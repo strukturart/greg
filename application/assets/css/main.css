@@ -1,0 +1,604 @@
+/*GENERAL*/
+
+:root {
+  --color-one: black;
+  --color-two: yellow;
+  --color-three: silver;
+  --color-four: rgb(190, 185, 185);
+  --color-five: rgba(214, 225, 228, 0.322);
+  --color-seven: rgba(101, 216, 24, 0.288);
+}
+
+@font-face {
+  font-family: "Lato-Regular";
+  src: url("../fonts/Lato-Regular.ttf");
+}
+
+*,
+*:before,
+*:after {
+  border: 0px;
+  padding: 0px;
+  margin: 0px;
+  box-sizing: border-box;
+
+  /* Careful, this breaks the word wherever it is without a hyphen */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+
+  /* Adds a hyphen where the word breaks */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  hyphens: auto;
+}
+
+:focus {
+  outline: none;
+  background: var(--color-four);
+}
+
+::-moz-focus-inner {
+  border: 0;
+}
+
+.debug {
+  outline: 1px solid red;
+}
+html,
+body {
+  font-family: "Lato-Regular";
+  font-weight: 100;
+  position: relative;
+  margin: 0px;
+  padding: 0px;
+  font-size: 1rem;
+  line-height: 1.4rem;
+  max-height: 100%;
+  max-width: 100%;
+  height: 100%;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  background: white;
+}
+
+h1 {
+  font-size: 1rem;
+}
+
+h2 {
+  font-size: 1rem;
+}
+
+h3 {
+  font-size: 1rem;
+}
+
+img {
+  max-width: 90vw;
+  height: auto;
+  display: block;
+}
+
+img[src=""] {
+  display: none;
+}
+
+img[src=" "] {
+  display: none;
+}
+
+button {
+  font-size: 1rem;
+  background: silver;
+  padding: 5px;
+  width: 100vw;
+  margin: 0 0 5px 0;
+  color: black;
+}
+
+button:focus {
+  background: silver;
+  color: white;
+}
+
+textarea {
+  height: 30px;
+  width: 90%;
+  padding: 3px;
+  border: 1px solid silver;
+}
+
+input {
+  width: 90%;
+  height: 30px;
+  padding: 3px;
+  border: 1px solid silver;
+}
+
+label {
+  display: block;
+  width: 100%;
+}
+.input-parent {
+  padding: 5px;
+}
+div#intro {
+  position: fixed;
+  background: black;
+  z-index: 100000;
+  min-width: 100%;
+  height: 100%;
+  animation-name: intro;
+  animation-duration: 1s;
+  animation-delay: 2s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+div#intro img {
+  width: 180px;
+  height: auto;
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  margin-left: -90px;
+  animation-name: intro_img;
+  animation-duration: 2s;
+  animation-delay: 1s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes intro_img {
+  from {
+    transform: translateX(0px);
+  }
+  to {
+    transform: translateX(-450px);
+  }
+}
+
+@keyframes intro {
+  from {
+    transform: translateY(0px);
+    display: block;
+    opacity: 100;
+  }
+  to {
+    transform: translateY(0px);
+    display: none;
+    opacity: 0;
+  }
+}
+
+div#intro div#version {
+  position: absolute;
+  text-align: center;
+  color: white;
+  z-index: 2000;
+  font-size: 0.7rem;
+  display: none;
+}
+
+div#intro div#intro-message {
+  position: absolute;
+  top: 190px;
+  text-align: center;
+  color: white;
+  z-index: 2000;
+  font-size: 0.8rem;
+}
+
+/*///////////////////////////
+///TOAST////////////////*/
+
+div#toast {
+  position: fixed;
+  height: auto;
+  overflow: none;
+  background: black;
+  color: white;
+  z-index: 10;
+  min-width: 100%;
+  padding: 5px;
+  top: 0px;
+
+  transition: all 0.5s ease-in-out;
+  transform-origin: left top;
+  transform: translate(0px, -100px);
+}
+
+/*///////////////////////////
+///VIEWS////////////////*/
+
+div#calendar {
+  padding: 10px;
+}
+
+div#calendar h3 {
+  background: var(--color-five);
+}
+
+div#calendar div.calendar-head {
+  background: var(--color-five);
+}
+
+div#calendar div.calendar-head div {
+  width: 13%;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+div#calendar div.calendar-body {
+  padding: 0px;
+}
+
+div#calendar div#calendar-body div {
+  min-width: 13%;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+div#calendar div#calendar-body div div.today {
+  background: pink;
+}
+
+div#calendar div#calendar-body div div.event {
+  background: var(--color-seven);
+}
+
+div#add-edit-event {
+  display: none;
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  height: 92vh;
+  overflow: hidden;
+}
+
+div#list-view {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  display: none;
+  padding: 5px;
+  height: 92vh;
+  overflow: hidden;
+}
+
+div#list-view article {
+  margin: 0 0 15px 0;
+}
+
+div#list-view article h2 {
+  background: var(--color-five);
+}
+
+div#options {
+  display: none;
+  background: white;
+  position: fixed;
+  top: 0;
+  z-index: 5;
+}
+
+div#options ul li {
+  background: var(--color-three);
+  color: white;
+  padding: 5px;
+  margin: 0 0 5px 0;
+}
+
+div#options ul li:focus {
+  background: rgb(92, 90, 90);
+}
+
+/*/////////////////
+///BOTTOM BAR////
+////////////////*/
+
+div#bottom-bar {
+  position: fixed;
+  z-index: 2000;
+  bottom: 10px;
+  left: 0px;
+  height: 18px;
+  z-index: 6;
+  background: black;
+  min-width: 100vw;
+}
+
+div#bottom-bar div#inner {
+  position: relative;
+}
+
+div#bottom-bar div {
+  background: black;
+  color: white;
+  padding: 2px;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+div#bottom-bar div#button-center {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 32%;
+  text-align: center;
+}
+
+div#bottom-bar div#button-left {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 32%;
+  text-align: left;
+  width: 32%;
+}
+
+div#bottom-bar div#button-right {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 32%;
+  text-align: right;
+}
+
+/*/////////////////
+///TOP-BAR///////*/
+
+div#top-bar {
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  height: 18px;
+  z-index: 4;
+  background: black;
+  min-width: 100vw;
+  display: none;
+}
+
+div#top-bar img {
+  margin: 3px 0 0 5px;
+  max-height: 15px;
+  color: white;
+}
+
+div#top-bar div#inner {
+  position: relative;
+}
+
+div#top-bar div {
+  background: black;
+  color: white;
+  padding: 2px;
+}
+
+div#top-bar div#button-center {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 30%;
+  text-align: center;
+}
+
+div#top-bar div#button-left {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 20px;
+  text-align: left;
+  width: 30%;
+}
+
+div#top-bar div#button-right {
+  background: black;
+  color: white;
+  padding: 2px;
+  width: 30%;
+  text-align: right;
+}
+
+/*INTRO*/
+
+div#message-box {
+  display: block;
+  position: fixed;
+  top: 0px;
+  left: 0px;
+  min-width: 100%;
+  height: 100%;
+  background: black;
+  color: white;
+  z-index: 5;
+
+  display: none;
+}
+
+div#message-box div {
+  margin: 100px 0 0 0;
+  animation-name: colorAnimation;
+  animation-duration: 2s;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+  max-width: 70%;
+  text-align: center;
+}
+
+div#count {
+  font-size: 8px;
+  color: white !important;
+  position: fixed;
+  bottom: 15px;
+}
+
+/*AUDIO-PLAYER*/
+
+div#audio-player {
+  background: var(--color-four);
+  z-index: 3;
+  position: fixed;
+  display: none;
+}
+
+div#audio-player div#audio-title {
+  background: black;
+  color: white;
+  font-size: 1.2rem;
+  max-width: 60%;
+  padding: 5px;
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
+div#audio-player div#image {
+  background-size: cover;
+  min-height: 100vh;
+}
+
+div#audio-player div#background-pattern {
+  min-width: 100vw;
+}
+
+div#audio-player div#background-pattern div {
+  width: 45px;
+  height: 45px;
+  margin: 0px;
+}
+
+div#audio-player div#progress-bar {
+  height: 10px;
+  position: fixed;
+  bottom: 30px;
+  z-index: 5;
+}
+
+div#audio-player div#progress-bar div {
+  height: 5px;
+  background: var(--color-six);
+}
+
+/*
+ SETTINGS
+ */
+
+div#top {
+  position: fixed;
+  top: 0;
+}
+
+div#settings {
+  display: none;
+  height: 92vh;
+  width: 100%;
+  padding: 0px 0 50px 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0px;
+  z-index: 3;
+  background: rgb(231, 231, 231);
+}
+
+div#settings div#text {
+  margin: 0 0 20px 0;
+}
+div#settings h2 {
+  padding: 0 10px 0 10px;
+}
+
+div#settings div.input-parent {
+  padding: 10px 10px 20px 10px;
+}
+
+div#settings div.input-parent:focus {
+  padding: 10px 10px 20px 10px;
+  background: rgb(179, 179, 179);
+}
+
+div#settings label {
+  min-width: 80%;
+  height: 30px;
+  margin: 5px 5px 0 0;
+}
+
+div#settings div#input-wrapper {
+  margin: 0 0 0px 0;
+}
+
+div#settings input {
+  width: 90%;
+  height: 30px;
+  font-size: 1rem;
+  border: 2px solid rgb(32, 32, 32);
+  margin: 10px 0 10px 0;
+  padding: 3px;
+  display: block;
+}
+
+div#settings input:focus {
+  outline: 1px solid rgb(36, 35, 35);
+  background: rgb(255, 240, 240);
+}
+
+#goodbye {
+  position: fixed;
+  z-index: 50000;
+  left: 0;
+  top: 0;
+  background: black;
+  color: white;
+  font-size: 18px;
+  padding: 70px 5px 5px 5px;
+  display: none;
+}
+
+#ciao {
+  padding: 5px;
+  text-align: center;
+  display: none;
+}
+
+#ciao ul {
+  margin: 20px 0 0px 0;
+}
+
+#ciao ul li {
+  margin: 0 0 0px 0;
+  font-size: 14px;
+  list-style: none;
+}
+
+#ciao ul li:first-child {
+  color: yellow;
+  margin: 0 0 5px 0;
+}
+
+#donation {
+  padding: 5px;
+  text-align: center;
+  display: none;
+}
+
+.overscrolling {
+  /* Start the shake animation and make the animation last for 0.5 seconds */
+  animation: jump 0.5s;
+
+  /* When the animation is finished, start again */
+
+  animation-iteration-count: 1;
+}
+
+@keyframes jump {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(-30px);
+  }
+}

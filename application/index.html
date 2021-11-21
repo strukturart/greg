@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>greg</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1" />
+    <link rel="stylesheet" href="assets/css/main.css" />
+    <link rel="stylesheet" href="assets/css/grid.css" />
+    <link rel="stylesheet" href="assets/css/qr-reader.css" />
+</head>
+
+<body>
+    <div id="wrapper">
+        <div id="toast" class="width-100"></div>
+        <div id="intro" class="width-100 height-100">
+            <img src="icons/intro.svg">
+            <div class="width-100" id="version"></div>
+            <div class="width-100" id="intro-message"></div>
+            <div class="width-100 flex justify-content-spacearound" id="loading-progress">
+                <div>
+                    <div></div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="qr-screen">
+            <video id="video"></video>
+            <div id="corner-nw"></div>
+            <div id="corner-no"></div>
+            <div id="corner-so"></div>
+            <div id="corner-sw"></div>
+            <div id="startDecoding" hidden>Start Scanning</div>
+        </div>
+        <!---------------->
+        <!--news-feed-->
+        <!---------------->
+
+
+        <div class="width-100 height-100">
+            <div id="calendar" class="page">
+                <h3 class="card-header" id="monthAndYear"></h3>
+                <div class="calendar-head flex">
+                    <div>Sun</div>
+                    <div>Mon</div>
+                    <div>Tue</div>
+                    <div>Wed</div>
+                    <div>Thu</div>
+                    <div>Fri</div>
+                    <div>Sat</div>
+                </div>
+    
+                <div id="calendar-body">
+    
+                </div>
+                
+            </div>
+            <div id="settings" class="page">   
+            </div>
+
+            <div id="add-edit-event" class="page width-100">
+                <div class="item input-parent" tabindex="0">
+                    <label for="event-title"><strong>Title</strong></label>
+                    <input placeholder="" type="text" id="event-title" />
+                </div>
+
+                <div class="item input-parent" tabindex="1">
+                    <label for="event-location"><strong>Location</strong></label>
+                    <input placeholder="" type="text" id="event-location" />
+                </div>
+
+                <div class="item input-parent" tabindex="2">
+                    <label for="date"><strong>Date</strong></label>
+                    <input placeholder="" type="text" id="event-date" />
+                </div>
+                
+                <div class="item input-parent" tabindex="3">
+                    <label for="time"><strong>Time</strong></label>
+                    <input placeholder="" type="text" id="event-time" />
+                    </div>
+
+                <div class="item input-parent" tabindex="4">
+                    <label for="description"><strong>Description</strong></label>
+                    <textarea placeholder="" type="text" id="event-description"></textarea>
+                </div>
+                <button tabindex="5" id="save-event" class="item">save</button>
+            </div>
+            <script id="template" type="x-tmpl-mustache">
+            
+            {{#data}}
+            <article data-fdate={{date}} class="item">
+            <h2>{{title}}</h2>
+            <div>{{date}},{{time}}</div>
+            <div>{{description}}</div>
+            </article>
+            {{/data}}
+            </script>
+
+            <div class="page width-100" id="list-view">
+            </div>
+
+
+
+            <div id="bottom-bar">
+                <div class="inner flex justify-content-spacebetween width-100">
+                    <div id="button-left"></div>
+                    <div id="button-center"></div>
+                    <div id="button-right"></div>
+                </div>
+            </div>
+
+            <div id="options" class="width-100 height-100">
+                
+                    <button class="item" data-function="unread" tabindex="0">mark as unread</button>
+                    <button class="item" data-function="sleepmode" tabindex="1">activate sleep mode</button>
+                    <button class="item" data-function="audio-player" tabindex="2">open audioplayer</button>
+                    <button class="item" data-function="volume" tabindex="3">volume</button>
+                    <button class="item" data-function="share" tabindex="4">share</button>
+               
+
+            </div>
+
+           
+        </div>
+     
+    </div>
+
+
+
+
+
+    <div id="goodbye" class="flex justify-content-center align-item-center width-100 height-100">
+        <div id="donation">
+            please support my work, <br />make a donation<br />
+            <br>paypal.me/strukturart<br>
+            Thank you!
+        </div>
+        <div id="ciao">
+            Goodbye<br />
+            <br />
+            <ul>
+                <li>Thank you</li>
+                <li>for using feedolin</li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+
+<script src="assets/js/mustache.js"></script>
+<script src="assets/js/helper.js"></script>
+<script src="index.js"></script>
+
+</html>
