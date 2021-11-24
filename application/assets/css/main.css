@@ -284,15 +284,7 @@ div#options {
   z-index: 5;
 }
 
-div#options ul li {
-  background: var(--color-three);
-  color: white;
-  padding: 5px;
-  margin: 0 0 5px 0;
-}
-
-div#options ul li:focus {
-  background: rgb(92, 90, 90);
+div#options button:focus {
 }
 
 /*/////////////////

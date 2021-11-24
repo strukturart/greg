@@ -91,7 +91,32 @@ const eximport = (() => {
     }
   };
 
+  let export_json = function () {
+    var sdcard = navigator.getDeviceStorage("sdcard");
+
+    var request_del = sdcard.delete("greg_events.json");
+    request_del.onsuccess = function () {};
+    setTimeout(function () {
+      let data = localStorage.getItem("events");
+      var file = new Blob([data], {
+        type: "application/json",
+      });
+
+      var request = sdcard.addNamed(file, "greg_events.json");
+
+      request.onsuccess = function () {
+        var name = this.result;
+        helper.toaster("events exported, greg_events.json", 5000);
+      };
+
+      request.onerror = function () {
+        helper.toaster("Unable to write the file", 2000);
+      };
+    }, 2000);
+  };
+
   return {
     export_ical,
+    export_json,
   };
 })();

@@ -89,9 +89,10 @@
             <script id="template" type="x-tmpl-mustache">
             
             {{#data}}
-            <article data-fdate={{date}} class="item">
+            <article data-id={{id}} data-fdate={{date}} class="item">
             <h2>{{title}}</h2>
             <div>{{date}},{{time}}</div>
+            <div>{{location}}</div>
             <div>{{description}}</div>
             </article>
             {{/data}}
@@ -110,15 +111,9 @@
                 </div>
             </div>
 
-            <div id="options" class="width-100 height-100">
-                
-                    <button class="item" data-function="unread" tabindex="0">mark as unread</button>
-                    <button class="item" data-function="sleepmode" tabindex="1">activate sleep mode</button>
-                    <button class="item" data-function="audio-player" tabindex="2">open audioplayer</button>
-                    <button class="item" data-function="volume" tabindex="3">volume</button>
-                    <button class="item" data-function="share" tabindex="4">share</button>
-               
-
+            <div id="options" class="width-100 height-100"> 
+                    <button class="item" data-function="export" tabindex="0">export events</button>
+                    <button class="item" data-function="import" tabindex="1">import events</button>
             </div>
 
            
@@ -147,6 +142,7 @@
     </div>
 
 </body>
+<script src="assets/js/eximport.js"></script>
 
 <script src="assets/js/mustache.js"></script>
 <script src="assets/js/helper.js"></script>

@@ -4,6 +4,7 @@ let status = {
   view: "month",
   selected_day: "",
   visible: "",
+  update_event_id: "",
 };
 
 let events;
@@ -158,7 +159,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (status.view == "month") {
       items = document.querySelectorAll(".item");
     }
-    if (status.view == "add-edit-event" || status.view == "list-view") {
+    if (
+      status.view == "add-edit-event" ||
+      status.view == "list-view" ||
+      status.view == "options"
+    ) {
       if (
         document.activeElement.parentNode.classList.contains("input-parent")
       ) {
@@ -181,6 +186,12 @@ document.addEventListener("DOMContentLoaded", function () {
   //STORE EVENTS//
   ///////////////
 
+  let clear_form = function () {
+    document.querySelectorAll("div#add-edit-event input").forEach(function (e) {
+      e.value = "";
+    });
+  };
+
   let store_event = function () {
     let event = {
       id: today.getTime() / 1000,
@@ -188,30 +199,60 @@ document.addEventListener("DOMContentLoaded", function () {
       date: document.getElementById("event-date").value,
       time: document.getElementById("event-time").value,
       description: document.getElementById("event-description").value,
-      /*
-      BEGIN: VCALENDAR
-      
-VERSION:2.0
-PRODID:Cal_App//Daily@Planet
-METHOD:PUBLISH
-BEGIN:VEVENT
-UID:123456789@example.com
-LOCATION:Metropolis
-SUMMARY:Meeting
-DESCRIPTION:Kick-off Meeting
-CLASS:PUBLIC
-DTSTART:20191101T100000Z
-DTEND: 20191101T120000Z
-DTSTAMP: 20191027T155954Z
-END:VEVENT
-END:VCALENDAR
-*/
     };
 
     events.push(event);
     localStorage.setItem("events", JSON.stringify(events));
+    //clean form
+    document.getElementById("event-title").value = "";
+    document.getElementById("event-date").value = "";
+
     status.view = "month";
     router();
+  };
+
+  let update_event = function () {
+    events.forEach(function (index, key, value) {
+      console.log(index.id);
+
+      if (index.id == status.update_event_id) {
+        index.title = document.getElementById("event-title").value;
+        index.date = document.getElementById("event-date").value;
+        index.time = document.getElementById("event-time").value;
+        index.description = document.getElementById("event-description").value;
+        index.location = document.getElementById("event-location").value;
+      }
+    });
+
+    localStorage.setItem("events", JSON.stringify(events));
+    //clean form
+    clear_form();
+
+    status.update_event_id = "";
+    status.view = "month";
+    router();
+  };
+
+  let delete_event = function () {
+    events.forEach(function (index, key, value) {
+      console.log(index.id);
+
+      if (index.id == status.update_event_id) {
+      }
+    });
+    clear_form();
+  };
+
+  let edit_event = function () {
+    status.update_event_id = document.activeElement.getAttribute("data-id");
+    events.forEach(function (index, key, value) {
+      if (index.id == status.update_event_id) {
+        document.getElementById("event-title").value = index.title;
+        document.getElementById("event-date").value = index.date;
+        document.getElementById("event-time").value = index.time;
+        document.getElementById("event-description").value = index.description;
+      }
+    });
   };
 
   let set_tabindex = function () {
@@ -242,6 +283,7 @@ END:VCALENDAR
   const month = document.getElementById("calendar");
   const add_edit_event = document.getElementById("add-edit-event");
   const list_view = document.getElementById("list-view");
+  const options = document.getElementById("options");
 
   const pages = document.querySelectorAll(".page");
 
@@ -257,32 +299,50 @@ END:VCALENDAR
         status.view = "month";
       }
     }
-
+    //add event view
     if (status.view == "add-edit-event") {
-      document.getElementById(
-        "event-date"
-      ).value = document.activeElement.getAttribute("data-date");
+      document.getElementById("event-date").value = status.selected_day;
       add_edit_event.style.display = "block";
       add_edit_event.querySelectorAll(".item")[0].focus();
       helper.bottom_bar("", "edit", "");
+
+      if (status.update_event_id != "") {
+        document.getElementById("save-event").innerText = "update";
+      }
+      if (status.update_event_id == "") {
+        document.getElementById("save-event").innerText = "save";
+      }
       return true;
     }
-
+    //month view
     if (status.view == "month") {
+      options.style.display = "none";
       month.style.display = "block";
       helper.bottom_bar("events", "add", "options");
+      status.update_event_id == "";
+      clear_form();
     }
+    //list view
     if (status.view == "list-view") {
       helper.bottom_bar("month", "edit", "options");
 
       list_view.style.display = "block";
       renderHello(events);
 
-      document.querySelectorAll("[data-fdate]").forEach(function (e) {
+      console.log(status);
+
+      document.querySelectorAll("article").forEach(function (e) {
         if (e.getAttribute("data-fdate") == status.selected_day) {
           e.focus();
+        } else {
+          document.querySelectorAll("div#list-view article")[0].focus();
         }
       });
+    }
+
+    if (status.view == "options") {
+      document.getElementById("options").style.display = "block";
+      document.querySelectorAll("div#options button")[0].focus();
     }
   };
 
@@ -327,7 +387,11 @@ END:VCALENDAR
         if (status.view == "month") {
           nav(-7);
         }
-        if (status.view == "add-edit-event" || status.view == "list-view") {
+        if (
+          status.view == "add-edit-event" ||
+          status.view == "list-view" ||
+          status.view == "options"
+        ) {
           nav(-1);
         }
         break;
@@ -335,7 +399,11 @@ END:VCALENDAR
         if (status.view == "month") {
           nav(+7);
         }
-        if (status.view == "add-edit-event" || status.view == "list-view") {
+        if (
+          status.view == "add-edit-event" ||
+          status.view == "list-view" ||
+          status.view == "options"
+        ) {
           nav(+1);
         }
 
@@ -354,6 +422,12 @@ END:VCALENDAR
         next();
         break;
 
+      case "SoftRight":
+      case "Alt":
+        status.view = "options";
+        router();
+        break;
+
       case "SoftLeft":
       case "Control":
         router("view");
@@ -370,12 +444,38 @@ END:VCALENDAR
         }
 
         if (document.activeElement.id == "save-event") {
-          store_event();
+          if (status.update_event_id != "") {
+            update_event();
+          } else {
+            store_event();
+          }
+        }
+        if (status.view == "options") {
+          if (
+            document.activeElement.getAttribute("data-function") == "export"
+          ) {
+            eximport.export_json();
+          }
+          if (
+            document.activeElement.getAttribute("data-function") == "import"
+          ) {
+          }
+        }
+        if (status.view == "list-view") {
+          edit_event();
+
+          status.view = "add-edit-event";
+          router();
         }
         break;
 
       case "Backspace":
         if (status.view == "add-edit-event") {
+          status.view = "month";
+          router();
+        }
+
+        if (status.view == "options") {
           status.view = "month";
           router();
         }
@@ -418,11 +518,7 @@ END:VCALENDAR
 
     if (evt.key == "Backspace") evt.preventDefault(); // Disable close app by holding backspace
 
-    if (
-      evt.key == "Backspace" &&
-      status.window_status != "article-list" &&
-      document.activeElement.tagName == "INPUT"
-    ) {
+    if (evt.key == "Backspace" && document.activeElement.tagName == "INPUT") {
       evt.preventDefault();
     }
 
