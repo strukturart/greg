@@ -1,6 +1,6 @@
 const eximport = (() => {
   //where the magic happens
-  let export_ical = function () {
+  let export_ical_example = function () {
     //name of event in iCal
     this.eventName = "My Cool Event";
 
@@ -107,6 +107,52 @@ const eximport = (() => {
       request.onsuccess = function () {
         var name = this.result;
         helper.toaster("events exported, greg_events.json", 5000);
+      };
+
+      request.onerror = function () {
+        helper.toaster("Unable to write the file", 2000);
+      };
+    }, 2000);
+  };
+
+  let export_ical = function () {
+    var sdcard = navigator.getDeviceStorage("sdcard");
+
+    var request_del = sdcard.delete("greg_events.ics");
+    request_del.onsuccess = function () {};
+    setTimeout(function () {
+      //convert
+      let data = JSON.parse(localStorage.getItem("events"));
+
+      let ll = {
+        BEGIN: "VCALENDAR",
+        VERSION: "2.0",
+        PRODID: "Greg",
+        METHOD: "PUBLISH",
+      };
+
+      data.unshift(ll);
+
+      let result = "";
+
+      data.forEach((e) => {
+        for (let key in e) {
+          if (key != "date" && key != "time_start" && key != "time_end") {
+            result += `${key}:${e[key]}` + "\r\n";
+          }
+        }
+      });
+      result += "END:VCALENDAR" + "\r\n";
+
+      var file = new Blob([result], {
+        type: "text/calendar",
+      });
+
+      var request = sdcard.addNamed(file, "greg_events.ics");
+
+      request.onsuccess = function () {
+        //var name = this.result;
+        helper.toaster("greg_events.ics", 5000);
       };
 
       request.onerror = function () {

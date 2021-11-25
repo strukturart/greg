@@ -3,9 +3,19 @@
 let status = {
   view: "month",
   selected_day: "",
-  visible: "",
+  visible: false,
   update_event_id: "",
 };
+
+function handleVisibilityChange() {
+  if (document.visibilityState === "hidden") {
+    status.visible = false;
+  } else {
+    setTimeout(function () {
+      status.visible = true;
+    }, 5000);
+  }
+}
 
 let events;
 
@@ -16,12 +26,17 @@ if (localStorage.getItem("events") != null) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  handleVisibilityChange();
+
+  console.log(status);
+
   let today = new Date();
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
   let currentDay = today.getDate();
-  //let selectYear = document.getElementById("year");
-  //let selectMonth = document.getElementById("month");
+
+  let monthAndYear = document.getElementById("monthAndYear");
+
   let months = [
     "Jan",
     "Feb",
@@ -63,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
     showCalendar(currentMonth, currentYear);
   }
 
+  //check if has event
   let event_check = function (date) {
     let f;
 
@@ -77,7 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return f;
   };
 
-  let monthAndYear = document.getElementById("monthAndYear");
   jump_to_today();
 
   //////////////
@@ -119,12 +134,16 @@ document.addEventListener("DOMContentLoaded", function () {
           break;
         } else {
           let cell = document.createElement("div");
+          let span = document.createElement("span");
           let cellText = document.createTextNode(date);
-          // color today's date
           cell.appendChild(cellText);
+          cell.appendChild(span);
+
+          //set tabindex
           cell.setAttribute("tabindex", date - 1);
           let p = year + "-" + (month + 1) + "-" + date;
           cell.setAttribute("data-date", p);
+          //check if has event
           if (event_check(p)) {
             cell.classList.add("event");
           }
@@ -164,6 +183,8 @@ document.addEventListener("DOMContentLoaded", function () {
       status.view == "list-view" ||
       status.view == "options"
     ) {
+      document.getElementById("add-edit-event").firstElementChild.focus();
+
       if (
         document.activeElement.parentNode.classList.contains("input-parent")
       ) {
@@ -176,6 +197,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const targetElement = items[next];
     targetElement.focus();
+
+    const rect = document.activeElement.getBoundingClientRect();
+    const elY =
+      rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+
+    document.activeElement.parentNode.scrollBy({
+      left: 0,
+      top: elY - window.innerHeight / 2,
+      behavior: "smooth",
+    });
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
@@ -192,35 +223,67 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   };
 
+  function uid() {
+    function _p8(s) {
+      var p = (Math.random().toString(16) + "000000000").substr(2, 8);
+      return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
+    }
+    return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
+  }
+
   let store_event = function () {
+    let start_time = "00:00:00";
+    if (document.getElementById("event-time-start").value != "") {
+      start_time = document.getElementById("event-time-start").value;
+    }
+
+    let end_time = "00:00:00";
+    if (document.getElementById("event-time-end").value != "") {
+      end_time = document.getElementById("event-time-end").value;
+    }
+
+    let convert_dt_start =
+      document.getElementById("event-date").value + " " + start_time;
+
+    let convert_dt_end =
+      document.getElementById("event-date").value + " " + end_time;
+
     let event = {
-      id: today.getTime() / 1000,
-      title: document.getElementById("event-title").value,
+      BEGIN: "VEVENT",
+      UID: uid(),
+      SUMMARY: document.getElementById("event-title").value,
+      LOCATION: document.getElementById("event-location").value,
+      DESCRIPTION: document.getElementById("event-description").value,
+      CLASS: "PRIVATE",
+      DTSTAMP: new Date().toISOString(),
+      DTSTART: new Date(convert_dt_start).toISOString(),
+      DTEND: new Date(convert_dt_end).toISOString(),
       date: document.getElementById("event-date").value,
-      time: document.getElementById("event-time").value,
-      description: document.getElementById("event-description").value,
+      time_start: document.getElementById("event-time-start").value,
+      time_end: document.getElementById("event-time-end").value,
+      END: "VEVENT",
     };
 
     events.push(event);
     localStorage.setItem("events", JSON.stringify(events));
+    eximport.export_ical();
+
     //clean form
-    document.getElementById("event-title").value = "";
-    document.getElementById("event-date").value = "";
+    clear_form();
 
     status.view = "month";
     router();
   };
 
   let update_event = function () {
-    events.forEach(function (index, key, value) {
-      console.log(index.id);
-
-      if (index.id == status.update_event_id) {
-        index.title = document.getElementById("event-title").value;
+    events.forEach(function (index) {
+      if (index.UID == status.update_event_id) {
+        index.SUMMARY = document.getElementById("event-title").value;
+        index.DESCRIPTION = document.getElementById("event-description").value;
+        index.LOCATION = document.getElementById("event-location").value;
         index.date = document.getElementById("event-date").value;
-        index.time = document.getElementById("event-time").value;
-        index.description = document.getElementById("event-description").value;
-        index.location = document.getElementById("event-location").value;
+        index.time_start = document.getElementById("event-time-start").value;
+        index.time_end = document.getElementById("event-time-end").value;
       }
     });
 
@@ -231,26 +294,35 @@ document.addEventListener("DOMContentLoaded", function () {
     status.update_event_id = "";
     status.view = "month";
     router();
+    eximport.export_ical();
   };
 
   let delete_event = function () {
-    events.forEach(function (index, key, value) {
-      console.log(index.id);
-
-      if (index.id == status.update_event_id) {
+    events.forEach(function (index) {
+      if (index.UID == status.update_event_id) {
+        events.splice(index, 1);
       }
     });
     clear_form();
+    status.update_event_id = "";
+    localStorage.setItem("events", JSON.stringify(events));
+    eximport.export_ical();
+
+    status.view = "month";
+    router();
   };
 
   let edit_event = function () {
     status.update_event_id = document.activeElement.getAttribute("data-id");
-    events.forEach(function (index, key, value) {
-      if (index.id == status.update_event_id) {
-        document.getElementById("event-title").value = index.title;
+    events.forEach(function (index) {
+      if (index.UID == status.update_event_id) {
+        console.log("founded");
+        document.getElementById("event-title").value = index.SUMMARY;
         document.getElementById("event-date").value = index.date;
-        document.getElementById("event-time").value = index.time;
-        document.getElementById("event-description").value = index.description;
+        document.getElementById("event-time-start").value = index.time_start;
+        document.getElementById("event-time-end").value = index.time_end;
+        document.getElementById("event-description").value = index.DESCRIPTION;
+        document.getElementById("event-location").value = index.LOCATION;
       }
     });
   };
@@ -261,11 +333,51 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   };
 
+  document.querySelectorAll("INPUT").forEach(function (ob) {
+    ob.addEventListener("input", function () {
+      console.log("ready");
+    });
+  });
+
   ////////////////////
   ////BUILD EVENT-LIST
   ///////////////////
 
+  let sort_array = function (arr, item_key, type) {
+    if (type == "date") {
+      arr.sort((a, b) => {
+        let da = new Date(a[item_key]),
+          db = new Date(b[item_key]);
+        return da - db;
+      });
+    }
+
+    //sort by number
+    if (type == "number") {
+      arr.sort((a, b) => {
+        return b[item_key] - a[item_key];
+      });
+    }
+    //sort by string
+    if (type == "string") {
+      arr.sort((a, b) => {
+        let fa = a[item_key].toLowerCase(),
+          fb = b[item_key].toLowerCase();
+
+        if (fa < fb) {
+          return -1;
+        }
+        if (fa > fb) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+  };
+
   function renderHello(arr) {
+    sort_array(arr, "date", "date");
+
     var template = document.getElementById("template").innerHTML;
     var rendered = Mustache.render(template, {
       data: arr,
@@ -320,6 +432,8 @@ document.addEventListener("DOMContentLoaded", function () {
       month.style.display = "block";
       helper.bottom_bar("events", "add", "options");
       status.update_event_id == "";
+      showCalendar(currentMonth, currentYear);
+
       clear_form();
     }
     //list view
@@ -329,7 +443,7 @@ document.addEventListener("DOMContentLoaded", function () {
       list_view.style.display = "block";
       renderHello(events);
 
-      console.log(status);
+      console.log(events);
 
       document.querySelectorAll("article").forEach(function (e) {
         if (e.getAttribute("data-fdate") == status.selected_day) {
@@ -368,6 +482,13 @@ document.addEventListener("DOMContentLoaded", function () {
   function longpress_action(param) {
     switch (param.key) {
       case "0":
+        break;
+
+      case "ArrowLeft":
+        if (status.view != "list-view") {
+          helper.toaster("deleted", 1000);
+        }
+
         break;
     }
   }
@@ -409,9 +530,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         break;
       case "ArrowRight":
+        if (status.view != "month") return true;
         nav(1);
         break;
       case "ArrowLeft":
+        if (status.view != "month") return true;
         nav(-1);
         break;
 
@@ -434,6 +557,7 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
 
       case "Enter":
+        if (!status.visible) return false;
         if (document.activeElement.classList.contains("input-parent")) {
           document.activeElement.children[1].focus();
           return true;
@@ -450,11 +574,16 @@ document.addEventListener("DOMContentLoaded", function () {
             store_event();
           }
         }
+
+        if (document.activeElement.id == "delete-event") {
+          delete_event();
+        }
+
         if (status.view == "options") {
           if (
             document.activeElement.getAttribute("data-function") == "export"
           ) {
-            eximport.export_json();
+            eximport.export_ical();
           }
           if (
             document.activeElement.getAttribute("data-function") == "import"
@@ -470,7 +599,10 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
 
       case "Backspace":
-        if (status.view == "add-edit-event") {
+        if (
+          status.view == "add-edit-event" &&
+          document.activeElement.tagName != "INPUT"
+        ) {
           status.view = "month";
           router();
         }
@@ -516,10 +648,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function handleKeyUp(evt) {
     evt.preventDefault();
 
-    if (evt.key == "Backspace") evt.preventDefault(); // Disable close app by holding backspace
-
     if (evt.key == "Backspace" && document.activeElement.tagName == "INPUT") {
-      evt.preventDefault();
     }
 
     clearTimeout(timeout);
@@ -530,10 +659,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.addEventListener("keydown", handleKeyDown);
   document.addEventListener("keyup", handleKeyUp);
-
-  document.addEventListener("visibilitychange", function () {
-    setTimeout(function () {
-      status.visible = document.visibilityState;
-    }, 1000);
-  });
 });
+
+document.addEventListener("visibilitychange", handleVisibilityChange, false);

@@ -8,6 +8,10 @@
 
 An easy to use calendar for KaiOs
 
+![image-1](/images/image-1.png)
+![image-2](/images/image-2.png)
+![image-3](/images/image-3.png)
+
 ## How to install
 
 The app is not available through the https://www.kaiostech.com/store/ They are only accepting apps that are monetized using <a href="https://developer.kaiostech.com/submit-to-kaistore">KaiAds SDK</a>, and that's something I'm not interested in integrating.

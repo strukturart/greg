@@ -72,28 +72,38 @@
 
                 <div class="item input-parent" tabindex="2">
                     <label for="date"><strong>Date</strong></label>
-                    <input placeholder="" type="text" id="event-date" />
+                    <input placeholder="YYYY-MM-DD" type="date" id="event-date" />
                 </div>
                 
                 <div class="item input-parent" tabindex="3">
-                    <label for="time"><strong>Time</strong></label>
-                    <input placeholder="" type="text" id="event-time" />
-                    </div>
+                    <label for="time"><strong>Start Time</strong></label>
+                    <input placeholder="hh:mm:ss" type="time" id="event-time-start" />
+                </div>
 
                 <div class="item input-parent" tabindex="4">
-                    <label for="description"><strong>Description</strong></label>
-                    <textarea placeholder="" type="text" id="event-description"></textarea>
+                    <label for="time"><strong>End Time</strong></label>
+                    <input placeholder="hh:mm:ss" type="time" id="event-time-end" />
                 </div>
-                <button tabindex="5" id="save-event" class="item">save</button>
+
+                <div class="item input-parent" tabindex="5">
+                    <label for="description"><strong>Description</strong></label>
+                    <input placeholder="" type="text" id="event-description">
+                </div>
+                <button tabindex="6" id="save-event" class="item">save</button>
+                <button tabindex="7" id="delete-event" class="item">delete</button>
+
             </div>
             <script id="template" type="x-tmpl-mustache">
             
             {{#data}}
-            <article data-id={{id}} data-fdate={{date}} class="item">
-            <h2>{{title}}</h2>
-            <div>{{date}},{{time}}</div>
-            <div>{{location}}</div>
-            <div>{{description}}</div>
+            <article data-id={{UID}} data-fdate={{date}} class="item">
+            <h2>{{SUMMARY}}</h2>
+            <div>{{date}}
+                {{#time_start.length}} ,{{/time_start.length}}
+                {{time_start}}
+                {{#time_end.length}} - {{time_end}}{{/time_end.length}}</div>
+            <div>{{LOCATION}}</div>
+            <div>{{DESCRIPTION}}</div>
             </article>
             {{/data}}
             </script>
@@ -136,14 +146,13 @@
             <br />
             <ul>
                 <li>Thank you</li>
-                <li>for using feedolin</li>
+                <li>for using Greg</li>
             </ul>
         </div>
     </div>
 
 </body>
 <script src="assets/js/eximport.js"></script>
-
 <script src="assets/js/mustache.js"></script>
 <script src="assets/js/helper.js"></script>
 <script src="index.js"></script>
