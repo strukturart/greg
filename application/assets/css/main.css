@@ -103,6 +103,15 @@ button:focus {
   color: white;
 }
 
+button#save-event {
+  margin: 30px 0 5px 0;
+}
+
+select {
+  width: 90%;
+  height: 50px;
+}
+
 textarea {
   height: 30px;
   width: 90%;
@@ -120,6 +129,7 @@ input {
 label {
   display: block;
   width: 100%;
+  margin: 0 0 10px 0;
 }
 .input-parent {
   padding: 5px;
@@ -210,6 +220,24 @@ div#toast {
   transform: translate(0px, -100px);
 }
 
+div#side-toast {
+  position: fixed;
+  height: auto;
+  overflow: none;
+  background: none;
+  color: white;
+  z-index: 10;
+  padding: 5px;
+  top: 70vh;
+
+  transition: all 0.5s ease-in-out;
+  transform-origin: left top;
+  transform: translate(-100vw, 0px);
+}
+
+div#side-toast img{
+width:60px;
+}
 /*///////////////////////////
 ///VIEWS////////////////*/
 
@@ -243,6 +271,10 @@ div#calendar div#calendar-body div {
   overflow: hidden;
 }
 
+div#calendar div#calendar-body div:focus {
+  background: none;
+}
+
 div#calendar div#calendar-body div div.today {
   background: pink;
 }
@@ -255,14 +287,6 @@ div#calendar div#calendar-body :focus span {
   top: -5px;
   position: absolute;
   transform: rotate(45deg);
-}
-
-div#calendar div#calendar-body div div.today + span {
-  min-width: 10px;
-  min-height: 10px;
-  background: red;
-  margin: 0 -10px 0 0;
-  position: absolute;
 }
 
 div#calendar div#calendar-body div div.event {

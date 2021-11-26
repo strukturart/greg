@@ -2,15 +2,23 @@
 
 # Greg
 
-![badge-release](https://img.shields.io/github/v/release/strukturart/feedolin?include_prereleases&style=plastic)
-[![badge-bhackers](https://img.shields.io/badge/bHackers-bHackerStore-orange)](https://store.bananahackers.net/#feedolin)
-![badge-downloads](https://img.shields.io/github/downloads/strukturart/feedolin/total)
+![badge-release](https://img.shields.io/github/v/release/strukturart/greg?include_prereleases&style=plastic)
+[![badge-bhackers](https://img.shields.io/badge/bHackers-bHackerStore-orange)](https://store.bananahackers.net/#greg)
+![badge-downloads](https://img.shields.io/github/downloads/strukturart/greg/total)
 
 An easy to use calendar for KaiOs
 
 ![image-1](/images/image-1.png)
 ![image-2](/images/image-2.png)
 ![image-3](/images/image-3.png)
+
+## How to use
+
+- Key 1 & 3 : Jump between the months
+- Key \* : Jump to current Day
+- SoftLeft : Toggle views -> month / event-list
+- Key Enter: month view add event
+- Key Enter: event-list view edit event
 
 ## How to install
 
@@ -21,9 +29,9 @@ The Developer Portal also contains a guide, and if nothing seems to work, you ca
 You can download the latest version from the Releases page.
 The app is not auto-updating. To update it, you have to follow the same steps you took when installing it.
 
-## How to use
-
 ## to do
+
+calDav
 
 ## Donation
 

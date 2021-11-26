@@ -116,6 +116,7 @@ const eximport = (() => {
   };
 
   let export_ical = function () {
+    if (!navigator.getDeviceStorage) return false;
     var sdcard = navigator.getDeviceStorage("sdcard");
 
     var request_del = sdcard.delete("greg_events.ics");
@@ -137,7 +138,13 @@ const eximport = (() => {
 
       data.forEach((e) => {
         for (let key in e) {
-          if (key != "date" && key != "time_start" && key != "time_end") {
+          if (
+            key != "date" &&
+            key != "time_start" &&
+            key != "time_end" &&
+            key != "notification" &&
+            key != "alarm"
+          ) {
             result += `${key}:${e[key]}` + "\r\n";
           }
         }
@@ -152,7 +159,7 @@ const eximport = (() => {
 
       request.onsuccess = function () {
         //var name = this.result;
-        helper.toaster("greg_events.ics", 5000);
+        helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
       };
 
       request.onerror = function () {

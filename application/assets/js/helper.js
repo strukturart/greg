@@ -20,43 +20,7 @@ function getRandomInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function notify(param_title, param_text, param_silent, requireInteraction) {
-  var options = {
-    body: param_text,
-    silent: param_silent,
-    requireInteraction: requireInteraction,
-  };
 
-  // Let's check if the browser supports notifications
-  if (!("Notification" in window)) {
-    alert("This browser does not support desktop notification");
-  }
-
-  // Let's check whether notification permissions have already been granted
-  else if (Notification.permission === "granted") {
-    // If it's okay let's create a notification
-    var notification = new Notification(param_title, options);
-  }
-
-  // Otherwise, we need to ask the user for permission
-  else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(function (permission) {
-      // If the user accepts, let's create a notification
-      if (permission === "granted") {
-        var notification = new Notification(param_title, options, action);
-
-        document.addEventListener("visibilitychange", function () {
-          if (document.visibilityState === "visible") {
-            // The tab has become visible so clear the now-stale Notification.
-            notification.close();
-
-            toaster("yes", 2000);
-          }
-        });
-      }
-    });
-  }
-}
 
 function share(url) {
   var activity = new MozActivity({
@@ -129,69 +93,46 @@ function write_file(data, filename) {
   };
 }
 
-function add_source(url, limit, categorie, channel) {
-  let sdcard = navigator.getDeviceStorages("sdcard");
-  let request = sdcard[1].get("rss-reader.json");
-
-  request.onsuccess = function () {
-    let fileget = this.result;
-    let reader = new FileReader();
-
-    reader.addEventListener("loadend", function (event) {
-      let data;
-      //check if json valid
-      try {
-        data = JSON.parse(event.target.result);
-      } catch (e) {
-        toaster("Json is not valid", 2000);
-        return false;
-      }
-
-      data.push({
-        categorie: categorie,
-        url: url,
-        limit: limit,
-        channel: channel,
-      });
-
-      let extData = JSON.stringify(data);
-
-      var request_del = sdcard[1].delete("rss-reader.json");
-
-      request_del.onsuccess = function () {
-        //toaster('File successfully removed.', 2000);
-
-        let file = new Blob([extData], {
-          type: "application/json",
-        });
-        let requestAdd = sdcard[1].addNamed(file, "rss-reader.json");
-
-        requestAdd.onsuccess = function () {
-          toaster(
-            "<br><br>the rss feed <br>has been successfully added to your list.",
-            3000
-          );
-        };
-
-        requestAdd.onerror = function () {
-          toaster("Unable to write the file: " + this.error);
-        };
-      };
-
-      request_del.onerror = function () {
-        //toaster('Unable to remove the file: ' + this.error);
-      };
-    });
-
-    reader.readAsText(fileget);
-  };
-
-  request.onerror = function () {
-    toaster(this.error, 3000);
-  };
-}
 
 const helper = (() => {
+
+ let notify = function(param_title, param_text, param_silent) {
+    var options = {
+      body: param_text,
+      silent: param_silent,
+    };
+    // Let's check if the browser supports notifications
+    if (!("Notification" in window)) {
+      alert("This browser does not support desktop notification");
+    }
+
+    // Let's check whether notification permissions have already been granted
+    else if (Notification.permission === "granted") {
+      // If it's okay let's create a notification
+      var notification = new Notification(param_title, options);
+    }
+
+    // Otherwise, we need to ask the user for permission
+    else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(function (permission) {
+        // If the user accepts, let's create a notification
+        if (permission === "granted") {
+          var notification = new Notification(param_title, options);
+        }
+      });
+    }
+  }
+  if (navigator.mozSetMessageHandler) {
+    navigator.mozSetMessageHandler("alarm", function (message) {
+      // Note: message has to be set in the manifest file
+      //console.log("Alarm fired: " + JSON.stringify(message));
+      notify("Greg", message.data.foo, false);
+    });
+  }
+
+
+
+
   function validate(url) {
     var pattern = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
     if (pattern.test(url)) {
@@ -213,6 +154,8 @@ const helper = (() => {
     self.onerror = function () {};
   };
 
+
+  //top toaster
   let queue = [];
   let timeout;
   let toaster = function (text, time) {
@@ -221,6 +164,58 @@ const helper = (() => {
       toast_q(text, time);
     }
   };
+
+
+  let toast_q = function (text, time) {
+    var x = document.querySelector("div#toast");
+    x.innerHTML = queue[0].text;
+
+    x.style.transform = "translate(0px, 0px)";
+
+    timeout = setTimeout(function () {
+      timeout = null;
+      x.style.transform = "translate(0px, -100px)";
+      queue = queue.slice(1);
+      if (queue.length > 0) {
+        setTimeout(() => {
+          toast_q(text, time);
+        }, 1000);
+      }
+    }, time);
+  };
+
+  //side toaster
+
+    let queue_st = [];
+    let ttimeout;
+    let side_toaster = function (text, time) {
+      queue_st.push({ text: text, time: time });
+      if (queue_st.length === 1) {
+        toast_qq(text, time);
+      }
+    };
+
+    let toast_qq = function (text, time) {
+      var x = document.querySelector("div#side-toast");
+      x.innerHTML = queue_st[0].text;
+
+      x.style.transform = "translate(0vh, 0px)";
+
+      timeout = setTimeout(function () {
+        ttimeout = null;
+        x.style.transform = "translate(-100vh,0px)";
+        queue_st = queue.slice(1);
+        if (queue_st.length > 0) {
+          setTimeout(() => {
+            toast_qq(text, time);
+          }, 1000);
+        }
+      }, time);
+    };
+
+  
+  
+  
 
   //bottom bar
   let bottom_bar = function (left, center, right) {
@@ -258,23 +253,6 @@ const helper = (() => {
     document.body.appendChild(document.createElement("script")).src = script;
   };
 
-  let toast_q = function (text, time) {
-    var x = document.querySelector("div#toast");
-    x.innerHTML = queue[0].text;
-
-    x.style.transform = "translate(0px, 0px)";
-
-    timeout = setTimeout(function () {
-      timeout = null;
-      x.style.transform = "translate(0px, -100px)";
-      queue = queue.slice(1);
-      if (queue.length > 0) {
-        setTimeout(() => {
-          toast_q(text, time);
-        }, 1000);
-      }
-    }, time);
-  };
 
   let lock;
   let screenlock = function (stat) {
@@ -362,6 +340,7 @@ const helper = (() => {
   return {
     getManifest,
     toaster,
+    side_toaster,   
     add_script,
     deleteFile,
     goodbye,
@@ -370,5 +349,6 @@ const helper = (() => {
     formatFileSize,
     top_bar,
     bottom_bar,
+    notify,
   };
 })();
