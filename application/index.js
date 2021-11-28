@@ -36,10 +36,10 @@ if (localStorage.getItem("events") != null) {
 document.addEventListener("DOMContentLoaded", function () {
   handleVisibilityChange();
 
-  console.log(status);
-
+  //current day
+  //with leading 0
   let today = new Date();
-  let currentMonth = today.getMonth();
+  let currentMonth = today.getMonth() + 1;
   let currentYear = today.getFullYear();
   let currentDay = today.getDate();
 
@@ -61,8 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   let jump_to_today = function () {
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
     showCalendar(currentMonth, currentYear);
 
     status.selected_day = document.activeElement.getAttribute("data-date");
@@ -81,8 +79,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function jump() {
-    //currentYear = parseInt(selectYear.value);
-    //currentMonth = parseInt(selectMonth.value);
     showCalendar(currentMonth, currentYear);
   }
 
@@ -93,9 +89,12 @@ document.addEventListener("DOMContentLoaded", function () {
     for (let t = 0; t < events.length; t++) {
       f = false;
 
+      console.log(date + "," + events[t].date);
+
       if (date === events[t].date) {
+        console.log("match");
         f = true;
-        t = 1000;
+        t = events.length + 1;
       }
     }
     return f;
@@ -147,14 +146,23 @@ document.addEventListener("DOMContentLoaded", function () {
           cell.appendChild(cellText);
           cell.appendChild(span);
 
-          //set tabindex
-          cell.setAttribute("tabindex", date - 1);
-          let p = year + "-" + (month + 1) + "-" + date;
-          cell.setAttribute("data-date", p);
+          let p = year + "-" + month + "-" + date;
+          console.log("tt" + p);
           //check if has event
           if (event_check(p)) {
             cell.classList.add("event");
           }
+
+          //set tabindex
+          cell.setAttribute("tabindex", date - 1);
+
+          month = `0${month + 1}`.slice(-2);
+          let day = `0${date}`.slice(-2);
+
+          p = year + "-" + month + "-" + day;
+
+          console.log(status);
+          cell.setAttribute("data-date", p);
 
           cell.classList.add("item");
           row.appendChild(cell);
@@ -166,12 +174,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.querySelectorAll(".item")[0].focus();
-    status.selected_day = document.activeElement.getAttribute("data-date");
     //highlight current day
-    if (today.getMonth() == month && today.getFullYear() == year) {
+
+    if (currentMonth == month && currentYear == year) {
       document.querySelectorAll(".item")[currentDay - 1].focus();
       document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
     }
+    status.selected_day = document.activeElement.getAttribute("data-date");
   }
 
   /////////////////
@@ -218,10 +227,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
+
+      console.log(status);
     }
 
     if (status.view == "list-view") {
-      status.selected_day = targetElement.getAttribute("data-fdate");
+      status.selected_day = targetElement.getAttribute("data-date");
+
+      console.log(status);
     }
   };
 
@@ -514,6 +527,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //add event view
     if (status.view == "add-edit-event") {
+      //set date with leading 0
+      var date = new Date(document.activeElement.getAttribute("data-date"));
+      var result = date.toISOString().split("T")[0];
+      status.selected_day = result;
+      console.log(status);
+
       document.getElementById("event-date").value = status.selected_day;
       add_edit_event.style.display = "block";
       add_edit_event.querySelectorAll(".item")[0].focus();
@@ -544,13 +563,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //list view
     if (status.view == "list-view") {
+      console.log(status.selected_day);
       helper.bottom_bar("month", "edit", "options");
 
       list_view.style.display = "block";
       renderHello(events);
 
       document.querySelectorAll("article").forEach(function (e) {
-        if (e.getAttribute("data-fdate") == status.selected_day) {
+        if (e.getAttribute("data-date") == status.selected_day) {
+          status.selected_day = document.activeElement.getAttribute(
+            "data-date"
+          );
           e.focus();
         } else {
           document.querySelectorAll("div#list-view article")[0].focus();

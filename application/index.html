@@ -107,9 +107,10 @@
             <script id="template" type="x-tmpl-mustache">
             
             {{#data}}
-            <article data-id={{UID}} data-fdate={{date}} class="item">
+            <article data-id={{UID}} data-date={{date}} class="item">
             <h2>{{SUMMARY}}</h2>
-            <div>{{date}}
+            <div>
+                {{date}}
                 {{#time_start.length}} ,{{/time_start.length}}
                 {{time_start}}
                 {{#time_end.length}} - {{time_end}}{{/time_end.length}}</div>
