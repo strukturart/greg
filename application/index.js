@@ -34,12 +34,14 @@ if (localStorage.getItem("events") != null) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+  eximport.list_ics();
+
   handleVisibilityChange();
 
-  //current day
-  //with leading 0
+  console.log(status);
+
   let today = new Date();
-  let currentMonth = today.getMonth() + 1;
+  let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
   let currentDay = today.getDate();
 
@@ -60,7 +62,10 @@ document.addEventListener("DOMContentLoaded", function () {
     "Dec",
   ];
 
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let jump_to_today = function () {
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
     showCalendar(currentMonth, currentYear);
 
     status.selected_day = document.activeElement.getAttribute("data-date");
@@ -79,6 +84,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function jump() {
+    //currentYear = parseInt(selectYear.value);
+    //currentMonth = parseInt(selectMonth.value);
     showCalendar(currentMonth, currentYear);
   }
 
@@ -89,12 +96,9 @@ document.addEventListener("DOMContentLoaded", function () {
     for (let t = 0; t < events.length; t++) {
       f = false;
 
-      console.log(date + "," + events[t].date);
-
       if (date === events[t].date) {
-        console.log("match");
         f = true;
-        t = events.length + 1;
+        t = events.length;
       }
     }
     return f;
@@ -107,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
   //////////////
 
   function showCalendar(month, year) {
-    helper.bottom_bar("events", "add", "options");
+    helper.bottom_bar("add", "events", "options");
 
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
@@ -146,23 +150,22 @@ document.addEventListener("DOMContentLoaded", function () {
           cell.appendChild(cellText);
           cell.appendChild(span);
 
-          let p = year + "-" + month + "-" + date;
-          console.log("tt" + p);
+          //set tabindex
+          cell.setAttribute("tabindex", date - 1);
+
+          //store date with leading 0
+          //because input type date
+          //accept only day month with leading zero
+          let mmonth = `0${month + 1}`.slice(-2);
+          let day = `0${date}`.slice(-2);
+
+          let p = year + "-" + mmonth + "-" + day;
+          cell.setAttribute("data-date", p);
+
           //check if has event
           if (event_check(p)) {
             cell.classList.add("event");
           }
-
-          //set tabindex
-          cell.setAttribute("tabindex", date - 1);
-
-          month = `0${month + 1}`.slice(-2);
-          let day = `0${date}`.slice(-2);
-
-          p = year + "-" + month + "-" + day;
-
-          console.log(status);
-          cell.setAttribute("data-date", p);
 
           cell.classList.add("item");
           row.appendChild(cell);
@@ -174,15 +177,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.querySelectorAll(".item")[0].focus();
+    status.selected_day = document.activeElement.getAttribute("data-date");
     //highlight current day
-
-    if (currentMonth == month && currentYear == year) {
+    if (today.getMonth() == month && today.getFullYear() == year) {
       document.querySelectorAll(".item")[currentDay - 1].focus();
       document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
     }
-    status.selected_day = document.activeElement.getAttribute("data-date");
   }
-
   /////////////////
   ///NAVIGATION
   /////////////////
@@ -227,14 +228,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
-
-      console.log(status);
     }
 
     if (status.view == "list-view") {
       status.selected_day = targetElement.getAttribute("data-date");
-
-      console.log(status);
     }
   };
 
@@ -247,14 +244,6 @@ document.addEventListener("DOMContentLoaded", function () {
       e.value = "";
     });
   };
-
-  function uid() {
-    function _p8(s) {
-      var p = (Math.random().toString(16) + "000000000").substr(2, 8);
-      return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
-    }
-    return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
-  }
 
   let add_alarm = function (date, message_text, id) {
     if (navigator.mozAlarms) {
@@ -328,6 +317,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   //STORE EVENT
 
+  let convert_ics_date = function (t) {
+    let nn = t.replace(/-/g, "");
+    nn = nn.replace(/:/g, "");
+    nn = nn.replace(" ", "T");
+    nn = nn + "00";
+    return nn;
+  };
+
   let store_event = function () {
     let start_time = "00:00:00";
     if (document.getElementById("event-time-start").value != "") {
@@ -354,23 +351,28 @@ document.addEventListener("DOMContentLoaded", function () {
       calc_notification.getMinutes() - notification_time
     );
 
+    let wd = new Date(document.getElementById("event-date").value);
+
     let event = {
       BEGIN: "VEVENT",
-      UID: uid(),
+      UID: helper.uid(),
       SUMMARY: document.getElementById("event-title").value,
       LOCATION: document.getElementById("event-location").value,
       DESCRIPTION: document.getElementById("event-description").value,
       CLASS: "PRIVATE",
-      DTSTAMP: new Date().toISOString(),
-      DTSTART: new Date(convert_dt_start).toISOString(),
-      DTEND: new Date(convert_dt_end).toISOString(),
+      DTSTAMP: convert_ics_date(convert_dt_start),
+      DTSTART: convert_ics_date(convert_dt_end),
+      DTEND: convert_ics_date(convert_dt_end),
       date: document.getElementById("event-date").value,
+      weekday: weekday[wd.getDay()],
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
       notification: notification_time,
       alarm: "",
       END: "VEVENT",
     };
+
+    console.log(event);
 
     add_alarm(calc_notification, event.SUMMARY, event.UID);
     events.push(event);
@@ -389,9 +391,30 @@ document.addEventListener("DOMContentLoaded", function () {
   let update_event = function () {
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
+        let start_time = "00:00:00";
+        if (document.getElementById("event-time-start").value != "") {
+          start_time = document.getElementById("event-time-start").value;
+        }
+
+        let end_time = "00:00:00";
+        if (document.getElementById("event-time-end").value != "") {
+          end_time = document.getElementById("event-time-end").value;
+        }
+
+        let convert_dt_start =
+          document.getElementById("event-date").value + " " + start_time;
+
+        let convert_dt_end =
+          document.getElementById("event-date").value + " " + end_time;
+
+        let wd = new Date(document.getElementById("event-date").value);
+
         index.SUMMARY = document.getElementById("event-title").value;
         index.DESCRIPTION = document.getElementById("event-description").value;
         index.LOCATION = document.getElementById("event-location").value;
+        index.DTSTART = convert_ics_date(convert_dt_start);
+        index.DTEND = convert_ics_date(convert_dt_end);
+        index.weekday = weekday[wd.getDay()];
         index.date = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
@@ -527,10 +550,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //add event view
     if (status.view == "add-edit-event") {
-      //set date with leading 0
-      var date = new Date(document.activeElement.getAttribute("data-date"));
-      var result = date.toISOString().split("T")[0];
-      status.selected_day = result;
+      status.selected_day = document.activeElement.getAttribute("data-date");
       console.log(status);
 
       document.getElementById("event-date").value = status.selected_day;
@@ -543,11 +563,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       if (status.update_event_id == "") {
         document.getElementById("save-event").innerText = "save";
-        document.getElementById("event-time-start").value =
-          new Date().getHours() + ":" + new Date().getMinutes();
-
-        document.getElementById("event-time-end").value =
-          new Date().getHours() + 1 + ":" + new Date().getMinutes();
       }
       return true;
     }
@@ -555,7 +570,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (status.view == "month") {
       options.style.display = "none";
       month.style.display = "block";
-      helper.bottom_bar("events", "add", "options");
+      helper.bottom_bar("add", "events", "options");
       status.update_event_id == "";
       showCalendar(currentMonth, currentYear);
 
@@ -564,7 +579,9 @@ document.addEventListener("DOMContentLoaded", function () {
     //list view
     if (status.view == "list-view") {
       console.log(status.selected_day);
-      helper.bottom_bar("month", "edit", "options");
+      clear_form();
+
+      helper.bottom_bar("edit", "month", "options");
 
       list_view.style.display = "block";
       renderHello(events);
@@ -687,7 +704,33 @@ document.addEventListener("DOMContentLoaded", function () {
 
       case "SoftLeft":
       case "Control":
-        router("view");
+        if (status.view == "list-view") {
+          edit_event();
+          status.view = "add-edit-event";
+          router();
+        }
+
+        if (status.view == "month") {
+          status.view = "add-edit-event";
+          router();
+
+          //when new event
+          //set time
+          let d = new Date();
+          let d_h = `0${d.getHours()}`.slice(-2);
+          let d_m = `0${d.getMinutes()}`.slice(-2);
+          let p = d_h + ":" + d_m;
+
+          let d_h_ = `0${d.getHours() + 1}`.slice(-2);
+          let d_m_ = `0${d.getMinutes()}`.slice(-2);
+          if (d_h_ > 23) d_h_ = "23";
+          let pp = d_h_ + ":" + d_m_;
+
+          document.getElementById("event-time-start").value = p;
+          document.getElementById("event-time-end").value = pp;
+
+          return true;
+        }
         break;
 
       case "Enter":
@@ -696,10 +739,6 @@ document.addEventListener("DOMContentLoaded", function () {
           document.activeElement.children[1].focus();
           return true;
         }
-        if (status.view == "month") {
-          status.view = "add-edit-event";
-          router();
-        }
 
         if (document.activeElement.id == "save-event") {
           if (status.update_event_id != "") {
@@ -707,6 +746,7 @@ document.addEventListener("DOMContentLoaded", function () {
           } else {
             store_event();
           }
+          return true;
         }
 
         if (document.activeElement.id == "delete-event") {
@@ -714,6 +754,7 @@ document.addEventListener("DOMContentLoaded", function () {
             status.view = "month";
             router();
           }
+          return true;
         }
 
         if (status.view == "options") {
@@ -725,14 +766,16 @@ document.addEventListener("DOMContentLoaded", function () {
           if (
             document.activeElement.getAttribute("data-function") == "import"
           ) {
+            console.log("yeah");
+            eximport.loadICS(
+              document.activeElement.getAttribute("data-filename")
+            );
           }
+          return true;
         }
-        if (status.view == "list-view") {
-          edit_event();
 
-          status.view = "add-edit-event";
-          router();
-        }
+        router("view");
+
         break;
 
       case "Backspace":

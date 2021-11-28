@@ -1,96 +1,4 @@
 const eximport = (() => {
-  //where the magic happens
-  let export_ical_example = function () {
-    //name of event in iCal
-    this.eventName = "My Cool Event";
-
-    //name of file to download as
-    this.fileName = "my-event.ics";
-
-    //start time of event in iCal
-    this.dateStart = "2016-04-01";
-
-    //end time of event in iCal
-    this.dateEnd = "2016-04-02";
-
-    //helper functions
-
-    //iso date for ical formats
-    this._isofix = function (d) {
-      var offset = ("0" + new Date().getTimezoneOffset() / 60).slice(-2);
-
-      if (typeof d == "string") {
-        return d.replace(/\-/g, "") + "T" + offset + "0000Z";
-      } else {
-        return (
-          d.getFullYear() +
-          this._zp(d.getMonth() + 1) +
-          this._zp(d.getDate()) +
-          "T" +
-          this._zp(d.getHours()) +
-          "0000Z"
-        );
-      }
-    };
-
-    //zero padding for data fixes
-    this._zp = function (s) {
-      return ("0" + s).slice(-2);
-    };
-    this._save = function (fileURL) {
-      if (!window.ActiveXObject) {
-        var save = document.createElement("a");
-        save.href = fileURL;
-        save.target = "_blank";
-        save.download = this.fileName || "unknown";
-
-        var evt = new MouseEvent("click", {
-          view: window,
-          bubbles: true,
-          cancelable: false,
-        });
-        save.dispatchEvent(evt);
-
-        (window.URL || window.webkitURL).revokeObjectURL(save.href);
-      }
-
-      // for IE < 11
-      else if (!!window.ActiveXObject && document.execCommand) {
-        var _window = window.open(fileURL, "_blank");
-        _window.document.close();
-        _window.document.execCommand("SaveAs", true, this.fileName || fileURL);
-        _window.close();
-      }
-    };
-
-    var now = new Date();
-    var ics_lines = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Addroid Inc.//iCalAdUnit//EN",
-      "METHOD:REQUEST",
-      "BEGIN:VEVENT",
-      "UID:event-" + now.getTime() + "@addroid.com",
-      "DTSTAMP:" + this._isofix(now),
-      "DTSTART:" + this._isofix(this.dateStart),
-      "DTEND:" + this._isofix(this.dateEnd),
-      "DESCRIPTION:" + this.eventName,
-      "SUMMARY:" + this.eventName,
-      "LAST-MODIFIED:" + this._isofix(now),
-      "SEQUENCE:0",
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ];
-
-    var dlurl = "data:text/calendar;base64," + btoa(ics_lines.join("\r\n"));
-
-    try {
-      this._save(dlurl);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
   let export_json = function () {
     var sdcard = navigator.getDeviceStorage("sdcard");
 
@@ -168,8 +76,131 @@ const eximport = (() => {
     }, 2000);
   };
 
+  let list_ics = function () {
+    //search gpx
+    let finder_gpx = new Applait.Finder({
+      type: "sdcard",
+      debugMode: false,
+    });
+
+    finder_gpx.search(".ics");
+    finder_gpx.on("searchComplete", function (needle, filematchcount) {
+      if (filematchcount == 0) {
+        helper.toaster("xxx", 2000);
+      }
+    });
+
+    finder_gpx.on("fileFound", function (file, fileinfo, storageName) {
+      document
+        .querySelector("div#options")
+        .insertAdjacentHTML(
+          "beforeend",
+          '<button class="item" data-function="import" data-filename="' +
+            fileinfo.name +
+            '">' +
+            fileinfo.name +
+            "</button>"
+        );
+    });
+  };
+
+  /////////////////////////
+  /////Load GPX///////////
+  ///////////////////////
+/*
+  var iCalendarData = [
+    "BEGIN:VCALENDAR",
+    "CALSCALE:GREGORIAN",
+    "PRODID:-//Example Inc.//Example Calendar//EN",
+    "VERSION:2.0",
+    "BEGIN:VEVENT",
+    "DTSTAMP:20080205T191224Z",
+    "DTSTART:20081006",
+    "SUMMARY:Planning meeting",
+    "UID:4088E990AD89CB3DBB484909",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+*/
+
+
+
+
+
+  function loadICS(filename) {
+    let finder = new Applait.Finder({
+      type: "sdcard",
+      debugMode: false,
+    });
+    finder.search(filename);
+
+    finder.on("searchComplete", function (needle, filematchcount) {
+      console.log(filematchcount);
+      if (filematchcount == 0) {
+        helper.toaster("xxx", 2000);
+      }
+    });
+
+    finder.on("fileFound", function (file, fileinfo, storageName) {
+      //file reader
+
+      let reader = new FileReader();
+
+      reader.onerror = function (event) {
+        helper.toaster("can't read file", 3000);
+        reader.abort();
+      };
+
+     
+
+  
+
+      reader.onloadend = function (event) {
+        var data = event.target.result.split(/\r\n|\n/);
+        data = data.join("\r\n")
+        
+          var jcalData = ICAL.parse(data);
+          var vcalendar = new ICAL.Component(jcalData);
+          var vevent = vcalendar.getFirstSubcomponent("vevent");
+         var summary = vevent.getFirstPropertyValue("summary");
+        console.log(summary);
+        
+
+        let imp = {
+          BEGIN: "VEVENT",
+          UID: helper.uid(),
+          SUMMARY: vevent.getFirstPropertyValue("summary"),
+          LOCATION: vevent.getFirstPropertyValue("location"),
+          DESCRIPTION: vevent.getFirstPropertyValue("description"),
+          CLASS: "PRIVATE",
+          DTSTAMP: vevent.getFirstPropertyValue("dtstamp"),
+          DTSTART: vevent.getFirstPropertyValue("dtstart"),
+          DTEND: vevent.getFirstPropertyValue("dtend"),
+          date: vevent.getFirstPropertyValue("dtstamp"),
+          weekday: weekday[0],
+          time_start: "",
+          time_end: "",
+          notification: "",
+          alarm: "",
+          END: "VEVENT",
+        };
+
+           events.push(imp);
+
+        console.log(imp);
+
+         
+      };
+
+      reader.readAsText(file);
+    });
+  }
+
   return {
     export_ical,
     export_json,
+    list_ics,
+    loadICS,
   };
 })();

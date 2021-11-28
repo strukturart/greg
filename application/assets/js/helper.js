@@ -20,8 +20,6 @@ function getRandomInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-
-
 function share(url) {
   var activity = new MozActivity({
     name: "share",
@@ -93,10 +91,18 @@ function write_file(data, filename) {
   };
 }
 
-
 const helper = (() => {
 
- let notify = function(param_title, param_text, param_silent) {
+    let uid = function () {
+      function _p8(s) {
+        var p = (Math.random().toString(16) + "000000000").substr(2, 8);
+        return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
+      }
+      return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
+    };
+  
+  
+  let notify = function (param_title, param_text, param_silent) {
     var options = {
       body: param_text,
       silent: param_silent,
@@ -121,7 +127,7 @@ const helper = (() => {
         }
       });
     }
-  }
+  };
   if (navigator.mozSetMessageHandler) {
     navigator.mozSetMessageHandler("alarm", function (message) {
       // Note: message has to be set in the manifest file
@@ -129,9 +135,6 @@ const helper = (() => {
       notify("Greg", message.data.foo, false);
     });
   }
-
-
-
 
   function validate(url) {
     var pattern = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
@@ -154,7 +157,6 @@ const helper = (() => {
     self.onerror = function () {};
   };
 
-
   //top toaster
   let queue = [];
   let timeout;
@@ -164,7 +166,6 @@ const helper = (() => {
       toast_q(text, time);
     }
   };
-
 
   let toast_q = function (text, time) {
     var x = document.querySelector("div#toast");
@@ -186,36 +187,32 @@ const helper = (() => {
 
   //side toaster
 
-    let queue_st = [];
-    let ttimeout;
-    let side_toaster = function (text, time) {
-      queue_st.push({ text: text, time: time });
-      if (queue_st.length === 1) {
-        toast_qq(text, time);
+  let queue_st = [];
+  let ttimeout;
+  let side_toaster = function (text, time) {
+    queue_st.push({ text: text, time: time });
+    if (queue_st.length === 1) {
+      toast_qq(text, time);
+    }
+  };
+
+  let toast_qq = function (text, time) {
+    var x = document.querySelector("div#side-toast");
+    x.innerHTML = queue_st[0].text;
+
+    x.style.transform = "translate(0vh, 0px)";
+
+    timeout = setTimeout(function () {
+      ttimeout = null;
+      x.style.transform = "translate(-100vh,0px)";
+      queue_st = queue.slice(1);
+      if (queue_st.length > 0) {
+        setTimeout(() => {
+          toast_qq(text, time);
+        }, 1000);
       }
-    };
-
-    let toast_qq = function (text, time) {
-      var x = document.querySelector("div#side-toast");
-      x.innerHTML = queue_st[0].text;
-
-      x.style.transform = "translate(0vh, 0px)";
-
-      timeout = setTimeout(function () {
-        ttimeout = null;
-        x.style.transform = "translate(-100vh,0px)";
-        queue_st = queue.slice(1);
-        if (queue_st.length > 0) {
-          setTimeout(() => {
-            toast_qq(text, time);
-          }, 1000);
-        }
-      }, time);
-    };
-
-  
-  
-  
+    }, time);
+  };
 
   //bottom bar
   let bottom_bar = function (left, center, right) {
@@ -252,7 +249,6 @@ const helper = (() => {
   let add_script = function (script) {
     document.body.appendChild(document.createElement("script")).src = script;
   };
-
 
   let lock;
   let screenlock = function (stat) {
@@ -312,7 +308,7 @@ const helper = (() => {
         localStorage.clickcount = 1;
 
         window.close();
-      }, 6000);
+      }, 3000);
     }
   };
 
@@ -340,7 +336,7 @@ const helper = (() => {
   return {
     getManifest,
     toaster,
-    side_toaster,   
+    side_toaster,
     add_script,
     deleteFile,
     goodbye,
@@ -350,5 +346,6 @@ const helper = (() => {
     top_bar,
     bottom_bar,
     notify,
+    uid,
   };
 })();
