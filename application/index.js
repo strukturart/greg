@@ -38,8 +38,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   handleVisibilityChange();
 
-  console.log(status);
-
   let today = new Date();
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
@@ -62,7 +60,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "Dec",
   ];
 
-  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let jump_to_today = function () {
     let currentMonth = today.getMonth();
     let currentYear = today.getFullYear();
@@ -286,6 +284,8 @@ document.addEventListener("DOMContentLoaded", function () {
             req.onerror = function () {
               console.log("An error occurred: " + this.error.name);
             };
+          } else {
+            console.log("no alarm founded");
           }
         });
       };
@@ -372,9 +372,9 @@ document.addEventListener("DOMContentLoaded", function () {
       END: "VEVENT",
     };
 
-    console.log(event);
-
-    add_alarm(calc_notification, event.SUMMARY, event.UID);
+    if (event.alarm != "none") {
+      add_alarm(calc_notification, event.SUMMARY, event.UID);
+    }
     events.push(event);
 
     localStorage.setItem("events", JSON.stringify(events));
@@ -389,6 +389,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let update_event = function () {
+    console.log(status);
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
         let start_time = "00:00:00";
@@ -421,14 +422,13 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    localStorage.setItem("events", JSON.stringify(events));
-    //clean form
-    clear_form();
-
     status.update_event_id = "";
     status.view = "month";
     router();
     eximport.export_ical();
+    //clean form
+    clear_form();
+    localStorage.setItem("events", JSON.stringify(events));
   };
 
   let delete_event = function () {
@@ -448,7 +448,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let edit_event = function () {
-    status.update_event_id = document.activeElement.getAttribute("data-id");
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
         console.log(index.date);
@@ -551,9 +550,8 @@ document.addEventListener("DOMContentLoaded", function () {
     //add event view
     if (status.view == "add-edit-event") {
       status.selected_day = document.activeElement.getAttribute("data-date");
-      console.log(status);
-
       document.getElementById("event-date").value = status.selected_day;
+
       add_edit_event.style.display = "block";
       add_edit_event.querySelectorAll(".item")[0].focus();
       helper.bottom_bar("", "edit", "");
@@ -578,30 +576,55 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //list view
     if (status.view == "list-view") {
-      console.log(status.selected_day);
+      options.style.display = "none";
+
       clear_form();
 
       helper.bottom_bar("edit", "month", "options");
 
       list_view.style.display = "block";
       renderHello(events);
+      setTimeout(function () {
+        let articles = document.querySelectorAll("article");
+        for (var k = 0; k < articles.length; k++) {
+          if (articles[k].getAttribute("data-date") == status.selected_day) {
+            articles[k].focus();
+            k = articles.length;
 
-      document.querySelectorAll("article").forEach(function (e) {
-        if (e.getAttribute("data-date") == status.selected_day) {
-          status.selected_day = document.activeElement.getAttribute(
-            "data-date"
-          );
-          e.focus();
-        } else {
-          document.querySelectorAll("div#list-view article")[0].focus();
+            const rect = document.activeElement.getBoundingClientRect();
+            const elY =
+              rect.top -
+              document.body.getBoundingClientRect().top +
+              rect.height / 2;
+
+            document.activeElement.parentNode.scrollBy({
+              left: 0,
+              top: elY - window.innerHeight / 2,
+              behavior: "smooth",
+            });
+          } else {
+            document.querySelectorAll("div#list-view article")[0].focus();
+          }
         }
-      });
+      }, 1000);
     }
 
     if (status.view == "options") {
       document.getElementById("options").style.display = "block";
       document.querySelectorAll("div#options button")[0].focus();
     }
+  };
+  //callback import single event
+  let import_event = function (id, date) {
+    console.log(date);
+    status.selected_day = date;
+    status.update_event_id = id;
+    helper.bottom_bar("edit", "", "");
+
+    //edit_event();
+    status.view = "list-view";
+    router();
+    helper.toaster("events imported", 2000);
   };
 
   //////////////////////////////
@@ -705,6 +728,10 @@ document.addEventListener("DOMContentLoaded", function () {
       case "SoftLeft":
       case "Control":
         if (status.view == "list-view") {
+          status.update_event_id = document.activeElement.getAttribute(
+            "data-id"
+          );
+
           edit_event();
           status.view = "add-edit-event";
           router();
@@ -746,6 +773,7 @@ document.addEventListener("DOMContentLoaded", function () {
           } else {
             store_event();
           }
+
           return true;
         }
 
@@ -766,15 +794,15 @@ document.addEventListener("DOMContentLoaded", function () {
           if (
             document.activeElement.getAttribute("data-function") == "import"
           ) {
-            console.log("yeah");
             eximport.loadICS(
-              document.activeElement.getAttribute("data-filename")
+              document.activeElement.getAttribute("data-filename"),
+              import_event
             );
           }
           return true;
         }
-
-        router("view");
+        if (status.view == "month" || status.view == "list-view")
+          router("view");
 
         break;
 

@@ -94,6 +94,7 @@
                 <div class="item input-parent" tabindex="6">
                     <label for="notification"><strong>Notification before the event</strong></label>
                     <select id="event-notification-time">
+                        <option value="none">none</option>
                         <option value="5">5 Minutes</option>
                         <option value="10">10 Minutes</option>
                         <option value="30">30 Minutes</option>
@@ -104,16 +105,19 @@
                 <button tabindex="8" id="delete-event" class="item">delete</button>
 
             </div>
+
+            <!--{{#time_start.length}} ,{{/time_start.length}}-->
             <script id="template" type="x-tmpl-mustache">
             
             {{#data}}
             <article data-id={{UID}} data-date={{date}} class="item">
-            <h2>{{SUMMARY}}</h2>
+                <div>{{weekday}}, {{date}}</div>
+                <div></div>
             <div>
-                {{date}}
-                {{#time_start.length}} ,{{/time_start.length}}
                 {{time_start}}
-                {{#time_end.length}} - {{time_end}}{{/time_end.length}}</div>
+                {{#time_end.length}} - {{time_end}}{{/time_end.length}}
+            </div>
+            <h2>{{SUMMARY}}</h2>
             <div>{{LOCATION}}</div>
             <div>{{DESCRIPTION}}</div>
             </article>
@@ -164,14 +168,15 @@
     </div>
 
 </body>
+
 <script src="assets/js/ical.js"></script>
 <script src="assets/js/helper.js"></script>
 
 <script src="assets/js/applait.finder.min.js"></script>
 <script src="assets/js/eximport.js"></script>
 <script src="assets/js/mustache.js"></script>
-
-
 <script src="index.js"></script>
+
+
 
 </html>
