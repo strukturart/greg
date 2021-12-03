@@ -158,7 +158,9 @@ document.addEventListener("DOMContentLoaded", function () {
           let day = `0${date}`.slice(-2);
 
           let p = year + "-" + mmonth + "-" + day;
+
           cell.setAttribute("data-date", p);
+          cell.setAttribute("data-index", new Date(p).toISOString());
 
           //check if has event
           if (event_check(p)) {
@@ -343,15 +345,14 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("event-date").value + " " + end_time;
 
     //notification before event
-    let notification_time = document.getElementById("event-notification-time")
-      .value;
+    let notification_time = document.getElementById(
+      "event-notification-time"
+    ).value;
 
     var calc_notification = new Date(convert_dt_start);
     calc_notification.setMinutes(
       calc_notification.getMinutes() - notification_time
     );
-
-    let wd = new Date(document.getElementById("event-date").value);
 
     let event = {
       BEGIN: "VEVENT",
@@ -364,7 +365,6 @@ document.addEventListener("DOMContentLoaded", function () {
       DTSTART: convert_ics_date(convert_dt_end),
       DTEND: convert_ics_date(convert_dt_end),
       date: document.getElementById("event-date").value,
-      weekday: weekday[wd.getDay()],
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
       notification: notification_time,
@@ -408,14 +408,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let convert_dt_end =
           document.getElementById("event-date").value + " " + end_time;
 
-        let wd = new Date(document.getElementById("event-date").value);
-
         index.SUMMARY = document.getElementById("event-title").value;
         index.DESCRIPTION = document.getElementById("event-description").value;
         index.LOCATION = document.getElementById("event-location").value;
         index.DTSTART = convert_ics_date(convert_dt_start);
         index.DTEND = convert_ics_date(convert_dt_end);
-        index.weekday = weekday[wd.getDay()];
         index.date = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
@@ -519,7 +516,24 @@ document.addEventListener("DOMContentLoaded", function () {
       data: arr,
     });
     document.getElementById("list-view").innerHTML = rendered;
+
     set_tabindex();
+
+    //format date
+    document.querySelectorAll("article").forEach(function (index) {
+      let p = index.getAttribute("data-date");
+      let t = new Date(p);
+      let f = months[t.getMonth()];
+      let d =
+        weekday[t.getDay()] +
+        ", " +
+        t.getFullYear() +
+        " " +
+        months[t.getMonth()] +
+        " " +
+        t.getDate();
+      index.querySelector("div.date").innerText = d;
+    });
   }
 
   renderHello(events);
@@ -728,9 +742,8 @@ document.addEventListener("DOMContentLoaded", function () {
       case "SoftLeft":
       case "Control":
         if (status.view == "list-view") {
-          status.update_event_id = document.activeElement.getAttribute(
-            "data-id"
-          );
+          status.update_event_id =
+            document.activeElement.getAttribute("data-id");
 
           edit_event();
           status.view = "add-edit-event";

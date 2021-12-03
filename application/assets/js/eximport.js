@@ -202,15 +202,18 @@ const eximport = (() => {
             e_month +
             e_day +
             "T" +
-            s_hour +
-            s_minutes +
-            s_minutes +
-            s_seconds;
+            e_hour +
+            e_minutes +
+            e_minutes +
+            e_seconds;
 
           let start_time = s_hour + ":" + s_minutes + ":" + s_seconds;
           let end_time = e_hour + ":" + e_minutes + ":" + e_seconds;
+          if (start_time == end_time) {
+            start_time = "";
+            end_time = "";
+          }
 
-          let w = new Date(index.getFirstPropertyValue("dtstart")).getDay();
           let date = s_year + "-" + s_month + "-" + s_day;
           last_uid = "";
           last_date = "";
@@ -226,11 +229,10 @@ const eximport = (() => {
             DTSTART: start_date,
             DTEND: end_date,
             date: date,
-            weekday: weekday[w],
             time_start: start_time,
             time_end: end_time,
             notification: " ",
-            alarm: " ",
+            alarm: "none",
             END: "VEVENT",
           };
           last_uid = imp.UID;

@@ -89,6 +89,15 @@ img[src=" "] {
   display: none;
 }
 
+div#handelbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 200000;
+  height: 200px;
+  width: 100px;
+}
+
 button {
   font-size: 1rem;
   background: silver;
@@ -235,8 +244,8 @@ div#side-toast {
   transform: translate(-100vw, 0px);
 }
 
-div#side-toast img{
-width:60px;
+div#side-toast img {
+  width: 60px;
 }
 /*///////////////////////////
 ///VIEWS////////////////*/
