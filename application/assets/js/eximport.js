@@ -16,6 +16,26 @@ const eximport = (() => {
 
   let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  function share(url, name) {
+    var activity = new MozActivity({
+      name: "share",
+      data: {
+        type: "text/calendar",
+        number: 1,
+        blobs: [url],
+        filenames: [name],
+      },
+    });
+
+    activity.onsuccess = function () {
+      alert("done");
+    };
+
+    activity.onerror = function () {
+      console.log("The activity encounter en error: " + this.error);
+    };
+  }
+
   let export_json = function () {
     var sdcard = navigator.getDeviceStorage("sdcard");
 
@@ -40,15 +60,15 @@ const eximport = (() => {
     }, 2000);
   };
 
-  let export_ical = function () {
+  let export_ical = function (filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
     var sdcard = navigator.getDeviceStorage("sdcard");
 
-    var request_del = sdcard.delete("greg.ics");
+    var request_del = sdcard.delete(filename);
     request_del.onsuccess = function () {};
     setTimeout(function () {
       //convert
-      let data = JSON.parse(localStorage.getItem("events"));
+      let data = event_data;
 
       let ll = {
         BEGIN: "VCALENDAR",
@@ -80,7 +100,7 @@ const eximport = (() => {
         type: "text/calendar",
       });
 
-      var request = sdcard.addNamed(file, "greg.ics");
+      var request = sdcard.addNamed(file, filename);
 
       request.onsuccess = function () {
         //var name = this.result;
@@ -165,6 +185,13 @@ const eximport = (() => {
         let last_date = "";
 
         vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
+          if (
+            index.getFirstPropertyValue("dtstart") == "" &&
+            index.getFirstPropertyValue("summary") == ""
+          )
+            return false;
+
+            
           let t = new Date(index.getFirstPropertyValue("dtstart"));
           let f = new Date(index.getFirstPropertyValue("dtend"));
 
@@ -239,10 +266,9 @@ const eximport = (() => {
           last_date = imp.date;
           events.push(imp);
         });
-        //var vevent = vcalendar.getFirstSubcomponent("vevent");
 
-        //callback(imp.UID);
         callback(last_uid, last_date);
+        localStorage.setItem("events", JSON.stringify(events));
       };
 
       reader.readAsText(file);
@@ -254,5 +280,6 @@ const eximport = (() => {
     export_json,
     list_ics,
     loadICS,
+    share,
   };
 })();

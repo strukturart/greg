@@ -89,15 +89,6 @@ img[src=" "] {
   display: none;
 }
 
-div#handelbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 200000;
-  height: 200px;
-  width: 100px;
-}
-
 button {
   font-size: 1rem;
   background: silver;
@@ -118,7 +109,7 @@ button#save-event {
 
 select {
   width: 90%;
-  height: 50px;
+  padding: 10px;
 }
 
 textarea {
@@ -335,9 +326,11 @@ div#options {
   position: fixed;
   top: 0;
   z-index: 5;
+  padding: 10px 0 0 0;
 }
 
-div#options button:focus {
+div#options div.import-text {
+  padding: 10px;
 }
 
 /*/////////////////

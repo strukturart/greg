@@ -327,6 +327,8 @@ document.addEventListener("DOMContentLoaded", function () {
     return nn;
   };
 
+  let export_data = [];
+
   let store_event = function () {
     let start_time = "00:00:00";
     if (document.getElementById("event-time-start").value != "") {
@@ -375,12 +377,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event.alarm != "none") {
       add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
+
     events.push(event);
 
     localStorage.setItem("events", JSON.stringify(events));
 
-    eximport.export_ical();
-
+    eximport.export_ical(
+      "greg.ics",
+      JSON.parse(localStorage.getItem("events"))
+    );
     //clean form
     clear_form();
 
@@ -389,7 +394,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let update_event = function () {
-    console.log(status);
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
         let start_time = "00:00:00";
@@ -422,8 +426,10 @@ document.addEventListener("DOMContentLoaded", function () {
     status.update_event_id = "";
     status.view = "month";
     router();
-    eximport.export_ical();
-    //clean form
+    eximport.export_ical(
+      "greg.ics",
+      JSON.parse(localStorage.getItem("events"))
+    ); //clean form
     clear_form();
     localStorage.setItem("events", JSON.stringify(events));
   };
@@ -440,14 +446,16 @@ document.addEventListener("DOMContentLoaded", function () {
     clear_form();
     status.update_event_id = "";
     localStorage.setItem("events", JSON.stringify(events));
-    eximport.export_ical();
+    eximport.export_ical(
+      "greg.ics",
+      JSON.parse(localStorage.getItem("events"))
+    );
     return f;
   };
 
   let edit_event = function () {
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
-        console.log(index.date);
         document.getElementById("event-title").value = index.SUMMARY;
         document.getElementById("event-date").value = index.date;
         document.getElementById("event-time-start").value = index.time_start;
@@ -780,6 +788,21 @@ document.addEventListener("DOMContentLoaded", function () {
           return true;
         }
 
+        if (document.activeElement.id == "export-event") {
+          //eximport.share("hey", "test.txt");
+
+          events.forEach(function (index) {
+            if (index.UID == status.update_event_id) {
+              console.log(index);
+              export_data.push(index);
+            }
+          });
+
+          eximport.export_ical("export.ics", export_data);
+
+          return true;
+        }
+
         if (document.activeElement.id == "save-event") {
           if (status.update_event_id != "") {
             update_event();
@@ -802,8 +825,12 @@ document.addEventListener("DOMContentLoaded", function () {
           if (
             document.activeElement.getAttribute("data-function") == "export"
           ) {
-            eximport.export_ical();
+            eximport.export_ical(
+              "greg.ics",
+              JSON.parse(localStorage.getItem("events"))
+            );
           }
+
           if (
             document.activeElement.getAttribute("data-function") == "import"
           ) {
