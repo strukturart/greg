@@ -92,16 +92,14 @@ function write_file(data, filename) {
 }
 
 const helper = (() => {
+  let uid = function () {
+    function _p8(s) {
+      var p = (Math.random().toString(16) + "000000000").substr(2, 8);
+      return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
+    }
+    return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
+  };
 
-    let uid = function () {
-      function _p8(s) {
-        var p = (Math.random().toString(16) + "000000000").substr(2, 8);
-        return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
-      }
-      return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
-    };
-  
-  
   let notify = function (param_title, param_text, param_silent) {
     var options = {
       body: param_text,
@@ -137,7 +135,8 @@ const helper = (() => {
   }
 
   function validate(url) {
-    var pattern = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
+    var pattern =
+      /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
     if (pattern.test(url)) {
       return true;
     }
@@ -217,12 +216,10 @@ const helper = (() => {
   //bottom bar
   let bottom_bar = function (left, center, right) {
     document.querySelector("div#bottom-bar div#button-left").textContent = left;
-    document.querySelector(
-      "div#bottom-bar div#button-center"
-    ).textContent = center;
-    document.querySelector(
-      "div#bottom-bar div#button-right"
-    ).textContent = right;
+    document.querySelector("div#bottom-bar div#button-center").textContent =
+      center;
+    document.querySelector("div#bottom-bar div#button-right").textContent =
+      right;
 
     if (left == "" && center == "" && right == "") {
       document.querySelector("div#bottom-bar").style.display = "none";
@@ -234,9 +231,8 @@ const helper = (() => {
   //top bar
   let top_bar = function (left, center, right) {
     document.querySelector("div#top-bar div.button-left").innerHTML = left;
-    document.querySelector(
-      "div#top-bar div.button-center"
-    ).textContent = center;
+    document.querySelector("div#top-bar div.button-center").textContent =
+      center;
     document.querySelector("div#top-bar div.button-right").textContent = right;
 
     if (left == "" && center == "" && right == "") {
@@ -299,7 +295,7 @@ const helper = (() => {
       document.getElementById("ciao").style.display = "block";
       setTimeout(function () {
         window.close();
-      }, 4000);
+      }, 2000);
     }
 
     function message() {

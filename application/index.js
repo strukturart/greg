@@ -810,16 +810,13 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (document.activeElement.id == "export-event") {
-          //eximport.share("hey", "test.txt");
-
           events.forEach(function (index) {
             if (index.UID == status.update_event_id) {
-              console.log(index);
               export_data.push(index);
             }
           });
 
-          eximport.export_ical("export.ics", export_data);
+          eximport.export_ical("share_event.ics", export_data);
 
           return true;
         }
@@ -891,7 +888,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function handleKeyDown(evt) {
     if (evt.key === "Backspace") {
-      evt.preventDefault();
+      if (status.view == "options" || status.view == "add-edit-event") {
+        evt.preventDefault();
+      }
     }
 
     if (evt.key === "EndCall") {
@@ -907,15 +906,18 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (evt.repeat) {
-      if (evt.key == "Backspace") evt.preventDefault(); // Disable close app by holding backspace
+      if (evt.key == "Backspace")
+        // evt.preventDefault();
 
-      longpress = false;
+        longpress = false;
       repeat_action(evt);
     }
   }
 
   function handleKeyUp(evt) {
-    evt.preventDefault();
+    if (status.visible === false) return false;
+
+    //evt.preventDefault();
 
     if (evt.key == "Backspace" && document.activeElement.tagName == "INPUT") {
     }

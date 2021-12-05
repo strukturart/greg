@@ -191,9 +191,13 @@ const eximport = (() => {
           )
             return false;
 
-            
           let t = new Date(index.getFirstPropertyValue("dtstart"));
           let f = new Date(index.getFirstPropertyValue("dtend"));
+
+          //last modified
+          let g = new Date(
+            index.getFirstPropertyValue("last-modified")
+          ).getTime();
 
           let k =
             t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate();
@@ -247,10 +251,11 @@ const eximport = (() => {
 
           let imp = {
             BEGIN: "VEVENT",
-            UID: helper.uid(),
+            UID: index.getFirstPropertyValue("uid"),
             SUMMARY: index.getFirstPropertyValue("summary"),
             LOCATION: index.getFirstPropertyValue("location"),
             DESCRIPTION: index.getFirstPropertyValue("description"),
+            "LAST-MODIFIED": g,
             CLASS: "PRIVATE",
             DTSTAMP: start_date,
             DTSTART: start_date,
