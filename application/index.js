@@ -480,6 +480,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  let find_closest_date = function (search_term) {
+    let t = 0;
+    let search = new Date(search_term).getTime();
+    for (let i = 0; i < events.length; i++) {
+      let item = new Date(events[i].date).getTime();
+
+      if (search > item) {
+        t = events[i].date;
+      }
+    }
+    return t;
+  };
+
   ////////////////////
   ////BUILD EVENT-LIST
   ///////////////////
@@ -608,27 +621,35 @@ document.addEventListener("DOMContentLoaded", function () {
       renderHello(events);
       setTimeout(function () {
         let articles = document.querySelectorAll("article");
+        let success = false;
         for (var k = 0; k < articles.length; k++) {
           if (articles[k].getAttribute("data-date") == status.selected_day) {
             articles[k].focus();
             k = articles.length;
-
-            const rect = document.activeElement.getBoundingClientRect();
-            const elY =
-              rect.top -
-              document.body.getBoundingClientRect().top +
-              rect.height / 2;
-
-            document.activeElement.parentNode.scrollBy({
-              left: 0,
-              top: elY - window.innerHeight / 2,
-              behavior: "smooth",
-            });
-          } else {
-            document.querySelectorAll("div#list-view article")[0].focus();
+            success = true;
           }
         }
-      }, 1000);
+        if (!success) {
+          document
+            .querySelectorAll(
+              "article[data-date='" +
+                find_closest_date(status.selected_day) +
+                "']"
+            )[0]
+            .focus();
+        }
+        const rect = document.activeElement.getBoundingClientRect();
+        const elY =
+          rect.top -
+          document.body.getBoundingClientRect().top +
+          rect.height / 2;
+
+        document.activeElement.parentNode.scrollBy({
+          left: 0,
+          top: elY - window.innerHeight / 2,
+          behavior: "smooth",
+        });
+      }, 100);
     }
 
     if (status.view == "options") {
