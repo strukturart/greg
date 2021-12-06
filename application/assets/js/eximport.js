@@ -1,41 +1,4 @@
 const eximport = (() => {
-  let months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  function share(url, name) {
-    var activity = new MozActivity({
-      name: "share",
-      data: {
-        type: "text/calendar",
-        number: 1,
-        blobs: [url],
-        filenames: [name],
-      },
-    });
-
-    activity.onsuccess = function () {
-      alert("done");
-    };
-
-    activity.onerror = function () {
-      console.log("The activity encounter en error: " + this.error);
-    };
-  }
-
   let export_json = function () {
     var sdcard = navigator.getDeviceStorage("sdcard");
 
@@ -112,6 +75,9 @@ const eximport = (() => {
       };
     }, 2000);
   };
+  ////////////
+  ///LIST ICS
+  //////////////
 
   let list_ics = function () {
     //search .ics files
@@ -147,6 +113,155 @@ const eximport = (() => {
     });
   };
 
+  ///////////////
+  ///PARSE ICS
+  ///////////////
+
+  let parse_ics = function (data, callback, saveOnDevice) {
+    var data = data.split(/\r\n|\n/);
+    data = data.join("\r\n");
+    //parse iCal data
+    var jcalData = ICAL.parse(data);
+    var vcalendar = new ICAL.Component(jcalData);
+    let last_uid = "";
+    let last_date = "";
+
+    vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
+      if (
+        index.getFirstPropertyValue("dtstart") == "" &&
+        index.getFirstPropertyValue("summary") == ""
+      )
+        return false;
+
+      let t = new Date(index.getFirstPropertyValue("dtstart"));
+      let f = new Date(index.getFirstPropertyValue("dtend"));
+
+      //last modified
+      let g = new Date(index.getFirstPropertyValue("last-modified")).getTime();
+
+      let k = t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate();
+
+      let s_month = `0${t.getMonth() + 1}`.slice(-2);
+      let s_day = `0${t.getDate()}`.slice(-2);
+      let s_year = t.getFullYear();
+
+      let s_hour = t.getHours() ? t.getHours() : "00";
+      let s_minutes = t.getMinutes() ? t.getMinutes() : "00";
+      let s_seconds = t.getSeconds() ? t.getSeconds() : "00";
+
+      let e_month = `0${f.getMonth() + 1}`.slice(-2);
+      let e_day = `0${f.getDate()}`.slice(-2);
+      let e_year = f.getFullYear();
+
+      let e_hour = f.getHours() ? f.getHours() : "00";
+      let e_minutes = f.getMinutes() ? f.getMinutes() : "00";
+      let e_seconds = f.getSeconds() ? f.getSeconds() : "00";
+
+      let start_date =
+        s_year +
+        s_month +
+        s_day +
+        "T" +
+        s_hour +
+        s_minutes +
+        s_minutes +
+        s_seconds;
+
+      let end_date =
+        e_year +
+        e_month +
+        e_day +
+        "T" +
+        e_hour +
+        e_minutes +
+        e_minutes +
+        e_seconds;
+
+      let start_time = s_hour + ":" + s_minutes + ":" + s_seconds;
+      let end_time = e_hour + ":" + e_minutes + ":" + e_seconds;
+      if (start_time == end_time) {
+        start_time = "";
+        end_time = "";
+      }
+
+      let date = s_year + "-" + s_month + "-" + s_day;
+      last_uid = "";
+      last_date = "";
+
+      let imp = {
+        BEGIN: "VEVENT",
+        UID: index.getFirstPropertyValue("uid"),
+        SUMMARY: index.getFirstPropertyValue("summary"),
+        LOCATION: index.getFirstPropertyValue("location"),
+        DESCRIPTION: index.getFirstPropertyValue("description"),
+        "LAST-MODIFIED": g,
+        CLASS: "PRIVATE",
+        DTSTAMP: start_date,
+        DTSTART: start_date,
+        DTEND: end_date,
+        date: date,
+        time_start: start_time,
+        time_end: end_time,
+        notification: " ",
+        alarm: "none",
+        END: "VEVENT",
+      };
+      last_uid = imp.UID;
+      last_date = imp.date;
+      events.push(imp);
+      console.log(imp);
+    });
+
+    callback(last_uid, last_date);
+    if (saveOnDevice) {
+      localStorage.setItem("events", JSON.stringify(events));
+    }
+  };
+
+  /////////////
+  ///FETCH ICS
+  ///////////
+
+  let fetch_ics = function (url, cb) {
+    let xhttp = new XMLHttpRequest({
+      mozSystem: true,
+    });
+
+    xhttp.open("GET", url + "?time=" + new Date().getTime(), true);
+    xhttp.timeout = 25000;
+    xhttp.onload = function () {
+      if (xhttp.readyState === xhttp.DONE && xhttp.status === 200) {
+        let data = xhttp.response;
+        console.log(cb);
+        parse_ics(data, cb, false);
+      }
+    };
+
+    xhttp.onerror = function () {};
+
+    xhttp.send(null);
+  };
+
+  function share(url, name) {
+    var activity = new MozActivity({
+      name: "share",
+      data: {
+        type: "text/calendar",
+        number: 1,
+        blobs: [url],
+        filenames: [name],
+      },
+    });
+
+    activity.onsuccess = function () {
+      alert("done");
+    };
+
+    activity.onerror = function () {
+      console.log("The activity encounter en error: " + this.error);
+    };
+  }
+
   /////////////////////////
   /////Load ICS///////////
   ///////////////////////
@@ -176,104 +291,9 @@ const eximport = (() => {
 
       reader.onloadend = function (event) {
         //text to array
-        var data = event.target.result.split(/\r\n|\n/);
-        data = data.join("\r\n");
-        //parse iCal data
-        var jcalData = ICAL.parse(data);
-        var vcalendar = new ICAL.Component(jcalData);
-        let last_uid = "";
-        let last_date = "";
 
-        vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
-          if (
-            index.getFirstPropertyValue("dtstart") == "" &&
-            index.getFirstPropertyValue("summary") == ""
-          )
-            return false;
-
-          let t = new Date(index.getFirstPropertyValue("dtstart"));
-          let f = new Date(index.getFirstPropertyValue("dtend"));
-
-          //last modified
-          let g = new Date(
-            index.getFirstPropertyValue("last-modified")
-          ).getTime();
-
-          let k =
-            t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate();
-
-          let s_month = `0${t.getMonth() + 1}`.slice(-2);
-          let s_day = `0${t.getDate()}`.slice(-2);
-          let s_year = t.getFullYear();
-
-          let s_hour = t.getHours() ? t.getHours() : "00";
-          let s_minutes = t.getMinutes() ? t.getMinutes() : "00";
-          let s_seconds = t.getSeconds() ? t.getSeconds() : "00";
-
-          let e_month = `0${f.getMonth() + 1}`.slice(-2);
-          let e_day = `0${f.getDate()}`.slice(-2);
-          let e_year = f.getFullYear();
-
-          let e_hour = f.getHours() ? f.getHours() : "00";
-          let e_minutes = f.getMinutes() ? f.getMinutes() : "00";
-          let e_seconds = f.getSeconds() ? f.getSeconds() : "00";
-
-          let start_date =
-            s_year +
-            s_month +
-            s_day +
-            "T" +
-            s_hour +
-            s_minutes +
-            s_minutes +
-            s_seconds;
-
-          let end_date =
-            e_year +
-            e_month +
-            e_day +
-            "T" +
-            e_hour +
-            e_minutes +
-            e_minutes +
-            e_seconds;
-
-          let start_time = s_hour + ":" + s_minutes + ":" + s_seconds;
-          let end_time = e_hour + ":" + e_minutes + ":" + e_seconds;
-          if (start_time == end_time) {
-            start_time = "";
-            end_time = "";
-          }
-
-          let date = s_year + "-" + s_month + "-" + s_day;
-          last_uid = "";
-          last_date = "";
-
-          let imp = {
-            BEGIN: "VEVENT",
-            UID: index.getFirstPropertyValue("uid"),
-            SUMMARY: index.getFirstPropertyValue("summary"),
-            LOCATION: index.getFirstPropertyValue("location"),
-            DESCRIPTION: index.getFirstPropertyValue("description"),
-            "LAST-MODIFIED": g,
-            CLASS: "PRIVATE",
-            DTSTAMP: start_date,
-            DTSTART: start_date,
-            DTEND: end_date,
-            date: date,
-            time_start: start_time,
-            time_end: end_time,
-            notification: " ",
-            alarm: "none",
-            END: "VEVENT",
-          };
-          last_uid = imp.UID;
-          last_date = imp.date;
-          events.push(imp);
-        });
-
-        callback(last_uid, last_date);
-        localStorage.setItem("events", JSON.stringify(events));
+        let data = event.target.result;
+        parse_ics(data, callback, true);
       };
 
       reader.readAsText(file);
@@ -286,5 +306,6 @@ const eximport = (() => {
     list_ics,
     loadICS,
     share,
+    fetch_ics,
   };
 })();

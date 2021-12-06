@@ -657,7 +657,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.querySelectorAll("div#options button")[0].focus();
     }
   };
-  //callback import single event
+  //callback import event
   let import_event = function (id, date) {
     console.log(date);
     status.selected_day = date;
@@ -665,10 +665,19 @@ document.addEventListener("DOMContentLoaded", function () {
     helper.bottom_bar("edit", "", "");
 
     //edit_event();
-    status.view = "list-view";
-    router();
-    helper.toaster("events imported", 2000);
+    //status.view = "list-view";
+    //router();
+    //helper.toaster("events imported", 2000);
   };
+
+  let load_subscriptions = function () {
+    eximport.fetch_ics(
+      "https://calendar.google.com/calendar/ical/de.christian%23holiday%40group.v.calendar.google.com/public/basic.ics",
+      import_event
+    );
+  };
+
+  load_subscriptions();
 
   //////////////////////////////
   ////KEYPAD HANDLER////////////
@@ -756,7 +765,6 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
 
       case "9":
-        test_alarm();
         break;
 
       case "7":
@@ -817,6 +825,22 @@ document.addEventListener("DOMContentLoaded", function () {
           });
 
           eximport.export_ical("share_event.ics", export_data);
+
+          return true;
+        }
+
+        if (
+          document.activeElement.getAttribute("data-function") ==
+          "add-subscription"
+        ) {
+          document.getElementById("subscription-form").style.display = "block";
+
+          document
+            .querySelectorAll("div#subscription-form div.item input")[0]
+            .focus();
+
+          helper.bottom_bar("QR", "save", "chancel");
+          status.view = "subscription";
 
           return true;
         }
@@ -906,18 +930,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (evt.repeat) {
-      if (evt.key == "Backspace")
-        // evt.preventDefault();
-
-        longpress = false;
+      if (evt.key == "Backspace") longpress = false;
       repeat_action(evt);
     }
   }
 
   function handleKeyUp(evt) {
     if (status.visible === false) return false;
-
-    //evt.preventDefault();
 
     if (evt.key == "Backspace" && document.activeElement.tagName == "INPUT") {
     }

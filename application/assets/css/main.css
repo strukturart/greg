@@ -333,6 +333,16 @@ div#options div.import-text {
   padding: 10px;
 }
 
+div#subscription-form {
+  position: fixed;
+  z-index: 30;
+  bottom: 40px;
+  display: none;
+  height: 100px;
+  background: white;
+  border-top: 2px solid black;
+}
+
 /*/////////////////
 ///BOTTOM BAR////
 ////////////////*/
