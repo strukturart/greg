@@ -96,10 +96,10 @@ const eximport = (() => {
     finder.on("fileFound", function (file, fileinfo, storageName) {
       if (fileinfo.name != "greg.ics") {
         document
-          .querySelector("div#options")
+          .querySelector("div#options div#import-text")
           .insertAdjacentHTML(
-            "beforeend",
-            '<button class="item" data-function="import" data-filename="' +
+            "afterend",
+            '<button class="item dynamic" data-function="import" data-filename="' +
               fileinfo.name +
               '">' +
               fileinfo.name +
@@ -209,7 +209,6 @@ const eximport = (() => {
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
-      console.log(imp);
     });
 
     callback(last_uid, last_date);
@@ -232,12 +231,13 @@ const eximport = (() => {
     xhttp.onload = function () {
       if (xhttp.readyState === xhttp.DONE && xhttp.status === 200) {
         let data = xhttp.response;
-        console.log(cb);
         parse_ics(data, cb, false);
       }
     };
 
-    xhttp.onerror = function () {};
+    xhttp.onerror = function () {
+      helper.toaster("subscription could not be loaded", 2000);
+    };
 
     xhttp.send(null);
   };

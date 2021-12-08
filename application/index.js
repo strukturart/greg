@@ -15,6 +15,11 @@ let status = {
   update_event_id: "",
 };
 
+let subscriptions =
+  localStorage.getItem("subscriptions") != null
+    ? JSON.parse(localStorage.getItem("subscriptions"))
+    : [];
+
 function handleVisibilityChange() {
   if (document.visibilityState === "hidden") {
     status.visible = false;
@@ -101,8 +106,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     return f;
   };
-
-  jump_to_today();
 
   //////////////
   //BUILD CALENDAR
@@ -568,6 +571,22 @@ document.addEventListener("DOMContentLoaded", function () {
   const list_view = document.getElementById("list-view");
   const options = document.getElementById("options");
 
+  let option_button_bar = function () {
+    setTimeout(function () {
+      if (status.view == "options") {
+        if (
+          document.activeElement.getAttribute("data-function") == "subscription"
+        ) {
+          helper.bottom_bar("delete", "select", "");
+          return true;
+        } else {
+          helper.bottom_bar("", "select", "");
+          return true;
+        }
+      }
+    }, 500);
+  };
+
   const pages = document.querySelectorAll(".page");
 
   let router = function (view) {
@@ -655,6 +674,27 @@ document.addEventListener("DOMContentLoaded", function () {
     if (status.view == "options") {
       document.getElementById("options").style.display = "block";
       document.querySelectorAll("div#options button")[0].focus();
+      document.getElementById("options").style.opacity = "1";
+
+      document.getElementById("subscription-form").style.display = "none";
+
+      document.querySelectorAll("button.dynamic").forEach(function (item) {
+        item.remove();
+      });
+      option_button_bar();
+      list_subscriptions();
+      eximport.list_ics();
+    }
+
+    if (status.view == "subscription") {
+      document.getElementById("options").style.opacity = "0.3";
+      document.getElementById("subscription-form").style.display = "block";
+
+      document
+        .querySelectorAll("div#subscription-form div.item input")[0]
+        .focus();
+
+      helper.bottom_bar("QR", "save", "chancel");
     }
   };
   //callback import event
@@ -667,14 +707,42 @@ document.addEventListener("DOMContentLoaded", function () {
     //edit_event();
     //status.view = "list-view";
     //router();
-    //helper.toaster("events imported", 2000);
+    helper.toaster("events imported", 2000);
   };
 
+  let list_subscriptions = function () {
+    subscriptions.forEach(function (item) {
+      document
+        .querySelector("div#options div#subscription-text")
+        .insertAdjacentHTML(
+          "afterend",
+          '<button class="item dynamic" data-function="subscription">' +
+            item +
+            "</button>"
+        );
+
+      document.querySelectorAll("div#options button").forEach(function (i, p) {
+        i.setAttribute("tabindex", p);
+      });
+    });
+  };
+
+  let lp = 0;
   let load_subscriptions = function () {
-    eximport.fetch_ics(
-      "https://calendar.google.com/calendar/ical/de.christian%23holiday%40group.v.calendar.google.com/public/basic.ics",
-      import_event
-    );
+    if (subscriptions.length > 0) {
+      if (lp < subscriptions.length) {
+        eximport.fetch_ics(subscriptions[lp], load_subscriptions);
+        lp++;
+      } else {
+        helper.toaster("subscriptions loaded", 2000);
+      }
+    }
+    jump_to_today();
+  };
+
+  let callback_scan = function (url) {
+    helper.bottom_bar("QR", "save", "cancel");
+    document.querySelector("div#subscription-form input").value = url;
   };
 
   load_subscriptions();
@@ -786,6 +854,11 @@ document.addEventListener("DOMContentLoaded", function () {
           status.view = "add-edit-event";
           router();
         }
+        if (status.view == "subscription") {
+          console.log("scan");
+          qr.start_scan(callback_scan);
+          return true;
+        }
 
         if (status.view == "month") {
           status.view = "add-edit-event";
@@ -817,6 +890,22 @@ document.addEventListener("DOMContentLoaded", function () {
           return true;
         }
 
+        if (status.view == "subscription") {
+          if (helper.validate(document.activeElement.value) == false) {
+            helper.toaster("url is not valid", 2000);
+          } else {
+            subscriptions.push(document.activeElement.value);
+            localStorage.setItem(
+              "subscriptions",
+              JSON.stringify(subscriptions)
+            );
+            document.activeElement.value = "";
+            status.view = "options";
+            router();
+          }
+          return true;
+        }
+
         if (document.activeElement.id == "export-event") {
           events.forEach(function (index) {
             if (index.UID == status.update_event_id) {
@@ -833,15 +922,8 @@ document.addEventListener("DOMContentLoaded", function () {
           document.activeElement.getAttribute("data-function") ==
           "add-subscription"
         ) {
-          document.getElementById("subscription-form").style.display = "block";
-
-          document
-            .querySelectorAll("div#subscription-form div.item input")[0]
-            .focus();
-
-          helper.bottom_bar("QR", "save", "chancel");
           status.view = "subscription";
-
+          router();
           return true;
         }
 
@@ -902,6 +984,11 @@ document.addEventListener("DOMContentLoaded", function () {
           router();
         }
 
+        if (status.view == "scan") {
+          status.views = "subscription";
+          router();
+        }
+
         break;
     }
   }
@@ -911,8 +998,13 @@ document.addEventListener("DOMContentLoaded", function () {
   ////////////////////////////////
 
   function handleKeyDown(evt) {
+    option_button_bar();
     if (evt.key === "Backspace") {
-      if (status.view == "options" || status.view == "add-edit-event") {
+      if (
+        status.view == "options" ||
+        status.view == "add-edit-event" ||
+        status.view == "scan"
+      ) {
         evt.preventDefault();
       }
     }
