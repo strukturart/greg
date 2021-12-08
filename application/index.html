@@ -115,7 +115,7 @@
             <script id="template" type="x-tmpl-mustache">
 
             {{#data}}
-            <article data-id={{UID}} data-date={{date}} class="item">
+            <article data-id={{UID}} data-date={{date}} class="item {{#isSubscription}}subscription{{/isSubscription}}">
                 <div class="date"></div>
                 <div>
                     {{time_start}}

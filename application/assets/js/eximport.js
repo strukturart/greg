@@ -94,7 +94,11 @@ const eximport = (() => {
     });
 
     finder.on("fileFound", function (file, fileinfo, storageName) {
+      document.querySelector("div#import-text").style.display = "block";
+
       if (fileinfo.name != "greg.ics") {
+        console.log("founded");
+
         document
           .querySelector("div#options div#import-text")
           .insertAdjacentHTML(
@@ -117,7 +121,7 @@ const eximport = (() => {
   ///PARSE ICS
   ///////////////
 
-  let parse_ics = function (data, callback, saveOnDevice) {
+  let parse_ics = function (data, callback, saveOnDevice, subscription) {
     var data = data.split(/\r\n|\n/);
     data = data.join("\r\n");
     //parse iCal data
@@ -205,6 +209,7 @@ const eximport = (() => {
         notification: " ",
         alarm: "none",
         END: "VEVENT",
+        isSubscription: subscription,
       };
       last_uid = imp.UID;
       last_date = imp.date;
@@ -231,7 +236,7 @@ const eximport = (() => {
     xhttp.onload = function () {
       if (xhttp.readyState === xhttp.DONE && xhttp.status === 200) {
         let data = xhttp.response;
-        parse_ics(data, cb, false);
+        parse_ics(data, cb, false, true);
       }
     };
 

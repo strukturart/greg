@@ -7,6 +7,7 @@
   --color-four: rgb(190, 185, 185);
   --color-five: rgba(214, 225, 228, 0.322);
   --color-seven: rgba(101, 216, 24, 0.288);
+  --color-eight: rgba(47, 82, 196, 0.188);
 }
 
 @font-face {
@@ -293,6 +294,10 @@ div#calendar div#calendar-body div div.event {
   background: var(--color-seven);
 }
 
+div#calendar div#calendar-body div div.subscription {
+  background: var(--color-eight);
+}
+
 div#add-edit-event {
   display: none;
   position: absolute;
@@ -332,8 +337,19 @@ div#options {
   padding: 10px 0 0 0;
 }
 
-div#options div.import-text {
+div#options div#import-text {
   padding: 10px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-align: center;
+  display: none;
+}
+
+div#options div#subscription-text {
+  padding: 10px;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  text-align: center;
 }
 
 div#subscription-form {

@@ -39,8 +39,6 @@ if (localStorage.getItem("events") != null) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  eximport.list_ics();
-
   handleVisibilityChange();
 
   let today = new Date();
@@ -94,17 +92,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
   //check if has event
   let event_check = function (date) {
-    let f;
+    let feedback = {
+      event: false,
+      subscription: false,
+    };
 
     for (let t = 0; t < events.length; t++) {
-      f = false;
-
       if (date === events[t].date) {
-        f = true;
+        feedback.event = true;
+        if (events[t].isSubscription === true) {
+          feedback.subscription = true;
+        }
         t = events.length;
       }
     }
-    return f;
+    return feedback;
   };
 
   //////////////
@@ -166,8 +168,13 @@ document.addEventListener("DOMContentLoaded", function () {
           cell.setAttribute("data-index", new Date(p).toISOString());
 
           //check if has event
-          if (event_check(p)) {
+          if (event_check(p).event) {
             cell.classList.add("event");
+          }
+          //check if has event + subscription
+          if (event_check(p).subscription == true) {
+            console.log("yeah");
+            cell.classList.add("subscription");
           }
 
           cell.classList.add("item");
@@ -587,6 +594,14 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 500);
   };
 
+  let delete_subscription = function () {
+    let o = document.activeElement.innerText;
+    subscriptions.splice(subscriptions.indexOf(o), 1);
+
+    localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+    document.activeElement.remove();
+  };
+
   const pages = document.querySelectorAll(".page");
 
   let router = function (view) {
@@ -857,6 +872,12 @@ document.addEventListener("DOMContentLoaded", function () {
         if (status.view == "subscription") {
           console.log("scan");
           qr.start_scan(callback_scan);
+          return true;
+        }
+
+        if (status.view == "options") {
+          console.log("yeah");
+          delete_subscription();
           return true;
         }
 
