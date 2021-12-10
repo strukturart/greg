@@ -17,8 +17,8 @@ An easy to use calendar for KaiOs
 - Key 1 & 3 : Jump between the months
 - Key \* : Jump to current Day
 - SoftLeft : Toggle views -> month / event-list
-- Key Enter: month view add event
-- Key Enter: event-list view edit event
+- Key Enter: toggle views
+- Key 2: event slider in month view
 
 ## How to install
 

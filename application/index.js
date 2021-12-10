@@ -64,31 +64,6 @@ document.addEventListener("DOMContentLoaded", function () {
   ];
 
   let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  let jump_to_today = function () {
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
-    showCalendar(currentMonth, currentYear);
-
-    status.selected_day = document.activeElement.getAttribute("data-date");
-  };
-
-  function next() {
-    currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-    currentMonth = (currentMonth + 1) % 12;
-    showCalendar(currentMonth, currentYear);
-  }
-
-  function previous() {
-    currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    showCalendar(currentMonth, currentYear);
-  }
-
-  function jump() {
-    //currentYear = parseInt(selectYear.value);
-    //currentMonth = parseInt(selectMonth.value);
-    showCalendar(currentMonth, currentYear);
-  }
 
   //check if has event
   let event_check = function (date) {
@@ -108,6 +83,70 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     return feedback;
   };
+  let slider = [];
+  let slider_index = 0;
+
+  let event_check_day = function (date) {
+    slider = [];
+    let k = document.querySelector("div#event-slider-indicator div");
+    k.innerHTML = "";
+
+    document
+      .querySelectorAll("div#event-slider article")
+      .forEach(function (item) {
+        item.style.display = "none";
+        if (item.getAttribute("data-date") == date) {
+          slider.push(item);
+          slider[0].style.display = "block";
+
+          k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+
+          if (slider.length > 1) {
+            k.style.opacity = 100;
+          } else {
+            k.style.opacity = 0;
+          }
+        }
+      });
+  };
+  let slider_navigation = function () {
+    let p = document.querySelectorAll("div#event-slider-indicator div div");
+    if (slider_index == slider.length - 1) {
+      slider_index = -1;
+    }
+    slider_index++;
+    slider.forEach(function (item) {
+      item.style.display = "none";
+    });
+    slider[slider_index].style.display = "block";
+    p.forEach(function (item) {
+      item.classList.remove("active");
+    });
+    p[slider_index].classList.add("active");
+  };
+
+  let jump_to_today = function () {
+    let currentMonth = today.getMonth();
+    let currentYear = today.getFullYear();
+    showCalendar(currentMonth, currentYear);
+
+    status.selected_day = document.activeElement.getAttribute("data-date");
+    event_check_day(status.selected_day);
+  };
+
+  function next() {
+    currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    currentMonth = (currentMonth + 1) % 12;
+    showCalendar(currentMonth, currentYear);
+    event_check_day(status.selected_day);
+  }
+
+  function previous() {
+    currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    showCalendar(currentMonth, currentYear);
+    event_check_day(status.selected_day);
+  }
 
   //////////////
   //BUILD CALENDAR
@@ -238,10 +277,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
+
+      event_check_day(status.selected_day);
     }
 
     if (status.view == "list-view") {
       status.selected_day = targetElement.getAttribute("data-date");
+      event_check_day(status.selected_day);
     }
   };
 
@@ -436,10 +478,12 @@ document.addEventListener("DOMContentLoaded", function () {
     status.update_event_id = "";
     status.view = "month";
     router();
+    console.log("updated");
     eximport.export_ical(
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
-    ); //clean form
+    );
+    //clean form
     clear_form();
     localStorage.setItem("events", JSON.stringify(events));
   };
@@ -479,7 +523,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let set_tabindex = function () {
-    document.querySelectorAll("article").forEach(function (i, p) {
+    document.querySelectorAll("div#list-view article").forEach(function (i, p) {
       i.setAttribute("tabindex", p);
     });
   };
@@ -547,6 +591,7 @@ document.addEventListener("DOMContentLoaded", function () {
       data: arr,
     });
     document.getElementById("list-view").innerHTML = rendered;
+    document.getElementById("event-slider").innerHTML = rendered;
 
     set_tabindex();
 
@@ -566,8 +611,15 @@ document.addEventListener("DOMContentLoaded", function () {
       index.querySelector("div.date").innerText = d;
     });
   }
-
+  //render events
   renderHello(events);
+
+  //event slider
+  let t = new Date();
+  let m = `0${t.getMonth() + 1}`.slice(-2);
+  let d = `0${t.getDate()}`.slice(-2);
+  let y = t.getFullYear();
+  event_check_day(y + "-" + m + "-" + d);
 
   ///////////////////
   ///ROUTER
@@ -640,6 +692,7 @@ document.addEventListener("DOMContentLoaded", function () {
       helper.bottom_bar("add", "events", "options");
       status.update_event_id == "";
       showCalendar(currentMonth, currentYear);
+      event_check_day(status.selected_day);
 
       clear_form();
     }
@@ -654,7 +707,7 @@ document.addEventListener("DOMContentLoaded", function () {
       list_view.style.display = "block";
       renderHello(events);
       setTimeout(function () {
-        let articles = document.querySelectorAll("article");
+        let articles = document.querySelectorAll("div#list-view article");
         let success = false;
         for (var k = 0; k < articles.length; k++) {
           if (articles[k].getAttribute("data-date") == status.selected_day) {
@@ -666,7 +719,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!success) {
           document
             .querySelectorAll(
-              "article[data-date='" +
+              "div#list-view article[data-date='" +
                 find_closest_date(status.selected_day) +
                 "']"
             )[0]
@@ -714,7 +767,6 @@ document.addEventListener("DOMContentLoaded", function () {
   };
   //callback import event
   let import_event = function (id, date) {
-    console.log(date);
     status.selected_day = date;
     status.update_event_id = id;
     helper.bottom_bar("edit", "", "");
@@ -753,6 +805,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
     jump_to_today();
+    renderHello(events);
+    event_check_day(document.activeElement.getAttribute("data-date"));
   };
 
   let callback_scan = function (url) {
@@ -847,6 +901,10 @@ document.addEventListener("DOMContentLoaded", function () {
         next();
         break;
 
+      case "2":
+        slider_navigation();
+        break;
+
       case "9":
         break;
 
@@ -862,6 +920,11 @@ document.addEventListener("DOMContentLoaded", function () {
       case "SoftLeft":
       case "Control":
         if (status.view == "list-view") {
+          if (document.activeElement.classList.contains("subscription")) {
+            helper.toaster("a subscription cannot be edited", 2000);
+            return false;
+          }
+
           status.update_event_id =
             document.activeElement.getAttribute("data-id");
 
@@ -876,7 +939,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (status.view == "options") {
-          console.log("yeah");
           delete_subscription();
           return true;
         }
