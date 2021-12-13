@@ -1,28 +1,4 @@
 const eximport = (() => {
-  let export_json = function () {
-    var sdcard = navigator.getDeviceStorage("sdcard");
-
-    var request_del = sdcard.delete("greg_events.json");
-    request_del.onsuccess = function () {};
-    setTimeout(function () {
-      let data = localStorage.getItem("events");
-      var file = new Blob([data], {
-        type: "application/json",
-      });
-
-      var request = sdcard.addNamed(file, "greg.json");
-
-      request.onsuccess = function () {
-        var name = this.result;
-        helper.toaster("events exported, greg.json", 5000);
-      };
-
-      request.onerror = function () {
-        helper.toaster("Unable to write the file", 2000);
-      };
-    }, 2000);
-  };
-
   let export_ical = function (filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
     var sdcard = navigator.getDeviceStorage("sdcard");
@@ -51,7 +27,8 @@ const eximport = (() => {
             key != "time_start" &&
             key != "time_end" &&
             key != "notification" &&
-            key != "alarm"
+            key != "alarm" &&
+            key != "isSubscription"
           ) {
             result += `${key}:${e[key]}` + "\r\n";
           }
@@ -218,7 +195,11 @@ const eximport = (() => {
 
     callback(last_uid, last_date);
     if (saveOnDevice) {
-      localStorage.setItem("events", JSON.stringify(events));
+      let without_subscription = events.filter(
+        (events) => events.isSubscription === false
+      );
+
+      localStorage.setItem("events", JSON.stringify(without_subscription));
     }
   };
 
@@ -307,7 +288,6 @@ const eximport = (() => {
 
   return {
     export_ical,
-    export_json,
     list_ics,
     loadICS,
     share,

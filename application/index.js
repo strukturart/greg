@@ -424,6 +424,7 @@ document.addEventListener("DOMContentLoaded", function () {
       notification: notification_time,
       alarm: "",
       END: "VEVENT",
+      isSubscription: false,
     };
 
     if (event.alarm != "none") {
@@ -472,6 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
         index.date = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
+        index.isSubscription = false;
       }
     });
 
