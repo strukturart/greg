@@ -426,6 +426,7 @@ document.addEventListener("DOMContentLoaded", function () {
       notification: notification_time,
       alarm: "",
       END: "VEVENT",
+      isSubscription: false,
     };
 
     if (event.alarm != "none") {
@@ -434,7 +435,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     events.push(event);
 
-    localStorage.setItem("events", JSON.stringify(events));
+    let without_subscription = events.filter(
+      (events) => events.isSubscription === false
+    );
+
+    localStorage.setItem("events", JSON.stringify(without_subscription));
 
     eximport.export_ical(
       "greg.ics",
@@ -474,19 +479,25 @@ document.addEventListener("DOMContentLoaded", function () {
         index.date = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
+        index.isSubscription = false;
       }
     });
 
     status.update_event_id = "";
     status.view = "month";
     router();
+
+    let without_subscription = events.filter(
+      (events) => events.isSubscription === false
+    );
+
     eximport.export_ical(
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
     );
     //clean form
     clear_form();
-    localStorage.setItem("events", JSON.stringify(events));
+    localStorage.setItem("events", JSON.stringify(without_subscription));
   };
 
   let delete_event = function () {
@@ -805,7 +816,7 @@ document.addEventListener("DOMContentLoaded", function () {
         eximport.fetch_ics(subscriptions[lp], load_subscriptions);
         lp++;
       } else {
-        helper.toaster("subscriptions loaded", 2000);
+        helper.toaster("subscriptions loaded", 5000);
       }
     }
     jump_to_today();
