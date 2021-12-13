@@ -8,6 +8,8 @@ if (navigator.mozSetMessageHandler) {
   });
 }
 
+let once = false;
+
 let status = {
   view: "month",
   selected_day: "",
@@ -478,7 +480,6 @@ document.addEventListener("DOMContentLoaded", function () {
     status.update_event_id = "";
     status.view = "month";
     router();
-    console.log("updated");
     eximport.export_ical(
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
@@ -738,8 +739,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }, 100);
     }
-
     if (status.view == "options") {
+      if (!once) {
+        eximport.list_ics();
+        once = true;
+      }
+
       document.getElementById("options").style.display = "block";
       document.querySelectorAll("div#options button")[0].focus();
       document.getElementById("options").style.opacity = "1";
@@ -751,7 +756,6 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       option_button_bar();
       list_subscriptions();
-      eximport.list_ics();
     }
 
     if (status.view == "subscription") {
@@ -967,6 +971,7 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
 
       case "Enter":
+        console.log(status.view);
         if (!status.visible) return false;
         if (document.activeElement.classList.contains("input-parent")) {
           document.activeElement.children[1].focus();
@@ -974,9 +979,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (status.view == "subscription") {
-          if (helper.validate(document.activeElement.value) == false) {
-            helper.toaster("url is not valid", 2000);
-          } else {
+          if (helper.validate(document.activeElement.value)) {
             subscriptions.push(document.activeElement.value);
             localStorage.setItem(
               "subscriptions",
@@ -985,6 +988,8 @@ document.addEventListener("DOMContentLoaded", function () {
             document.activeElement.value = "";
             status.view = "options";
             router();
+          } else {
+            helper.toaster("url is not valid", 2000);
           }
           return true;
         }

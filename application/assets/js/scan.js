@@ -52,7 +52,7 @@ const qr = ((_) => {
               if (code) {
                 stop_scan();
                 callback(code.data);
-
+                status.view = "subscription";
                 clearInterval(intv);
               }
             }, 1000);

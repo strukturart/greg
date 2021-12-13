@@ -95,10 +95,8 @@ const eximport = (() => {
 
     finder.on("fileFound", function (file, fileinfo, storageName) {
       document.querySelector("div#import-text").style.display = "block";
-
+      console.log("founded");
       if (fileinfo.name != "greg.ics") {
-        console.log("founded");
-
         document
           .querySelector("div#options div#import-text")
           .insertAdjacentHTML(
@@ -116,6 +114,7 @@ const eximport = (() => {
       });
     });
   };
+
 
   ///////////////
   ///PARSE ICS
