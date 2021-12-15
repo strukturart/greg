@@ -214,7 +214,6 @@ document.addEventListener("DOMContentLoaded", function () {
           }
           //check if has event + subscription
           if (event_check(p).subscription == true) {
-            console.log("yeah");
             cell.classList.add("subscription");
           }
 
@@ -502,20 +501,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let delete_event = function () {
     let f = false;
-    events.forEach(function (index) {
-      if (index.UID == status.update_event_id) {
-        remove_alarm(status.update_event_id);
-        events.splice(index, 1);
-        f = true;
-      }
-    });
-    clear_form();
+
+    events = events.filter((person) => person.UID != status.update_event_id);
+    renderHello(events);
+    remove_alarm(status.update_event_id);
+    f = true;
+
     status.update_event_id = "";
-    localStorage.setItem("events", JSON.stringify(events));
+    let without_subscription = events.filter(
+      (events) => events.isSubscription === false
+    );
+
     eximport.export_ical(
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
     );
+    //clean form
+    clear_form();
+    localStorage.setItem("events", JSON.stringify(without_subscription));
     return f;
   };
 
@@ -786,9 +789,7 @@ document.addEventListener("DOMContentLoaded", function () {
     status.update_event_id = id;
     helper.bottom_bar("edit", "", "");
 
-    //edit_event();
-    //status.view = "list-view";
-    //router();
+    renderHello(events);
     helper.toaster("events imported", 2000);
   };
 
@@ -948,7 +949,6 @@ document.addEventListener("DOMContentLoaded", function () {
           router();
         }
         if (status.view == "subscription") {
-          console.log("scan");
           qr.start_scan(callback_scan);
           return true;
         }
@@ -982,7 +982,6 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
 
       case "Enter":
-        console.log(status.view);
         if (!status.visible) return false;
         if (document.activeElement.classList.contains("input-parent")) {
           document.activeElement.children[1].focus();
@@ -1110,7 +1109,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (evt.key === "EndCall") {
       evt.preventDefault();
-      helper.goodbye();
+      window.close();
     }
     if (!evt.repeat) {
       longpress = false;
