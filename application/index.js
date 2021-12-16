@@ -67,6 +67,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+  let parse_ics_isoString = function (date) {
+    let p = Array.from(date);
+    p.splice(4, 0, "-");
+    p.splice(7, 0, "-");
+    p.splice(13, 0, ":");
+    p.splice(16, 0, ":");
+    p.splice(19, 0, ":");
+    p[20] = "0";
+    p[21] = "0";
+    let k = p.toString();
+    k = k.replaceAll(",", "");
+    k = k.replaceAll("T", " ");
+    let f = new Date(k);
+    if (f == "Invalid Date") {
+      f = k;
+    }
+    return f;
+  };
+
   //check if has event
   let event_check = function (date) {
     let feedback = {
@@ -75,6 +94,15 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     for (let t = 0; t < events.length; t++) {
+      let n = events[t].DTSTART;
+      if (n != null) {
+        n =
+          n.year + "-" + `0${n.month}`.slice(-2) + "-" + `0${n.day}`.slice(-2);
+      }
+      //todo
+      //multi day event
+      //compare dtstart and dtend
+
       if (date === events[t].date) {
         feedback.event = true;
         if (events[t].isSubscription === true) {
@@ -417,7 +445,7 @@ document.addEventListener("DOMContentLoaded", function () {
       DESCRIPTION: document.getElementById("event-description").value,
       CLASS: "PRIVATE",
       DTSTAMP: convert_ics_date(convert_dt_start),
-      DTSTART: convert_ics_date(convert_dt_end),
+      DTSTART: convert_ics_date(convert_dt_start),
       DTEND: convert_ics_date(convert_dt_end),
       date: document.getElementById("event-date").value,
       time_start: document.getElementById("event-time-start").value,

@@ -92,7 +92,6 @@ const eximport = (() => {
     });
   };
 
-
   ///////////////
   ///PARSE ICS
   ///////////////
@@ -115,6 +114,20 @@ const eximport = (() => {
 
       let t = new Date(index.getFirstPropertyValue("dtstart"));
       let f = new Date(index.getFirstPropertyValue("dtend"));
+
+      let n = null;
+      if (index.getFirstPropertyValue("dtend") != null) {
+        n = ICAL.design.icalendar.value["date-time"].toICAL(
+          index.getFirstPropertyValue("dtend")
+        );
+      }
+
+      let m = null;
+      if (index.getFirstPropertyValue("dtstart") != null) {
+        m = ICAL.design.icalendar.value["date-time"].toICAL(
+          index.getFirstPropertyValue("dtstart")
+        );
+      }
 
       //last modified
       let g = new Date(index.getFirstPropertyValue("last-modified")).getTime();
@@ -176,15 +189,15 @@ const eximport = (() => {
         DESCRIPTION: index.getFirstPropertyValue("description"),
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
-        DTSTAMP: start_date,
-        DTSTART: start_date,
-        DTEND: end_date,
+        DTSTAMP: m,
+        DTSTART: m,
+        DTEND: n,
+        END: "VEVENT",
         date: date,
         time_start: start_time,
         time_end: end_time,
         notification: " ",
         alarm: "none",
-        END: "VEVENT",
         isSubscription: subscription,
       };
       last_uid = imp.UID;
