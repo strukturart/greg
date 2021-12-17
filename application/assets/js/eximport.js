@@ -112,27 +112,44 @@ const eximport = (() => {
       )
         return false;
 
-      let t = new Date(index.getFirstPropertyValue("dtstart"));
-      let f = new Date(index.getFirstPropertyValue("dtend"));
-
-      let n = null;
+      let DTend = null;
+      let dateEnd = null;
       if (index.getFirstPropertyValue("dtend") != null) {
-        n = ICAL.design.icalendar.value["date-time"].toICAL(
+        DTend = ICAL.design.icalendar.value["date-time"].toICAL(
           index.getFirstPropertyValue("dtend")
         );
+
+        dateEnd =
+          DTend.year +
+          "-" +
+          `0${DTend.month}`.slice(-2) +
+          "-" +
+          `0${DTend.day}`.slice(-2);
       }
 
-      let m = null;
+      let DTstart = null;
+      let dateStart = null;
       if (index.getFirstPropertyValue("dtstart") != null) {
-        m = ICAL.design.icalendar.value["date-time"].toICAL(
+        DTstart = ICAL.design.icalendar.value["date-time"].toICAL(
           index.getFirstPropertyValue("dtstart")
         );
+
+        dateStart =
+          DTstart.year +
+          "-" +
+          `0${DTstart.month}`.slice(-2) +
+          "-" +
+          `0${DTstart.day}`.slice(-2);
       }
 
       //last modified
       let g = new Date(index.getFirstPropertyValue("last-modified")).getTime();
 
-      let k = t.getFullYear() + "-" + (t.getMonth() + 1) + "-" + t.getDate();
+      //custom convert
+      //todo
+
+      let t = new Date(index.getFirstPropertyValue("dtstart"));
+      let f = new Date(index.getFirstPropertyValue("dtend"));
 
       let s_month = `0${t.getMonth() + 1}`.slice(-2);
       let s_day = `0${t.getDate()}`.slice(-2);
@@ -177,7 +194,6 @@ const eximport = (() => {
         end_time = "";
       }
 
-      let date = s_year + "-" + s_month + "-" + s_day;
       last_uid = "";
       last_date = "";
 
@@ -189,17 +205,20 @@ const eximport = (() => {
         DESCRIPTION: index.getFirstPropertyValue("description"),
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
-        DTSTAMP: m,
-        DTSTART: m,
-        DTEND: n,
+        DTSTAMP: start_date,
+        DTSTART: start_date,
+        DTEND: end_date,
         END: "VEVENT",
-        date: date,
+        dateStart: dateStart,
+        dateEnd: dateEnd,
         time_start: start_time,
         time_end: end_time,
         notification: " ",
         alarm: "none",
         isSubscription: subscription,
       };
+
+      console.log(imp);
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);

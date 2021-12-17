@@ -67,25 +67,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-  let parse_ics_isoString = function (date) {
-    let p = Array.from(date);
-    p.splice(4, 0, "-");
-    p.splice(7, 0, "-");
-    p.splice(13, 0, ":");
-    p.splice(16, 0, ":");
-    p.splice(19, 0, ":");
-    p[20] = "0";
-    p[21] = "0";
-    let k = p.toString();
-    k = k.replaceAll(",", "");
-    k = k.replaceAll("T", " ");
-    let f = new Date(k);
-    if (f == "Invalid Date") {
-      f = k;
-    }
-    return f;
-  };
-
   //check if has event
   let event_check = function (date) {
     let feedback = {
@@ -94,16 +75,11 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     for (let t = 0; t < events.length; t++) {
-      let n = events[t].DTSTART;
-      if (n != null) {
-        n =
-          n.year + "-" + `0${n.month}`.slice(-2) + "-" + `0${n.day}`.slice(-2);
-      }
       //todo
       //multi day event
-      //compare dtstart and dtend
+      //compare dateStart and dateEnd
 
-      if (date === events[t].date) {
+      if (date === events[t].dateStart) {
         feedback.event = true;
         if (events[t].isSubscription === true) {
           feedback.subscription = true;
@@ -113,6 +89,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     return feedback;
   };
+
+  //////////////////
+  //event slider
+  ///////////
+
   let slider = [];
   let slider_index = 0;
 
@@ -447,7 +428,8 @@ document.addEventListener("DOMContentLoaded", function () {
       DTSTAMP: convert_ics_date(convert_dt_start),
       DTSTART: convert_ics_date(convert_dt_start),
       DTEND: convert_ics_date(convert_dt_end),
-      date: document.getElementById("event-date").value,
+      dateStart: document.getElementById("event-date").value,
+      dateEnd: document.getElementById("event-date-end").value,
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
       notification: notification_time,
@@ -503,7 +485,8 @@ document.addEventListener("DOMContentLoaded", function () {
         index.LOCATION = document.getElementById("event-location").value;
         index.DTSTART = convert_ics_date(convert_dt_start);
         index.DTEND = convert_ics_date(convert_dt_end);
-        index.date = document.getElementById("event-date").value;
+        index.dateEnd = document.getElementById("event-date-end").value;
+        index.dateStart = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
         index.isSubscription = false;
@@ -554,7 +537,8 @@ document.addEventListener("DOMContentLoaded", function () {
     events.forEach(function (index) {
       if (index.UID == status.update_event_id) {
         document.getElementById("event-title").value = index.SUMMARY;
-        document.getElementById("event-date").value = index.date;
+        document.getElementById("event-date").value = index.dateStart;
+        document.getElementById("event-date-end").value = index.dateEnd;
         document.getElementById("event-time-start").value = index.time_start;
         document.getElementById("event-time-end").value = index.time_end;
         document.getElementById("event-description").value = index.DESCRIPTION;
@@ -581,10 +565,10 @@ document.addEventListener("DOMContentLoaded", function () {
     let t = 0;
     let search = new Date(search_term).getTime();
     for (let i = 0; i < events.length; i++) {
-      let item = new Date(events[i].date).getTime();
+      let item = new Date(events[i].dateStart).getTime();
 
       if (search > item) {
-        t = events[i].date;
+        t = events[i].dateStart;
       }
     }
     return t;
@@ -627,7 +611,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   function renderHello(arr) {
-    sort_array(arr, "date", "date");
+    sort_array(arr, "dateStart", "date");
 
     var template = document.getElementById("template").innerHTML;
     var rendered = Mustache.render(template, {
