@@ -78,8 +78,15 @@ document.addEventListener("DOMContentLoaded", function () {
       //todo
       //multi day event
       //compare dateStart and dateEnd
+      let a = new Date(events[t].dateStart).getTime();
+      let b = new Date(events[t].dateEnd).getTime();
+      let c = new Date(date).getTime();
 
-      if (date === events[t].dateStart) {
+      if (a == c) {
+        console.log("event");
+      }
+
+      if (a === c) {
         feedback.event = true;
         if (events[t].isSubscription === true) {
           feedback.subscription = true;

@@ -218,7 +218,6 @@ const eximport = (() => {
         isSubscription: subscription,
       };
 
-      console.log(imp);
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
