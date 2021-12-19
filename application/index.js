@@ -72,6 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let feedback = {
       event: false,
       subscription: false,
+      multidayevent: false,
     };
 
     for (let t = 0; t < events.length; t++) {
@@ -82,14 +83,14 @@ document.addEventListener("DOMContentLoaded", function () {
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
 
-      if (a == c) {
-        console.log("event");
-      }
-
-      if (a === c) {
+      if (a === c || b === c || (a < c && b > c)) {
         feedback.event = true;
         if (events[t].isSubscription === true) {
           feedback.subscription = true;
+        }
+
+        if (events[t].multidayevent === true) {
+          feedback.multidayevent = true;
         }
         t = events.length;
       }
@@ -113,7 +114,12 @@ document.addEventListener("DOMContentLoaded", function () {
       .querySelectorAll("div#event-slider article")
       .forEach(function (item) {
         item.style.display = "none";
-        if (item.getAttribute("data-date") == date) {
+        let a = new Date(item.getAttribute("data-date")).getTime();
+        let b = new Date(item.getAttribute("data-date-end")).getTime();
+        let c = new Date(date).getTime();
+
+        if (a === c || b === c || (a < c && b > c)) {
+          //if (item.getAttribute("data-date") == date) {
           slider.push(item);
           slider[0].style.display = "block";
 
@@ -142,6 +148,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     p[slider_index].classList.add("active");
   };
+
+  ////
+  //JUMP TO TODAY
+  ////
 
   let jump_to_today = function () {
     let currentMonth = today.getMonth();
@@ -412,8 +422,12 @@ document.addEventListener("DOMContentLoaded", function () {
     let convert_dt_start =
       document.getElementById("event-date").value + " " + start_time;
 
+    if (document.getElementById("event-date-end").value == "")
+      document.getElementById("event-date-end").value =
+        document.getElementById("event-date").value;
+
     let convert_dt_end =
-      document.getElementById("event-date").value + " " + end_time;
+      document.getElementById("event-date-end").value + " " + end_time;
 
     //notification before event
     let notification_time = document.getElementById(
@@ -424,6 +438,15 @@ document.addEventListener("DOMContentLoaded", function () {
     calc_notification.setMinutes(
       calc_notification.getMinutes() - notification_time
     );
+
+    let multidayevent = false;
+
+    let a = new Date(document.getElementById("event-date").value).getTime();
+    let b = new Date(document.getElementById("event-date-end").value).getTime();
+
+    if (a != b) {
+      multidayevent = true;
+    }
 
     let event = {
       BEGIN: "VEVENT",
@@ -443,6 +466,7 @@ document.addEventListener("DOMContentLoaded", function () {
       alarm: "",
       END: "VEVENT",
       isSubscription: false,
+      multidayevent: multidayevent,
     };
 
     if (event.alarm != "none") {
@@ -470,6 +494,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let update_event = function () {
     events.forEach(function (index) {
+      let a = new Date(document.getElementById("event-date").value).getTime();
+      let b = new Date(
+        document.getElementById("event-date-end").value
+      ).getTime();
+
+      multidayevent = false;
+
+      if (a != b) {
+        multidayevent = true;
+      }
+
       if (index.UID == status.update_event_id) {
         let start_time = "00:00:00";
         if (document.getElementById("event-time-start").value != "") {
@@ -497,6 +532,7 @@ document.addEventListener("DOMContentLoaded", function () {
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
         index.isSubscription = false;
+        index.multidayevent = multidayevent;
       }
     });
 
@@ -562,11 +598,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   };
 
-  document.querySelectorAll("INPUT").forEach(function (ob) {
-    ob.addEventListener("input", function () {
-      console.log("ready");
-    });
-  });
+  //////////
+  //finde closest event to selected date in list view
+  //////////
 
   let find_closest_date = function (search_term) {
     let t = 0;
@@ -631,9 +665,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     //format date
     document.querySelectorAll("article").forEach(function (index) {
-      let p = index.getAttribute("data-date");
-      let t = new Date(p);
-      let f = months[t.getMonth()];
+      let t = new Date(index.getAttribute("data-date"));
+      let n = new Date(index.getAttribute("data-date-end"));
+
       let d =
         weekday[t.getDay()] +
         ", " +
@@ -642,7 +676,21 @@ document.addEventListener("DOMContentLoaded", function () {
         months[t.getMonth()] +
         " " +
         t.getDate();
-      index.querySelector("div.date").innerText = d;
+
+      let m =
+        weekday[n.getDay()] +
+        ", " +
+        n.getFullYear() +
+        " " +
+        months[n.getMonth()] +
+        " " +
+        n.getDate();
+      //to do singel day event or not
+      if (index.classList.contains("multidayevent")) {
+        index.querySelector("div.date").innerText = d + " - " + m;
+      } else {
+        index.querySelector("div.date").innerText = d;
+      }
     });
   }
   //render events
@@ -710,6 +758,11 @@ document.addEventListener("DOMContentLoaded", function () {
       add_edit_event.style.display = "block";
       add_edit_event.querySelectorAll(".item")[0].focus();
       helper.bottom_bar("", "edit", "");
+
+      if (document.getElementById("event-date-end").value == "") {
+        document.getElementById("event-date-end").value =
+          document.getElementById("event-date").value;
+      }
 
       if (status.update_event_id != "") {
         document.getElementById("save-event").innerText = "update";

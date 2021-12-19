@@ -142,6 +142,12 @@ const eximport = (() => {
           `0${DTstart.day}`.slice(-2);
       }
 
+      //check multi day events
+      multidayevent = false;
+      if (new Date(dateEnd).getTime() > new Date(dateStart).getTime()) {
+        multidayevent = true;
+      }
+
       //last modified
       let g = new Date(index.getFirstPropertyValue("last-modified")).getTime();
 
@@ -216,6 +222,7 @@ const eximport = (() => {
         notification: " ",
         alarm: "none",
         isSubscription: subscription,
+        multidayevent: multidayevent,
       };
 
       last_uid = imp.UID;
