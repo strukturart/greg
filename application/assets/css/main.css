@@ -330,6 +330,14 @@ div#event-slider div.description {
   display: none;
 }
 
+div#event-slider div.time {
+  display: none;
+}
+
+div#event-slider div.date {
+  display: none;
+}
+
 div#event-slider-indicator div div {
   background: rgb(121, 112, 112);
   height: 10px;

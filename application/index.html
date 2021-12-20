@@ -127,7 +127,7 @@
             {{#data}}
             <article data-id={{UID}} data-date={{dateStart}} data-date-end={{dateEnd}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}}">
                 <div class="date"></div>
-                <div>
+                <div class="time">
                     {{time_start}}
                     {{#time_end.length}} - {{time_end}}{{/time_end.length}}
                 </div>
@@ -202,6 +202,7 @@
     </div>
 
 </body>
+<script src="assets/js/localforage.js"></script>
 
 <script src="assets/js/jsQR.js"></script>
 <script src="assets/js/helper.js"></script>

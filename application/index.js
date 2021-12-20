@@ -1,5 +1,19 @@
 "use strict";
 
+let subscriptionss = [];
+localforage
+  .getItem("subscriptions")
+  .then(function (value) {
+    // This code runs once the value has been loaded
+    // from the offline store.
+    console.log(value);
+    subscriptions = value;
+  })
+  .catch(function (err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
+
 //alarm notification
 if (navigator.mozSetMessageHandler) {
   navigator.mozSetMessageHandler("alarm", function (message) {
@@ -76,9 +90,8 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     for (let t = 0; t < events.length; t++) {
-      //todo
       //multi day event
-      //compare dateStart and dateEnd
+
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
@@ -266,11 +279,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let nav = function (move) {
     const currentIndex = document.activeElement.tabIndex;
-    const next = currentIndex + move;
-    let items;
+    let next = currentIndex + move;
+    let items = 0;
 
     if (status.view == "month") {
-      items = document.querySelectorAll(".item");
+      //items = document.querySelectorAll(".item");
+
+      let b = document.activeElement.parentNode.parentNode;
+      items = b.querySelectorAll(".item");
     }
     if (
       status.view == "add-edit-event" ||
@@ -288,9 +304,11 @@ document.addEventListener("DOMContentLoaded", function () {
       let b = document.activeElement.parentNode;
       items = b.querySelectorAll(".item");
     }
-
-    const targetElement = items[next];
-    targetElement.focus();
+    let targetElement = 0;
+    if (next < items.length) {
+      targetElement = items[next];
+      targetElement.focus();
+    }
 
     const rect = document.activeElement.getBoundingClientRect();
     const elY =
@@ -304,8 +322,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
-
-      event_check_day(status.selected_day);
+      console.log(status.selected_day);
+      if (status.selected_day != "") event_check_day(status.selected_day);
+      return true;
     }
 
     if (status.view == "list-view") {
@@ -733,6 +752,18 @@ document.addEventListener("DOMContentLoaded", function () {
     subscriptions.splice(subscriptions.indexOf(o), 1);
 
     localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+
+    localforage
+      .setItem("subscriptions", subscriptions)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+        console.log(value);
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
+
     document.activeElement.remove();
   };
 
@@ -1061,12 +1092,25 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (status.view == "subscription") {
+          //store subscription
           if (helper.validate(document.activeElement.value)) {
             subscriptions.push(document.activeElement.value);
             localStorage.setItem(
               "subscriptions",
               JSON.stringify(subscriptions)
             );
+
+            localforage
+              .setItem("subscriptions", subscriptions)
+              .then(function (value) {
+                // Do other things once the value has been saved.
+                console.log(value);
+              })
+              .catch(function (err) {
+                // This code runs if there were any errors
+                console.log(err);
+              });
+
             document.activeElement.value = "";
             status.view = "options";
             router();
