@@ -1,6 +1,8 @@
 {
-	"version": "1.1.0",
+	"version": "0.0.1",
 	"name": "greg",
+	"id":"greg",
+	"categories": ["utilities"],
 	"description": "greg",
 	"launch_path": "/index.html",
 	"type": "privileged",
@@ -35,6 +37,9 @@
 
 
 	],
+
+
+
 	"permissions": {
 		"desktop-notification": {
 			"description": "Needed to fire system notifications"
@@ -52,14 +57,7 @@
 		"video-capture": {
 			"description": "Reading Codes using the Camera"
 		},
-		"audio-channel-normal": {
-			"description": "Needed to play this app's audio content on the normal channel"
-		},
-		"audio-channel-content": {
-			"description": "Needed to play this app's audio content on the content channel"
-		},
-		"volumemanager": {},
-		"browser": {},
+
 		"spatialnavigation-app-manage": {
 			"navigator.spatialNavigationEnabled": false
 		},
@@ -67,4 +65,8 @@
 			"description": "Required to load remote content"
 		}
 	}
+
+
+
+
 }
