@@ -247,7 +247,7 @@ div#calendar {
 }
 
 div#calendar h3 {
-  background: var(--color-five);
+  margin: 0 0 5px 20px;
 }
 
 div#calendar div.calendar-head {
@@ -258,6 +258,9 @@ div#calendar div.calendar-head div {
   width: 13%;
   font-size: 0.8rem;
   text-align: center;
+}
+div#calendar div.calendar-head div:first-child {
+  margin: 0 0 0 0px;
 }
 
 div#calendar div.calendar-body {
@@ -274,6 +277,11 @@ div#calendar div#calendar-body div {
 
 div#calendar div#calendar-body div:focus {
   background: none;
+}
+
+div#calendar div#calendar-body div div {
+  text-align: center;
+  padding: 2px 0 0 0;
 }
 
 div#calendar div#calendar-body div div.today {
@@ -296,6 +304,14 @@ div#calendar div#calendar-body div div.event {
 
 div#calendar div#calendar-body div div.subscription {
   background: var(--color-eight);
+}
+
+span.weeknumber {
+  color: silver;
+  padding: 2px;
+  font-size: 0.7rem;
+  position: absolute;
+  right: 0;
 }
 
 div#add-edit-event {
@@ -330,12 +346,9 @@ div#event-slider div.description {
   display: none;
 }
 
-div#event-slider div.time {
-  display: none;
-}
-
 div#event-slider div.date {
-  display: none;
+  opacity: 0;
+  height: 0px;
 }
 
 div#event-slider-indicator div div {
@@ -355,7 +368,7 @@ div#event-slider-indicator div div.active {
 }
 
 div#event-slider-indicator {
-  margin: 10px 0 0 0;
+  margin: -10px 0 0 -10px;
 }
 
 div#event-slider article h2 {

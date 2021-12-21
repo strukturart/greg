@@ -1,19 +1,5 @@
 "use strict";
 
-let subscriptionss = [];
-localforage
-  .getItem("subscriptions")
-  .then(function (value) {
-    // This code runs once the value has been loaded
-    // from the offline store.
-    console.log(value);
-    subscriptions = value;
-  })
-  .catch(function (err) {
-    // This code runs if there were any errors
-    console.log(err);
-  });
-
 //alarm notification
 if (navigator.mozSetMessageHandler) {
   navigator.mozSetMessageHandler("alarm", function (message) {
@@ -132,7 +118,6 @@ document.addEventListener("DOMContentLoaded", function () {
         let c = new Date(date).getTime();
 
         if (a === c || b === c || (a < c && b > c)) {
-          //if (item.getAttribute("data-date") == date) {
           slider.push(item);
           slider[0].style.display = "block";
 
@@ -193,25 +178,41 @@ document.addEventListener("DOMContentLoaded", function () {
   //BUILD CALENDAR
   //////////////
 
+  Date.prototype.getWeek = function () {
+    var date = new Date(this.getTime());
+    date.setHours(0, 0, 0, 0);
+    // Thursday in current week decides the year.
+    date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+    // January 4 is always in week 1.
+    var week1 = new Date(date.getFullYear(), 0, 4);
+    // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+    return (
+      1 +
+      Math.round(
+        ((date.getTime() - week1.getTime()) / 86400000 -
+          3 +
+          ((week1.getDay() + 6) % 7)) /
+          7
+      )
+    );
+  };
   function showCalendar(month, year) {
     helper.bottom_bar("add", "events", "options");
 
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
 
-    let tbl = document.getElementById("calendar-body"); // body of the calendar
+    let tbl = document.getElementById("calendar-body");
 
     // clearing all previous cells
     tbl.innerHTML = "";
 
     // filing data about month and in the page via DOM.
     monthAndYear.innerHTML = months[month] + " " + year;
-    //selectYear.value = year;
-    //selectMonth.value = month;
 
     // creating all cells
     let date = 1;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 5; i++) {
       // creates a table row
       let row = document.createElement("div");
       row.classList.add("flex");
@@ -258,10 +259,21 @@ document.addEventListener("DOMContentLoaded", function () {
 
           cell.classList.add("item");
           row.appendChild(cell);
+
           date++;
         }
       }
+      //add weeknumbers
+      let week = document.createElement("span");
+      week.classList.add("weeknumber");
 
+      let weekText = document.createTextNode(
+        new Date(year, month, date).getWeek()
+      );
+
+      week.appendChild(weekText);
+      row.appendChild(week);
+      //add row
       tbl.appendChild(row);
     }
 
@@ -753,17 +765,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
 
-    localforage
-      .setItem("subscriptions", subscriptions)
-      .then(function (value) {
-        // Do other things once the value has been saved.
-        console.log(value);
-      })
-      .catch(function (err) {
-        // This code runs if there were any errors
-        console.log(err);
-      });
-
     document.activeElement.remove();
   };
 
@@ -1099,17 +1100,6 @@ document.addEventListener("DOMContentLoaded", function () {
               "subscriptions",
               JSON.stringify(subscriptions)
             );
-
-            localforage
-              .setItem("subscriptions", subscriptions)
-              .then(function (value) {
-                // Do other things once the value has been saved.
-                console.log(value);
-              })
-              .catch(function (err) {
-                // This code runs if there were any errors
-                console.log(err);
-              });
 
             document.activeElement.value = "";
             status.view = "options";
