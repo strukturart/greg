@@ -860,6 +860,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (status.view == "options") {
       if (!once) {
         eximport.list_ics();
+        list_subscriptions();
         once = true;
       }
 
@@ -870,10 +871,9 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("subscription-form").style.display = "none";
 
       document.querySelectorAll("button.dynamic").forEach(function (item) {
-        item.remove();
+        //item.remove();
       });
       option_button_bar();
-      list_subscriptions();
     }
 
     if (status.view == "subscription") {
@@ -968,6 +968,21 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
     }
   }
+
+  let set_datetime_form = function () {
+    let d = new Date();
+    let d_h = `0${d.getHours()}`.slice(-2);
+    let d_m = `0${d.getMinutes()}`.slice(-2);
+    let p = d_h + ":" + d_m;
+
+    let d_h_ = `0${d.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d.getMinutes()}`.slice(-2);
+    if (d_h_ > 23) d_h_ = "23";
+    let pp = d_h_ + ":" + d_m_;
+
+    document.getElementById("event-time-start").value = p;
+    document.getElementById("event-time-end").value = pp;
+  };
 
   ///////////////
   ////SHORTPRESS
@@ -1068,18 +1083,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
           //when new event
           //set time
-          let d = new Date();
-          let d_h = `0${d.getHours()}`.slice(-2);
-          let d_m = `0${d.getMinutes()}`.slice(-2);
-          let p = d_h + ":" + d_m;
-
-          let d_h_ = `0${d.getHours() + 1}`.slice(-2);
-          let d_m_ = `0${d.getMinutes()}`.slice(-2);
-          if (d_h_ > 23) d_h_ = "23";
-          let pp = d_h_ + ":" + d_m_;
-
-          document.getElementById("event-time-start").value = p;
-          document.getElementById("event-time-end").value = pp;
+          set_datetime_form();
 
           return true;
         }
@@ -1100,6 +1104,7 @@ document.addEventListener("DOMContentLoaded", function () {
               "subscriptions",
               JSON.stringify(subscriptions)
             );
+            load_subscriptions();
 
             document.activeElement.value = "";
             status.view = "options";

@@ -28,7 +28,8 @@ const eximport = (() => {
             key != "time_end" &&
             key != "notification" &&
             key != "alarm" &&
-            key != "isSubscription"
+            key != "isSubscription" &&
+            key != "multidayevent"
           ) {
             result += `${key}:${e[key]}` + "\r\n";
           }
@@ -66,13 +67,12 @@ const eximport = (() => {
     finder.search(".ics");
     finder.on("searchComplete", function (needle, filematchcount) {
       if (filematchcount == 0) {
-        helper.toaster("xxx", 2000);
+        //helper.toaster("xxx", 2000);
       }
     });
 
     finder.on("fileFound", function (file, fileinfo, storageName) {
       document.querySelector("div#import-text").style.display = "block";
-      console.log("founded");
       if (fileinfo.name != "greg.ics") {
         document
           .querySelector("div#options div#import-text")
@@ -114,32 +114,61 @@ const eximport = (() => {
 
       let DTend = null;
       let dateEnd = null;
+      let timeEnd = null;
       if (index.getFirstPropertyValue("dtend") != null) {
         DTend = ICAL.design.icalendar.value["date-time"].toICAL(
           index.getFirstPropertyValue("dtend")
         );
 
+        DTend = new Date(index.getFirstPropertyValue("dtend"));
+
         dateEnd =
-          DTend.year +
+          DTend.getFullYear() +
           "-" +
-          `0${DTend.month}`.slice(-2) +
+          `0${DTend.getMonth() + 1}`.slice(-2) +
           "-" +
-          `0${DTend.day}`.slice(-2);
+          `0${DTend.getDate()}`.slice(-2);
+
+        timeEnd =
+          `0${DTend.getHours()}`.slice(-2) +
+          ":" +
+          `0${DTend.getMinutes()}`.slice(-2) +
+          ":" +
+          `0${DTend.getSeconds()}`.slice(-2);
+
+        isoDateTimeEnd = dateEnd + "T" + timeEnd;
+        isoDateTimeEnd = isoDateTimeEnd.replace(/-/g, "");
+        isoDateTimeEnd = isoDateTimeEnd.replace(/:/g, "");
       }
 
       let DTstart = null;
       let dateStart = null;
+      let timeStart = null;
+      let isoDateTimeStart = null;
       if (index.getFirstPropertyValue("dtstart") != null) {
         DTstart = ICAL.design.icalendar.value["date-time"].toICAL(
           index.getFirstPropertyValue("dtstart")
         );
 
+        DTstart = new Date(index.getFirstPropertyValue("dtstart"));
+
         dateStart =
-          DTstart.year +
+          DTstart.getFullYear() +
           "-" +
-          `0${DTstart.month}`.slice(-2) +
+          `0${DTstart.getMonth() + 1}`.slice(-2) +
           "-" +
-          `0${DTstart.day}`.slice(-2);
+          `0${DTstart.getDate()}`.slice(-2);
+
+        timeStart =
+          `0${DTstart.getHours()}`.slice(-2) +
+          ":" +
+          `0${DTstart.getMinutes()}`.slice(-2) +
+          ":" +
+          `0${DTstart.getSeconds()}`.slice(-2);
+
+        isoDateTimeStart = dateStart + "T" + timeStart;
+        isoDateTimeStart = isoDateTimeStart.replace(/-/g, "");
+        isoDateTimeStart = isoDateTimeStart.replace(/:/g, "");
       }
 
       //check multi day events
@@ -153,7 +182,7 @@ const eximport = (() => {
 
       //custom convert
       //todo
-
+      /*
       let t = new Date(index.getFirstPropertyValue("dtstart"));
       let f = new Date(index.getFirstPropertyValue("dtend"));
 
@@ -193,11 +222,15 @@ const eximport = (() => {
         e_minutes +
         e_seconds;
 
+        
+
       let start_time = s_hour + ":" + s_minutes + ":" + s_seconds;
       let end_time = e_hour + ":" + e_minutes + ":" + e_seconds;
-      if (start_time == end_time) {
-        start_time = "";
-        end_time = "";
+
+      */
+      if (timeStart == timeEnd) {
+        timeStart = "";
+        timeEnd = "";
       }
 
       last_uid = "";
@@ -211,14 +244,14 @@ const eximport = (() => {
         DESCRIPTION: index.getFirstPropertyValue("description"),
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
-        DTSTAMP: start_date,
-        DTSTART: start_date,
-        DTEND: end_date,
+        DTSTAMP: isoDateTimeStart,
+        DTSTART: isoDateTimeStart,
+        DTEND: isoDateTimeEnd,
         END: "VEVENT",
         dateStart: dateStart,
         dateEnd: dateEnd,
-        time_start: start_time,
-        time_end: end_time,
+        time_start: timeStart,
+        time_end: timeEnd,
         notification: " ",
         alarm: "none",
         isSubscription: subscription,
