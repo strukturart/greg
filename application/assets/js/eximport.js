@@ -180,54 +180,6 @@ const eximport = (() => {
       //last modified
       let g = new Date(index.getFirstPropertyValue("last-modified")).getTime();
 
-      //custom convert
-      //todo
-      /*
-      let t = new Date(index.getFirstPropertyValue("dtstart"));
-      let f = new Date(index.getFirstPropertyValue("dtend"));
-
-      let s_month = `0${t.getMonth() + 1}`.slice(-2);
-      let s_day = `0${t.getDate()}`.slice(-2);
-      let s_year = t.getFullYear();
-
-      let s_hour = t.getHours() ? t.getHours() : "00";
-      let s_minutes = t.getMinutes() ? t.getMinutes() : "00";
-      let s_seconds = t.getSeconds() ? t.getSeconds() : "00";
-
-      let e_month = `0${f.getMonth() + 1}`.slice(-2);
-      let e_day = `0${f.getDate()}`.slice(-2);
-      let e_year = f.getFullYear();
-
-      let e_hour = f.getHours() ? f.getHours() : "00";
-      let e_minutes = f.getMinutes() ? f.getMinutes() : "00";
-      let e_seconds = f.getSeconds() ? f.getSeconds() : "00";
-
-      let start_date =
-        s_year +
-        s_month +
-        s_day +
-        "T" +
-        s_hour +
-        s_minutes +
-        s_minutes +
-        s_seconds;
-
-      let end_date =
-        e_year +
-        e_month +
-        e_day +
-        "T" +
-        e_hour +
-        e_minutes +
-        e_minutes +
-        e_seconds;
-
-        
-
-      let start_time = s_hour + ":" + s_minutes + ":" + s_seconds;
-      let end_time = e_hour + ":" + e_minutes + ":" + e_seconds;
-
-      */
       if (timeStart == timeEnd) {
         timeStart = "";
         timeEnd = "";

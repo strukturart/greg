@@ -294,8 +294,6 @@ document.addEventListener("DOMContentLoaded", function () {
     let next = currentIndex + move;
     let items = 0;
 
-    console.log(document.activeElement);
-
     if (status.view == "month") {
       let b = document.activeElement.parentNode.parentNode;
       items = b.querySelectorAll(".item");
@@ -303,11 +301,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "list-view") {
       let b = document.activeElement.parentNode;
-      items = b.querySelectorAll(".item");
-      console.log(items.length + "/" + next + "/" + move);
+      items = b.querySelectorAll("div#list-view article");
+    }
+
+    if (status.view == "subscription") {
+      items = document.querySelectorAll("div#subscription-form > div.item");
     }
 
     if (status.view == "add-edit-event" || status.view == "options") {
+      let b = document.activeElement.parentNode;
+      items = b.querySelectorAll(".item");
+
       if (
         document.activeElement.parentNode.classList.contains("input-parent")
       ) {
@@ -316,14 +320,17 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         document.getElementById("add-edit-event").firstElementChild.focus();
       }
-
-      let b = document.activeElement.parentNode;
-      items = b.querySelectorAll(".item");
     }
     let targetElement = 0;
-    targetElement = items[next];
-    targetElement.focus();
-    if (next < items.length) {
+
+    if (next <= items.length) {
+      targetElement = items[next];
+      targetElement.focus();
+    }
+
+    if (next == items.length) {
+      targetElement = items[0];
+      targetElement.focus();
     }
 
     const rect = document.activeElement.getBoundingClientRect();
@@ -801,10 +808,15 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let delete_subscription = function () {
-    let o = document.activeElement.innerText;
-    subscriptions.splice(subscriptions.indexOf(o), 1);
+    let updated_subscriptions = subscriptions.filter(
+      (e) => e.name != document.activeElement.innerText
+    );
+    helper.toaster("subscription deleted", 100);
 
-    localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+    localStorage.setItem(
+      "subscriptions",
+      JSON.stringify(updated_subscriptions)
+    );
 
     document.activeElement.remove();
   };
@@ -953,7 +965,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .insertAdjacentHTML(
           "afterend",
           '<button class="item dynamic" data-function="subscription">' +
-            item +
+            item.name +
             "</button>"
         );
 
@@ -967,7 +979,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let load_subscriptions = function () {
     if (subscriptions.length > 0) {
       if (lp < subscriptions.length) {
-        eximport.fetch_ics(subscriptions[lp], load_subscriptions);
+        eximport.fetch_ics(subscriptions[lp].url, load_subscriptions);
         lp++;
       } else {
         helper.toaster("subscriptions loaded", 5000);
@@ -984,6 +996,24 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   load_subscriptions();
+
+  let store_subscription = function () {
+    if (helper.validate(document.getElementById("cal-subs-url").value)) {
+      subscriptions.push({
+        url: document.getElementById("cal-subs-url").value,
+        name: document.getElementById("cal-subs-name").value,
+      });
+
+      localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+      load_subscriptions();
+
+      document.activeElement.value = "";
+      status.view = "options";
+      router();
+    } else {
+      helper.toaster("url is not valid", 2000);
+    }
+  };
 
   //////////////////////////////
   ////KEYPAD HANDLER////////////
@@ -1051,7 +1081,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (
           status.view == "add-edit-event" ||
           status.view == "list-view" ||
-          status.view == "options"
+          status.view == "options" ||
+          status.view == "subscription"
         ) {
           nav(-1);
         }
@@ -1063,7 +1094,8 @@ document.addEventListener("DOMContentLoaded", function () {
         if (
           status.view == "add-edit-event" ||
           status.view == "list-view" ||
-          status.view == "options"
+          status.view == "options" ||
+          status.view == "subscription"
         ) {
           nav(+1);
         }
@@ -1147,20 +1179,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (status.view == "subscription") {
           //store subscription
-          if (helper.validate(document.activeElement.value)) {
-            subscriptions.push(document.activeElement.value);
-            localStorage.setItem(
-              "subscriptions",
-              JSON.stringify(subscriptions)
-            );
-            load_subscriptions();
-
-            document.activeElement.value = "";
-            status.view = "options";
-            router();
-          } else {
-            helper.toaster("url is not valid", 2000);
-          }
+          store_subscription();
           return true;
         }
 
