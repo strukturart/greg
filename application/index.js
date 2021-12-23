@@ -294,17 +294,20 @@ document.addEventListener("DOMContentLoaded", function () {
     let next = currentIndex + move;
     let items = 0;
 
-    if (status.view == "month") {
-      //items = document.querySelectorAll(".item");
+    console.log(document.activeElement);
 
+    if (status.view == "month") {
       let b = document.activeElement.parentNode.parentNode;
       items = b.querySelectorAll(".item");
     }
-    if (
-      status.view == "add-edit-event" ||
-      status.view == "list-view" ||
-      status.view == "options"
-    ) {
+
+    if (status.view == "list-view") {
+      let b = document.activeElement.parentNode;
+      items = b.querySelectorAll(".item");
+      console.log(items.length + "/" + next + "/" + move);
+    }
+
+    if (status.view == "add-edit-event" || status.view == "options") {
       if (
         document.activeElement.parentNode.classList.contains("input-parent")
       ) {
@@ -318,9 +321,9 @@ document.addEventListener("DOMContentLoaded", function () {
       items = b.querySelectorAll(".item");
     }
     let targetElement = 0;
+    targetElement = items[next];
+    targetElement.focus();
     if (next < items.length) {
-      targetElement = items[next];
-      targetElement.focus();
     }
 
     const rect = document.activeElement.getBoundingClientRect();
@@ -335,7 +338,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (status.view == "month") {
       status.selected_day = targetElement.getAttribute("data-date");
-      console.log(status.selected_day);
       if (status.selected_day != "") event_check_day(status.selected_day);
       return true;
     }
@@ -849,8 +851,16 @@ document.addEventListener("DOMContentLoaded", function () {
       month.style.display = "block";
       helper.bottom_bar("add", "events", "options");
       status.update_event_id == "";
-      showCalendar(currentMonth, currentYear);
+      //showCalendar(currentMonth, currentYear);
       event_check_day(status.selected_day);
+
+      document.querySelectorAll("div.item").forEach(function (item) {
+        console.log(status.selected_day);
+
+        if (item.getAttribute("data-date") == status.selected_day) {
+          item.focus();
+        }
+      });
 
       clear_form();
     }
