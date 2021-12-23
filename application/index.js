@@ -305,12 +305,13 @@ document.addEventListener("DOMContentLoaded", function () {
       status.view == "list-view" ||
       status.view == "options"
     ) {
-      document.getElementById("add-edit-event").firstElementChild.focus();
-
       if (
         document.activeElement.parentNode.classList.contains("input-parent")
       ) {
         document.activeElement.parentNode.focus();
+        return true;
+      } else {
+        document.getElementById("add-edit-event").firstElementChild.focus();
       }
 
       let b = document.activeElement.parentNode;
@@ -344,6 +345,35 @@ document.addEventListener("DOMContentLoaded", function () {
       event_check_day(status.selected_day);
     }
   };
+
+  //after selection
+
+  document
+    .getElementById("event-notification-time")
+    .addEventListener("change", (event) => {
+      console.log("yeah");
+      setTimeout(function () {
+        document
+          .getElementById("event-notification-time")
+          .parentElement.focus();
+      }, 500);
+    });
+
+  document.querySelectorAll('input[type="time"]').forEach(function (item) {
+    item.addEventListener("change", (event) => {
+      setTimeout(function () {
+        item.parentElement.focus();
+      }, 500);
+    });
+  });
+
+  document.querySelectorAll('input[type="date"]').forEach(function (item) {
+    item.addEventListener("change", (event) => {
+      setTimeout(function () {
+        item.parentElement.focus();
+      }, 500);
+    });
+  });
 
   ///////////////
   //STORE EVENTS//
@@ -426,8 +456,9 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     }
   };
-
+  //////////////
   //STORE EVENT
+  ///////////
 
   let convert_ics_date = function (t) {
     let nn = t.replace(/-/g, "");
@@ -523,6 +554,10 @@ document.addEventListener("DOMContentLoaded", function () {
     router();
   };
 
+  //////////////
+  //UPDATE EVENT
+  ///////////
+
   let update_event = function () {
     events.forEach(function (index) {
       let a = new Date(document.getElementById("event-date").value).getTime();
@@ -606,6 +641,10 @@ document.addEventListener("DOMContentLoaded", function () {
     localStorage.setItem("events", JSON.stringify(without_subscription));
     return f;
   };
+
+  //////////////
+  //EDIT EVENT
+  ///////////
 
   let edit_event = function () {
     events.forEach(function (index) {

@@ -418,7 +418,7 @@ div#subscription-form {
   z-index: 5;
   bottom: 15px;
   display: none;
-  height: 100px;
+  height: 150px;
   background: white;
   border-top: 2px solid black;
 }
