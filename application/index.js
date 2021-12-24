@@ -178,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
   //BUILD CALENDAR
   //////////////
 
+  //get weeknumber
   Date.prototype.getWeek = function () {
     var date = new Date(this.getTime());
     date.setHours(0, 0, 0, 0);
@@ -196,6 +197,7 @@ document.addEventListener("DOMContentLoaded", function () {
       )
     );
   };
+
   function showCalendar(month, year) {
     helper.bottom_bar("add", "events", "options");
 
@@ -807,20 +809,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 500);
   };
 
-  let delete_subscription = function () {
-    let updated_subscriptions = subscriptions.filter(
-      (e) => e.name != document.activeElement.innerText
-    );
-    helper.toaster("subscription deleted", 100);
-
-    localStorage.setItem(
-      "subscriptions",
-      JSON.stringify(updated_subscriptions)
-    );
-
-    document.activeElement.remove();
-  };
-
   const pages = document.querySelectorAll(".page");
 
   let router = function (view) {
@@ -863,16 +851,24 @@ document.addEventListener("DOMContentLoaded", function () {
       month.style.display = "block";
       helper.bottom_bar("add", "events", "options");
       status.update_event_id == "";
-      //showCalendar(currentMonth, currentYear);
-      event_check_day(status.selected_day);
 
-      document.querySelectorAll("div.item").forEach(function (item) {
-        console.log(status.selected_day);
+      let t = new Date(status.selected_day);
+      currentMonth = t.getMonth();
+      currentYear = t.getFullYear();
 
-        if (item.getAttribute("data-date") == status.selected_day) {
-          item.focus();
-        }
-      });
+      let k = status.selected_day;
+      showCalendar(currentMonth, currentYear);
+
+      setTimeout(function () {
+        document
+          .querySelectorAll("div#calendar-body div.item")
+          .forEach(function (item) {
+            if (item.getAttribute("data-date") == k) {
+              item.focus();
+              event_check_day(k);
+            }
+          });
+      }, 500);
 
       clear_form();
     }
@@ -992,13 +988,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let callback_scan = function (url) {
     helper.bottom_bar("QR", "save", "cancel");
-    document.querySelector("div#subscription-form input").value = url;
+    document.querySelector("div#subscription-form input#cal-subs-url").value =
+      url;
   };
 
   load_subscriptions();
 
   let store_subscription = function () {
-    if (helper.validate(document.getElementById("cal-subs-url").value)) {
+    if (
+      helper.validate(document.getElementById("cal-subs-url").value) &&
+      document.getElementById("cal-subs-name").value != ""
+    ) {
       subscriptions.push({
         url: document.getElementById("cal-subs-url").value,
         name: document.getElementById("cal-subs-name").value,
@@ -1011,8 +1011,22 @@ document.addEventListener("DOMContentLoaded", function () {
       status.view = "options";
       router();
     } else {
-      helper.toaster("url is not valid", 2000);
+      helper.toaster("Please enter a name and a valid url", 2000);
     }
+  };
+
+  let delete_subscription = function () {
+    let updated_subscriptions = subscriptions.filter(
+      (e) => e.name != document.activeElement.innerText
+    );
+    helper.toaster("subscription deleted", 100);
+
+    localStorage.setItem(
+      "subscriptions",
+      JSON.stringify(updated_subscriptions)
+    );
+
+    document.activeElement.remove();
   };
 
   //////////////////////////////
