@@ -11,6 +11,7 @@ An easy to use calendar for KaiOs
 ![image-1](/images/image-1.png)
 ![image-2](/images/image-2.png)
 ![image-3](/images/image-3.png)
+![image-4](/images/image-3.png)
 
 ## How to use
 
@@ -19,6 +20,7 @@ An easy to use calendar for KaiOs
 - SoftLeft : Toggle views -> month / event-list
 - Key Enter: toggle views
 - Key 2: event slider in month view
+- Key #: toggle moon phase view
 
 ## How to install
 

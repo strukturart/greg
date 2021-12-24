@@ -247,11 +247,12 @@ div#calendar {
 }
 
 div#calendar h3 {
-  margin: 0 0 5px 20px;
+  margin: 0 0 5px 3px;
 }
 
 div#calendar div.calendar-head {
   background: var(--color-five);
+  margin: 0 0 5px 0;
 }
 
 div#calendar div.calendar-head div {
@@ -265,6 +266,7 @@ div#calendar div.calendar-head div:first-child {
 
 div#calendar div.calendar-body {
   padding: 0px;
+  margin: 8px 0 0 0;
 }
 
 div#calendar div#calendar-body div {
@@ -273,6 +275,9 @@ div#calendar div#calendar-body div {
   text-align: center;
   position: relative;
   overflow: hidden;
+}
+
+div#calendar div#calendar-body div.row {
 }
 
 div#calendar div#calendar-body div:focus {
@@ -304,6 +309,62 @@ div#calendar div#calendar-body div div.event {
 
 div#calendar div#calendar-body div div.subscription {
   background: var(--color-eight);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-0 {
+  background-image: url(../image/moon1.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-1 {
+  background-image: url(../image/moon2.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-2 {
+  background-image: url(../image/moon3.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-3 {
+  background-image: url(../image/moon4.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-4 {
+  background-image: url(../image/moon5.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-5 {
+  background-image: url(../image/moon6.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-6 {
+  background-image: url(../image/moon7.svg);
+}
+
+div#calendar div#calendar-body div div div.moon-phase-7 {
+  background-image: url(../image/moon8.svg);
+}
+
+div#calendar div#calendar-body div div div[class^="moon-phase-"] {
+  background-position: center;
+  background-size: 80% 80%;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0%;
+  right: 0%;
+  z-index: 1;
+  background-color: white;
+  display: none;
+}
+
+div#calendar div#calendar-body div div div.active {
+  display: block;
+}
+
+div#calendar div#calendar-body div div.today div.active {
+  display: block;
+  filter: sepia(100%);
 }
 
 span.weeknumber {

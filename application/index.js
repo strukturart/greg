@@ -8,6 +8,11 @@ if (navigator.mozSetMessageHandler) {
   });
 }
 
+//KaiOs 3.0
+self.onsystemmessage = (e) => {
+  console.log(e.data.json()); // The alarm object
+};
+
 let once = false;
 
 let status = {
@@ -218,6 +223,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // creates a table row
       let row = document.createElement("div");
       row.classList.add("flex");
+      row.classList.add("row");
       row.classList.add("width-100");
 
       //creating individual cells, filing them up with data.
@@ -232,6 +238,8 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           let cell = document.createElement("div");
           let span = document.createElement("span");
+          let moon = document.createElement("div");
+
           let cellText = document.createTextNode(date);
           cell.appendChild(cellText);
           cell.appendChild(span);
@@ -247,7 +255,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
           let p = year + "-" + mmonth + "-" + day;
 
+          moon.classList.add("moon-phase-" + getMoonPhase(year, month, date));
+          cell.appendChild(moon);
+
           cell.setAttribute("data-date", p);
+
           cell.setAttribute("data-index", new Date(p).toISOString());
 
           //check if has event
@@ -397,8 +409,9 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   let add_alarm = function (date, message_text, id) {
-    if (navigator.mozAlarms) {
-      let t = false;
+    //KaiOs 3.0
+    /*
+    if (typeof navigator.b2g.alarmManager != "undefined") {
       // This is arbitrary data pass to the alarm
       var data = {
         foo: message_text,
@@ -406,6 +419,29 @@ document.addEventListener("DOMContentLoaded", function () {
       };
 
       // The "honorTimezone" string is what make the alarm honoring it
+
+      var request = navigator.b2g.alarmManager.add(date, "honorTimezone", data);
+
+      request.onsuccess = function () {
+        //console.log(this.result);
+      };
+
+      request.onerror = function () {
+        console.log("An error occurred: " + this.error.name);
+      };
+    }
+    */
+
+    //KaiOs  2.xx
+    if (navigator.mozAlarms) {
+      // This is arbitrary data pass to the alarm
+      var data = {
+        foo: message_text,
+        event_id: id,
+      };
+
+      // The "honorTimezone" string is what make the alarm honoring it
+
       var request = navigator.mozAlarms.add(date, "honorTimezone", data);
 
       request.onsuccess = function () {
@@ -422,6 +458,37 @@ document.addEventListener("DOMContentLoaded", function () {
   //with all events
   //to clean
   let remove_alarm = function (id) {
+    //KaiOs  3.00
+    /*
+    if (typeof navigator.b2g.alarmManager != "undefined") {
+      let request = navigator.b2g.alarmManager.getAll();
+
+      request.onsuccess = function () {
+        this.result.forEach(function (alarm) {
+          if (alarm.data.event_id == id) {
+            let req = navigator.b2g.alarmManager.remove(alarm.id);
+
+            req.onsuccess = function () {
+              console.log("removed");
+            };
+
+            req.onerror = function () {
+              console.log("An error occurred: " + this.error.name);
+            };
+          } else {
+            console.log("no alarm founded");
+          }
+        });
+      };
+
+      request.onerror = function () {
+        console.log("An error occurred:", this.error.name);
+      };
+    }
+    */
+
+    //KaiOs  2.xx
+
     if (navigator.mozAlarms) {
       let request = navigator.mozAlarms.getAll();
 
@@ -536,7 +603,7 @@ document.addEventListener("DOMContentLoaded", function () {
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
       notification: notification_time,
-      alarm: "",
+      alarm: notification_time,
       END: "VEVENT",
       isSubscription: false,
       multidayevent: multidayevent,
@@ -614,8 +681,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     status.update_event_id = "";
-    status.view = "month";
-    router();
 
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
@@ -628,6 +693,8 @@ document.addEventListener("DOMContentLoaded", function () {
     //clean form
     clear_form();
     localStorage.setItem("events", JSON.stringify(without_subscription));
+    status.view = "month";
+    router();
   };
 
   let delete_event = function () {
@@ -1135,7 +1202,14 @@ document.addEventListener("DOMContentLoaded", function () {
         slider_navigation();
         break;
 
-      case "9":
+      case "#":
+        document
+          .querySelectorAll(
+            "div#calendar div#calendar-body div div [class^='moon-phase-']"
+          )
+          .forEach(function (e) {
+            e.classList.toggle("active");
+          });
         break;
 
       case "7":
