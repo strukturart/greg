@@ -9,9 +9,24 @@ if (navigator.mozSetMessageHandler) {
 }
 
 //KaiOs 3.0
-self.onsystemmessage = (e) => {
-  console.log(e.data.json()); // The alarm object
-};
+
+if ("b2g.alarmManager" in navigator) {
+  self.onsystemmessage = (message) => {
+    console.log(e.data.json()); // The alarm object
+    helper.notify("Greg", message.data.foo, false);
+  };
+
+  navigator.serviceWorker.register("index.js").then((registration) => {
+    registration.systemMessageManager.subscribe("alarm").then(
+      (rv) => {
+        console.log('Successfully subscribe system messages of name "alarm".');
+      },
+      (error) => {
+        console.log("Fail to subscribe system message, error: " + error);
+      }
+    );
+  });
+}
 
 let once = false;
 
@@ -410,8 +425,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let add_alarm = function (date, message_text, id) {
     //KaiOs 3.0
-    /*
-    if (typeof navigator.b2g.alarmManager != "undefined") {
+
+    if ("b2g.alarmManager" in navigator) {
       // This is arbitrary data pass to the alarm
       var data = {
         foo: message_text,
@@ -429,8 +444,9 @@ document.addEventListener("DOMContentLoaded", function () {
       request.onerror = function () {
         console.log("An error occurred: " + this.error.name);
       };
+    } else {
+      console.log("API not aviable");
     }
-    */
 
     //KaiOs  2.xx
     if (navigator.mozAlarms) {
@@ -459,8 +475,8 @@ document.addEventListener("DOMContentLoaded", function () {
   //to clean
   let remove_alarm = function (id) {
     //KaiOs  3.00
-    /*
-    if (typeof navigator.b2g.alarmManager != "undefined") {
+
+    if ("b2g.alarmManager" in navigator) {
       let request = navigator.b2g.alarmManager.getAll();
 
       request.onsuccess = function () {
@@ -485,7 +501,6 @@ document.addEventListener("DOMContentLoaded", function () {
         console.log("An error occurred:", this.error.name);
       };
     }
-    */
 
     //KaiOs  2.xx
 
