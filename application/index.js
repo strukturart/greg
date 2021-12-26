@@ -48,7 +48,7 @@ function handleVisibilityChange() {
   } else {
     setTimeout(function () {
       status.visible = true;
-    }, 5000);
+    }, 3000);
   }
 }
 
@@ -384,12 +384,12 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
+  //foram actions
   //after selection
 
   document
     .getElementById("event-notification-time")
     .addEventListener("change", (event) => {
-      console.log("yeah");
       setTimeout(function () {
         document
           .getElementById("event-notification-time")
@@ -658,7 +658,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("event-date-end").value
       ).getTime();
 
-      multidayevent = false;
+      let multidayevent = false;
 
       if (a != b) {
         multidayevent = true;
@@ -712,11 +712,14 @@ document.addEventListener("DOMContentLoaded", function () {
     router();
   };
 
+  //////////////
+  //DELETE EVENT
+  ///////////
+
   let delete_event = function () {
     let f = false;
 
     events = events.filter((person) => person.UID != status.update_event_id);
-    renderHello(events);
     remove_alarm(status.update_event_id);
     f = true;
 
@@ -947,6 +950,9 @@ document.addEventListener("DOMContentLoaded", function () {
           .forEach(function (item) {
             if (item.getAttribute("data-date") == k) {
               item.focus();
+
+              renderHello(events);
+
               event_check_day(k);
             }
           });
