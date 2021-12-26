@@ -38,6 +38,12 @@
         "notification": "/index.html"
       }
     ],
+
+    "serviceworker": {
+      "script_url": "assets/js/service-worker.js"
+    },
+
+
     "permissions": {
       "desktop-notification": {
         "description": "Needed to fire system notifications"

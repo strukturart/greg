@@ -1,33 +1,5 @@
 "use strict";
 
-//alarm notification
-if (navigator.mozSetMessageHandler) {
-  navigator.mozSetMessageHandler("alarm", function (message) {
-    console.log("Alarm fired: " + JSON.stringify(message));
-    helper.notify("Greg", message.data.foo, false);
-  });
-}
-
-//KaiOs 3.0
-
-if ("b2g.alarmManager" in navigator) {
-  self.onsystemmessage = (message) => {
-    console.log(e.data.json()); // The alarm object
-    helper.notify("Greg", message.data.foo, false);
-  };
-
-  navigator.serviceWorker.register("index.js").then((registration) => {
-    registration.systemMessageManager.subscribe("alarm").then(
-      (rv) => {
-        console.log('Successfully subscribe system messages of name "alarm".');
-      },
-      (error) => {
-        console.log("Fail to subscribe system message, error: " + error);
-      }
-    );
-  });
-}
-
 let once = false;
 
 let status = {
@@ -1117,6 +1089,21 @@ document.addEventListener("DOMContentLoaded", function () {
     document.activeElement.remove();
   };
 
+  let set_datetime_form = function () {
+    let d = new Date();
+    let d_h = `0${d.getHours()}`.slice(-2);
+    let d_m = `0${d.getMinutes()}`.slice(-2);
+    let p = d_h + ":" + d_m;
+
+    let d_h_ = `0${d.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d.getMinutes()}`.slice(-2);
+    if (d_h_ > 23) d_h_ = "23";
+    let pp = d_h_ + ":" + d_m_;
+
+    document.getElementById("event-time-start").value = p;
+    document.getElementById("event-time-end").value = pp;
+  };
+
   //////////////////////////////
   ////KEYPAD HANDLER////////////
   //////////////////////////////
@@ -1149,21 +1136,6 @@ document.addEventListener("DOMContentLoaded", function () {
         break;
     }
   }
-
-  let set_datetime_form = function () {
-    let d = new Date();
-    let d_h = `0${d.getHours()}`.slice(-2);
-    let d_m = `0${d.getMinutes()}`.slice(-2);
-    let p = d_h + ":" + d_m;
-
-    let d_h_ = `0${d.getHours() + 1}`.slice(-2);
-    let d_m_ = `0${d.getMinutes()}`.slice(-2);
-    if (d_h_ > 23) d_h_ = "23";
-    let pp = d_h_ + ":" + d_m_;
-
-    document.getElementById("event-time-start").value = p;
-    document.getElementById("event-time-end").value = pp;
-  };
 
   ///////////////
   ////SHORTPRESS

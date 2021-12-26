@@ -100,37 +100,34 @@ const helper = (() => {
     return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
   };
 
+  let notification = "";
   let notify = function (param_title, param_text, param_silent) {
     var options = {
       body: param_text,
       silent: param_silent,
     };
-    // Let's check if the browser supports notifications
-    if (!("Notification" in window)) {
-      alert("This browser does not support desktop notification");
-    }
 
     // Let's check whether notification permissions have already been granted
-    else if (Notification.permission === "granted") {
+    if (Notification.permission === "granted") {
       // If it's okay let's create a notification
-      var notification = new Notification(param_title, options);
+      notification = new Notification(param_title, options);
     }
 
     // Otherwise, we need to ask the user for permission
-    else if (Notification.permission !== "denied") {
+    if (Notification.permission !== "denied") {
       Notification.requestPermission().then(function (permission) {
         // If the user accepts, let's create a notification
         if (permission === "granted") {
-          var notification = new Notification(param_title, options);
+          notification = new Notification(param_title, options);
         }
       });
     }
   };
+
+  //alarm notification
   if (navigator.mozSetMessageHandler) {
     navigator.mozSetMessageHandler("alarm", function (message) {
-      // Note: message has to be set in the manifest file
-      //console.log("Alarm fired: " + JSON.stringify(message));
-      notify("Greg", message.data.foo, false);
+      helper.notify("Greg", message.data.foo, false);
     });
   }
 
