@@ -1,7 +1,3 @@
-self.addEventListener("fetch", function (event) {
-  console.log(event.request);
-});
-
 function showNotification(title, param_text, param_silent) {
   var options = {
     body: param_text,

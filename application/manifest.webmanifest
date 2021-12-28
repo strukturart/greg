@@ -1,6 +1,7 @@
 {
   "name": "greg",
   "description": "greg",
+  "id": "greg",
   "lang": "en-US",
   "start_url": "/index.html",
   "icons": [
@@ -16,7 +17,7 @@
     }
   ],
   "b2g_features": {
-    "version": "0.0.1",
+    "version": "0.0.2",
     "id": "greg",
     "categories": [
       "utilities"

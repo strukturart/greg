@@ -39,6 +39,11 @@
 	],
 
 
+ "serviceworker": {
+      "script_url": "assets/js/service-worker.js"
+    },
+
+
 
 	"permissions": {
 		"desktop-notification": {

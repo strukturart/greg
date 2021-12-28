@@ -1,24 +1,20 @@
 "use strict";
-
-
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function () {
-    navigator.serviceWorker.register("assets/js/service-worker.js").then(
-      function (registration) {
-        // Registration was successful
-        console.log(
-          "ServiceWorker registration successful with scope: ",
-          registration.scope
-        );
-      },
-      function (err) {
-        // registration failed :(
-        console.log("ServiceWorker registration failed: ", err);
-      }
-    );
-  });
+if ("b2g.alarmManager" in navigator) {
+  navigator.serviceWorker
+    .register("assets/js/service-worker.js")
+    .then((registration) => {
+      registration.systemMessageManager.subscribe("alarm").then(
+        (rv) => {
+          console.log(
+            'Successfully subscribe system messages of name "alarm".'
+          );
+        },
+        (error) => {
+          console.log("Fail to subscribe system message, error: " + error);
+        }
+      );
+    });
 }
-
 
 let once = false;
 
@@ -40,7 +36,7 @@ function handleVisibilityChange() {
   } else {
     setTimeout(function () {
       status.visible = true;
-    }, 3000);
+    }, 1000);
   }
 }
 
@@ -364,9 +360,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     if (status.view == "month" || status.view == "list-view") {
-      status.selected_day = targetElement.getAttribute("data-date");
-      status.selected_day_id = targetElement.getAttribute("data-id");
-      if (status.selected_day != "") event_check_day(status.selected_day);
+      if (targetElement.hasAttribute("data-date")) {
+        status.selected_day = targetElement.getAttribute("data-date");
+        status.selected_day_id = targetElement.getAttribute("data-id");
+        if (status.selected_day != "") event_check_day(status.selected_day);
+      }
       return true;
     }
   };
@@ -536,6 +534,86 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     }
   };
+
+  ////////////////////
+  ////BUILD EVENT-LIST
+  ///////////////////
+
+  let sort_array = function (arr, item_key, type) {
+    if (type == "date") {
+      arr.sort((a, b) => {
+        let da = new Date(a[item_key]),
+          db = new Date(b[item_key]);
+        return da - db;
+      });
+    }
+
+    //sort by number
+    if (type == "number") {
+      arr.sort((a, b) => {
+        return b[item_key] - a[item_key];
+      });
+    }
+    //sort by string
+    if (type == "string") {
+      arr.sort((a, b) => {
+        let fa = a[item_key].toLowerCase(),
+          fb = b[item_key].toLowerCase();
+
+        if (fa < fb) {
+          return -1;
+        }
+        if (fa > fb) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+  };
+
+  function renderHello(arr) {
+    sort_array(arr, "dateStart", "date");
+
+    var template = document.getElementById("template").innerHTML;
+    var rendered = Mustache.render(template, {
+      data: arr,
+    });
+    document.getElementById("list-view").innerHTML = rendered;
+    document.getElementById("event-slider").innerHTML = rendered;
+
+    set_tabindex();
+
+    //format date
+    document.querySelectorAll("article").forEach(function (index) {
+      let t = new Date(index.getAttribute("data-date"));
+      let n = new Date(index.getAttribute("data-date-end"));
+
+      let d =
+        weekday[t.getDay()] +
+        ", " +
+        t.getFullYear() +
+        " " +
+        months[t.getMonth()] +
+        " " +
+        t.getDate();
+
+      let m =
+        weekday[n.getDay()] +
+        ", " +
+        n.getFullYear() +
+        " " +
+        months[n.getMonth()] +
+        " " +
+        n.getDate();
+      //to do singel day event or not
+      if (index.classList.contains("multidayevent")) {
+        index.querySelector("div.date").innerText = d + " - " + m;
+      } else {
+        index.querySelector("div.date").innerText = d;
+      }
+    });
+  }
+
   //////////////
   //STORE EVENT
   ///////////
@@ -629,6 +707,8 @@ document.addEventListener("DOMContentLoaded", function () {
     //clean form
     clear_form();
 
+    renderHello(events);
+
     status.view = "month";
     router();
   };
@@ -692,6 +772,8 @@ document.addEventListener("DOMContentLoaded", function () {
     );
     //clean form
     clear_form();
+    renderHello(events);
+
     localStorage.setItem("events", JSON.stringify(without_subscription));
     status.view = "month";
     router();
@@ -720,6 +802,8 @@ document.addEventListener("DOMContentLoaded", function () {
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
     );
+
+    renderHello(events);
 
     return f;
   };
@@ -756,96 +840,22 @@ document.addEventListener("DOMContentLoaded", function () {
   let find_closest_date = function (search_term) {
     let t = 0;
     let search = new Date(search_term).getTime();
+
     for (let i = 0; i < events.length; i++) {
       let item = new Date(events[i].dateStart).getTime();
 
-      if (search > item) {
-        t = events[i].dateStart;
+      console.log(item + " / " + search);
+
+      if (search < item) {
+        t = events[i - 1].dateStart;
+        i = events.length;
       }
     }
+    document
+      .querySelectorAll("div#list-view article[data-date='" + t + "']")[0]
+      .focus();
     return t;
   };
-
-  ////////////////////
-  ////BUILD EVENT-LIST
-  ///////////////////
-
-  let sort_array = function (arr, item_key, type) {
-    if (type == "date") {
-      arr.sort((a, b) => {
-        let da = new Date(a[item_key]),
-          db = new Date(b[item_key]);
-        return da - db;
-      });
-    }
-
-    //sort by number
-    if (type == "number") {
-      arr.sort((a, b) => {
-        return b[item_key] - a[item_key];
-      });
-    }
-    //sort by string
-    if (type == "string") {
-      arr.sort((a, b) => {
-        let fa = a[item_key].toLowerCase(),
-          fb = b[item_key].toLowerCase();
-
-        if (fa < fb) {
-          return -1;
-        }
-        if (fa > fb) {
-          return 1;
-        }
-        return 0;
-      });
-    }
-  };
-
-  function renderHello(arr) {
-    sort_array(arr, "dateStart", "date");
-
-    var template = document.getElementById("template").innerHTML;
-    var rendered = Mustache.render(template, {
-      data: arr,
-    });
-    document.getElementById("list-view").innerHTML = rendered;
-    document.getElementById("event-slider").innerHTML = rendered;
-
-    set_tabindex();
-
-    //format date
-    document.querySelectorAll("article").forEach(function (index) {
-      let t = new Date(index.getAttribute("data-date"));
-      let n = new Date(index.getAttribute("data-date-end"));
-
-      let d =
-        weekday[t.getDay()] +
-        ", " +
-        t.getFullYear() +
-        " " +
-        months[t.getMonth()] +
-        " " +
-        t.getDate();
-
-      let m =
-        weekday[n.getDay()] +
-        ", " +
-        n.getFullYear() +
-        " " +
-        months[n.getMonth()] +
-        " " +
-        n.getDate();
-      //to do singel day event or not
-      if (index.classList.contains("multidayevent")) {
-        index.querySelector("div.date").innerText = d + " - " + m;
-      } else {
-        index.querySelector("div.date").innerText = d;
-      }
-    });
-  }
-  //render events
-  renderHello(events);
 
   //event slider
   let t = new Date();
@@ -895,7 +905,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //add event view
     if (status.view == "add-edit-event") {
-      status.selected_day = document.activeElement.getAttribute("data-date");
+      if (document.activeElement.hasAttribute("data-date"))
+        status.selected_day = document.activeElement.getAttribute("data-date");
       document.getElementById("event-date").value = status.selected_day;
 
       add_edit_event.style.display = "block";
@@ -917,10 +928,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //month view
     if (status.view == "month") {
+      if (document.activeElement.hasAttribute("data-date"))
+        status.selected_day = document.activeElement.getAttribute("data-date");
       options.style.display = "none";
       month.style.display = "block";
       helper.bottom_bar("add", "events", "options");
       status.edit_event = false;
+
       let t = new Date(status.selected_day);
       currentMonth = t.getMonth();
       currentYear = t.getFullYear();
@@ -935,8 +949,6 @@ document.addEventListener("DOMContentLoaded", function () {
             if (item.getAttribute("data-date") == k) {
               item.focus();
 
-              renderHello(events);
-
               event_check_day(k);
             }
           });
@@ -946,6 +958,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     //list view
     if (status.view == "list-view") {
+      if (document.activeElement.hasAttribute("data-date"))
+        status.selected_day = document.activeElement.getAttribute("data-date");
+      console.log(status);
+
       options.style.display = "none";
       status.edit_event = false;
       clear_form();
@@ -953,7 +969,6 @@ document.addEventListener("DOMContentLoaded", function () {
       helper.bottom_bar("edit", "month", "options");
 
       list_view.style.display = "block";
-      renderHello(events);
       setTimeout(function () {
         let articles = document.querySelectorAll("div#list-view article");
         let success = false;
@@ -965,13 +980,8 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
         if (!success) {
-          document
-            .querySelectorAll(
-              "div#list-view article[data-date='" +
-                find_closest_date(status.selected_day) +
-                "']"
-            )[0]
-            .focus();
+          document.querySelectorAll("div#list-view article")[0].focus();
+          find_closest_date(status.selected_day);
         }
         const rect = document.activeElement.getBoundingClientRect();
         const elY =
@@ -984,9 +994,11 @@ document.addEventListener("DOMContentLoaded", function () {
           top: elY - window.innerHeight / 2,
           behavior: "smooth",
         });
-      }, 100);
+      }, 1000);
     }
     if (status.view == "options") {
+      if (document.activeElement.hasAttribute("data-date"))
+        status.selected_day = document.activeElement.getAttribute("data-date");
       if (!once) {
         eximport.list_ics();
         list_subscriptions();
@@ -1056,6 +1068,8 @@ document.addEventListener("DOMContentLoaded", function () {
     jump_to_today();
     renderHello(events);
     event_check_day(document.activeElement.getAttribute("data-date"));
+    if (document.activeElement.hasAttribute("data-date"))
+      status.selected_day = document.activeElement.getAttribute("data-date");
   };
 
   let callback_scan = function (url) {
