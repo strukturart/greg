@@ -39,7 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
   let currentDay = today.getDate();
-
   let monthAndYear = document.getElementById("monthAndYear");
 
   let months = [
@@ -344,15 +343,11 @@ document.addEventListener("DOMContentLoaded", function () {
       behavior: "smooth",
     });
 
-    if (status.view == "month") {
+    if (status.view == "month" || status.view == "list-view") {
       status.selected_day = targetElement.getAttribute("data-date");
+      status.selected_day_id = targetElement.getAttribute("data-id");
       if (status.selected_day != "") event_check_day(status.selected_day);
       return true;
-    }
-
-    if (status.view == "list-view") {
-      status.selected_day = targetElement.getAttribute("data-date");
-      event_check_day(status.selected_day);
     }
   };
 
@@ -503,7 +498,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  let test_alarm = function (id) {
+  let test_alarm = function () {
     if (navigator.mozAlarms) {
       var request = navigator.mozAlarms.getAll();
 
@@ -561,7 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
       "event-notification-time"
     ).value;
 
-    var calc_notification = new Date(convert_dt_start);
+    let calc_notification = new Date(convert_dt_start);
     calc_notification.setMinutes(
       calc_notification.getMinutes() - notification_time
     );
@@ -589,7 +584,6 @@ document.addEventListener("DOMContentLoaded", function () {
       dateEnd: document.getElementById("event-date-end").value,
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
-      notification: notification_time,
       alarm: notification_time,
       END: "VEVENT",
       isSubscription: false,
@@ -636,7 +630,7 @@ document.addEventListener("DOMContentLoaded", function () {
         multidayevent = true;
       }
 
-      if (index.UID == status.update_event_id) {
+      if (index.UID == status.selected_day_id) {
         let start_time = "00:00:00";
         if (document.getElementById("event-time-start").value != "") {
           start_time = document.getElementById("event-time-start").value;
@@ -664,10 +658,9 @@ document.addEventListener("DOMContentLoaded", function () {
         index.time_end = document.getElementById("event-time-end").value;
         index.isSubscription = false;
         index.multidayevent = multidayevent;
+        index.alarm = document.getElementById("event-notification-time").value;
       }
     });
-
-    status.update_event_id = "";
 
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
@@ -691,22 +684,23 @@ document.addEventListener("DOMContentLoaded", function () {
   let delete_event = function () {
     let f = false;
 
-    events = events.filter((person) => person.UID != status.update_event_id);
-    remove_alarm(status.update_event_id);
+    events = events.filter((person) => person.UID != status.selected_day_id);
+    remove_alarm(status.selected_day_id);
     f = true;
 
-    status.update_event_id = "";
+    status.edit_event = false;
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
     );
+
+    clear_form();
+    localStorage.setItem("events", JSON.stringify(without_subscription));
 
     eximport.export_ical(
       "greg.ics",
       JSON.parse(localStorage.getItem("events"))
     );
-    //clean form
-    clear_form();
-    localStorage.setItem("events", JSON.stringify(without_subscription));
+
     return f;
   };
 
@@ -716,7 +710,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let edit_event = function () {
     events.forEach(function (index) {
-      if (index.UID == status.update_event_id) {
+      if (index.UID == status.selected_day_id) {
         document.getElementById("event-title").value = index.SUMMARY;
         document.getElementById("event-date").value = index.dateStart;
         document.getElementById("event-date-end").value = index.dateEnd;
@@ -724,8 +718,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("event-time-end").value = index.time_end;
         document.getElementById("event-description").value = index.DESCRIPTION;
         document.getElementById("event-location").value = index.LOCATION;
-        document.querySelector("#event-notification-time").value =
-          index.notification;
+        document.querySelector("#event-notification-time").value = index.alarm;
       }
     });
   };
@@ -894,10 +887,10 @@ document.addEventListener("DOMContentLoaded", function () {
           document.getElementById("event-date").value;
       }
 
-      if (status.update_event_id != "") {
+      if (status.edit_event) {
         document.getElementById("save-event").innerText = "update";
       }
-      if (status.update_event_id == "") {
+      if (!status.edit_event) {
         document.getElementById("save-event").innerText = "save";
       }
       return true;
@@ -907,8 +900,7 @@ document.addEventListener("DOMContentLoaded", function () {
       options.style.display = "none";
       month.style.display = "block";
       helper.bottom_bar("add", "events", "options");
-      status.update_event_id == "";
-
+      status.edit_event = false;
       let t = new Date(status.selected_day);
       currentMonth = t.getMonth();
       currentYear = t.getFullYear();
@@ -935,7 +927,7 @@ document.addEventListener("DOMContentLoaded", function () {
     //list view
     if (status.view == "list-view") {
       options.style.display = "none";
-
+      status.edit_event = false;
       clear_form();
 
       helper.bottom_bar("edit", "month", "options");
@@ -1007,7 +999,7 @@ document.addEventListener("DOMContentLoaded", function () {
   //callback import event
   let import_event = function (id, date) {
     status.selected_day = date;
-    status.update_event_id = id;
+    status.selected_day_id = id;
     helper.bottom_bar("edit", "", "");
 
     renderHello(events);
@@ -1130,7 +1122,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
       case "ArrowLeft":
         if (status.view == "list-view") {
+          //to do
           delete_event();
+          document.activeElement.previousElementSibling.focus();
+
+          renderHello(events);
         }
 
         break;
@@ -1182,6 +1178,7 @@ document.addEventListener("DOMContentLoaded", function () {
       case "ArrowLeft":
         if (status.view != "month") return true;
         nav(-1);
+
         break;
 
       case "1":
@@ -1222,8 +1219,10 @@ document.addEventListener("DOMContentLoaded", function () {
             return false;
           }
 
-          status.update_event_id =
+          status.selected_day_id =
             document.activeElement.getAttribute("data-id");
+
+          status.edit_event = true;
 
           edit_event();
           status.view = "add-edit-event";
@@ -1266,7 +1265,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (document.activeElement.id == "export-event") {
           events.forEach(function (index) {
-            if (index.UID == status.update_event_id) {
+            if (index.UID == status.selected_day_id) {
               export_data.push(index);
             }
           });
@@ -1285,8 +1284,9 @@ document.addEventListener("DOMContentLoaded", function () {
           return true;
         }
 
+        //same button with different text and action
         if (document.activeElement.id == "save-event") {
-          if (status.update_event_id != "") {
+          if (status.edit_event) {
             update_event();
           } else {
             store_event();
