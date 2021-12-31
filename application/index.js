@@ -116,10 +116,14 @@ document.addEventListener("DOMContentLoaded", function () {
     let k = document.querySelector("div#event-slider-indicator div");
     k.innerHTML = "";
 
+    var elements = document.querySelectorAll("div#event-slider article");
+    for (var i = 0; i < elements.length; i++) {
+      elements[i].style.display = "none";
+    }
+
     document
       .querySelectorAll("div#event-slider article")
       .forEach(function (item) {
-        item.style.display = "none";
         let a = new Date(item.getAttribute("data-date")).getTime();
         let b = new Date(item.getAttribute("data-date-end")).getTime();
         let c = new Date(date).getTime();
@@ -572,6 +576,7 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   function renderHello(arr) {
+    document.getElementById("event-slider").style.opacity = 0;
     sort_array(arr, "dateStart", "date");
 
     var template = document.getElementById("template").innerHTML;
@@ -580,6 +585,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
     document.getElementById("list-view").innerHTML = rendered;
     document.getElementById("event-slider").innerHTML = rendered;
+    document.getElementById("event-slider").style.opacity = 100;
 
     set_tabindex();
 
@@ -654,10 +660,15 @@ document.addEventListener("DOMContentLoaded", function () {
       "event-notification-time"
     ).value;
 
-    let calc_notification = new Date(convert_dt_start);
-    calc_notification.setMinutes(
-      calc_notification.getMinutes() - notification_time
-    );
+    let calc_notification;
+    if (notification_time != "none") {
+      calc_notification = new Date(convert_dt_start);
+      calc_notification.setMinutes(
+        calc_notification.getMinutes() - notification_time
+      );
+
+      notification_time = convert_ics_date(calc_notification.toISOString());
+    }
 
     let multidayevent = false;
 
@@ -669,7 +680,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     let event = {
-      BEGIN: "VEVENT",
       UID: helper.uid(),
       SUMMARY: document.getElementById("event-title").value,
       LOCATION: document.getElementById("event-location").value,
@@ -682,13 +692,17 @@ document.addEventListener("DOMContentLoaded", function () {
       dateEnd: document.getElementById("event-date-end").value,
       time_start: document.getElementById("event-time-start").value,
       time_end: document.getElementById("event-time-end").value,
-      alarm: notification_time,
-      END: "VEVENT",
+      alarm: document.getElementById("event-notification-time").value,
+      alarmTrigger: notification_time,
       isSubscription: false,
       multidayevent: multidayevent,
     };
 
     if (event.alarm != "none") {
+      event.BEGIN = "VALARM";
+      event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
+      event.ACTION = "AUDIO";
+      event.END = "VALARM";
       add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
 
@@ -747,6 +761,21 @@ document.addEventListener("DOMContentLoaded", function () {
         let convert_dt_end =
           document.getElementById("event-date").value + " " + end_time;
 
+        //notification before event
+        let notification_time = document.getElementById(
+          "event-notification-time"
+        ).value;
+
+        let calc_notification;
+        if (notification_time != "none") {
+          calc_notification = new Date(convert_dt_start);
+          calc_notification.setMinutes(
+            calc_notification.getMinutes() - notification_time
+          );
+
+          notification_time = convert_ics_date(calc_notification.toISOString());
+        }
+
         index.SUMMARY = document.getElementById("event-title").value;
         index.DESCRIPTION = document.getElementById("event-description").value;
         index.LOCATION = document.getElementById("event-location").value;
@@ -759,6 +788,16 @@ document.addEventListener("DOMContentLoaded", function () {
         index.isSubscription = false;
         index.multidayevent = multidayevent;
         index.alarm = document.getElementById("event-notification-time").value;
+        index.alarmTrigger = notification_time;
+
+        if (index.alarm != "none") {
+          remove_alarm(index.UID);
+          index.BEGIN = "VALARM";
+          index["TRIGGER;VALUE=DATE-TIME:"] = notification_time;
+          index.ACTION = "AUDIO";
+          index.END = "VALARM";
+          add_alarm(calc_notification, index.SUMMARY, index.UID);
+        }
       }
     });
 
@@ -942,17 +981,15 @@ document.addEventListener("DOMContentLoaded", function () {
       let k = status.selected_day;
       showCalendar(currentMonth, currentYear);
 
-      setTimeout(function () {
-        document
-          .querySelectorAll("div#calendar-body div.item")
-          .forEach(function (item) {
-            if (item.getAttribute("data-date") == k) {
-              item.focus();
+      document
+        .querySelectorAll("div#calendar-body div.item")
+        .forEach(function (item) {
+          if (item.getAttribute("data-date") == k) {
+            item.focus();
 
-              event_check_day(k);
-            }
-          });
-      }, 500);
+            event_check_day(k);
+          }
+        });
 
       clear_form();
     }

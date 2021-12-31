@@ -9,32 +9,40 @@ const eximport = (() => {
       //convert
       let data = event_data;
 
-      let ll = {
-        BEGIN: "VCALENDAR",
-        VERSION: "2.0",
-        PRODID: "Greg",
-        METHOD: "PUBLISH",
-      };
-
-      data.unshift(ll);
-
       let result = "";
 
+      result += "BEGIN:VCALENDAR" + "\r\n";
+      result += "VERSION:2.0" + "\r\n";
+      result += "PROID:GREG" + "\r\n";
+      result += "METHOD:PUBLISHED" + "\r\n";
+
       data.forEach((e) => {
+        let index = -1;
         for (let key in e) {
+          index++;
+          if (index == 0) result += "BEGIN:VEVENT" + "\r\n";
+
           if (
+            key != "BEGIN" &&
+            key != "END" &&
             key != "date" &&
             key != "time_start" &&
             key != "time_end" &&
+            key != "dateStart" &&
+            key != "dateEnd" &&
             key != "notification" &&
             key != "alarm" &&
             key != "isSubscription" &&
-            key != "multidayevent"
+            key != "multidayevent" &&
+            key != "alarmTrigger"
           ) {
             result += `${key}:${e[key]}` + "\r\n";
           }
+          if (index == Object.keys(e).length - 1)
+            result += "END:VEVENT" + "\r\n";
         }
       });
+
       result += "END:VCALENDAR" + "\r\n";
 
       var file = new Blob([result], {
