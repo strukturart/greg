@@ -5,12 +5,10 @@ if ("b2g.alarmManager" in navigator) {
     .then((registration) => {
       registration.systemMessageManager.subscribe("alarm").then(
         (rv) => {
-          console.log(
-            'Successfully subscribe system messages of name "alarm".'
-          );
+          alert('Successfully subscribe system messages of name "alarm".');
         },
         (error) => {
-          console.log("Fail to subscribe system message, error: " + error);
+          alert("Fail to subscribe system message, error: " + error);
         }
       );
     });
