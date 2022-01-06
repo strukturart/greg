@@ -5,10 +5,12 @@ if ("b2g.alarmManager" in navigator) {
     .then((registration) => {
       registration.systemMessageManager.subscribe("alarm").then(
         (rv) => {
-          alert('Successfully subscribe system messages of name "alarm".');
+          console.log(
+            'Successfully subscribe system messages of name "alarm".'
+          );
         },
         (error) => {
-          alert("Fail to subscribe system message, error: " + error);
+          console.log("Fail to subscribe system message, error: " + error);
         }
       );
     });
@@ -38,15 +40,25 @@ function handleVisibilityChange() {
   }
 }
 
-let events;
-
+let events = "";
+/*
 if (localStorage.getItem("events") != null) {
   events = JSON.parse(localStorage.getItem("events"));
 } else {
   events = [];
 }
+*/
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function (e) {
+  console.log(e);
+
+  localforage.getItem("events", function (err, value) {
+    // Run this code once the value has been
+    // loaded from the offline store.
+    events = value;
+    console.log(events[0]);
+  });
+
   handleVisibilityChange();
 
   let today = new Date();
@@ -74,6 +86,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   //check if has event
   let event_check = function (date) {
+    console.log(events);
+    if (events.length == 0) return false;
     let feedback = {
       event: false,
       subscription: false,
@@ -711,6 +725,17 @@ document.addEventListener("DOMContentLoaded", function () {
     );
 
     localStorage.setItem("events", JSON.stringify(without_subscription));
+
+    localforage
+      .setItem("events", without_subscription)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+        console.log(value);
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
 
     eximport.export_ical(
       "greg.ics",
