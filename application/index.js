@@ -1,4 +1,345 @@
 "use strict";
+
+let months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+let events = [];
+let today = new Date();
+let currentMonth = today.getMonth();
+let currentYear = today.getFullYear();
+let currentDay = today.getDate();
+let monthAndYear = document.getElementById("monthAndYear");
+
+//check if has event
+let event_check = function (date) {
+  let feedback = {
+    event: false,
+    subscription: false,
+    multidayevent: false,
+  };
+
+  for (let t = 0; t < events.length; t++) {
+    //multi day event
+
+    let a = new Date(events[t].dateStart).getTime();
+    let b = new Date(events[t].dateEnd).getTime();
+    let c = new Date(date).getTime();
+
+    if (a === c || b === c || (a < c && b > c)) {
+      feedback.event = true;
+      if (events[t].isSubscription === true) {
+        feedback.subscription = true;
+      }
+
+      if (events[t].multidayevent === true) {
+        feedback.multidayevent = true;
+      }
+      t = events.length;
+    }
+  }
+  return feedback;
+};
+
+//////////////////
+//event slider
+///////////
+
+let slider = [];
+let slider_index = 0;
+
+let event_check_day = function (date) {
+  slider = [];
+  let k = document.querySelector("div#event-slider-indicator div");
+  k.innerHTML = "";
+
+  var elements = document.querySelectorAll("div#event-slider article");
+  for (var i = 0; i < elements.length; i++) {
+    elements[i].style.display = "none";
+  }
+
+  document
+    .querySelectorAll("div#event-slider article")
+    .forEach(function (item) {
+      let a = new Date(item.getAttribute("data-date")).getTime();
+      let b = new Date(item.getAttribute("data-date-end")).getTime();
+      let c = new Date(date).getTime();
+
+      if (a === c || b === c || (a < c && b > c)) {
+        slider.push(item);
+        slider[0].style.display = "block";
+
+        k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+
+        if (slider.length > 1) {
+          k.style.opacity = 100;
+        } else {
+          k.style.opacity = 0;
+        }
+      }
+    });
+};
+let slider_navigation = function () {
+  let p = document.querySelectorAll("div#event-slider-indicator div div");
+  if (slider_index == slider.length - 1) {
+    slider_index = -1;
+  }
+  slider_index++;
+  slider.forEach(function (item) {
+    item.style.display = "none";
+  });
+  slider[slider_index].style.display = "block";
+  p.forEach(function (item) {
+    item.classList.remove("active");
+  });
+  p[slider_index].classList.add("active");
+};
+
+////
+//JUMP TO TODAY
+////
+
+let jump_to_today = function () {
+  let currentMonth = today.getMonth();
+  let currentYear = today.getFullYear();
+  showCalendar(currentMonth, currentYear);
+
+  status.selected_day = document.activeElement.getAttribute("data-date");
+  event_check_day(status.selected_day);
+};
+
+function next() {
+  currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+  currentMonth = (currentMonth + 1) % 12;
+  showCalendar(currentMonth, currentYear);
+  event_check_day(status.selected_day);
+}
+
+function previous() {
+  currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  showCalendar(currentMonth, currentYear);
+  event_check_day(status.selected_day);
+}
+
+//////////////
+//BUILD CALENDAR
+//////////////
+
+//get weeknumber
+Date.prototype.getWeek = function () {
+  var date = new Date(this.getTime());
+  date.setHours(0, 0, 0, 0);
+  // Thursday in current week decides the year.
+  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+  // January 4 is always in week 1.
+  var week1 = new Date(date.getFullYear(), 0, 4);
+  // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+  return (
+    1 +
+    Math.round(
+      ((date.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getDay() + 6) % 7)) /
+        7
+    )
+  );
+};
+
+let showCalendar = function (month, year) {
+  helper.bottom_bar("add", "events", "options");
+
+  let firstDay = new Date(year, month).getDay();
+  let daysInMonth = 32 - new Date(year, month, 32).getDate();
+
+  let tbl = document.getElementById("calendar-body");
+
+  // clearing all previous cells
+  tbl.innerHTML = "";
+
+  // filing data about month and in the page via DOM.
+  monthAndYear.innerHTML = months[month] + " " + year;
+
+  // creating all cells
+  let date = 1;
+  for (let i = 0; i < 5; i++) {
+    // creates a table row
+    let row = document.createElement("div");
+    row.classList.add("flex");
+    row.classList.add("row");
+    row.classList.add("width-100");
+
+    //creating individual cells, filing them up with data.
+    for (let j = 0; j < 7; j++) {
+      if (i === 0 && j < firstDay) {
+        let cell = document.createElement("div");
+        let cellText = document.createTextNode("");
+        cell.appendChild(cellText);
+        row.appendChild(cell);
+      } else if (date > daysInMonth) {
+        break;
+      } else {
+        let cell = document.createElement("div");
+        let span = document.createElement("span");
+        let moon = document.createElement("div");
+
+        let cellText = document.createTextNode(date);
+        cell.appendChild(cellText);
+        cell.appendChild(span);
+
+        //set tabindex
+        cell.setAttribute("tabindex", date - 1);
+
+        //store date with leading 0
+        //because input type date
+        //accept only day month with leading zero
+        let mmonth = `0${month + 1}`.slice(-2);
+        let day = `0${date}`.slice(-2);
+
+        let p = year + "-" + mmonth + "-" + day;
+
+        moon.classList.add("moon-phase-" + getMoonPhase(year, month, date));
+        cell.appendChild(moon);
+
+        cell.setAttribute("data-date", p);
+
+        cell.setAttribute("data-index", new Date(p).toISOString());
+
+        //check if has event
+        if (event_check(p).event) {
+          cell.classList.add("event");
+        }
+        //check if has event + subscription
+        if (event_check(p).subscription == true) {
+          cell.classList.add("subscription");
+        }
+
+        cell.classList.add("item");
+        row.appendChild(cell);
+
+        date++;
+      }
+    }
+    //add weeknumbers
+    let week = document.createElement("span");
+    week.classList.add("weeknumber");
+
+    let weekText = document.createTextNode(
+      new Date(year, month, date).getWeek()
+    );
+
+    week.appendChild(weekText);
+    row.appendChild(week);
+    //add row
+    tbl.appendChild(row);
+  }
+
+  document.querySelectorAll(".item")[0].focus();
+  status.selected_day = document.activeElement.getAttribute("data-date");
+  //highlight current day
+  if (today.getMonth() == month && today.getFullYear() == year) {
+    document.querySelectorAll(".item")[currentDay - 1].focus();
+    document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
+  }
+};
+
+let set_tabindex = function () {
+  document.querySelectorAll("div#list-view article").forEach(function (i, p) {
+    i.setAttribute("tabindex", p);
+  });
+};
+
+let sort_array = function (arr, item_key, type) {
+  if (type == "date") {
+    arr.sort((a, b) => {
+      let da = new Date(a[item_key]),
+        db = new Date(b[item_key]);
+      return da - db;
+    });
+  }
+
+  //sort by number
+  if (type == "number") {
+    arr.sort((a, b) => {
+      return b[item_key] - a[item_key];
+    });
+  }
+  //sort by string
+  if (type == "string") {
+    arr.sort((a, b) => {
+      let fa = a[item_key].toLowerCase(),
+        fb = b[item_key].toLowerCase();
+
+      if (fa < fb) {
+        return -1;
+      }
+      if (fa > fb) {
+        return 1;
+      }
+      return 0;
+    });
+  }
+};
+
+function renderHello(arr) {
+  if (arr == null) return false;
+  document.getElementById("event-slider").style.opacity = 0;
+  sort_array(arr, "dateStart", "date");
+
+  var template = document.getElementById("template").innerHTML;
+  var rendered = Mustache.render(template, {
+    data: arr,
+  });
+  document.getElementById("list-view").innerHTML = rendered;
+  document.getElementById("event-slider").innerHTML = rendered;
+  document.getElementById("event-slider").style.opacity = 100;
+
+  set_tabindex();
+
+  //format date
+  document.querySelectorAll("article").forEach(function (index) {
+    let t = new Date(index.getAttribute("data-date"));
+    let n = new Date(index.getAttribute("data-date-end"));
+
+    let d =
+      weekday[t.getDay()] +
+      ", " +
+      t.getFullYear() +
+      " " +
+      months[t.getMonth()] +
+      " " +
+      t.getDate();
+
+    let m =
+      weekday[n.getDay()] +
+      ", " +
+      n.getFullYear() +
+      " " +
+      months[n.getMonth()] +
+      " " +
+      n.getDate();
+    //to do singel day event or not
+    if (index.classList.contains("multidayevent")) {
+      index.querySelector("div.date").innerText = d + " - " + m;
+    } else {
+      index.querySelector("div.date").innerText = d;
+    }
+  });
+}
+
 if ("b2g.alarmManager" in navigator) {
   navigator.serviceWorker
     .register("assets/js/service-worker.js")
@@ -15,6 +356,19 @@ if ("b2g.alarmManager" in navigator) {
       );
     });
 }
+
+localforage.config({
+  driver: localforage.INDEXEDDB,
+});
+
+localforage.getItem("events", function (err, value) {
+  // Run this code once the value has been
+  // loaded from the offline store.
+  console.log(err );
+  events = value;
+  renderHello(events);
+  jump_to_today();
+});
 
 let once = false;
 
@@ -40,283 +394,9 @@ function handleVisibilityChange() {
   }
 }
 
-let events = "";
-/*
-if (localStorage.getItem("events") != null) {
-  events = JSON.parse(localStorage.getItem("events"));
-} else {
-  events = [];
-}
-*/
-
 document.addEventListener("DOMContentLoaded", function (e) {
-  console.log(e);
-
-  localforage.getItem("events", function (err, value) {
-    // Run this code once the value has been
-    // loaded from the offline store.
-    events = value;
-    console.log(events[0]);
-  });
-
   handleVisibilityChange();
 
-  let today = new Date();
-  let currentMonth = today.getMonth();
-  let currentYear = today.getFullYear();
-  let currentDay = today.getDate();
-  let monthAndYear = document.getElementById("monthAndYear");
-
-  let months = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-
-  let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  //check if has event
-  let event_check = function (date) {
-    console.log(events);
-    if (events.length == 0) return false;
-    let feedback = {
-      event: false,
-      subscription: false,
-      multidayevent: false,
-    };
-
-    for (let t = 0; t < events.length; t++) {
-      //multi day event
-
-      let a = new Date(events[t].dateStart).getTime();
-      let b = new Date(events[t].dateEnd).getTime();
-      let c = new Date(date).getTime();
-
-      if (a === c || b === c || (a < c && b > c)) {
-        feedback.event = true;
-        if (events[t].isSubscription === true) {
-          feedback.subscription = true;
-        }
-
-        if (events[t].multidayevent === true) {
-          feedback.multidayevent = true;
-        }
-        t = events.length;
-      }
-    }
-    return feedback;
-  };
-
-  //////////////////
-  //event slider
-  ///////////
-
-  let slider = [];
-  let slider_index = 0;
-
-  let event_check_day = function (date) {
-    slider = [];
-    let k = document.querySelector("div#event-slider-indicator div");
-    k.innerHTML = "";
-
-    var elements = document.querySelectorAll("div#event-slider article");
-    for (var i = 0; i < elements.length; i++) {
-      elements[i].style.display = "none";
-    }
-
-    document
-      .querySelectorAll("div#event-slider article")
-      .forEach(function (item) {
-        let a = new Date(item.getAttribute("data-date")).getTime();
-        let b = new Date(item.getAttribute("data-date-end")).getTime();
-        let c = new Date(date).getTime();
-
-        if (a === c || b === c || (a < c && b > c)) {
-          slider.push(item);
-          slider[0].style.display = "block";
-
-          k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-
-          if (slider.length > 1) {
-            k.style.opacity = 100;
-          } else {
-            k.style.opacity = 0;
-          }
-        }
-      });
-  };
-  let slider_navigation = function () {
-    let p = document.querySelectorAll("div#event-slider-indicator div div");
-    if (slider_index == slider.length - 1) {
-      slider_index = -1;
-    }
-    slider_index++;
-    slider.forEach(function (item) {
-      item.style.display = "none";
-    });
-    slider[slider_index].style.display = "block";
-    p.forEach(function (item) {
-      item.classList.remove("active");
-    });
-    p[slider_index].classList.add("active");
-  };
-
-  ////
-  //JUMP TO TODAY
-  ////
-
-  let jump_to_today = function () {
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
-    showCalendar(currentMonth, currentYear);
-
-    status.selected_day = document.activeElement.getAttribute("data-date");
-    event_check_day(status.selected_day);
-  };
-
-  function next() {
-    currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-    currentMonth = (currentMonth + 1) % 12;
-    showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
-  }
-
-  function previous() {
-    currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-    currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-    showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
-  }
-
-  //////////////
-  //BUILD CALENDAR
-  //////////////
-
-  //get weeknumber
-  Date.prototype.getWeek = function () {
-    var date = new Date(this.getTime());
-    date.setHours(0, 0, 0, 0);
-    // Thursday in current week decides the year.
-    date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-    // January 4 is always in week 1.
-    var week1 = new Date(date.getFullYear(), 0, 4);
-    // Adjust to Thursday in week 1 and count number of weeks from date to week1.
-    return (
-      1 +
-      Math.round(
-        ((date.getTime() - week1.getTime()) / 86400000 -
-          3 +
-          ((week1.getDay() + 6) % 7)) /
-          7
-      )
-    );
-  };
-
-  function showCalendar(month, year) {
-    helper.bottom_bar("add", "events", "options");
-
-    let firstDay = new Date(year, month).getDay();
-    let daysInMonth = 32 - new Date(year, month, 32).getDate();
-
-    let tbl = document.getElementById("calendar-body");
-
-    // clearing all previous cells
-    tbl.innerHTML = "";
-
-    // filing data about month and in the page via DOM.
-    monthAndYear.innerHTML = months[month] + " " + year;
-
-    // creating all cells
-    let date = 1;
-    for (let i = 0; i < 5; i++) {
-      // creates a table row
-      let row = document.createElement("div");
-      row.classList.add("flex");
-      row.classList.add("row");
-      row.classList.add("width-100");
-
-      //creating individual cells, filing them up with data.
-      for (let j = 0; j < 7; j++) {
-        if (i === 0 && j < firstDay) {
-          let cell = document.createElement("div");
-          let cellText = document.createTextNode("");
-          cell.appendChild(cellText);
-          row.appendChild(cell);
-        } else if (date > daysInMonth) {
-          break;
-        } else {
-          let cell = document.createElement("div");
-          let span = document.createElement("span");
-          let moon = document.createElement("div");
-
-          let cellText = document.createTextNode(date);
-          cell.appendChild(cellText);
-          cell.appendChild(span);
-
-          //set tabindex
-          cell.setAttribute("tabindex", date - 1);
-
-          //store date with leading 0
-          //because input type date
-          //accept only day month with leading zero
-          let mmonth = `0${month + 1}`.slice(-2);
-          let day = `0${date}`.slice(-2);
-
-          let p = year + "-" + mmonth + "-" + day;
-
-          moon.classList.add("moon-phase-" + getMoonPhase(year, month, date));
-          cell.appendChild(moon);
-
-          cell.setAttribute("data-date", p);
-
-          cell.setAttribute("data-index", new Date(p).toISOString());
-
-          //check if has event
-          if (event_check(p).event) {
-            cell.classList.add("event");
-          }
-          //check if has event + subscription
-          if (event_check(p).subscription == true) {
-            cell.classList.add("subscription");
-          }
-
-          cell.classList.add("item");
-          row.appendChild(cell);
-
-          date++;
-        }
-      }
-      //add weeknumbers
-      let week = document.createElement("span");
-      week.classList.add("weeknumber");
-
-      let weekText = document.createTextNode(
-        new Date(year, month, date).getWeek()
-      );
-
-      week.appendChild(weekText);
-      row.appendChild(week);
-      //add row
-      tbl.appendChild(row);
-    }
-
-    document.querySelectorAll(".item")[0].focus();
-    status.selected_day = document.activeElement.getAttribute("data-date");
-    //highlight current day
-    if (today.getMonth() == month && today.getFullYear() == year) {
-      document.querySelectorAll(".item")[currentDay - 1].focus();
-      document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
-    }
-  }
   /////////////////
   ///NAVIGATION
   /////////////////
@@ -555,83 +635,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
   ////BUILD EVENT-LIST
   ///////////////////
 
-  let sort_array = function (arr, item_key, type) {
-    if (type == "date") {
-      arr.sort((a, b) => {
-        let da = new Date(a[item_key]),
-          db = new Date(b[item_key]);
-        return da - db;
-      });
-    }
-
-    //sort by number
-    if (type == "number") {
-      arr.sort((a, b) => {
-        return b[item_key] - a[item_key];
-      });
-    }
-    //sort by string
-    if (type == "string") {
-      arr.sort((a, b) => {
-        let fa = a[item_key].toLowerCase(),
-          fb = b[item_key].toLowerCase();
-
-        if (fa < fb) {
-          return -1;
-        }
-        if (fa > fb) {
-          return 1;
-        }
-        return 0;
-      });
-    }
-  };
-
-  function renderHello(arr) {
-    document.getElementById("event-slider").style.opacity = 0;
-    sort_array(arr, "dateStart", "date");
-
-    var template = document.getElementById("template").innerHTML;
-    var rendered = Mustache.render(template, {
-      data: arr,
-    });
-    document.getElementById("list-view").innerHTML = rendered;
-    document.getElementById("event-slider").innerHTML = rendered;
-    document.getElementById("event-slider").style.opacity = 100;
-
-    set_tabindex();
-
-    //format date
-    document.querySelectorAll("article").forEach(function (index) {
-      let t = new Date(index.getAttribute("data-date"));
-      let n = new Date(index.getAttribute("data-date-end"));
-
-      let d =
-        weekday[t.getDay()] +
-        ", " +
-        t.getFullYear() +
-        " " +
-        months[t.getMonth()] +
-        " " +
-        t.getDate();
-
-      let m =
-        weekday[n.getDay()] +
-        ", " +
-        n.getFullYear() +
-        " " +
-        months[n.getMonth()] +
-        " " +
-        n.getDate();
-      //to do singel day event or not
-      if (index.classList.contains("multidayevent")) {
-        index.querySelector("div.date").innerText = d + " - " + m;
-      } else {
-        index.querySelector("div.date").innerText = d;
-      }
-    });
-  }
-
   //////////////
   //STORE EVENT
   ///////////
@@ -724,27 +727,34 @@ document.addEventListener("DOMContentLoaded", function (e) {
       (events) => events.isSubscription === false
     );
 
-    localStorage.setItem("events", JSON.stringify(without_subscription));
+    //localStorage.setItem("events", JSON.stringify(without_subscription));
 
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
         // Do other things once the value has been saved.
-        console.log(value);
+
+        localforage
+          .setItem("events", without_subscription)
+          .then(function (value) {
+            // Do other things once the value has been saved.
+
+            console.log("saved: " + value);
+            //clean form
+            clear_form();
+            renderHello(events);
+
+            eximport.export_ical("greg.ics", value);
+          })
+          .catch(function (err) {
+            // This code runs if there were any errors
+            console.log(err);
+          });
       })
       .catch(function (err) {
         // This code runs if there were any errors
         console.log(err);
       });
-
-    eximport.export_ical(
-      "greg.ics",
-      JSON.parse(localStorage.getItem("events"))
-    );
-    //clean form
-    clear_form();
-
-    renderHello(events);
 
     status.view = "month";
     router();
@@ -828,15 +838,24 @@ document.addEventListener("DOMContentLoaded", function (e) {
       (events) => events.isSubscription === false
     );
 
-    eximport.export_ical(
-      "greg.ics",
-      JSON.parse(localStorage.getItem("events"))
-    );
-    //clean form
-    clear_form();
-    renderHello(events);
+    //localStorage.setItem("events", JSON.stringify(without_subscription));
 
-    localStorage.setItem("events", JSON.stringify(without_subscription));
+    localforage
+      .setItem("events", without_subscription)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+
+        console.log("saved: " + value);
+        //clean form
+        clear_form();
+        renderHello(events);
+
+        eximport.export_ical("greg.ics", value);
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
     status.view = "month";
     router();
   };
@@ -858,14 +877,21 @@ document.addEventListener("DOMContentLoaded", function (e) {
     );
 
     clear_form();
-    localStorage.setItem("events", JSON.stringify(without_subscription));
+    //localStorage.setItem("events", JSON.stringify(without_subscription));
 
-    eximport.export_ical(
-      "greg.ics",
-      JSON.parse(localStorage.getItem("events"))
-    );
+    localforage
+      .setItem("events", without_subscription)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+        console.log("saved: " + value);
+        renderHello(events);
 
-    renderHello(events);
+        eximport.export_ical("greg.ics", value);
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
 
     return f;
   };
@@ -889,12 +915,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
     });
   };
 
-  let set_tabindex = function () {
-    document.querySelectorAll("div#list-view article").forEach(function (i, p) {
-      i.setAttribute("tabindex", p);
-    });
-  };
-
   //////////
   //finde closest event to selected date in list view
   //////////
@@ -905,8 +925,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
     for (let i = 0; i < events.length; i++) {
       let item = new Date(events[i].dateStart).getTime();
-
-      console.log(item + " / " + search);
 
       if (search < item) {
         t = events[i - 1].dateStart;
