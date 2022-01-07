@@ -33,6 +33,7 @@ let status = {
 };
 
 let events = [];
+let subscriptions = [];
 
 //check if has event
 let event_check = function (date) {
@@ -315,7 +316,6 @@ function renderHello(arr) {
     } else {
       index.querySelector("div.date").innerText = d;
     }
-    console.log(status.selected_day);
     event_check_day(document.activeElement.getAttribute("data-date"));
   });
 }
@@ -337,37 +337,123 @@ if ("b2g.alarmManager" in navigator) {
     });
 }
 
+let list_subscriptions = function () {
+  if (subscriptions == null) return false;
+  subscriptions.forEach(function (item) {
+    document
+      .querySelector("div#options div#subscription-text")
+      .insertAdjacentHTML(
+        "afterend",
+        '<button class="item dynamic" data-function="subscription">' +
+          item.name +
+          "</button>"
+      );
+
+    document.querySelectorAll("div#options button").forEach(function (i, p) {
+      i.setAttribute("tabindex", p);
+    });
+  });
+};
+
+let lp = 0;
+let load_subscriptions = function () {
+  if (subscriptions.length > 0) {
+    if (lp < subscriptions.length) {
+      eximport.fetch_ics(subscriptions[lp].url, load_subscriptions);
+      lp++;
+    } else {
+      helper.toaster("subscriptions loaded", 15000);
+    }
+  }
+  jump_to_today();
+
+  console.log(events);
+  renderHello(events);
+
+  event_check_day(document.activeElement.getAttribute("data-date"));
+  if (document.activeElement.hasAttribute("data-date"))
+    status.selected_day = document.activeElement.getAttribute("data-date");
+};
+
+let callback_scan = function (url) {
+  helper.bottom_bar("QR", "save", "cancel");
+  document.querySelector("div#subscription-form input#cal-subs-url").value =
+    url;
+};
+
+let store_subscription = function () {
+  if (
+    helper.validate(document.getElementById("cal-subs-url").value) &&
+    document.getElementById("cal-subs-name").value != ""
+  ) {
+    subscriptions.push({
+      url: document.getElementById("cal-subs-url").value,
+      name: document.getElementById("cal-subs-name").value,
+    });
+
+    localforage
+      .setItem("subscriptions", subscriptions)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+        console.log("saved: " + value);
+        document.activeElement.value = "";
+        status.view = "options";
+        router();
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
+    //load_subscriptions();
+  } else {
+    helper.toaster("Please enter a name and a valid url", 2000);
+  }
+};
+
+let delete_subscription = function () {
+  let updated_subscriptions = subscriptions.filter(
+    (e) => e.name != document.activeElement.innerText
+  );
+
+  localforage
+    .setItem("subscriptions", updated_subscriptions)
+    .then(function (value) {
+      // Do other things once the value has been saved.
+      console.log("saved: " + value);
+      helper.toaster("subscription deleted", 100);
+      status.view = "month";
+      router();
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      console.log(err);
+    });
+
+  document.activeElement.remove();
+};
+
 localforage.config({
   driver: localforage.INDEXEDDB,
 });
 
-console.log(events);
-
 localforage
   .getItem("events")
   .then(function (value) {
-    // This code runs once the value has been loaded
-    // from the offline store.
-    //events = value;
     if (value != null) events = value;
     renderHello(events);
     jump_to_today();
   })
   .catch(function (err) {
-    // This code runs if there were any errors
-    console.log(err);
     jump_to_today();
   });
-
-let subscriptions = [];
 
 localforage
   .getItem("subscriptions")
   .then(function (value) {
-    // Do other things once the value has been saved.
-
-    console.log("saved: " + value);
     if (value != null) subscriptions = value;
+    setTimeout(function () {
+      load_subscriptions();
+    }, 1000);
   })
   .catch(function (err) {
     // This code runs if there were any errors
@@ -711,8 +797,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
       add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
 
-    console.log(events);
-
     events.push(event);
 
     let without_subscription = events.filter(
@@ -722,8 +806,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        // Do other things once the value has been saved.
-
         console.log("saved: " + value);
         //clean form
         clear_form();
@@ -731,10 +813,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
         eximport.export_ical("greg.ics", value);
       })
-      .catch(function (err) {
-        // This code runs if there were any errors
-        console.log(err);
-      });
+      .catch(function (err) {});
 
     status.view = "month";
     router();
@@ -1090,101 +1169,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
     renderHello(events);
     helper.toaster("events imported", 2000);
-  };
-
-  let list_subscriptions = function () {
-    if (subscriptions == null) return false;
-    subscriptions.forEach(function (item) {
-      document
-        .querySelector("div#options div#subscription-text")
-        .insertAdjacentHTML(
-          "afterend",
-          '<button class="item dynamic" data-function="subscription">' +
-            item.name +
-            "</button>"
-        );
-
-      document.querySelectorAll("div#options button").forEach(function (i, p) {
-        i.setAttribute("tabindex", p);
-      });
-    });
-  };
-
-  let lp = 0;
-  let load_subscriptions = function () {
-    if (subscriptions.length > 0) {
-      if (lp < subscriptions.length) {
-        eximport.fetch_ics(subscriptions[lp].url, load_subscriptions);
-        lp++;
-      } else {
-        helper.toaster("subscriptions loaded", 5000);
-      }
-    }
-    jump_to_today();
-    renderHello(events);
-    event_check_day(document.activeElement.getAttribute("data-date"));
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-  };
-
-  let callback_scan = function (url) {
-    helper.bottom_bar("QR", "save", "cancel");
-    document.querySelector("div#subscription-form input#cal-subs-url").value =
-      url;
-  };
-
-  load_subscriptions();
-
-  let store_subscription = function () {
-    if (
-      helper.validate(document.getElementById("cal-subs-url").value) &&
-      document.getElementById("cal-subs-name").value != ""
-    ) {
-      subscriptions.push({
-        url: document.getElementById("cal-subs-url").value,
-        name: document.getElementById("cal-subs-name").value,
-      });
-
-      //localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
-
-      localforage
-        .setItem("subscriptions", subscriptions)
-        .then(function (value) {
-          // Do other things once the value has been saved.
-          console.log("saved: " + value);
-        })
-        .catch(function (err) {
-          // This code runs if there were any errors
-          console.log(err);
-        });
-      load_subscriptions();
-
-      document.activeElement.value = "";
-      status.view = "options";
-      router();
-    } else {
-      helper.toaster("Please enter a name and a valid url", 2000);
-    }
-  };
-
-  let delete_subscription = function () {
-    let updated_subscriptions = subscriptions.filter(
-      (e) => e.name != document.activeElement.innerText
-    );
-
-    localforage
-      .setItem("subscriptions", updated_subscriptions)
-      .then(function (value) {
-        // Do other things once the value has been saved.
-        console.log("saved: " + value);
-        helper.toaster("subscription deleted", 100);
-      })
-      .catch(function (err) {
-        // This code runs if there were any errors
-        console.log(err);
-      });
-
-    document.activeElement.remove();
   };
 
   let set_datetime_form = function () {

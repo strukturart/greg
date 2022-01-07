@@ -75,7 +75,6 @@ const eximport = (() => {
     finder.search(".ics");
     finder.on("searchComplete", function (needle, filematchcount) {
       if (filematchcount == 0) {
-        //helper.toaster("xxx", 2000);
       }
     });
 
@@ -233,8 +232,7 @@ const eximport = (() => {
         .setItem("events", without_subscription)
         .then(function (value) {
           // Do other things once the value has been saved.
-
-          console.log("saved: " + value);
+          events = value;
         })
         .catch(function (err) {
           // This code runs if there were any errors
