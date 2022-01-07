@@ -229,7 +229,17 @@ const eximport = (() => {
         (events) => events.isSubscription === false
       );
 
-      localStorage.setItem("events", JSON.stringify(without_subscription));
+      localforage
+        .setItem("events", without_subscription)
+        .then(function (value) {
+          // Do other things once the value has been saved.
+
+          console.log("saved: " + value);
+        })
+        .catch(function (err) {
+          // This code runs if there were any errors
+          console.log(err);
+        });
     }
   };
 

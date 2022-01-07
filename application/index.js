@@ -17,12 +17,22 @@ let months = [
 
 let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-let events = [];
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
 let monthAndYear = document.getElementById("monthAndYear");
+
+let once = false;
+
+let status = {
+  view: "month",
+  selected_day: "",
+  visible: false,
+  update_event_id: "",
+};
+
+let events = [];
 
 //check if has event
 let event_check = function (date) {
@@ -262,42 +272,10 @@ let set_tabindex = function () {
   });
 };
 
-let sort_array = function (arr, item_key, type) {
-  if (type == "date") {
-    arr.sort((a, b) => {
-      let da = new Date(a[item_key]),
-        db = new Date(b[item_key]);
-      return da - db;
-    });
-  }
-
-  //sort by number
-  if (type == "number") {
-    arr.sort((a, b) => {
-      return b[item_key] - a[item_key];
-    });
-  }
-  //sort by string
-  if (type == "string") {
-    arr.sort((a, b) => {
-      let fa = a[item_key].toLowerCase(),
-        fb = b[item_key].toLowerCase();
-
-      if (fa < fb) {
-        return -1;
-      }
-      if (fa > fb) {
-        return 1;
-      }
-      return 0;
-    });
-  }
-};
-
 function renderHello(arr) {
   if (arr == null) return false;
   document.getElementById("event-slider").style.opacity = 0;
-  sort_array(arr, "dateStart", "date");
+  helper.sort_array(arr, "dateStart", "date");
 
   var template = document.getElementById("template").innerHTML;
   var rendered = Mustache.render(template, {
@@ -337,6 +315,8 @@ function renderHello(arr) {
     } else {
       index.querySelector("div.date").innerText = d;
     }
+    console.log(status.selected_day);
+    event_check_day(document.activeElement.getAttribute("data-date"));
   });
 }
 
@@ -361,28 +341,38 @@ localforage.config({
   driver: localforage.INDEXEDDB,
 });
 
-localforage.getItem("events", function (err, value) {
-  // Run this code once the value has been
-  // loaded from the offline store.
-  console.log(err );
-  events = value;
-  renderHello(events);
-  jump_to_today();
-});
+console.log(events);
 
-let once = false;
+localforage
+  .getItem("events")
+  .then(function (value) {
+    // This code runs once the value has been loaded
+    // from the offline store.
+    //events = value;
+    if (value != null) events = value;
+    renderHello(events);
+    jump_to_today();
+  })
+  .catch(function (err) {
+    // This code runs if there were any errors
+    console.log(err);
+    jump_to_today();
+  });
 
-let status = {
-  view: "month",
-  selected_day: "",
-  visible: false,
-  update_event_id: "",
-};
+let subscriptions = [];
 
-let subscriptions =
-  localStorage.getItem("subscriptions") != null
-    ? JSON.parse(localStorage.getItem("subscriptions"))
-    : [];
+localforage
+  .getItem("subscriptions")
+  .then(function (value) {
+    // Do other things once the value has been saved.
+
+    console.log("saved: " + value);
+    if (value != null) subscriptions = value;
+  })
+  .catch(function (err) {
+    // This code runs if there were any errors
+    console.log(err);
+  });
 
 function handleVisibilityChange() {
   if (document.visibilityState === "hidden") {
@@ -721,35 +711,25 @@ document.addEventListener("DOMContentLoaded", function (e) {
       add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
 
+    console.log(events);
+
     events.push(event);
 
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
     );
 
-    //localStorage.setItem("events", JSON.stringify(without_subscription));
-
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
         // Do other things once the value has been saved.
 
-        localforage
-          .setItem("events", without_subscription)
-          .then(function (value) {
-            // Do other things once the value has been saved.
+        console.log("saved: " + value);
+        //clean form
+        clear_form();
+        renderHello(events);
 
-            console.log("saved: " + value);
-            //clean form
-            clear_form();
-            renderHello(events);
-
-            eximport.export_ical("greg.ics", value);
-          })
-          .catch(function (err) {
-            // This code runs if there were any errors
-            console.log(err);
-          });
+        eximport.export_ical("greg.ics", value);
       })
       .catch(function (err) {
         // This code runs if there were any errors
@@ -838,26 +818,22 @@ document.addEventListener("DOMContentLoaded", function (e) {
       (events) => events.isSubscription === false
     );
 
-    //localStorage.setItem("events", JSON.stringify(without_subscription));
-
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        // Do other things once the value has been saved.
-
         console.log("saved: " + value);
         //clean form
         clear_form();
         renderHello(events);
 
         eximport.export_ical("greg.ics", value);
+        status.view = "month";
+        router();
       })
       .catch(function (err) {
         // This code runs if there were any errors
         console.log(err);
       });
-    status.view = "month";
-    router();
   };
 
   //////////////
@@ -1117,6 +1093,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
   };
 
   let list_subscriptions = function () {
+    if (subscriptions == null) return false;
     subscriptions.forEach(function (item) {
       document
         .querySelector("div#options div#subscription-text")
@@ -1168,7 +1145,18 @@ document.addEventListener("DOMContentLoaded", function (e) {
         name: document.getElementById("cal-subs-name").value,
       });
 
-      localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+      //localStorage.setItem("subscriptions", JSON.stringify(subscriptions));
+
+      localforage
+        .setItem("subscriptions", subscriptions)
+        .then(function (value) {
+          // Do other things once the value has been saved.
+          console.log("saved: " + value);
+        })
+        .catch(function (err) {
+          // This code runs if there were any errors
+          console.log(err);
+        });
       load_subscriptions();
 
       document.activeElement.value = "";
@@ -1183,12 +1171,18 @@ document.addEventListener("DOMContentLoaded", function (e) {
     let updated_subscriptions = subscriptions.filter(
       (e) => e.name != document.activeElement.innerText
     );
-    helper.toaster("subscription deleted", 100);
 
-    localStorage.setItem(
-      "subscriptions",
-      JSON.stringify(updated_subscriptions)
-    );
+    localforage
+      .setItem("subscriptions", updated_subscriptions)
+      .then(function (value) {
+        // Do other things once the value has been saved.
+        console.log("saved: " + value);
+        helper.toaster("subscription deleted", 100);
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
 
     document.activeElement.remove();
   };
@@ -1419,10 +1413,17 @@ document.addEventListener("DOMContentLoaded", function (e) {
           if (
             document.activeElement.getAttribute("data-function") == "export"
           ) {
-            eximport.export_ical(
-              "greg.ics",
-              JSON.parse(localStorage.getItem("events"))
-            );
+            localforage
+              .getItem("events")
+              .then(function (value) {
+                console.log("saved: " + value);
+
+                eximport.export_ical("greg.ics", value);
+              })
+              .catch(function (err) {
+                // This code runs if there were any errors
+                console.log(err);
+              });
           }
 
           if (
