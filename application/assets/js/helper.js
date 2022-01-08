@@ -336,6 +336,27 @@ const helper = (() => {
       }, 3000);
     }
   };
+  //pick image
+  let pick_image = function (cb) {
+    var activity = new MozActivity({
+      name: "pick",
+      data: {
+       type: ["image/png", "image/jpg", "image/jpeg"]
+   }
+      
+    });
+
+    activity.onsuccess = function () {
+      console.log("Activity successfuly handled");
+
+      let p = this.result.blob;
+      cb(p);
+    };
+
+    activity.onerror = function () {
+      console.log("The activity encouter en error: " + this.error);
+    };
+  };
 
   //delete file
   function deleteFile(storage, path, notification) {
@@ -373,5 +394,6 @@ const helper = (() => {
     notify,
     uid,
     sort_array,
+    pick_image,
   };
 })();
