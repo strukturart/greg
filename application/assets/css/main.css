@@ -277,8 +277,6 @@ div#calendar div#calendar-body div {
   overflow: hidden;
 }
 
-div#calendar div#calendar-body div.row {
-}
 
 div#calendar div#calendar-body div:focus {
   background: none;
@@ -483,6 +481,17 @@ div#subscription-form {
   background: white;
   border-top: 2px solid black;
 }
+
+
+div#form-image-wrapper{
+  width:100%;
+  padding:5px;
+}
+
+div#form-image-wrapper img#form-image{
+  min-width:100%;
+}
+
 
 /*/////////////////
 ///BOTTOM BAR////
@@ -726,14 +735,7 @@ div#settings input:focus {
   display: none;
 }
 
-.overscrolling {
-  /* Start the shake animation and make the animation last for 0.5 seconds */
-  animation: jump 0.5s;
 
-  /* When the animation is finished, start again */
-
-  animation-iteration-count: 1;
-}
 
 @keyframes jump {
   0% {

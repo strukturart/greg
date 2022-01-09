@@ -92,6 +92,38 @@ function write_file(data, filename) {
 }
 
 const helper = (() => {
+  let sort_array = function (arr, item_key, type) {
+    if (type == "date") {
+      arr.sort((a, b) => {
+        let da = new Date(a[item_key]),
+          db = new Date(b[item_key]);
+        return da - db;
+      });
+    }
+
+    //sort by number
+    if (type == "number") {
+      arr.sort((a, b) => {
+        return b[item_key] - a[item_key];
+      });
+    }
+    //sort by string
+    if (type == "string") {
+      arr.sort((a, b) => {
+        let fa = a[item_key].toLowerCase(),
+          fb = b[item_key].toLowerCase();
+
+        if (fa < fb) {
+          return -1;
+        }
+        if (fa > fb) {
+          return 1;
+        }
+        return 0;
+      });
+    }
+  };
+
   let uid = function () {
     function _p8(s) {
       var p = (Math.random().toString(16) + "000000000").substr(2, 8);
@@ -304,6 +336,27 @@ const helper = (() => {
       }, 3000);
     }
   };
+  //pick image
+  let pick_image = function (cb) {
+    var activity = new MozActivity({
+      name: "pick",
+      data: {
+       type: ["image/png", "image/jpg", "image/jpeg"]
+   }
+      
+    });
+
+    activity.onsuccess = function () {
+      console.log("Activity successfuly handled");
+
+      let p = this.result.blob;
+      cb(p);
+    };
+
+    activity.onerror = function () {
+      console.log("The activity encouter en error: " + this.error);
+    };
+  };
 
   //delete file
   function deleteFile(storage, path, notification) {
@@ -340,5 +393,7 @@ const helper = (() => {
     bottom_bar,
     notify,
     uid,
+    sort_array,
+    pick_image,
   };
 })();
