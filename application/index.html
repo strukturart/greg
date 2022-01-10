@@ -57,7 +57,6 @@
                 </div>
 
                 <div id="calendar-body">
-
                 </div>
                 <div id="event-slider">
 
@@ -69,20 +68,21 @@
 
             </div>
             <div id="settings" class="page">
+         
             </div>
 
             <div id="add-edit-event" class="page width-100">
-                <div class="item input-parent" tabindex="0">
+                <div class="item input-parent">
                     <label for="event-title"><strong>Title</strong></label>
                     <input placeholder="" type="text" id="event-title" />
                 </div>
 
-                <div class="item input-parent" tabindex="1">
+                <div class="item input-parent">
                     <label for="event-location"><strong>Location</strong></label>
                     <input placeholder="" type="text" id="event-location" />
                 </div>
 
-                <div class="item input-parent" tabindex="2">
+                <div class="item input-parent">
                     <label for="date"><strong>Start Date</strong></label>
                     <input placeholder="YYYY-MM-DD" type="date" id="event-date" />
                 </div>
@@ -107,7 +107,7 @@
                     <input placeholder="" type="text" id="event-description">
                 </div>
 
-                <div class="item input-parent" tabindex="7">
+                <div class="item input-parent" id="event-notification-time-wrapper" tabindex="7">
                     <label for="notification"><strong>Notification before the event</strong></label>
                     <select id="event-notification-time">
                         <option value="none">none</option>
@@ -119,7 +119,7 @@
                 </div>
 
                 <button class="item" tabindex="8" id="select-image">add image</button>
-                <div tabindex="9" class="item" id="form-image-wrapper">
+                <div  class="" id="form-image-wrapper">
                     <img id="form-image" data-blob="" src="">
                 </div>
 
@@ -133,7 +133,8 @@
             <script id="template" type="x-tmpl-mustache">
 
             {{#data}}
-            <article data-id={{UID}} data-date={{dateStart}} data-date-end={{dateEnd}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}}">
+            <article data-id={{UID}} data-date={{dateStart}} data-date-end={{dateEnd}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}}  {{#alarmTrigger}}alarm{{/alarmTrigger}}">
+               <div class="icons-bar flex">{{#alarmTrigger}}<img class="bell" src="assets/image/bell.svg">{{/alarmTrigger}}{{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
                 <div class="date"></div>
                 <div class="time">
                     {{time_start}}
@@ -160,10 +161,21 @@
             </div>
 
             <div id="options" class="width-100">
-                <button class="item" data-function="export" tabindex="0">export all events</button>
-                <div id="import-text">The following events can be imported</div>
-                <button class="item" data-function="add-subscription" tabindex="1">add subscription</button>
+                <div class="item input-parent" tabindex="0">
+                    <label for="default-notification"><strong>default Notification</strong></label>
+                    <select id="default-notification-time">
+                        <option value="none">none</option>
+                        <option value="5">5 Minutes</option>
+                        <option value="10">10 Minutes</option>
+                        <option value="30">30 Minutes</option>
+                        <option value="1440">1 Day</option>
+                    </select>
+                </div>
+                <button class="item" data-function="export" tabindex="1">export all events</button>
+               
+                <button class="item" data-function="add-subscription" tabindex="2">add subscription</button>
                 <div id="subscription-text">Subscriptions</div>
+                <div id="import-text">The following events can be imported</div>
 
             </div>
 
@@ -217,7 +229,6 @@
 
 
 <script src="assets/js/localforage.js"></script>
-
 <script src="assets/js/getMoonPhase.js"></script>
 <script src="assets/js/jsQR.js"></script>
 <script src="assets/js/helper.js"></script>

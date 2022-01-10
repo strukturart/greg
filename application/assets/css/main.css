@@ -94,9 +94,11 @@ button {
   font-size: 1rem;
   background: silver;
   padding: 5px;
-  width: 100vw;
-  margin: 0 0 5px 0;
+  width: 90vw;
+
+  margin: 0 0 15px 5vw;
   color: black;
+  border-radius: 10px;
 }
 
 button:focus {
@@ -104,13 +106,27 @@ button:focus {
   color: white;
 }
 
-button#save-event {
-  margin: 30px 0 5px 0;
-}
-
 select {
-  width: 90%;
+  width: 80vw;
   padding: 10px;
+  margin: 10px 10vw 0px 10vw;
+
+  /* styling */
+  background-color: white;
+  border: thin solid rgb(56, 56, 66);
+  border-radius: 4px;
+  font: inherit;
+  line-height: 1.5em;
+  padding: 0.5em 3.5em 0.5em 1em;
+  text-align: center;
+
+  /* reset */
+
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 textarea {
@@ -131,9 +147,11 @@ label {
   display: block;
   width: 100%;
   margin: 0 0 10px 0;
+  text-align: center;
 }
 .input-parent {
   padding: 5px;
+  margin: 0 0 20px 0;
 }
 div#intro {
   position: fixed;
@@ -277,7 +295,6 @@ div#calendar div#calendar-body div {
   overflow: hidden;
 }
 
-
 div#calendar div#calendar-body div:focus {
   background: none;
 }
@@ -382,6 +399,31 @@ div#add-edit-event {
   overflow: hidden;
 }
 
+div#add-edit-event .item {
+  margin: 0;
+}
+div#add-edit-event .item input {
+  margin: 0 5vw 0 5vw;
+}
+
+div#add-edit-event button.item {
+  margin: 0 5vw 10px 5vw;
+}
+
+div#form-image-wrapper {
+  margin: 0 0 10px 0;
+}
+
+#event-notification-time-wrapper {
+  padding: 0 0 20px 0;
+  margin: 20px 0 30px 0 !important;
+  position: relative;
+}
+
+#form-image-wrapper {
+  background: none;
+}
+
 div#list-view {
   position: absolute;
   z-index: 4;
@@ -396,9 +438,19 @@ div#list-view article {
   margin: 0 0 15px 0;
 }
 
+div#list-view div.icons-bar {
+  width: 50px;
+  margin: 5px 0;
+}
+
+div#list-view div.icons-bar img {
+  width: 15px;
+  height: auto;
+}
+
 div#event-slider {
   position: relative;
-  margin: 20px 0 0 0;
+  margin: 15px 0 0 0;
   height: 70px;
 }
 div#event-slider div.description {
@@ -408,6 +460,18 @@ div#event-slider div.description {
 div#event-slider div.date {
   opacity: 0;
   height: 0px;
+}
+
+div#event-slider div.icons-bar {
+  position: absolute;
+  left: 90%;
+  width: 50px;
+  margin: 5px 0;
+}
+
+div#event-slider div.icons-bar img {
+  width: 15px;
+  height: auto;
 }
 
 div#event-slider-indicator div div {
@@ -482,16 +546,14 @@ div#subscription-form {
   border-top: 2px solid black;
 }
 
-
-div#form-image-wrapper{
-  width:100%;
-  padding:5px;
+div#form-image-wrapper {
+  width: 100%;
+  padding: 5px;
 }
 
-div#form-image-wrapper img#form-image{
-  min-width:100%;
+div#form-image-wrapper img#form-image {
+  min-width: 100%;
 }
-
 
 /*/////////////////
 ///BOTTOM BAR////
@@ -734,8 +796,6 @@ div#settings input:focus {
   text-align: center;
   display: none;
 }
-
-
 
 @keyframes jump {
   0% {
