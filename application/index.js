@@ -69,13 +69,15 @@ let event_check = function (date) {
   };
 
   for (let t = 0; t < events.length; t++) {
+    feedback.event = false;
+    feedback.subscription = false;
+    feedback.multidayevent = false;
     // multi day event
-
     let a = new Date(events[t].dateStart).getTime();
     let b = new Date(events[t].dateEnd).getTime();
     let c = new Date(date).getTime();
 
-    if (a === c || b === c || (a < c && b > c)) {
+    if (a === c || b === c || (a < c && b > c && events[t].rrule_ == "none")) {
       feedback.event = true;
       if (events[t].isSubscription === true) {
         feedback.subscription = true;
@@ -86,7 +88,32 @@ let event_check = function (date) {
       }
       t = events.length;
     }
+
+    //recurrences
+    if (typeof events[t] === "object")
+      if (events[t].hasOwnProperty("rrule_")) {
+        if (
+          events[t].rrule_ == "DAILY" &&
+          new Date(events[t].dateStart).getTime() <= new Date(date).getTime() &&
+          new Date(date).getTime() <= new Date(events[t].dateEnd).getTime()
+        ) {
+          feedback.event = true;
+        }
+
+        if (
+          events[t].rrule_ == "WEEKLY" &&
+          new Date(events[t].dateStart).getTime() <= new Date(date).getTime() &&
+          new Date(date).getTime() <= new Date(events[t].dateEnd).getTime()
+        ) {
+          if (
+            new Date(events[t].dateStart).getDay() === new Date(date).getDay()
+          ) {
+            feedback.event = true;
+          }
+        }
+      }
   }
+
   return feedback;
 };
 
@@ -144,11 +171,9 @@ let slider_navigation = function () {
   p[slider_index].classList.add("active");
 };
 
-// //
-
+////
 // JUMP TO TODAY
-
-// //
+////
 
 let jump_to_today = function () {
   let currentMonth = today.getMonth();
@@ -173,9 +198,9 @@ function previous() {
   event_check_day(status.selected_day);
 }
 
-// ////////////
-// BUILD CALENDAR
-// ////////////
+//////////////
+//BUILD CALENDAR
+//////////////
 
 // get weeknumber
 Date.prototype.getWeek = function () {
@@ -245,9 +270,7 @@ let showCalendar = function (month, year) {
         cell.setAttribute("tabindex", date - 1);
 
         // store date with leading 0
-
         // because input type date
-
         // accept only day month with leading zero
         let mmonth = `0${month + 1}`.slice(-2);
         let day = `0${date}`.slice(-2);
@@ -289,7 +312,7 @@ let showCalendar = function (month, year) {
     week.appendChild(weekText);
     row.appendChild(week);
 
-    // add row
+    //add row
     tbl.appendChild(row);
   }
 
@@ -322,7 +345,7 @@ function renderHello(arr) {
   set_tabindex();
   event_check_day(document.activeElement.getAttribute("data-date"));
 
-  // format date
+  //format date
   document.querySelectorAll("article").forEach(function (index) {
     let t = new Date(index.getAttribute("data-date"));
     let n = new Date(index.getAttribute("data-date-end"));
@@ -638,7 +661,7 @@ let delete_subscription = function () {
   localforage
     .setItem("subscriptions", updated_subscriptions)
     .then(function (value) {
-      // Do other things once the value has been saved.
+      //Do other things once the value has been saved.
       console.log("saved: " + value);
       helper.toaster("subscription deleted", 100);
       status.view = "month";
@@ -706,11 +729,11 @@ function handleVisibilityChange() {
 document.addEventListener("DOMContentLoaded", function (e) {
   handleVisibilityChange();
 
-  // ///////////////
+  console.log(events);
 
-  // /NAVIGATION
-
-  // ///////////////
+  /////////////////
+  ///NAVIGATION
+  /////////////////
 
   let nav = function (move) {
     const currentIndex = document.activeElement.tabIndex;
@@ -1039,6 +1062,8 @@ document.addEventListener("DOMContentLoaded", function (e) {
       DTSTAMP: convert_ics_date(convert_dt_start),
       DTSTART: convert_ics_date(convert_dt_start),
       DTEND: convert_ics_date(convert_dt_end),
+      RRULE: "RRULE FREQ=" + document.getElementById("event-recur").value,
+      rrule_: document.getElementById("event-recur").value,
       dateStart: document.getElementById("event-date").value,
       dateEnd: document.getElementById("event-date-end").value,
       time_start: document.getElementById("event-time-start").value,
@@ -1139,6 +1164,10 @@ document.addEventListener("DOMContentLoaded", function (e) {
         index.dateStart = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
+        index.RRULE =
+          "RRULE=FREQ=" + document.getElementById("event-recur").value;
+        index.rrule_ = document.getElementById("event-recur").value;
+
         index.isSubscription = false;
         index.multidayevent = multidayevent;
         index.alarm = document.getElementById("event-notification-time").value;
@@ -1192,6 +1221,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         document.getElementById("event-location").value = index.LOCATION;
         document.querySelector("#event-notification-time").value = index.alarm;
         document.getElementById("form-image").src = index.ATTACH;
+        document.getElementById("event-recur").value = index.rrule_;
       }
     });
   };
