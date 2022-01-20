@@ -35,7 +35,8 @@ const eximport = (() => {
             key != "alarm" &&
             key != "isSubscription" &&
             key != "multidayevent" &&
-            key != "alarmTrigger"
+            key != "alarmTrigger" &&
+            key != "rrule_"
           ) {
             result += `${key}:${e[key]}` + "\r\n";
           }
@@ -201,6 +202,7 @@ const eximport = (() => {
         LOCATION: index.getFirstPropertyValue("location"),
         DESCRIPTION: index.getFirstPropertyValue("description"),
         ATTACH: index.getFirstPropertyValue("attache"),
+        RRULE: "",
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
         DTSTAMP: isoDateTimeStart,
@@ -215,6 +217,7 @@ const eximport = (() => {
         alarm: "none",
         isSubscription: subscription,
         multidayevent: multidayevent,
+        rrule_: "none",
       };
 
       last_uid = imp.UID;
