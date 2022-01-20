@@ -129,16 +129,14 @@ let rrule_check = function (date) {
         typeof events[t]["rrule_"] !== "undefined" &&
         events[t]["rrule_"] !== undefined
       ) {
-
-        if (new Date(events[t].dateStart).getTime() <= new Date(date).getTime() &&
-          new Date(date).getTime() <= new Date(events[t].dateEnd).getTime()) {
-          
-          if (
-            events[t].rrule_ == "MONTHLY" 
-         
+        if (
+          new Date(events[t].dateStart).getTime() <= new Date(date).getTime() &&
+          new Date(date).getTime() <= new Date(events[t].dateEnd).getTime()
         ) {
+          if (events[t].rrule_ == "MONTHLY") {
             if (
-              new Date(events[t].dateStart).getDate() === new Date(date).getDate()
+              new Date(events[t].dateStart).getDate() ===
+              new Date(date).getDate()
             ) {
               feedback.rrule = true;
               t = events.length;
@@ -146,17 +144,13 @@ let rrule_check = function (date) {
             }
           }
 
-          if (
-            events[t]["rrule_"] == "DAILY" 
-          ) {
+          if (events[t]["rrule_"] == "DAILY") {
             feedback.rrule = true;
             t = events.length;
             return feedback;
           }
 
-          if (
-            events[t].rrule_ == "WEEKLY"
-          ) {
+          if (events[t].rrule_ == "WEEKLY") {
             if (
               new Date(events[t].dateStart).getDay() === new Date(date).getDay()
             ) {
@@ -166,9 +160,7 @@ let rrule_check = function (date) {
             }
           }
 
-          if (
-            events[t].rrule_ == "YEARLY" 
-          ) {
+          if (events[t].rrule_ == "YEARLY") {
             let tt = new Date(events[t].dateStart);
             let pp = new Date(date);
 
@@ -181,7 +173,6 @@ let rrule_check = function (date) {
               return feedback;
             }
           }
-          
         }
       }
     }
@@ -206,79 +197,76 @@ let event_check_day = function (date) {
     elements[i].style.display = "none";
   }
 
-  document
-    .querySelectorAll("div#event-slider article")
-    .forEach(function (item) {
-      let a = new Date(item.getAttribute("data-date")).getTime();
-      let b = new Date(item.getAttribute("data-date-end")).getTime();
-      let c = new Date(date).getTime();
-      let d = item.getAttribute("data-rrule");
+  let item = document.querySelectorAll("div#event-slider article");
 
-      if (d === "none") {
-        if (a === c || b === c || (a < c && b > c)) {
-          slider.push(item);
-          slider[0].style.display = "block";
+  for (let i = 0; i < item.length; i++) {
+    let a = new Date(item[i].getAttribute("data-date")).getTime();
+    let b = new Date(item[i].getAttribute("data-date-end")).getTime();
+    let c = new Date(date).getTime();
+    let d = item[i].getAttribute("data-rrule");
 
-          k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+    if (d === "none" || d === "") {
+      if (a === c || b === c || (a < c && b > c)) {
+        slider.push(item[i]);
+        slider[0].style.display = "block";
+
+        k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+      }
+    } else {
+      if (a === c || b === c || (a < c && b > c && d)) {
+        //recurrences
+        //YEAR
+        if (d == "YEARLY") {
+          let tt = new Date(item[i].getAttribute("data-date"));
+          let pp = new Date(date);
+
+          if (
+            tt.getDate() + "-" + tt.getMonth() ===
+            pp.getDate() + "-" + pp.getMonth()
+          ) {
+            slider.push(item[i]);
+            slider[0].style.display = "block";
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
+        //WEEK
+        if (d == "WEEKLY") {
+          if (
+            new Date(item[i].getAttribute("data-date")).getDay() ==
+            new Date(date).getDay()
+          ) {
+            slider.push(item[i]);
+            slider[0].style.display = "block";
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
+        //MONTH
+
+        if (d == "MONTHLY") {
+          if (
+            new Date(item[i].getAttribute("data-date")).getDate() ==
+            new Date(date).getDate()
+          ) {
+            slider.push(item[i]);
+            slider[0].style.display = "block";
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
         }
       }
-      else {
-
-        if (a === c || b === c || (a < c && b > c && d)) {
-          //recurrences
-          //YEAR
-          if (d == "YEARLY") {
-            let tt = new Date(item.getAttribute("data-date"));
-            let pp = new Date(date);
-            console.log(tt.getDate() + "-" + tt.getMonth());
-
-            if (
-              tt.getDate() + "-" + tt.getMonth() ===
-              pp.getDate() + "-" + pp.getMonth()
-            ) {
-              slider.push(item);
-              slider[0].style.display = "block";
-
-              k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-            }
-          }
-
-          //WEEK
-          if (d == "WEEKLY") {
-            if (
-              new Date(item.getAttribute("data-date")).getDay() ==
-              new Date(date).getDay()
-            ) {
-              slider.push(item);
-              slider[0].style.display = "block";
-
-              k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-            }
-          }
-
-          //MONTH
-
-          if (d == "MONTHLY") {
-            if (
-              new Date(item.getAttribute("data-date")).getDate() ==
-              new Date(date).getDate()
-            ) {
-              slider.push(item);
-              slider[0].style.display = "block";
-
-              k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-            }
-          }
-        }
-        if (slider.length > 1) {
-          k.style.opacity = 100;
-        } else {
-          k.style.opacity = 0;
-        }
-      
+      if (slider != "" && slider.length > 1) {
+        k.style.opacity = 100;
+      } else {
+        k.style.opacity = 0;
       }
-    });
+    }
+  }
 };
+
 let slider_navigation = function () {
   let p = document.querySelectorAll("div#event-slider-indicator div div");
   if (slider_index == slider.length - 1) {
@@ -632,7 +620,6 @@ let router = function (view) {
       .forEach(function (item) {
         if (item.getAttribute("data-date") == k) {
           item.focus();
-
           event_check_day(k);
         }
       });
@@ -1190,7 +1177,11 @@ document.addEventListener("DOMContentLoaded", function (e) {
       DTSTAMP: convert_ics_date(convert_dt_start),
       DTSTART: convert_ics_date(convert_dt_start),
       DTEND: convert_ics_date(convert_dt_end),
-      RRULE: "RRULE FREQ=" + document.getElementById("event-recur").value,
+      RRULE:
+        "FREQ=" +
+        document.getElementById("event-recur").value +
+        ";UNTIL=" +
+        convert_ics_date(convert_dt_end),
       rrule_: document.getElementById("event-recur").value,
       dateStart: document.getElementById("event-date").value,
       dateEnd: document.getElementById("event-date-end").value,
@@ -1295,7 +1286,10 @@ document.addEventListener("DOMContentLoaded", function (e) {
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
         index.RRULE =
-          "RRULE=FREQ=" + document.getElementById("event-recur").value;
+          "FREQ=" +
+          document.getElementById("event-recur").value +
+          ";UNTIL=" +
+          convert_ics_date(convert_dt_end);
         index.rrule_ = document.getElementById("event-recur").value;
 
         index.isSubscription = false;

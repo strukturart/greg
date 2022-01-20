@@ -9,7 +9,6 @@ const eximport = (() => {
     setTimeout(function () {
       // convert
       let data = event_data;
-
       let result = "";
 
       result += "BEGIN:VCALENDAR" + "\r\n";
@@ -194,6 +193,25 @@ const eximport = (() => {
 
       last_uid = "";
       last_date = "";
+      let parse_rrule = function () {
+        let feedback = "";
+        if (index.getFirstPropertyValue("rrule") != null) {
+          let a = index.getFirstPropertyValue("rrule");
+          feedback = a.toString();
+        }
+
+        return feedback;
+      };
+
+      let parse_rrule2 = function () {
+        let feedback = "none";
+        if (index.getFirstPropertyValue("rrule") != null) {
+          let a = index.getFirstPropertyValue("rrule");
+          feedback = a.freq;
+        }
+
+        return feedback;
+      };
 
       let imp = {
         BEGIN: "VEVENT",
@@ -202,7 +220,7 @@ const eximport = (() => {
         LOCATION: index.getFirstPropertyValue("location"),
         DESCRIPTION: index.getFirstPropertyValue("description"),
         ATTACH: index.getFirstPropertyValue("attache"),
-        RRULE: "",
+        RRULE: parse_rrule(),
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
         DTSTAMP: isoDateTimeStart,
@@ -217,11 +235,12 @@ const eximport = (() => {
         alarm: "none",
         isSubscription: subscription,
         multidayevent: multidayevent,
-        rrule_: "none",
+        rrule_: parse_rrule2(),
       };
 
       last_uid = imp.UID;
       last_date = imp.date;
+      if (imp.RRULE != "") console.log(imp);
       events.push(imp);
     });
 
