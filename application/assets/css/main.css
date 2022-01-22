@@ -399,6 +399,8 @@ div#add-edit-event {
   overflow: hidden;
 }
 
+/*add edit form*/
+
 div#add-edit-event .item {
   margin: 0;
 }
@@ -423,6 +425,29 @@ div#form-image-wrapper {
 #form-image-wrapper {
   background: none;
 }
+
+div#form-image-wrapper {
+  width: 100%;
+  padding: 5px;
+}
+
+div#form-image-wrapper img#form-image {
+  min-width: 100%;
+}
+
+div#event-recur-wrapper {
+  margin: 0 0 20px 0 !important;
+}
+
+button#delete-event {
+  display: none;
+}
+
+button#export-event {
+  display: none;
+}
+
+/*List view*/
 
 div#list-view {
   position: absolute;
@@ -546,15 +571,6 @@ div#subscription-form {
   border-top: 2px solid black;
 }
 
-div#form-image-wrapper {
-  width: 100%;
-  padding: 5px;
-}
-
-div#form-image-wrapper img#form-image {
-  min-width: 100%;
-}
-
 /*/////////////////
 ///BOTTOM BAR////
 ////////////////*/
@@ -674,7 +690,6 @@ div#message-box {
   background: black;
   color: white;
   z-index: 5;
-
   display: none;
 }
 

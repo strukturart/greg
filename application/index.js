@@ -1,4 +1,10 @@
 "use strict";
+/*
+localforage.config({
+  driver: localforage.WEBSQL, // Force WebSQL; same as using setDriver()
+  name: "greg",
+});
+*/
 
 let months = [
   "Jan",
@@ -43,6 +49,7 @@ let subscriptions = [];
 // ////////
 
 let find_closest_date = function (search_term) {
+  if ((events.length = 0)) return false;
   let t = 0;
   let search = new Date(search_term).getTime();
 
@@ -445,9 +452,11 @@ let showCalendar = function (month, year) {
 };
 
 let set_tabindex = function () {
-  document.querySelectorAll("div#list-view article").forEach(function (i, p) {
-    i.setAttribute("tabindex", p);
-  });
+  Array.from(document.querySelectorAll("div#list-view article")).forEach(
+    function (i, p) {
+      i.setAttribute("tabindex", p);
+    }
+  );
 };
 
 function renderHello(arr) {
@@ -464,7 +473,7 @@ function renderHello(arr) {
   event_check_day(document.activeElement.getAttribute("data-date"));
 
   //format date
-  document.querySelectorAll("article").forEach(function (index) {
+  Array.from(document.querySelectorAll("article")).forEach(function (index) {
     let t = new Date(index.getAttribute("data-date"));
     let n = new Date(index.getAttribute("data-date-end"));
 
@@ -513,11 +522,13 @@ if ("b2g.alarmManager" in navigator) {
 }
 
 let clear_form = function () {
-  document.querySelectorAll("div#add-edit-event input").forEach(function (e) {
-    e.value = "";
-    document.getElementById("form-image").src = "";
-    blob = "";
-  });
+  Array.from(document.querySelectorAll("div#add-edit-event input")).forEach(
+    function (e) {
+      e.value = "";
+      document.getElementById("form-image").src = "";
+      blob = "";
+    }
+  );
 };
 
 /*
@@ -554,7 +565,7 @@ let option_button_bar = function () {
 const pages = document.querySelectorAll(".page");
 
 let router = function (view) {
-  pages.forEach(function (index) {
+  Array.from(pages).forEach(function (index) {
     index.style.display = "none";
   });
 
@@ -574,11 +585,11 @@ let router = function (view) {
     document.getElementById("event-date").value = status.selected_day;
 
     add_edit_event.style.display = "block";
-    document
-      .querySelectorAll("div#add-edit-event .item")
-      .forEach(function (i, p) {
+    Array.from(document.querySelectorAll("div#add-edit-event .item")).forEach(
+      function (i, p) {
         i.setAttribute("tabindex", p);
-      });
+      }
+    );
     add_edit_event.querySelectorAll(".item")[0].focus();
     helper.bottom_bar("", "edit", "");
 
@@ -615,14 +626,14 @@ let router = function (view) {
     let k = status.selected_day;
     showCalendar(currentMonth, currentYear);
 
-    document
-      .querySelectorAll("div#calendar-body div.item")
-      .forEach(function (item) {
+    Array.from(document.querySelectorAll("div#calendar-body div.item")).forEach(
+      function (item) {
         if (item.getAttribute("data-date") == k) {
           item.focus();
           event_check_day(k);
         }
-      });
+      }
+    );
 
     clear_form();
   }
@@ -679,9 +690,11 @@ let router = function (view) {
     document.getElementById("options").style.opacity = "1";
     document.getElementById("subscription-form").style.display = "none";
     setTimeout(function () {
-      document.querySelectorAll("div#options .item").forEach(function (i, p) {
-        i.setAttribute("tabindex", p);
-      });
+      Array.from(document.querySelectorAll("div#options .item")).forEach(
+        function (i, p) {
+          i.setAttribute("tabindex", p);
+        }
+      );
     }, 1000);
 
     option_button_bar();
@@ -712,9 +725,11 @@ let list_subscriptions = function () {
           "</button>"
       );
 
-    document.querySelectorAll("div#options button").forEach(function (i, p) {
-      i.setAttribute("tabindex", p);
-    });
+    Array.from(document.querySelectorAll("div#options button")).forEach(
+      function (i, p) {
+        i.setAttribute("tabindex", p);
+      }
+    );
   });
 };
 
@@ -791,8 +806,6 @@ let delete_subscription = function () {
 
   document.activeElement.remove();
 };
-
-localforage.config({ driver: localforage.INDEXEDDB });
 
 localforage
   .getItem("events")
@@ -963,7 +976,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
       }, 500);
     });
 
-  document.querySelectorAll('input[type="time"]').forEach(function (item) {
+  Array.from(document.querySelectorAll('input[type="time"]')).forEach(function (
+    item
+  ) {
     item.addEventListener("change", (event) => {
       setTimeout(function () {
         item.parentElement.focus();
@@ -971,7 +986,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
     });
   });
 
-  document.querySelectorAll('input[type="date"]').forEach(function (item) {
+  Array.from(document.querySelectorAll('input[type="date"]')).forEach(function (
+    item
+  ) {
     item.addEventListener("change", (event) => {
       setTimeout(function () {
         item.parentElement.focus();
@@ -1334,6 +1351,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
   // /////////
 
   let edit_event = function () {
+    document.getElementById("delete-event").style.display = "block";
+    document.getElementById("export-event").style.display = "block";
+
     events.forEach(function (index) {
       if (index.UID == status.selected_day_id) {
         document.getElementById("event-title").value = index.SUMMARY;
