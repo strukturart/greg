@@ -8,8 +8,8 @@
 	"type": "privileged",
 	"fullscreen": "true",
 	"icons": {
-		"56": "/icons/icon-56-56.png",
-		"112": "/icons/icon-112-112.png"
+		"56": "/icons/icon-56-56.svg",
+		"112": "/icons/icon-112-112.svg"
 	},
 	"developer": {
 		"name": "strukturart",

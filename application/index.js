@@ -264,6 +264,15 @@ let event_check_day = function (date) {
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
           }
         }
+
+        if (d == "DAILY") {
+          if (a === c || b === c || (a < c && b > c)) {
+            slider.push(item[i]);
+            slider[0].style.display = "block";
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
       }
       if (slider != "" && slider.length > 1) {
         k.style.opacity = 100;
@@ -295,12 +304,13 @@ let slider_navigation = function () {
 ////
 
 let jump_to_today = function () {
-  let currentMonth = today.getMonth();
+  let currentMonth = today.getMonth() + 1;
   let currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
+  console.log(currentMonth);
 
-  status.selected_day = document.activeElement.getAttribute("data-date");
   event_check_day(status.selected_day);
+  status.selected_day = document.activeElement.getAttribute("data-date");
 };
 
 function next() {
