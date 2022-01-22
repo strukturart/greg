@@ -17,10 +17,17 @@ An easy to use calendar for KaiOs
 
 - Key 1 & 3 : Jump between the months
 - Key \* : Jump to current Day
-- SoftLeft : Toggle views -> month / event-list
 - Key Enter: toggle views
 - Key 2: event slider in month view
 - Key #: toggle moon phase view
+
+## Features
+
+- Local Calendar
+- subscribe to calendar
+- moon phases
+
+I tested subscribing to calendar with google calendar. you have the possibility to subscribe to public calendars and private calendars, in the google calendar settings you will find an ID that you can enter in greg (by hand or qr code).
 
 ## How to install
 
