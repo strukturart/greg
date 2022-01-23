@@ -92,24 +92,25 @@ img[src=" "] {
 
 button {
   font-size: 1rem;
-  background: silver;
-  padding: 5px;
+  background: rgb(255, 255, 255);
+  padding: 10px;
   width: 90vw;
-
   margin: 0 0 15px 5vw;
   color: black;
   border-radius: 10px;
+  border: 3px solid gray;
 }
 
 button:focus {
-  background: silver;
-  color: white;
+  background: orange;
+  color: black;
+  border: 0px solid gray;
 }
 
 select {
-  width: 80vw;
+  width: 90vw;
   padding: 10px;
-  margin: 10px 10vw 0px 10vw;
+  margin: 10px 10vw 0px 0vw;
 
   /* styling */
   background-color: white;
@@ -150,8 +151,12 @@ label {
   text-align: center;
 }
 .input-parent {
-  padding: 5px;
+  padding: 10px;
   margin: 0 0 20px 0;
+}
+
+.input-parent:focus {
+  background: orange;
 }
 div#intro {
   position: fixed;
@@ -218,6 +223,19 @@ div#intro div#intro-message {
   color: white;
   z-index: 2000;
   font-size: 0.8rem;
+}
+
+#KaiOsAd {
+  height: 200px;
+  width: 240px;
+}
+
+#KaiOsAds-Wrapper {
+  padding: 10px;
+}
+
+#KaiOsAds-Wrapper iframe {
+  width: 220px;
 }
 
 /*///////////////////////////
@@ -739,38 +757,10 @@ div#settings h2 {
   padding: 0 10px 0 10px;
 }
 
-div#settings div.input-parent {
-  padding: 10px 10px 20px 10px;
-}
-
-div#settings div.input-parent:focus {
-  padding: 10px 10px 20px 10px;
-  background: rgb(179, 179, 179);
-}
-
 div#settings label {
   min-width: 80%;
   height: 30px;
   margin: 5px 5px 0 0;
-}
-
-div#settings div#input-wrapper {
-  margin: 0 0 0px 0;
-}
-
-div#settings input {
-  width: 90%;
-  height: 30px;
-  font-size: 1rem;
-  border: 2px solid rgb(32, 32, 32);
-  margin: 10px 0 10px 0;
-  padding: 3px;
-  display: block;
-}
-
-div#settings input:focus {
-  outline: 1px solid rgb(36, 35, 35);
-  background: rgb(255, 240, 240);
 }
 
 #goodbye {

@@ -6,6 +6,8 @@ localforage.config({
 });
 */
 
+
+
 let months = [
   "Jan",
   "Feb",
@@ -44,12 +46,38 @@ let blob = "";
 let events = [];
 let subscriptions = [];
 
+//ads || ads free
+
+//KaioOs ads
+let getManifest = function (callback) {
+  if (!navigator.mozApps) {
+    return false;
+  }
+  let self = navigator.mozApps.getSelf();
+  self.onsuccess = function () {
+    callback(self.result);
+  };
+  self.onerror = function () {};
+};
+
+//KaiOs store true||false
+function manifest(a) {
+  let t = document.getElementById("#KaiOsAds-Wrapper");
+  if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
+    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
+  } else {
+    console.log("Ads free");
+    t.style.display = "none";
+  }
+}
+
+getManifest(manifest);
+
 // ////////
 // finde closest event to selected date in list view
 // ////////
 
 let find_closest_date = function (search_term) {
-  if ((events.length = 0)) return false;
   let t = 0;
   let search = new Date(search_term).getTime();
 
@@ -58,6 +86,12 @@ let find_closest_date = function (search_term) {
 
     if (search < item) {
       t = events[i - 1].dateStart;
+      i = events.length;
+    }
+    //after last event
+    //focus last event
+    if (search > new Date(events[events.length - 1].dateStart).getTime()) {
+      t = events[events.length - 1].dateStart;
       i = events.length;
     }
   }
@@ -304,7 +338,7 @@ let slider_navigation = function () {
 ////
 
 let jump_to_today = function () {
-  let currentMonth = today.getMonth() + 1;
+  let currentMonth = today.getMonth();
   let currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
   console.log(currentMonth);
@@ -705,7 +739,7 @@ let router = function (view) {
           i.setAttribute("tabindex", p);
         }
       );
-    }, 1000);
+    }, 2000);
 
     option_button_bar();
   }
@@ -931,7 +965,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
       if (targetElement.hasAttribute("data-date")) {
         status.selected_day = targetElement.getAttribute("data-date");
         status.selected_day_id = targetElement.getAttribute("data-id");
-        if (status.selected_day != "") event_check_day(status.selected_day);
+        event_check_day(status.selected_day);
       }
       return true;
     }

@@ -240,7 +240,6 @@ const eximport = (() => {
 
       last_uid = imp.UID;
       last_date = imp.date;
-      if (imp.RRULE != "") console.log(imp);
       events.push(imp);
     });
 
