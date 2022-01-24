@@ -53,7 +53,7 @@ body {
   position: relative;
   margin: 0px;
   padding: 0px;
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: 1.4rem;
   max-height: 100%;
   max-width: 100%;
@@ -93,7 +93,7 @@ img[src=" "] {
 button {
   font-size: 1rem;
   background: rgb(255, 255, 255);
-  padding: 10px;
+  padding: 7px;
   width: 90vw;
   margin: 0 0 15px 5vw;
   color: black;
@@ -103,14 +103,13 @@ button {
 
 button:focus {
   background: orange;
-  color: black;
   border: 0px solid gray;
 }
 
 select {
-  width: 90vw;
+  width: 90%;
   padding: 10px;
-  margin: 10px 10vw 0px 0vw;
+  margin: 10px 5% 0px 5%;
 
   /* styling */
   background-color: white;
@@ -207,24 +206,6 @@ div#intro img {
   }
 }
 
-div#intro div#version {
-  position: absolute;
-  text-align: center;
-  color: white;
-  z-index: 2000;
-  font-size: 0.7rem;
-  display: none;
-}
-
-div#intro div#intro-message {
-  position: absolute;
-  top: 190px;
-  text-align: center;
-  color: white;
-  z-index: 2000;
-  font-size: 0.8rem;
-}
-
 #KaiOsAd {
   height: 200px;
   width: 240px;
@@ -236,6 +217,23 @@ div#intro div#intro-message {
 
 #KaiOsAds-Wrapper iframe {
   width: 220px;
+}
+
+ul#keys li span {
+  display: inline-block;
+
+  min-width: 60px;
+  width: 60px;
+  font-weight: bold;
+}
+
+ul#keys li {
+  margin: 0 0 10px 0;
+  padding: 5px 0 0 10px;
+}
+
+ul#keys {
+  margin: 0 0 20px 0;
 }
 
 /*///////////////////////////
@@ -584,7 +582,7 @@ div#subscription-form {
   z-index: 5;
   bottom: 15px;
   display: none;
-  height: 170px;
+  height: 190px;
   background: white;
   border-top: 2px solid black;
 }
@@ -694,39 +692,6 @@ div#top-bar div#button-right {
   padding: 2px;
   width: 30%;
   text-align: right;
-}
-
-/*INTRO*/
-
-div#message-box {
-  display: block;
-  position: fixed;
-  top: 0px;
-  left: 0px;
-  min-width: 100%;
-  height: 100%;
-  background: black;
-  color: white;
-  z-index: 5;
-  display: none;
-}
-
-div#message-box div {
-  margin: 100px 0 0 0;
-  animation-name: colorAnimation;
-  animation-duration: 2s;
-  animation-timing-function: ease-out;
-  animation-fill-mode: forwards;
-  animation-iteration-count: infinite;
-  max-width: 70%;
-  text-align: center;
-}
-
-div#count {
-  font-size: 8px;
-  color: white !important;
-  position: fixed;
-  bottom: 15px;
 }
 
 /*
