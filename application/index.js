@@ -6,31 +6,6 @@ localforage.config({
 });
 */
 
-//KaioOs ads
-let getManifest = function (callback) {
-  if (!navigator.mozApps) {
-    return false;
-  }
-  let self = navigator.mozApps.getSelf();
-  self.onsuccess = function () {
-    callback(self.result);
-  };
-  self.onerror = function () {};
-};
-
-//KaiOs store true||false
-function manifest(a) {
-  let t = document.getElementById("#KaiOsAds-Wrapper");
-  if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
-    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
-  } else {
-    console.log("Ads free");
-    t.style.display = "none";
-  }
-}
-
-getManifest(manifest);
-
 let months = [
   "Jan",
   "Feb",
@@ -68,6 +43,33 @@ let settings = {};
 let blob = "";
 let events = [];
 let subscriptions = [];
+
+//ads || ads free
+
+//KaioOs ads
+let getManifest = function (callback) {
+  if (!navigator.mozApps) {
+    return false;
+  }
+  let self = navigator.mozApps.getSelf();
+  self.onsuccess = function () {
+    callback(self.result);
+  };
+  self.onerror = function () {};
+};
+
+//KaiOs store true||false
+function manifest(a) {
+  let t = document.getElementById("#KaiOsAds-Wrapper");
+  if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
+    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
+  } else {
+    console.log("Ads free");
+    t.style.display = "none";
+  }
+}
+
+getManifest(manifest);
 
 // ////////
 // finde closest event to selected date in list view
@@ -775,7 +777,7 @@ let list_subscriptions = function () {
 
 let lp = 0;
 let load_subscriptions = function () {
-  if (subscriptions == null) return false;
+  if (subscriptions == null || subscriptions.lenght == 0) return false;
 
   if (lp < subscriptions.length) {
     eximport.fetch_ics(subscriptions[lp].url, load_subscriptions);
@@ -1225,6 +1227,19 @@ document.addEventListener("DOMContentLoaded", function (e) {
       multidayevent = true;
     }
 
+    let rrule_convert = function () {
+      let p = document.getElementById("event-recur").value;
+      let r;
+      if (p != "" || p != "none") {
+        r =
+          "FREQ=" +
+          document.getElementById("event-recur").value +
+          ";UNTIL=" +
+          convert_ics_date(convert_dt_end);
+      }
+      return r;
+    };
+
     let event = {
       UID: helper.uid(),
       SUMMARY: document.getElementById("event-title").value,
@@ -1234,11 +1249,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
       DTSTAMP: convert_ics_date(convert_dt_start),
       DTSTART: convert_ics_date(convert_dt_start),
       DTEND: convert_ics_date(convert_dt_end),
-      RRULE:
-        "FREQ=" +
-        document.getElementById("event-recur").value +
-        ";UNTIL=" +
-        convert_ics_date(convert_dt_end),
+      RRULE: rrule_convert(),
       rrule_: document.getElementById("event-recur").value,
       dateStart: document.getElementById("event-date").value,
       dateEnd: document.getElementById("event-date-end").value,
@@ -1260,8 +1271,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
     }
 
     events.push(event);
-
-    console.log(document.getElementById("event-recur").value);
 
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
@@ -1333,6 +1342,19 @@ document.addEventListener("DOMContentLoaded", function (e) {
           notification_time = convert_ics_date(calc_notification.toISOString());
         }
 
+        let rrule_convert = function () {
+          let p = document.getElementById("event-recur").value;
+          let r;
+          if (p != "" || p != "none") {
+            r =
+              "FREQ=" +
+              document.getElementById("event-recur").value +
+              ";UNTIL=" +
+              convert_ics_date(convert_dt_end);
+          }
+          return r;
+        };
+
         index.SUMMARY = document.getElementById("event-title").value;
         index.DESCRIPTION = document.getElementById("event-description").value;
         index.LOCATION = document.getElementById("event-location").value;
@@ -1342,13 +1364,8 @@ document.addEventListener("DOMContentLoaded", function (e) {
         index.dateStart = document.getElementById("event-date").value;
         index.time_start = document.getElementById("event-time-start").value;
         index.time_end = document.getElementById("event-time-end").value;
-        index.RRULE =
-          "FREQ=" +
-          document.getElementById("event-recur").value +
-          ";UNTIL=" +
-          convert_ics_date(convert_dt_end);
+        index.RRULE = rrule_convert();
         index.rrule_ = document.getElementById("event-recur").value;
-
         index.isSubscription = false;
         index.multidayevent = multidayevent;
         index.alarm = document.getElementById("event-notification-time").value;
@@ -1456,8 +1473,21 @@ document.addEventListener("DOMContentLoaded", function (e) {
     status.selected_day_id = id;
     helper.bottom_bar("edit", "", "");
 
-    renderHello(events);
+    //renderHello(events);
     helper.toaster("events imported", 2000);
+    let without_subscription = events.filter(
+      (events) => events.isSubscription === false
+    );
+
+    localforage
+      .setItem("events", without_subscription)
+      .then(function (value) {
+        helper.toaster("saved in idxdb", 2000);
+        renderHello(events);
+
+        eximport.export_ical("greg.ics", without_subscription);
+      })
+      .catch(function (err) {});
   };
 
   let set_datetime_form = function () {
@@ -1729,6 +1759,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
             localforage
               .getItem("events")
               .then(function (value) {
+                console.log(value);
                 eximport.export_ical("greg.ics", value);
               })
               .catch(function (err) {

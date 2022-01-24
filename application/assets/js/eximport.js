@@ -1,3 +1,8 @@
+//polyfill
+if (window.NodeList && !NodeList.prototype.forEach) {
+  NodeList.prototype.forEach = Array.prototype.forEach;
+}
+
 const eximport = (() => {
   let export_ical = function (filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
@@ -13,7 +18,7 @@ const eximport = (() => {
 
       result += "BEGIN:VCALENDAR" + "\r\n";
       result += "VERSION:2.0" + "\r\n";
-      result += "PROID:GREG" + "\r\n";
+      result += "PRODID:GREG" + "\r\n";
       result += "METHOD:PUBLISHED" + "\r\n";
 
       data.forEach((e) => {
@@ -103,7 +108,7 @@ const eximport = (() => {
   let parse_ics = function (data, callback, saveOnDevice, subscription) {
     var data = data.split(/\r\n|\n/);
     data = data.join("\r\n");
-
+    helper.toaster("import started", 2000);
     // parse iCal data
     var jcalData = ICAL.parse(data);
     var vcalendar = new ICAL.Component(jcalData);
@@ -112,6 +117,8 @@ const eximport = (() => {
     let isoDateTimeEnd = "";
 
     vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
+      console.log(index);
+
       if (
         index.getFirstPropertyValue("dtstart") == "" &&
         index.getFirstPropertyValue("summary") == ""
@@ -241,9 +248,8 @@ const eximport = (() => {
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
+      console.log(imp);
     });
-
-    callback(last_uid, last_date);
 
     if (saveOnDevice) {
       let without_subscription = events.filter(
@@ -254,11 +260,14 @@ const eximport = (() => {
         .setItem("events", without_subscription)
         .then(function (value) {
           // events = value;
+          helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
         })
         .catch(function (err) {
-          console.log(err);
+          helper.toaster(err);
         });
     }
+
+    callback(last_uid, last_date);
   };
 
   // ///////////
@@ -297,9 +306,7 @@ const eximport = (() => {
       },
     });
 
-    activity.onsuccess = function () {
-      alert("done");
-    };
+    activity.onsuccess = function () {};
 
     activity.onerror = function () {};
   }
@@ -329,7 +336,7 @@ const eximport = (() => {
 
       reader.onloadend = function (event) {
         let data = event.target.result;
-        parse_ics(data, callback, true);
+        parse_ics(data, callback, true, false);
       };
 
       reader.readAsText(file);
