@@ -306,7 +306,7 @@ let event_check_day = function (date) {
           }
         }
       }
-      if (slider != "" && slider.length > 1) {
+      if (slider != "" && slider.length > 0) {
         k.style.opacity = 100;
       } else {
         k.style.opacity = 0;
@@ -643,8 +643,11 @@ let router = function (view) {
     if (status.edit_event) {
       document.getElementById("save-event").innerText = "update";
     }
+    console.log(status.edit_event);
+
     if (!status.edit_event) {
       document.getElementById("save-event").innerText = "save";
+
       document.getElementById("event-notification-time").value =
         settings.default_notification;
     }
@@ -906,6 +909,13 @@ document.addEventListener("DOMContentLoaded", function (e) {
   /////////////////
 
   let nav = function (move) {
+    console.log(document.activeElement.nodeName);
+    if (
+      document.activeElement.nodeName == "SELECT" ||
+      document.activeElement.type == "date" ||
+      document.activeElement.type == "time"
+    )
+      return false;
     const currentIndex = document.activeElement.tabIndex;
     let next = currentIndex + move;
     let items = 0;
@@ -1018,9 +1028,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
       }, 500);
     });
 
-  Array.from(document.querySelectorAll('input[type="time"]')).forEach(function (
-    item
-  ) {
+  document.querySelectorAll('input[type="time"]').forEach(function (item) {
     item.addEventListener("change", (event) => {
       setTimeout(function () {
         item.parentElement.focus();
@@ -1028,9 +1036,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     });
   });
 
-  Array.from(document.querySelectorAll('input[type="date"]')).forEach(function (
-    item
-  ) {
+  document.querySelectorAll('input[type="date"]').forEach(function (item) {
     item.addEventListener("change", (event) => {
       setTimeout(function () {
         item.parentElement.focus();
@@ -1082,9 +1088,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
   };
 
   // may better to compare all alarms
-
   // with all events
-
   // to clean
   let remove_alarm = function (id) {
     // KaiOs  3.00
@@ -1469,12 +1473,11 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
   // callback import event
   let import_event = function (id, date) {
-    status.selected_day = date;
-    status.selected_day_id = id;
+    //status.selected_day = date;
+    //status.selected_day_id = id;
     helper.bottom_bar("edit", "", "");
 
     //renderHello(events);
-    helper.toaster("events imported", 2000);
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
     );
@@ -1482,7 +1485,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        helper.toaster("saved in idxdb", 2000);
         renderHello(events);
 
         eximport.export_ical("greg.ics", without_subscription);
@@ -1565,12 +1567,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
   }
 
   // /////////////
-
   // //SHORTPRESS
-
   // ////////////
 
   function shortpress_action(param) {
+    console.log(document.activeElement.type);
+
     switch (param.key) {
       case "*":
         jump_to_today();
@@ -1806,9 +1808,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
   }
 
   // ///////////////////////////////
-
   // //shortpress / longpress logic
-
   // //////////////////////////////
 
   function handleKeyDown(evt) {

@@ -346,9 +346,8 @@ const helper = (() => {
     var activity = new MozActivity({
       name: "pick",
       data: {
-       type: ["image/png", "image/jpg", "image/jpeg"]
-   }
-      
+        type: ["image/png", "image/jpg", "image/jpeg"],
+      },
     });
 
     activity.onsuccess = function () {

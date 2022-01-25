@@ -108,7 +108,6 @@ const eximport = (() => {
   let parse_ics = function (data, callback, saveOnDevice, subscription) {
     var data = data.split(/\r\n|\n/);
     data = data.join("\r\n");
-    helper.toaster("import started", 2000);
     // parse iCal data
     var jcalData = ICAL.parse(data);
     var vcalendar = new ICAL.Component(jcalData);
@@ -226,7 +225,7 @@ const eximport = (() => {
         SUMMARY: index.getFirstPropertyValue("summary"),
         LOCATION: index.getFirstPropertyValue("location"),
         DESCRIPTION: index.getFirstPropertyValue("description"),
-        ATTACH: index.getFirstPropertyValue("attache"),
+        ATTACH: index.getFirstPropertyValue("attach"),
         RRULE: parse_rrule(),
         "LAST-MODIFIED": g,
         CLASS: "PRIVATE",
@@ -248,7 +247,7 @@ const eximport = (() => {
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
-      console.log(imp);
+   
     });
 
     if (saveOnDevice) {
