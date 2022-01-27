@@ -780,13 +780,19 @@ let list_subscriptions = function () {
 
 let lp = 0;
 let load_subscriptions = function () {
-  if (subscriptions == null || subscriptions.lenght == 0) return false;
+  console.log(subscriptions);
+  if (
+    subscriptions == null ||
+    subscriptions.lenght == -1 ||
+    subscriptions.lenght == "undefined"
+  )
+    return false;
 
   if (lp < subscriptions.length) {
     eximport.fetch_ics(subscriptions[lp].url, load_subscriptions);
     lp++;
+    helper.toaster("subscriptions loaded", 2000);
   } else {
-    helper.toaster("subscriptions loaded", 5000);
   }
   jump_to_today();
 
@@ -813,10 +819,14 @@ let store_subscription = function () {
       name: document.getElementById("cal-subs-name").value,
     });
 
+    document.querySelector("input#cal-subs-name").val = "";
+    document.querySelector("input#cal-subs-url").val = "";
+    document.getElementById("subscription-form").style.display = "none";
+
     localforage
       .setItem("subscriptions", subscriptions)
       .then(function (value) {
-        helper.toaster("stored", 2000);
+        helper.toaster("subscription stored", 2000);
         status.view = "options";
         router();
       })
@@ -825,6 +835,7 @@ let store_subscription = function () {
         console.log(err);
       });
     load_subscriptions();
+    list_subscriptions();
   } else {
     helper.toaster("Please enter a name and a valid url", 2000);
   }
@@ -834,19 +845,20 @@ let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
     (e) => e.name != document.activeElement.innerText
   );
+  console.log(updated_subscriptions);
 
   localforage
     .setItem("subscriptions", updated_subscriptions)
     .then(function (value) {
       //Do other things once the value has been saved.
       console.log("saved: " + value);
-      helper.toaster("subscription deleted", 100);
+      helper.toaster("subscription deleted", 2000);
       status.view = "month";
       router();
     })
     .catch(function (err) {
       // This code runs if there were any errors
-      console.log(err);
+      helper.toaster(err, 2000);
     });
 
   document.activeElement.remove();
@@ -867,10 +879,11 @@ localforage
 localforage
   .getItem("subscriptions")
   .then(function (value) {
-    if (value != null) subscriptions = value;
+    subscriptions = value;
 
     setTimeout(function () {
       load_subscriptions();
+      console.log(subscriptions);
     }, 2000);
   })
   .catch(function (err) {
@@ -1007,6 +1020,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
           .parentElement.focus();
       }, 500);
     });
+
+  //default when is not set
+  settings.default_notification = "none";
 
   document
     .getElementById("default-notification-time")
@@ -1553,13 +1569,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
       case "0":
         break;
 
+      case "Backspace":
+        window.close();
+        break;
+
       case "ArrowLeft":
         if (status.view == "list-view") {
-          // to do
-          delete_event();
-          document.activeElement.previousElementSibling.focus();
-
-          renderHello(events);
         }
 
         break;
@@ -1761,7 +1776,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
             localforage
               .getItem("events")
               .then(function (value) {
-                console.log(value);
                 eximport.export_ical("greg.ics", value);
               })
               .catch(function (err) {

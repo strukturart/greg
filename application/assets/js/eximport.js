@@ -100,9 +100,7 @@ const eximport = (() => {
   };
 
   // /////////////
-
   // /PARSE ICS
-
   // /////////////
 
   let parse_ics = function (data, callback, saveOnDevice, subscription) {
@@ -116,8 +114,6 @@ const eximport = (() => {
     let isoDateTimeEnd = "";
 
     vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
-      console.log(index);
-
       if (
         index.getFirstPropertyValue("dtstart") == "" &&
         index.getFirstPropertyValue("summary") == ""
@@ -247,7 +243,6 @@ const eximport = (() => {
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
-   
     });
 
     if (saveOnDevice) {
@@ -270,9 +265,7 @@ const eximport = (() => {
   };
 
   // ///////////
-
   // /FETCH ICS
-
   // /////////
 
   let fetch_ics = function (url, cb) {
