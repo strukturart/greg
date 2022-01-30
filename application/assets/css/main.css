@@ -509,6 +509,10 @@ div#event-slider div.icons-bar {
   margin: 5px 0;
 }
 
+div#event-slider article[data-alarm="none"] div.icons-bar img.bell {
+  display: none;
+}
+
 div#event-slider div.icons-bar img {
   width: 15px;
   height: auto;
@@ -543,6 +547,7 @@ div#event-slider article {
   font-size: 0.9rem;
   position: absolute;
   top: 0px;
+  display: none;
 }
 
 div#event-slider article h2 {

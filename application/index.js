@@ -42,8 +42,6 @@ let settings = {};
 
 let blob = "";
 let events = [];
-let subscriptions = [];
-
 //ads || ads free
 
 //KaioOs ads
@@ -60,7 +58,7 @@ let getManifest = function (callback) {
 
 //KaiOs store true||false
 function manifest(a) {
-  let t = document.getElementById("#KaiOsAds-Wrapper");
+  let t = document.getElementById("KaiOsAds-Wrapper");
   if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
     document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
   } else {
@@ -228,6 +226,7 @@ let slider_index = 0;
 
 let event_check_day = function (date) {
   slider = [];
+  console.log(date);
   let k = document.querySelector("div#event-slider-indicator div");
   k.innerHTML = "";
 
@@ -306,11 +305,12 @@ let event_check_day = function (date) {
           }
         }
       }
-      if (slider != "" && slider.length > 0) {
-        k.style.opacity = 100;
-      } else {
-        k.style.opacity = 0;
-      }
+    }
+    console.log(slider.length);
+    if (slider != "" && slider.length > 0) {
+      k.style.opacity = 100;
+    } else {
+      k.style.opacity = 0;
     }
   }
 };
@@ -501,6 +501,8 @@ let set_tabindex = function () {
   );
 };
 
+//RENDER
+
 function renderHello(arr) {
   document.getElementById("event-slider").style.opacity = 0;
   helper.sort_array(arr, "dateStart", "date");
@@ -512,10 +514,10 @@ function renderHello(arr) {
   document.getElementById("event-slider").style.opacity = 100;
 
   set_tabindex();
-  event_check_day(document.activeElement.getAttribute("data-date"));
+  //event_check_day(document.activeElement.getAttribute("data-date"));
 
   //format date
-  Array.from(document.querySelectorAll("article")).forEach(function (index) {
+  document.querySelectorAll("article").forEach(function (index) {
     let t = new Date(index.getAttribute("data-date"));
     let n = new Date(index.getAttribute("data-date-end"));
 
@@ -697,6 +699,7 @@ let router = function (view) {
     list_view.style.display = "block";
     setTimeout(function () {
       let articles = document.querySelectorAll("div#list-view article");
+
       let success = false;
       for (var k = 0; k < articles.length; k++) {
         if (articles[k].getAttribute("data-date") == status.selected_day) {
@@ -704,6 +707,12 @@ let router = function (view) {
           k = articles.length;
           success = true;
         }
+      }
+      //
+      for (var k = 0; k < articles.length; k++) {
+        console.log(articles[k].getAttribute("data-alarm"));
+        if (articles[k].getAttribute("data-alarm") == "none")
+          articles[k].querySelector("img.bell").style.display = "none";
       }
       if (!success) {
         document.querySelectorAll("div#list-view article")[0].focus();
@@ -753,7 +762,7 @@ let router = function (view) {
       .querySelectorAll("div#subscription-form div.item input")[0]
       .focus();
 
-    helper.bottom_bar("QR", "save", "chancel");
+    helper.bottom_bar("QR", "", "save");
   }
 };
 
@@ -808,12 +817,15 @@ let callback_scan = function (url) {
   document.querySelector("div#subscription-form input#cal-subs-url").value =
     url;
 };
-
+let subscriptions = new Array();
 let store_subscription = function () {
+  console.log(subscriptions);
+
   if (
     helper.validate(document.getElementById("cal-subs-url").value) &&
     document.getElementById("cal-subs-name").value != ""
   ) {
+    subscriptions = [];
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
@@ -821,11 +833,11 @@ let store_subscription = function () {
 
     document.querySelector("input#cal-subs-name").val = "";
     document.querySelector("input#cal-subs-url").val = "";
-    document.getElementById("subscription-form").style.display = "none";
 
     localforage
       .setItem("subscriptions", subscriptions)
       .then(function (value) {
+        document.getElementById("subscription-form").style.display = "none";
         helper.toaster("subscription stored", 2000);
         status.view = "options";
         router();
@@ -845,7 +857,6 @@ let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
     (e) => e.name != document.activeElement.innerText
   );
-  console.log(updated_subscriptions);
 
   localforage
     .setItem("subscriptions", updated_subscriptions)
@@ -882,6 +893,7 @@ localforage
     subscriptions = value;
 
     setTimeout(function () {
+      if (subscriptions == null) return false;
       load_subscriptions();
       console.log(subscriptions);
     }, 2000);
@@ -922,7 +934,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
   /////////////////
 
   let nav = function (move) {
-    console.log(document.activeElement.nodeName);
     if (
       document.activeElement.nodeName == "SELECT" ||
       document.activeElement.type == "date" ||
@@ -1586,8 +1597,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
   // ////////////
 
   function shortpress_action(param) {
-    console.log(document.activeElement.type);
-
     switch (param.key) {
       case "*":
         jump_to_today();
@@ -1659,8 +1668,19 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
       case "SoftRight":
       case "Alt":
-        status.view = "options";
-        router();
+        console.log(status.view);
+        if (status.view == "month") {
+          status.view = "options";
+          router();
+
+          return true;
+        }
+
+        if (status.view == "subscription") {
+          // store subscription
+          store_subscription();
+          return true;
+        }
         break;
 
       case "SoftLeft":
@@ -1708,12 +1728,6 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
         if (document.activeElement.classList.contains("input-parent")) {
           document.activeElement.children[1].focus();
-          return true;
-        }
-
-        if (status.view == "subscription") {
-          // store subscription
-          store_subscription();
           return true;
         }
 

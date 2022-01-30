@@ -144,8 +144,8 @@
             <script id="template" type="x-tmpl-mustache">
 
             {{#data}}
-            <article data-id={{UID}} data-date={{dateStart}} data-date-end={{dateEnd}} data-rrule={{rrule_}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}}  {{#alarmTrigger}}alarm{{/alarmTrigger}}">
-               <div class="icons-bar flex">{{#alarmTrigger}}<img class="bell" src="assets/image/bell.svg">{{/alarmTrigger}}{{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
+            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}} ">
+               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
                 <div class="date"></div>
                 <div class="time">
                     {{time_start}}
