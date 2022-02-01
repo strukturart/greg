@@ -226,7 +226,6 @@ let slider_index = 0;
 
 let event_check_day = function (date) {
   slider = [];
-  console.log(date);
   let k = document.querySelector("div#event-slider-indicator div");
   k.innerHTML = "";
 
@@ -306,12 +305,11 @@ let event_check_day = function (date) {
         }
       }
     }
-    console.log(slider.length);
-    if (slider != "" && slider.length > 0) {
-      k.style.opacity = 100;
-    } else {
-      k.style.opacity = 0;
-    }
+  }
+  if (slider != "" && slider.length > 0) {
+    k.style.opacity = 100;
+  } else {
+    k.style.opacity = 0;
   }
 };
 
@@ -402,7 +400,7 @@ let showCalendar = function (month, year) {
 
   // creating all cells
   let date = 1;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 6; i++) {
     // creates a table row
     let row = document.createElement("div");
     row.classList.add("flex");
@@ -494,11 +492,9 @@ let showCalendar = function (month, year) {
 };
 
 let set_tabindex = function () {
-  Array.from(document.querySelectorAll("div#list-view article")).forEach(
-    function (i, p) {
-      i.setAttribute("tabindex", p);
-    }
-  );
+  document.querySelectorAll("div#list-view article").forEach(function (i, p) {
+    i.setAttribute("tabindex", p);
+  });
 };
 
 //RENDER
