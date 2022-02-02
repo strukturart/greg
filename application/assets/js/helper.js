@@ -142,6 +142,8 @@ const helper = (() => {
     var options = {
       body: param_text,
       silent: param_silent,
+      requireInteraction: false,
+      //actions: [{ action: "test", title: "test" }],
     };
 
     // Let's check whether notification permissions have already been granted
@@ -161,12 +163,41 @@ const helper = (() => {
     }
   };
 
-  //alarm notification
-  if (navigator.mozSetMessageHandler) {
-    navigator.mozSetMessageHandler("alarm", function (message) {
-      helper.notify("Greg", message.data.foo, false);
+  //https://notifications.spec.whatwg.org/#dictdef-notificationaction
+
+  const pushLocalNotification = function (title, body) {
+    window.Notification.requestPermission().then((result) => {
+      var notification = new window.Notification(title, {
+        body: body,
+        //requireInteraction: true,
+      });
+
+      notification.onerror = function (err) {
+        console.log(err);
+      };
+      notification.onclick = function (event) {
+        if (window.navigator.mozApps) {
+          var request = window.navigator.mozApps.getSelf();
+          request.onsuccess = function () {
+            if (request.result) {
+              notification.close();
+              request.result.launch();
+            }
+          };
+        } else {
+          window.open(document.location.origin, "_blank");
+        }
+      };
+      notification.onshow = function () {
+        // notification.close();
+      };
     });
-  }
+  };
+
+  navigator.mozSetMessageHandler("alarm", function (message) {
+    console.log(JSON.stringify(message));
+    pushLocalNotification("Greg", message.data.foo);
+  });
 
   function validate(url) {
     var pattern =

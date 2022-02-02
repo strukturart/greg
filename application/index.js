@@ -42,7 +42,18 @@ let settings = {};
 
 let blob = "";
 let events = [];
+
 //ads || ads free
+navigator.serviceWorker
+  .register("service-worker.js")
+  .then((reg) => {
+    // registration worked
+    console.log("Registration succeeded. Scope is " + reg.scope);
+  })
+  .catch((error) => {
+    // registration failed
+    console.log("Registration failed with " + error);
+  });
 
 //KaioOs ads
 let getManifest = function (callback) {
@@ -56,8 +67,10 @@ let getManifest = function (callback) {
   self.onerror = function () {};
 };
 
+let self;
 //KaiOs store true||false
 function manifest(a) {
+  self = a.origin;
   let t = document.getElementById("KaiOsAds-Wrapper");
   if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
     document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
@@ -1069,6 +1082,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
 
   let add_alarm = function (date, message_text, id) {
     // KaiOs 3.0
+    navigator.serviceWorker.ready.then(function (registration) {
+      console.log(registration);
+    });
 
     if ("b2g.alarmManager" in navigator) {
       // This is arbitrary data pass to the alarm

@@ -40,12 +40,15 @@
 
 
  "serviceworker": {
-      "script_url": "assets/js/service-worker.js"
+      "script_url": "service-worker.js"
     },
 
 
 
 	"permissions": {
+		   "serviceworker": {
+        "description": "Needed for assocating service worker"
+   			 },
 		"desktop-notification": {
 			"description": "Needed to fire system notifications"
 		},
