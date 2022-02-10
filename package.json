@@ -1,0 +1,29 @@
+{
+  "name": "greg",
+  "version": "1.0.0",
+  "description": "<img src=\"/images/logo.svg\" width=\"228\"/>",
+  "source": "/application/index.html",
+  "browserslist": "Firefox <= 48",
+  "scripts": {
+    "start": "parcel  --no-source-maps",
+    "build": "parcel build --no-source-maps -d public --public-url ./"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/strukturart/greg.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/strukturart/greg/issues"
+  },
+  "homepage": "https://github.com/strukturart/greg#readme",
+  "devDependencies": {
+    "cssnano": "^4.1.11",
+    "postcss": "^8.4.6"
+  },
+  "dependencies": {
+    "localforage": "^1.10.0"
+  }
+}

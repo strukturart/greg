@@ -1,8 +1,3 @@
-//polyfill
-if (window.NodeList && !NodeList.prototype.forEach) {
-  NodeList.prototype.forEach = Array.prototype.forEach;
-}
-
 const eximport = (() => {
   let export_ical = function (filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
@@ -92,10 +87,6 @@ const eximport = (() => {
               "</button>"
           );
       }
-
-      document.querySelectorAll("div#options button").forEach(function (i, p) {
-        // i.setAttribute("tabindex", p)
-      });
     });
   };
 

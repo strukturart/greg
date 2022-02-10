@@ -1,101 +1,5 @@
 "use strict";
 
-//polyfill
-if (window.NodeList && !NodeList.prototype.forEach) {
-  NodeList.prototype.forEach = Array.prototype.forEach;
-}
-
-function hashCode(str) {
-  var hash = 0;
-  for (var i = 0; i < str.length; i++) {
-    hash = ~~((hash << 5) - hash + str.charCodeAt(i));
-  }
-  return hash;
-}
-
-function intToRGB(i) {
-  var c = (i & 0x00ffffff).toString(16).toUpperCase();
-
-  return "00000".substring(0, 6 - c.length) + c;
-}
-
-function getRandomInteger(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function share(url) {
-  var activity = new MozActivity({
-    name: "share",
-    data: {
-      type: "url",
-      url: url,
-    },
-  });
-
-  activity.onsuccess = function () {};
-
-  activity.onerror = function () {
-    console.log("The activity encounter en error: " + this.error);
-  };
-}
-
-//check if internet connection
-function check_iconnection() {
-  function updateOfflineStatus() {
-    toaster("Your Browser is offline", 15000);
-    return false;
-  }
-
-  window.addEventListener("offline", updateOfflineStatus);
-}
-
-function delete_file(filename) {
-  var sdcard = navigator.getDeviceStorages("sdcard");
-  var request = sdcard[1].delete(filename);
-
-  request.onsuccess = function () {
-    //toaster("File deleted", 2000);
-  };
-
-  request.onerror = function () {
-    //toaster("Unable to delete the file: " + this.error, 2000);
-  };
-}
-
-function get_file(filename) {
-  var sdcard = navigator.getDeviceStorages("sdcard");
-  var request = sdcard[1].get(filename);
-
-  request.onsuccess = function () {
-    var file = this.result;
-    //alert("Get the file: " + file.name);
-  };
-
-  request.onerror = function () {
-    //alert("Unable to get the file: " + this.error);
-  };
-}
-
-function write_file(data, filename) {
-  var sdcard = navigator.getDeviceStorages("sdcard");
-  var file = new Blob([data], {
-    type: "text/plain",
-  });
-  var request = sdcard[1].addNamed(file, filename);
-
-  request.onsuccess = function () {
-    var name = this.result;
-    //toaster('File "' + name + '" successfully wrote on the sdcard storage area', 2000);
-  };
-
-  // An error typically occur if a file with the same name already exist
-  request.onerror = function () {
-    toaster("Unable to write the file: " + this.error, 2000);
-  };
-}
-
 const helper = (() => {
   let sort_array = function (arr, item_key, type) {
     if (type == "date") {
@@ -193,11 +97,12 @@ const helper = (() => {
       };
     });
   };
-
-  navigator.mozSetMessageHandler("alarm", function (message) {
-    console.log(JSON.stringify(message));
-    pushLocalNotification("Greg", message.data.foo);
-  });
+  if (navigator.mozSetMessageHandler) {
+    navigator.mozSetMessageHandler("alarm", function (message) {
+      console.log(JSON.stringify(message));
+      pushLocalNotification("Greg", message.data.foo);
+    });
+  }
 
   function validate(url) {
     var pattern =
@@ -414,7 +319,37 @@ const helper = (() => {
     };
   }
 
+  let list_files = function (filetype, callback) {
+    var pics = navigator.getDeviceStorage("sdcard");
+
+    var cursor = pics.enumerate();
+    let file_list = [];
+
+    cursor.onsuccess = function () {
+      if (cursor.result.name !== null) {
+        var file = cursor.result;
+        let n = file.name.split(".");
+        let file_type = n[n.length - 1];
+
+        if (file_type == filetype) {
+          file_list.push(file.name);
+        }
+
+        this.continue();
+      } else {
+        console.log(file_list);
+      }
+
+      callback = function () {};
+    };
+
+    cursor.onerror = function () {
+      console.warn("No file found: " + this.error);
+    };
+  };
+
   return {
+    list_files,
     getManifest,
     toaster,
     side_toaster,
@@ -432,3 +367,99 @@ const helper = (() => {
     pick_image,
   };
 })();
+
+//polyfill
+if (window.NodeList && !NodeList.prototype.forEach) {
+  NodeList.prototype.forEach = Array.prototype.forEach;
+}
+
+function hashCode(str) {
+  var hash = 0;
+  for (var i = 0; i < str.length; i++) {
+    hash = ~~((hash << 5) - hash + str.charCodeAt(i));
+  }
+  return hash;
+}
+
+function intToRGB(i) {
+  var c = (i & 0x00ffffff).toString(16).toUpperCase();
+
+  return "00000".substring(0, 6 - c.length) + c;
+}
+
+function getRandomInteger(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function share(url) {
+  var activity = new MozActivity({
+    name: "share",
+    data: {
+      type: "url",
+      url: url,
+    },
+  });
+
+  activity.onsuccess = function () {};
+
+  activity.onerror = function () {
+    console.log("The activity encounter en error: " + this.error);
+  };
+}
+
+//check if internet connection
+function check_iconnection() {
+  function updateOfflineStatus() {
+    toaster("Your Browser is offline", 15000);
+    return false;
+  }
+
+  window.addEventListener("offline", updateOfflineStatus);
+}
+
+function delete_file(filename) {
+  var sdcard = navigator.getDeviceStorages("sdcard");
+  var request = sdcard[1].delete(filename);
+
+  request.onsuccess = function () {
+    //toaster("File deleted", 2000);
+  };
+
+  request.onerror = function () {
+    //toaster("Unable to delete the file: " + this.error, 2000);
+  };
+}
+
+function get_file(filename) {
+  var sdcard = navigator.getDeviceStorages("sdcard");
+  var request = sdcard[1].get(filename);
+
+  request.onsuccess = function () {
+    var file = this.result;
+    //alert("Get the file: " + file.name);
+  };
+
+  request.onerror = function () {
+    //alert("Unable to get the file: " + this.error);
+  };
+}
+
+function write_file(data, filename) {
+  var sdcard = navigator.getDeviceStorages("sdcard");
+  var file = new Blob([data], {
+    type: "text/plain",
+  });
+  var request = sdcard[1].addNamed(file, filename);
+
+  request.onsuccess = function () {
+    var name = this.result;
+    //toaster('File "' + name + '" successfully wrote on the sdcard storage area', 2000);
+  };
+
+  // An error typically occur if a file with the same name already exist
+  request.onerror = function () {
+    toaster("Unable to write the file: " + this.error, 2000);
+  };
+}
