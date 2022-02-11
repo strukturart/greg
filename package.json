@@ -5,8 +5,8 @@
   "source": "/application/index.html",
   "browserslist": "Firefox <= 48",
   "scripts": {
-    "start": "parcel  --no-source-maps",
-    "build": "parcel build --no-source-maps -d public --public-url ./"
+    "start": "parcel  --no-source-maps application/index.html",
+    "build": "parcel build --no-source-maps -d public --public-url ./ public/index.html"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
     "postcss": "^8.4.6"
   },
   "dependencies": {
+    "assets": "^3.0.1",
     "localforage": "^1.10.0"
   }
 }

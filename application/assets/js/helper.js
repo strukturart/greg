@@ -1,6 +1,6 @@
 "use strict";
 
-const helper = (() => {
+export const helper = (() => {
   let sort_array = function (arr, item_key, type) {
     if (type == "date") {
       arr.sort((a, b) => {
@@ -320,27 +320,24 @@ const helper = (() => {
   }
 
   let list_files = function (filetype, callback) {
-    var pics = navigator.getDeviceStorage("sdcard");
+    var d = navigator.getDeviceStorage("sdcard");
 
-    var cursor = pics.enumerate();
-    let file_list = [];
+    var cursor = d.enumerate();
 
     cursor.onsuccess = function () {
+      if (!this.result) {
+        console.log("finished");
+      }
       if (cursor.result.name !== null) {
         var file = cursor.result;
         let n = file.name.split(".");
         let file_type = n[n.length - 1];
 
         if (file_type == filetype) {
-          file_list.push(file.name);
+          callback(file.name);
         }
-
         this.continue();
-      } else {
-        console.log(file_list);
       }
-
-      callback = function () {};
     };
 
     cursor.onerror = function () {

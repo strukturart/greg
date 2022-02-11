@@ -168,25 +168,17 @@ var eximport = function () {
 
 
   var list_ics = function list_ics() {
-    // search .ics files
-    var finder = new Applait.Finder({
-      type: "sdcard",
-      debugMode: false
-    });
-    finder.search(".ics");
-    finder.on("searchComplete", function (needle, filematchcount) {
-      if (filematchcount == 0) {}
-    });
-    finder.on("fileFound", function (file, fileinfo, storageName) {
-      document.querySelector("div#import-text").style.display = "block";
+    var file_list = [];
 
-      if (fileinfo.name != "greg.ics") {
-        document.querySelector("div#options div#import-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="import" data-filename="' + fileinfo.name + '">' + fileinfo.name + "</button>");
-      }
+    var cb = function cb(result) {
+      file_list.push(result);
+      var fn = result.split("/");
+      fn = fn[fn.length - 1];
+      if (fn == "greg.ics") return false;
+      document.querySelector("div#options div#import-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="import" data-filename="' + result + '">' + fn + "</button>");
+    };
 
-      document.querySelectorAll("div#options button").forEach(function (i, p) {// i.setAttribute("tabindex", p)
-      });
-    });
+    helper.list_files("ics", cb);
   }; // /////////////
   // /PARSE ICS
   // /////////////
@@ -309,11 +301,12 @@ var eximport = function () {
         // events = value;
         helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
       }).catch(function (err) {
-        helper.toaster(err);
+        console.log(err);
       });
     }
 
     callback(last_uid, last_date);
+    console.log("done");
   }; // ///////////
   // /FETCH ICS
   // /////////
@@ -360,18 +353,11 @@ var eximport = function () {
 
 
   function loadICS(filename, callback) {
-    var finder = new Applait.Finder({
-      type: "sdcard",
-      debugMode: false
-    });
-    finder.search(filename);
-    finder.on("searchComplete", function (needle, filematchcount) {
-      if (filematchcount == 0) {
-        helper.toaster("xxx", 2000);
-      }
-    });
-    finder.on("fileFound", function (file, fileinfo, storageName) {
-      // file reader
+    var sdcard = navigator.getDeviceStorage("sdcard");
+    var request = sdcard.get(filename);
+
+    request.onsuccess = function () {
+      var file = this.result;
       var reader = new FileReader();
 
       reader.onerror = function (event) {
@@ -380,12 +366,15 @@ var eximport = function () {
       };
 
       reader.onloadend = function (event) {
-        var data = event.target.result;
-        parse_ics(data, callback, true, false);
+        parse_ics(event.target.result, callback, true, false);
       };
 
       reader.readAsText(file);
-    });
+    };
+
+    request.onerror = function () {
+      console.warn("Unable to get the file: " + this.error);
+    };
   }
 
   return {
@@ -424,7 +413,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "40361" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "40769" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

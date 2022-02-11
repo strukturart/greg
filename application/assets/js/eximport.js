@@ -64,30 +64,27 @@ const eximport = (() => {
   // ////////////
 
   let list_ics = function () {
-    // search .ics files
-    let finder = new Applait.Finder({ type: "sdcard", debugMode: false });
+    let file_list = [];
+    let cb = function (result) {
+      file_list.push(result);
 
-    finder.search(".ics");
-    finder.on("searchComplete", function (needle, filematchcount) {
-      if (filematchcount == 0) {
-      }
-    });
+      let fn = result.split("/");
+      fn = fn[fn.length - 1];
+      if (fn == "greg.ics") return false;
 
-    finder.on("fileFound", function (file, fileinfo, storageName) {
-      document.querySelector("div#import-text").style.display = "block";
-      if (fileinfo.name != "greg.ics") {
-        document
-          .querySelector("div#options div#import-text")
-          .insertAdjacentHTML(
-            "afterend",
-            '<button class="item dynamic" data-function="import" data-filename="' +
-              fileinfo.name +
-              '">' +
-              fileinfo.name +
-              "</button>"
-          );
-      }
-    });
+      document
+        .querySelector("div#options div#import-text")
+        .insertAdjacentHTML(
+          "afterend",
+          '<button class="item dynamic" data-function="import" data-filename="' +
+            result +
+            '">' +
+            fn +
+            "</button>"
+        );
+    };
+
+    helper.list_files("ics", cb);
   };
 
   // /////////////
@@ -103,6 +100,8 @@ const eximport = (() => {
     let last_uid = "";
     let last_date = "";
     let isoDateTimeEnd = "";
+
+
 
     vcalendar.getAllSubcomponents("vevent").forEach(function (index) {
       if (
@@ -120,6 +119,10 @@ const eximport = (() => {
         );
 
         DTend = new Date(index.getFirstPropertyValue("dtend"));
+
+
+
+
 
         dateEnd =
           DTend.getFullYear() +
@@ -184,6 +187,9 @@ const eximport = (() => {
         timeEnd = "";
       }
 
+
+
+
       last_uid = "";
       last_date = "";
       let parse_rrule = function () {
@@ -205,6 +211,9 @@ const eximport = (() => {
 
         return feedback;
       };
+
+
+
 
       let imp = {
         BEGIN: "VEVENT",
@@ -231,15 +240,21 @@ const eximport = (() => {
         rrule_: parse_rrule2(),
       };
 
+
       last_uid = imp.UID;
       last_date = imp.date;
       events.push(imp);
+
     });
+
+
+
 
     if (saveOnDevice) {
       let without_subscription = events.filter(
         (events) => events.isSubscription === false
       );
+      
 
       localforage
         .setItem("events", without_subscription)
@@ -248,11 +263,16 @@ const eximport = (() => {
           helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
         })
         .catch(function (err) {
-          helper.toaster(err);
+          console.log(err);
         });
     }
+    
+
+        
 
     callback(last_uid, last_date);
+
+console.log("done")
   };
 
   // ///////////
@@ -299,17 +319,13 @@ const eximport = (() => {
   // /////////////////////
 
   function loadICS(filename, callback) {
-    let finder = new Applait.Finder({ type: "sdcard", debugMode: false });
-    finder.search(filename);
+    var sdcard = navigator.getDeviceStorage("sdcard");
 
-    finder.on("searchComplete", function (needle, filematchcount) {
-      if (filematchcount == 0) {
-        helper.toaster("xxx", 2000);
-      }
-    });
+    var request = sdcard.get(filename);
 
-    finder.on("fileFound", function (file, fileinfo, storageName) {
-      // file reader
+    request.onsuccess = function () {
+      var file = this.result;
+
       let reader = new FileReader();
 
       reader.onerror = function (event) {
@@ -318,12 +334,17 @@ const eximport = (() => {
       };
 
       reader.onloadend = function (event) {
-        let data = event.target.result;
-        parse_ics(data, callback, true, false);
+        parse_ics(event.target.result, callback, true, false);
       };
 
       reader.readAsText(file);
-    });
+    };
+
+    request.onerror = function () {
+      console.warn("Unable to get the file: " + this.error);
+    };
+
+ 
   }
 
   return {

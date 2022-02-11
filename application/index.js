@@ -1,11 +1,11 @@
 "use strict";
-let cb = function () {
-  alert();
-};
 
-helper.list_files("ics", cb);
+import localforage from 'localforage'
 
-document.addEventListener("DOMContentLoaded", function () {
+import helper from 'assets/js/helper.js'
+
+
+
   let months = [
     "Jan",
     "Feb",
@@ -346,6 +346,8 @@ document.addEventListener("DOMContentLoaded", function () {
     p[slider_index].classList.add("active");
   };
 
+
+
   ////
   // JUMP TO TODAY
   ////
@@ -561,22 +563,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  if ("b2g.alarmManager" in navigator) {
-    navigator.serviceWorker
-      .register("service-worker.js")
-      .then((registration) => {
-        registration.systemMessageManager.subscribe("alarm").then(
-          (rv) => {
-            console.log(
-              'Successfully subscribe system messages of name "alarm".'
-            );
-          },
-          (error) => {
-            console.log("Fail to subscribe system message, error: " + error);
-          }
-        );
-      });
-  }
 
   let clear_form = function () {
     Array.from(document.querySelectorAll("div#add-edit-event input")).forEach(
@@ -1085,29 +1071,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   let add_alarm = function (date, message_text, id) {
-    // KaiOs 3.0
-    navigator.serviceWorker.ready.then(function (registration) {
-      console.log(registration);
-    });
-
-    if ("b2g.alarmManager" in navigator) {
-      // This is arbitrary data pass to the alarm
-      var data = {
-        foo: message_text,
-        event_id: id,
-      };
-
-      var request = navigator.b2g.alarmManager.add(date, "honorTimezone", data);
-
-      request.onsuccess = function () {};
-
-      request.onerror = function () {
-        console.log("An error occurred: " + this.error.name);
-      };
-    } else {
-      console.log("API not aviable");
-    }
-
+   
     // KaiOs  2.xx
     if (navigator.mozAlarms) {
       // This is arbitrary data pass to the alarm
@@ -1134,33 +1098,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // with all events
   // to clean
   let remove_alarm = function (id) {
-    // KaiOs  3.00
 
-    if ("b2g.alarmManager" in navigator) {
-      let request = navigator.b2g.alarmManager.getAll();
-
-      request.onsuccess = function () {
-        this.result.forEach(function (alarm) {
-          if (alarm.data.event_id == id) {
-            let req = navigator.b2g.alarmManager.remove(alarm.id);
-
-            req.onsuccess = function () {
-              console.log("removed");
-            };
-
-            req.onerror = function () {
-              console.log("An error occurred: " + this.error.name);
-            };
-          } else {
-            console.log("no alarm founded");
-          }
-        });
-      };
-
-      request.onerror = function () {
-        console.log("An error occurred:", this.error.name);
-      };
-    }
 
     // KaiOs  2.xx
 
@@ -1516,8 +1454,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // callback import event
   let import_event = function (id, date) {
-    //status.selected_day = date;
-    //status.selected_day_id = id;
+    helper.toaster("done", 2000);
     helper.bottom_bar("edit", "", "");
 
     //renderHello(events);
@@ -1902,8 +1839,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.addEventListener("keyup", handleKeyUp);
 
   document.addEventListener("visibilitychange", handleVisibilityChange, false);
-  console.log("DOM is loaded");
-});
+
 
 navigator.serviceWorker
   .register("service-worker.js")

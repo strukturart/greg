@@ -223,10 +223,12 @@ var helper = function () {
     });
   };
 
-  navigator.mozSetMessageHandler("alarm", function (message) {
-    console.log(JSON.stringify(message));
-    pushLocalNotification("Greg", message.data.foo);
-  });
+  if (navigator.mozSetMessageHandler) {
+    navigator.mozSetMessageHandler("alarm", function (message) {
+      console.log(JSON.stringify(message));
+      pushLocalNotification("Greg", message.data.foo);
+    });
+  }
 
   function validate(url) {
     var pattern = /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
@@ -448,7 +450,35 @@ var helper = function () {
     };
   }
 
+  var list_files = function list_files(filetype, callback) {
+    var d = navigator.getDeviceStorage("sdcard");
+    var cursor = d.enumerate();
+
+    cursor.onsuccess = function () {
+      if (!this.result) {
+        console.log("finished");
+      }
+
+      if (cursor.result.name !== null) {
+        var file = cursor.result;
+        var n = file.name.split(".");
+        var file_type = n[n.length - 1];
+
+        if (file_type == filetype) {
+          callback(file.name);
+        }
+
+        this.continue();
+      }
+    };
+
+    cursor.onerror = function () {
+      console.warn("No file found: " + this.error);
+    };
+  };
+
   return {
+    list_files: list_files,
     getManifest: getManifest,
     toaster: toaster,
     side_toaster: side_toaster,
@@ -465,9 +495,8 @@ var helper = function () {
     sort_array: sort_array,
     pick_image: pick_image
   };
-}();
+}(); //polyfill
 
-console.log(helper); //polyfill
 
 if (window.NodeList && !NodeList.prototype.forEach) {
   NodeList.prototype.forEach = Array.prototype.forEach;
@@ -587,7 +616,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "40361" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "40769" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
