@@ -1,7 +1,7 @@
 "use strict";
 
-export const helper = (() => {
-  let sort_array = function (arr, item_key, type) {
+
+  export let sort_array = function (arr, item_key, type) {
     if (type == "date") {
       arr.sort((a, b) => {
         let da = new Date(a[item_key]),
@@ -33,7 +33,7 @@ export const helper = (() => {
     }
   };
 
-  let uid = function () {
+  export let uid = function () {
     function _p8(s) {
       var p = (Math.random().toString(16) + "000000000").substr(2, 8);
       return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
@@ -41,7 +41,7 @@ export const helper = (() => {
     return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
   };
 
-  let notification = "";
+  export let notification = "";
   let notify = function (param_title, param_text, param_silent) {
     var options = {
       body: param_text,
@@ -69,7 +69,7 @@ export const helper = (() => {
 
   //https://notifications.spec.whatwg.org/#dictdef-notificationaction
 
-  const pushLocalNotification = function (title, body) {
+  export let pushLocalNotification = function (title, body) {
     window.Notification.requestPermission().then((result) => {
       var notification = new window.Notification(title, {
         body: body,
@@ -104,7 +104,7 @@ export const helper = (() => {
     });
   }
 
-  function validate(url) {
+  export let validate = function(url) {
     var pattern =
       /(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?/;
     if (pattern.test(url)) {
@@ -113,7 +113,7 @@ export const helper = (() => {
     return false;
   }
 
-  let getManifest = function (callback) {
+  export let getManifest = function (callback) {
     if (!navigator.mozApps) {
       //let t = document.getElementById("kaisos-ads");
       //t.remove();
@@ -158,7 +158,7 @@ export const helper = (() => {
 
   let queue_st = [];
   let ttimeout;
-  let side_toaster = function (text, time) {
+  export let  side_toaster = function (text, time) {
     queue_st.push({ text: text, time: time });
     if (queue_st.length === 1) {
       toast_qq(text, time);
@@ -184,7 +184,7 @@ export const helper = (() => {
   };
 
   //bottom bar
-  let bottom_bar = function (left, center, right) {
+  export let bottom_bar = function (left, center, right) {
     document.querySelector("div#bottom-bar div#button-left").textContent = left;
     document.querySelector("div#bottom-bar div#button-center").textContent =
       center;
@@ -199,7 +199,7 @@ export const helper = (() => {
   };
 
   //top bar
-  let top_bar = function (left, center, right) {
+  export let top_bar = function (left, center, right) {
     document.querySelector("div#top-bar div.button-left").innerHTML = left;
     document.querySelector("div#top-bar div.button-center").textContent =
       center;
@@ -217,7 +217,7 @@ export const helper = (() => {
   };
 
   let lock;
-  let screenlock = function (stat) {
+  export let screenlock = function (stat) {
     if (typeof window.navigator.requestWakeLock === "undefined") {
       return false;
     }
@@ -236,20 +236,10 @@ export const helper = (() => {
     }
   };
 
-  //filesize
-  function formatFileSize(bytes, decimalPoint) {
-    if (bytes || bytes > 0 || bytes != undefined || bytes != NaN) {
-      var k = 1000,
-        dm = decimalPoint || 2,
-        sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"],
-        i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
-    }
-  }
 
   //goodbye
 
-  let goodbye = function () {
+  export let goodbye = function () {
     document.getElementById("goodbye").style.display = "block";
     bottom_bar("", "", "");
 
@@ -278,7 +268,7 @@ export const helper = (() => {
     }
   };
   //pick image
-  let pick_image = function (cb) {
+  export let pick_image = function (cb) {
     var activity = new MozActivity({
       name: "pick",
       data: {
@@ -299,14 +289,14 @@ export const helper = (() => {
   };
 
   //delete file
-  function deleteFile(storage, path, notification) {
+ export  let deleteFile = function(storage, path, notification) {
     let sdcard = navigator.getDeviceStorages("sdcard");
 
     let requestDel = sdcard[storage].delete(path);
 
     requestDel.onsuccess = function () {
       if (notification == "notification") {
-        helper.toaster(
+        toaster(
           'File "' +
             name +
             '" successfully deleted frome the sdcard storage area'
@@ -315,11 +305,11 @@ export const helper = (() => {
     };
 
     requestDel.onerror = function () {
-      helper.toaster("Unable to delete the file: " + this.error);
+      toaster("Unable to delete the file: " + this.error);
     };
   }
 
-  let list_files = function (filetype, callback) {
+  export let list_files = function (filetype, callback) {
     var d = navigator.getDeviceStorage("sdcard");
 
     var cursor = d.enumerate();
@@ -345,25 +335,8 @@ export const helper = (() => {
     };
   };
 
-  return {
-    list_files,
-    getManifest,
-    toaster,
-    side_toaster,
-    add_script,
-    deleteFile,
-    goodbye,
-    screenlock,
-    validate,
-    formatFileSize,
-    top_bar,
-    bottom_bar,
-    notify,
-    uid,
-    sort_array,
-    pick_image,
-  };
-})();
+
+
 
 //polyfill
 if (window.NodeList && !NodeList.prototype.forEach) {

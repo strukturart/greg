@@ -1,5 +1,8 @@
-const eximport = (() => {
-  let export_ical = function (filename, event_data) {
+ 
+ import {list_files }from '/assets/js/helper.js'
+
+ 
+ export let export_ical = function (filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
 
     var sdcard = navigator.getDeviceStorage("sdcard");
@@ -48,11 +51,11 @@ const eximport = (() => {
       var file = new Blob([result], { type: "text/calendar" });
       var request = sdcard.addNamed(file, filename);
       request.onsuccess = function () {
-        helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
       };
 
       request.onerror = function () {
-        helper.toaster("Unable to write the file", 2000);
+        toaster("Unable to write the file", 2000);
       };
     }, 2000);
   };
@@ -63,7 +66,7 @@ const eximport = (() => {
 
   // ////////////
 
-  let list_ics = function () {
+  export let list_ics = function () {
     let file_list = [];
     let cb = function (result) {
       file_list.push(result);
@@ -84,14 +87,14 @@ const eximport = (() => {
         );
     };
 
-    helper.list_files("ics", cb);
+    list_files("ics", cb);
   };
 
   // /////////////
   // /PARSE ICS
   // /////////////
 
-  let parse_ics = function (data, callback, saveOnDevice, subscription) {
+  export let parse_ics = function (data, callback, saveOnDevice, subscription) {
     var data = data.split(/\r\n|\n/);
     data = data.join("\r\n");
     // parse iCal data
@@ -260,7 +263,7 @@ const eximport = (() => {
         .setItem("events", without_subscription)
         .then(function (value) {
           // events = value;
-          helper.side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+         side_toaster("<img src='assets/image/E25C.svg'>", 2500);
         })
         .catch(function (err) {
           console.log(err);
@@ -279,7 +282,7 @@ console.log("done")
   // /FETCH ICS
   // /////////
 
-  let fetch_ics = function (url, cb) {
+  export let fetch_ics = function (url, cb) {
     let xhttp = new XMLHttpRequest({ mozSystem: true });
 
     xhttp.open("GET", url + "?time=" + new Date().getTime(), true);
@@ -292,7 +295,7 @@ console.log("done")
     };
 
     xhttp.onerror = function () {
-      helper.toaster("subscription could not be loaded", 2000);
+      toaster("subscription could not be loaded", 2000);
     };
 
     xhttp.send(null);
@@ -318,7 +321,7 @@ console.log("done")
   // ///Load ICS///////////
   // /////////////////////
 
-  function loadICS(filename, callback) {
+  export function loadICS(filename, callback) {
     var sdcard = navigator.getDeviceStorage("sdcard");
 
     var request = sdcard.get(filename);
@@ -329,7 +332,7 @@ console.log("done")
       let reader = new FileReader();
 
       reader.onerror = function (event) {
-        helper.toaster("can't read file", 3000);
+        toaster("can't read file", 3000);
         reader.abort();
       };
 
@@ -347,11 +350,4 @@ console.log("done")
  
   }
 
-  return {
-    export_ical,
-    list_ics,
-    loadICS,
-    share,
-    fetch_ics,
-  };
-})();
+

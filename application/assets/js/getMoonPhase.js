@@ -2,8 +2,11 @@
  * modified from http://www.voidware.com/moon_phase.htm
  */
 
-function getMoonPhase(year, month, day) {
-  var c = (e = jd = b = 0);
+export function getMoonPhase(year, month, day) {
+  let c = (e = jd = b = 0);
+  let b
+  let jd
+  let e
 
   if (month < 3) {
     year--;

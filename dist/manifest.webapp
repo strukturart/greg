@@ -1,0 +1,80 @@
+{
+	"version": "0.0.3",
+	"name": "greg",
+	"id":"greg",
+	"categories": ["utilities"],
+	"description": "greg",
+	"launch_path": "/index.html",
+	"type": "privileged",
+	"fullscreen": "true",
+	"icons": {
+		"56": "/icons/icon-56-56.svg",
+		"112": "/icons/icon-112-112.svg"
+	},
+	"developer": {
+		"name": "strukturart",
+		"url": "https://strukturart.com"
+	},
+	"dependencies": {
+		"ads-sdk": "1.5.0"
+	},
+	"locales": {
+		"en-US": {
+			"name": "greg",
+			"subtitle": "greg",
+			"description": "greg"
+		}
+	},
+	"default_locale": "en-US",
+	"messages": [
+
+		{
+			"alarm": "/index.html"
+		},
+		{
+			"notification": "/index.html"
+		}
+
+
+	],
+
+
+ "serviceworker": {
+      "script_url": "service-worker.js"
+    },
+
+
+
+	"permissions": {
+		   "serviceworker": {
+        "description": "Needed for assocating service worker"
+   			 },
+		"desktop-notification": {
+			"description": "Needed to fire system notifications"
+		},
+		"alarms": {
+			"description": "Required to schedule alarms"
+		},
+		"mobiledata": {},
+		"wifidata": {},
+		"calllog": {},
+		"device-storage:sdcard": {
+			"description": "Read/Write from/to sd-card",
+			"access": "readwrite"
+		},
+		"video-capture": {
+			"description": "Reading Codes using the Camera"
+		},
+
+		"spatialnavigation-app-manage": {
+			"navigator.spatialNavigationEnabled": false
+		},
+		"systemXHR": {
+			"description": "Required to load remote content"
+		}
+	}
+
+
+
+
+}
