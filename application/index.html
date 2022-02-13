@@ -16,7 +16,7 @@
     <div id="wrapper">
 
         <div id="toast" class="width-100"></div>
-        <div id="side-toast" class="">hey</div>
+        <div id="side-toast" ></div>
         <div id="intro" class="width-100 height-100">
             <img src="icons/intro.svg">
             <div class="width-100" id="version"></div>
@@ -145,7 +145,7 @@
 
             {{#data}}
             <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}} ">
-               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
+               <div class="icons-bar flex"><img class=bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
                 <div class="date"></div>
                 <div class="time">
                     {{time_start}}
@@ -236,7 +236,7 @@
 
 
 
-<script type="module" src="app.js"></script>
+<script src="app.js"></script>
 
 
 </html>

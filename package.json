@@ -2,11 +2,11 @@
   "name": "greg",
   "version": "1.0.0",
   "description": "<img src=\"/images/logo.svg\" width=\"228\"/>",
-  "source": "application/app.js",
+  "source": "application/index.html",
   "browserslist": "Firefox <= 48",
   "scripts": {
-    "start": "parcel  --no-source-maps application/index.html",
-    "build": "parcel build"
+    "start": "parcel --no-source-maps application/index.html",
+    "build": "parcel build --no-source-maps"
   },
   "repository": {
     "type": "git",
@@ -21,12 +21,28 @@
   "homepage": "https://github.com/strukturart/greg#readme",
   "devDependencies": {
     "cssnano": "^4.1.11",
+    "parcel-plugin-static-files-copy": "^2.6.0",
     "postcss": "^8.4.6"
   },
   "dependencies": {
     "as": "^0.4.1",
     "assets": "^3.0.1",
+    "ical": "^0.8.0",
+    "ical.js": "^1.5.0",
+    "jsqr": "^1.4.0",
     "localforage": "^1.10.0",
-    "mustache": "^4.2.0"
+    "mustache": "^4.2.0",
+    "simple-caldav": "^0.7.1"
+  },
+   "staticFiles": {
+        "staticPath": [
+            {
+                 "staticPath": "application/assets/",
+                "staticOutDir": "assets/"
+            },
+            {
+                "staticPath": "application/manifest.webapp"
+            }
+        ]
   }
 }
