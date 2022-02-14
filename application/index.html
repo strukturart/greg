@@ -18,7 +18,7 @@
         <div id="toast" class="width-100"></div>
         <div id="side-toast" ></div>
         <div id="intro" class="width-100 height-100">
-            <img src="icons/intro.svg">
+            <img src="assets/icons/intro.svg">
             <div class="width-100" id="version"></div>
             <div class="width-100" id="intro-message"></div>
             <div class="width-100 flex justify-content-spacearound" id="loading-progress">
@@ -144,8 +144,8 @@
             <script id="template" type="x-tmpl-mustache">
 
             {{#data}}
-            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} class="item {{#isSubscription}}subscription{{/isSubscription}} {{#multidayevent}}multidayevent{{/multidayevent}} ">
-               <div class="icons-bar flex"><img class=bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
+            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} data-time-start={{time_start}} data-time-end={{time_end}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} data-multidayevent={{multidayevent}} class="item {{#isSubscription}}subscription{{/isSubscription}} ">
+               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
                 <div class="date"></div>
                 <div class="time">
                     {{time_start}}

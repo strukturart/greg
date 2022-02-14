@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/strukturart/greg#readme",
   "devDependencies": {
-    "cssnano": "^4.1.11",
+    "cssnano": "^5.0.17",
     "parcel-plugin-static-files-copy": "^2.6.0",
     "postcss": "^8.4.6"
   },
@@ -34,15 +34,15 @@
     "mustache": "^4.2.0",
     "simple-caldav": "^0.7.1"
   },
-   "staticFiles": {
-        "staticPath": [
-            {
-                 "staticPath": "application/assets/",
-                "staticOutDir": "assets/"
-            },
-            {
-                "staticPath": "application/manifest.webapp"
-            }
-        ]
+  "staticFiles": {
+    "staticPath": [
+      {
+        "staticPath": "application/assets/",
+        "staticOutDir": "assets/"
+      },
+      {
+        "staticPath": "application/manifest.webapp"
+      }
+    ]
   }
 }

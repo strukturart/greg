@@ -75,6 +75,9 @@ export let list_ics = function () {
     fn = fn[fn.length - 1];
     if (fn == "greg.ics") return false;
 
+    document.querySelector("div#options div#import-text").style.display =
+      "block";
+
     document
       .querySelector("div#options div#import-text")
       .insertAdjacentHTML(
@@ -106,14 +109,6 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
     if (datas.hasOwnProperty(k)) {
       var ev = datas[k];
       if (datas[k].type == "VEVENT") {
-        console.log(ev.start + "/" + ev.summary);
-        //multiday event
-        let multidayevent = false;
-        if (ev.end && ev.start) {
-          if (new Date(ev.end).getTime() > new Date(ev.start).getTime()) {
-            multidayevent = true;
-          }
-        }
         //date start
         let dateStart, timeStart;
         if (ev.start) {
@@ -152,6 +147,24 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
             `0${DTstart.getMinutes()}`.slice(-2) +
             ":" +
             `0${DTstart.getSeconds()}`.slice(-2);
+        }
+
+        //multiday event
+        let multidayevent = false;
+        if (ev.end && ev.start) {
+          if (new Date(ev.end) > new Date(ev.start)) {
+            console.log(ev.summary + " / " + ev.start + " / " + ev.end);
+
+            multidayevent = true;
+          }
+          //all day events have the time 00:00:00 but the start end date consecutive
+          if (
+            new Date(ev.end) > new Date(ev.start) &&
+            timeStart == "00:00:00" &&
+            timeEnd == "00:00:00"
+          ) {
+            multidayevent = false;
+          }
         }
 
         let parse_rrule = function () {
@@ -196,8 +209,6 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
 
         last_uid = imp.UID;
         last_date = imp.DTSTART;
-
-        //console.log(imp);
       }
     }
   }
@@ -281,6 +292,7 @@ export function loadICS(filename, callback) {
 
     reader.onloadend = function (event) {
       parse_ics(event.target.result, callback, true, false);
+      document.getElementById("import-text").style.display = "block";
     };
 
     reader.readAsText(file);

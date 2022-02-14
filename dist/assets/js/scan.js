@@ -20,8 +20,6 @@ export let stop_scan = function () {
 
   video.srcObject = null;
   */
-
-  bottom_bar("QR", "save", "chancel");
 };
 
 export let start_scan = function (callback) {

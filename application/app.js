@@ -2,11 +2,9 @@
 
 import localforage from "localforage";
 import Mustache from "mustache";
-
 import { sort_array } from "/assets/js/helper.js";
 import { toaster } from "/assets/js/helper.js";
 import { validate } from "/assets/js/helper.js";
-
 import { uid } from "/assets/js/helper.js";
 import { pick_image } from "/assets/js/helper.js";
 import { bottom_bar } from "/assets/js/helper.js";
@@ -243,18 +241,29 @@ let event_check_day = function (date) {
   slider = [];
   let k = document.querySelector("div#event-slider-indicator div");
   k.innerHTML = "";
-
-  var elements = document.querySelectorAll("div#event-slider article");
-  for (var i = 0; i < elements.length; i++) {
-    elements[i].style.display = "none";
-  }
-
+  //hide all
   let item = document.querySelectorAll("div#event-slider article");
 
   for (let i = 0; i < item.length; i++) {
+    item[i].style.display = "none";
+
     let a = new Date(item[i].getAttribute("data-date")).getTime();
     let b = new Date(item[i].getAttribute("data-date-end")).getTime();
     let c = new Date(date).getTime();
+
+    //hide/show alarm icon
+    if (item[i].getAttribute("data-alarm")) {
+      if (item[i].getAttribute("data-alarm") == "none")
+        item[i].querySelector("div.icons-bar img.bell").style.display = "none";
+    }
+    //all day event
+    if (
+      item[i].getAttribute("data-time-start") == "00:00:00" &&
+      item[i].getAttribute("data-time-end") == "00:00:00"
+    ) {
+      item[i].querySelector("div.time").innerHTML = "All day";
+    }
+
     let d = item[i].getAttribute("data-rrule");
 
     if (d === "none" || d === "") {
@@ -528,6 +537,13 @@ function renderHello(arr) {
 
   //format date
   document.querySelectorAll("article").forEach(function (index) {
+    let w = index.getAttribute("data-time-start");
+    let s = index.getAttribute("data-time-end");
+
+    if (w == "00:00:00" && s == "00:00:00") {
+      index.querySelector("div.time").innerHTML = "All day";
+    }
+
     let t = new Date(index.getAttribute("data-date"));
     let n = new Date(index.getAttribute("data-date-end"));
 
@@ -600,7 +616,7 @@ let option_button_bar = function () {
 const pages = document.querySelectorAll(".page");
 
 let router = function (view) {
-  Array.from(pages).forEach(function (index) {
+  pages.forEach(function (index) {
     index.style.display = "none";
   });
 
@@ -620,11 +636,11 @@ let router = function (view) {
     document.getElementById("event-date").value = status.selected_day;
 
     add_edit_event.style.display = "block";
-    Array.from(document.querySelectorAll("div#add-edit-event .item")).forEach(
-      function (i, p) {
+    document
+      .querySelectorAll("div#add-edit-event .item")
+      .forEach(function (i, p) {
         i.setAttribute("tabindex", p);
-      }
-    );
+      });
     add_edit_event.querySelectorAll(".item")[0].focus();
     bottom_bar("", "edit", "");
 
@@ -664,14 +680,14 @@ let router = function (view) {
     let k = status.selected_day;
     showCalendar(currentMonth, currentYear);
 
-    Array.from(document.querySelectorAll("div#calendar-body div.item")).forEach(
-      function (item) {
+    document
+      .querySelectorAll("div#calendar-body div.item")
+      .forEach(function (item) {
         if (item.getAttribute("data-date") == k) {
           item.focus();
           event_check_day(k);
         }
-      }
-    );
+      });
 
     clear_form();
   }
@@ -703,7 +719,6 @@ let router = function (view) {
       for (var k = 0; k < articles.length; k++) {
         console.log(articles[k].getAttribute("data-alarm"));
         if (articles[k].getAttribute("data-alarm") == "none") {
-          
           articles[k].querySelector("img.bell").style.display = "none";
         }
       }
@@ -772,11 +787,9 @@ let list_subscriptions = function () {
           "</button>"
       );
 
-    Array.from(document.querySelectorAll("div#options button")).forEach(
-      function (i, p) {
-        i.setAttribute("tabindex", p);
-      }
-    );
+    document.querySelectorAll("div#options button").forEach(function (i, p) {
+      i.setAttribute("tabindex", p);
+    });
   });
 };
 
@@ -804,7 +817,7 @@ let load_subscriptions = function () {
 };
 
 let callback_scan = function (url) {
-  bottom_bar("QR", "save", "cancel");
+  bottom_bar("QR", "", "save");
   status.view = "subscription";
   document.querySelector("div#subscription-form input#cal-subs-url").value =
     url;
