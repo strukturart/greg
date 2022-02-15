@@ -1,0 +1,28 @@
+{
+  "name": "ical",
+  "version": "0.8.0",
+  "main": "index.js",
+  "description": "A tolerant, minimal icalendar parser",
+  "keywords": [
+    "ical",
+    "ics",
+    "calendar"
+  ],
+  "homepage": "https://github.com/peterbraden/ical.js",
+  "author": "Peter Braden <peterbraden@peterbraden.co.uk> (peterbraden.co.uk)",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/peterbraden/ical.js.git"
+  },
+  "dependencies": {
+    "rrule": "2.4.1"
+  },
+  "devDependencies": {
+    "vows": "0.8.2",
+    "underscore": "1.9.1"
+  },
+  "scripts": {
+    "test": "./node_modules/vows/bin/vows ./test/test.js"
+  }
+}
