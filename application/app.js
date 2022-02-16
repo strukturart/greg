@@ -16,6 +16,12 @@ import { loadICS } from "/assets/js/eximport.js";
 import { start_scan } from "/assets/js/scan.js";
 import { stop_scan } from "/assets/js/scan.js";
 
+import SimpleCalDAV from "simple-caldav";
+
+const URI = "https://example.com/cal/";
+const dav = new SimpleCalDAV(URI, { credentials: "include", mode: "cors" });
+const evt = dav.getEvent("abc").then(console.log).catch(console.log);
+
 let months = [
   "Jan",
   "Feb",
@@ -38,7 +44,6 @@ let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
 let monthAndYear = document.getElementById("monthAndYear");
-
 let once = false;
 
 export let status = {
@@ -126,7 +131,7 @@ let event_check = function (date) {
       feedback.subscription = false;
       feedback.multidayevent = false;
       feedback.rrule = false;
-      feedback.date = date;
+      //feedback.date = date;
 
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
@@ -136,6 +141,7 @@ let event_check = function (date) {
       if (events[t]["rrule_"] == "none") {
         if (a === c || b === c || (a < c && b > c)) {
           feedback.event = true;
+
           if (events[t].isSubscription === true) {
             feedback.subscription = true;
           }
@@ -143,6 +149,12 @@ let event_check = function (date) {
           if (events[t].multidayevent === true) {
             feedback.multidayevent = true;
           }
+
+          if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
+            feedback.subscription = false;
+            feedback.event = false;
+          }
+
           t = events.length;
         }
       }
@@ -268,6 +280,15 @@ let event_check_day = function (date) {
 
     if (d === "none" || d === "") {
       if (a === c || b === c || (a < c && b > c)) {
+        //if multiday event
+        //the end date is next day
+        //time is 00:00:00
+        if (
+          item[i].getAttribute("data-time-end") == "00:00:00" &&
+          item[i].getAttribute("data-date-end") == date
+        ) {
+          return false;
+        }
         slider.push(item[i]);
         slider[0].style.display = "block";
 
@@ -468,7 +489,7 @@ let showCalendar = function (month, year) {
 
         // check if has event
         if (events.length > 0) {
-          if (event_check(p).event) {
+          if (event_check(p).event == true) {
             cell.classList.add("event");
           }
 

@@ -14980,7 +14980,7 @@ exports.LocalZone = LocalZone;
 exports.Settings = Settings;
 exports.VERSION = VERSION;
 exports.Zone = Zone;
-
+//# sourceMappingURL=luxon.js.map
 
 },{}],"../node_modules/rrule/dist/esm/nlp/i18n.js":[function(require,module,exports) {
 "use strict";
@@ -17552,11 +17552,9 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
 
 
         var multidayevent = false;
-        console.log(ev);
 
         if (ev.end && ev.start) {
           if (new Date(ev.end) > new Date(ev.start)) {
-            console.log(ev.summary + " / " + ev.start + " / " + ev.end);
             multidayevent = true;
           } //all day events have the time 00:00:00 but the start end date consecutive
 
@@ -17571,8 +17569,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
 
           if (ev.rrule != null || ev.rrule != undefined) {
             var a = ev.rrule;
-            feedback = a.freq;
-            console.log(ev.rrule);
+            feedback = a.freq; //console.log(ev.rrule);
           }
 
           return feedback;
@@ -27877,7 +27874,23859 @@ var start_scan = function start_scan(callback) {
 };
 
 exports.start_scan = start_scan;
-},{"jsqr":"../node_modules/jsqr/dist/jsQR.js","../../app.js":"app.js"}],"app.js":[function(require,module,exports) {
+},{"jsqr":"../node_modules/jsqr/dist/jsQR.js","../../app.js":"app.js"}],"../node_modules/simple-caldav/node_modules/ical.js/build/ical.js":[function(require,module,exports) {
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+if (typeof window !== 'undefined' && 'noModule' in HTMLScriptElement.prototype) {
+  // In case ical.js is executed in the browser and a JavaScript module, strict
+  // mode is enabled and requires a global variable to be assigned explicitly
+  // to e.g. the window object.
+  window.ICAL = {};
+}
+
+/* istanbul ignore next */
+/* jshint ignore:start */
+if (typeof module === 'object') {
+  // CommonJS, where exports may be different each time.
+  ICAL = module.exports;
+} else if (typeof ICAL !== 'object') {/* istanbul ignore next */
+  /** @ignore */
+  this.ICAL = {};
+}
+/* jshint ignore:end */
+
+
+/**
+ * The number of characters before iCalendar line folding should occur
+ * @type {Number}
+ * @default 75
+ */
+ICAL.foldLength = 75;
+
+
+/**
+ * The character(s) to be used for a newline. The default value is provided by
+ * rfc5545.
+ * @type {String}
+ * @default "\r\n"
+ */
+ICAL.newLineChar = '\r\n';
+
+
+/**
+ * Helper functions used in various places within ical.js
+ * @namespace
+ */
+ICAL.helpers = {
+  /**
+   * Compiles a list of all referenced TZIDs in all subcomponents and
+   * removes any extra VTIMEZONE subcomponents. In addition, if any TZIDs
+   * are referenced by a component, but a VTIMEZONE does not exist,
+   * an attempt will be made to generate a VTIMEZONE using ICAL.TimezoneService.
+   *
+   * @param {ICAL.Component} vcal     The top-level VCALENDAR component.
+   * @return {ICAL.Component}         The ICAL.Component that was passed in.
+   */
+  updateTimezones: function(vcal) {
+    var allsubs, properties, vtimezones, reqTzid, i, tzid;
+
+    if (!vcal || vcal.name !== "vcalendar") {
+      //not a top-level vcalendar component
+      return vcal;
+    }
+
+    //Store vtimezone subcomponents in an object reference by tzid.
+    //Store properties from everything else in another array
+    allsubs = vcal.getAllSubcomponents();
+    properties = [];
+    vtimezones = {};
+    for (i = 0; i < allsubs.length; i++) {
+      if (allsubs[i].name === "vtimezone") {
+        tzid = allsubs[i].getFirstProperty("tzid").getFirstValue();
+        vtimezones[tzid] = allsubs[i];
+      } else {
+        properties = properties.concat(allsubs[i].getAllProperties());
+      }
+    }
+
+    //create an object with one entry for each required tz
+    reqTzid = {};
+    for (i = 0; i < properties.length; i++) {
+      if ((tzid = properties[i].getParameter("tzid"))) {
+        reqTzid[tzid] = true;
+      }
+    }
+
+    //delete any vtimezones that are not on the reqTzid list.
+    for (i in vtimezones) {
+      if (vtimezones.hasOwnProperty(i) && !reqTzid[i]) {
+        vcal.removeSubcomponent(vtimezones[i]);
+      }
+    }
+
+    //create any missing, but registered timezones
+    for (i in reqTzid) {
+      if (
+        reqTzid.hasOwnProperty(i) &&
+        !vtimezones[i] &&
+        ICAL.TimezoneService.has(i)
+      ) {
+        vcal.addSubcomponent(ICAL.TimezoneService.get(i).component);
+      }
+    }
+
+    return vcal;
+  },
+
+  /**
+   * Checks if the given type is of the number type and also NaN.
+   *
+   * @param {Number} number     The number to check
+   * @return {Boolean}          True, if the number is strictly NaN
+   */
+  isStrictlyNaN: function(number) {
+    return typeof(number) === 'number' && isNaN(number);
+  },
+
+  /**
+   * Parses a string value that is expected to be an integer, when the valid is
+   * not an integer throws a decoration error.
+   *
+   * @param {String} string     Raw string input
+   * @return {Number}           Parsed integer
+   */
+  strictParseInt: function(string) {
+    var result = parseInt(string, 10);
+
+    if (ICAL.helpers.isStrictlyNaN(result)) {
+      throw new Error(
+        'Could not extract integer from "' + string + '"'
+      );
+    }
+
+    return result;
+  },
+
+  /**
+   * Creates or returns a class instance of a given type with the initialization
+   * data if the data is not already an instance of the given type.
+   *
+   * @example
+   * var time = new ICAL.Time(...);
+   * var result = ICAL.helpers.formatClassType(time, ICAL.Time);
+   *
+   * (result instanceof ICAL.Time)
+   * // => true
+   *
+   * result = ICAL.helpers.formatClassType({}, ICAL.Time);
+   * (result isntanceof ICAL.Time)
+   * // => true
+   *
+   *
+   * @param {Object} data       object initialization data
+   * @param {Object} type       object type (like ICAL.Time)
+   * @return {?}                An instance of the found type.
+   */
+  formatClassType: function formatClassType(data, type) {
+    if (typeof(data) === 'undefined') {
+      return undefined;
+    }
+
+    if (data instanceof type) {
+      return data;
+    }
+    return new type(data);
+  },
+
+  /**
+   * Identical to indexOf but will only match values when they are not preceded
+   * by a backslash character.
+   *
+   * @param {String} buffer         String to search
+   * @param {String} search         Value to look for
+   * @param {Number} pos            Start position
+   * @return {Number}               The position, or -1 if not found
+   */
+  unescapedIndexOf: function(buffer, search, pos) {
+    while ((pos = buffer.indexOf(search, pos)) !== -1) {
+      if (pos > 0 && buffer[pos - 1] === '\\') {
+        pos += 1;
+      } else {
+        return pos;
+      }
+    }
+    return -1;
+  },
+
+  /**
+   * Find the index for insertion using binary search.
+   *
+   * @param {Array} list            The list to search
+   * @param {?} seekVal             The value to insert
+   * @param {function(?,?)} cmpfunc The comparison func, that can
+   *                                  compare two seekVals
+   * @return {Number}               The insert position
+   */
+  binsearchInsert: function(list, seekVal, cmpfunc) {
+    if (!list.length)
+      return 0;
+
+    var low = 0, high = list.length - 1,
+        mid, cmpval;
+
+    while (low <= high) {
+      mid = low + Math.floor((high - low) / 2);
+      cmpval = cmpfunc(seekVal, list[mid]);
+
+      if (cmpval < 0)
+        high = mid - 1;
+      else if (cmpval > 0)
+        low = mid + 1;
+      else
+        break;
+    }
+
+    if (cmpval < 0)
+      return mid; // insertion is displacing, so use mid outright.
+    else if (cmpval > 0)
+      return mid + 1;
+    else
+      return mid;
+  },
+
+  /**
+   * Convenience function for debug output
+   * @private
+   */
+  dumpn: /* istanbul ignore next */ function() {
+    if (!ICAL.debug) {
+      return;
+    }
+
+    if (typeof (console) !== 'undefined' && 'log' in console) {
+      ICAL.helpers.dumpn = function consoleDumpn(input) {
+        console.log(input);
+      };
+    } else {
+      ICAL.helpers.dumpn = function geckoDumpn(input) {
+        dump(input + '\n');
+      };
+    }
+
+    ICAL.helpers.dumpn(arguments[0]);
+  },
+
+  /**
+   * Clone the passed object or primitive. By default a shallow clone will be
+   * executed.
+   *
+   * @param {*} aSrc            The thing to clone
+   * @param {Boolean=} aDeep    If true, a deep clone will be performed
+   * @return {*}                The copy of the thing
+   */
+  clone: function(aSrc, aDeep) {
+    if (!aSrc || typeof aSrc != "object") {
+      return aSrc;
+    } else if (aSrc instanceof Date) {
+      return new Date(aSrc.getTime());
+    } else if ("clone" in aSrc) {
+      return aSrc.clone();
+    } else if (Array.isArray(aSrc)) {
+      var arr = [];
+      for (var i = 0; i < aSrc.length; i++) {
+        arr.push(aDeep ? ICAL.helpers.clone(aSrc[i], true) : aSrc[i]);
+      }
+      return arr;
+    } else {
+      var obj = {};
+      for (var name in aSrc) {
+        // uses prototype method to allow use of Object.create(null);
+        /* istanbul ignore else */
+        if (Object.prototype.hasOwnProperty.call(aSrc, name)) {
+          if (aDeep) {
+            obj[name] = ICAL.helpers.clone(aSrc[name], true);
+          } else {
+            obj[name] = aSrc[name];
+          }
+        }
+      }
+      return obj;
+    }
+  },
+
+  /**
+   * Performs iCalendar line folding. A line ending character is inserted and
+   * the next line begins with a whitespace.
+   *
+   * @example
+   * SUMMARY:This line will be fold
+   *  ed right in the middle of a word.
+   *
+   * @param {String} aLine      The line to fold
+   * @return {String}           The folded line
+   */
+  foldline: function foldline(aLine) {
+    var result = "";
+    var line = aLine || "";
+
+    while (line.length) {
+      result += ICAL.newLineChar + " " + line.substr(0, ICAL.foldLength);
+      line = line.substr(ICAL.foldLength);
+    }
+    return result.substr(ICAL.newLineChar.length + 1);
+  },
+
+  /**
+   * Pads the given string or number with zeros so it will have at least two
+   * characters.
+   *
+   * @param {String|Number} data    The string or number to pad
+   * @return {String}               The number padded as a string
+   */
+  pad2: function pad(data) {
+    if (typeof(data) !== 'string') {
+      // handle fractions.
+      if (typeof(data) === 'number') {
+        data = parseInt(data);
+      }
+      data = String(data);
+    }
+
+    var len = data.length;
+
+    switch (len) {
+      case 0:
+        return '00';
+      case 1:
+        return '0' + data;
+      default:
+        return data;
+    }
+  },
+
+  /**
+   * Truncates the given number, correctly handling negative numbers.
+   *
+   * @param {Number} number     The number to truncate
+   * @return {Number}           The truncated number
+   */
+  trunc: function trunc(number) {
+    return (number < 0 ? Math.ceil(number) : Math.floor(number));
+  },
+
+  /**
+   * Poor-man's cross-browser inheritance for JavaScript. Doesn't support all
+   * the features, but enough for our usage.
+   *
+   * @param {Function} base     The base class constructor function.
+   * @param {Function} child    The child class constructor function.
+   * @param {Object} extra      Extends the prototype with extra properties
+   *                              and methods
+   */
+  inherits: function(base, child, extra) {
+    function F() {}
+    F.prototype = base.prototype;
+    child.prototype = new F();
+
+    if (extra) {
+      ICAL.helpers.extend(extra, child.prototype);
+    }
+  },
+
+  /**
+   * Poor-man's cross-browser object extension. Doesn't support all the
+   * features, but enough for our usage. Note that the target's properties are
+   * not overwritten with the source properties.
+   *
+   * @example
+   * var child = ICAL.helpers.extend(parent, {
+   *   "bar": 123
+   * });
+   *
+   * @param {Object} source     The object to extend
+   * @param {Object} target     The object to extend with
+   * @return {Object}           Returns the target.
+   */
+  extend: function(source, target) {
+    for (var key in source) {
+      var descr = Object.getOwnPropertyDescriptor(source, key);
+      if (descr && !Object.getOwnPropertyDescriptor(target, key)) {
+        Object.defineProperty(target, key, descr);
+      }
+    }
+    return target;
+  }
+};
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+/** @namespace ICAL */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.design = (function() {
+  'use strict';
+
+  var FROM_ICAL_NEWLINE = /\\\\|\\;|\\,|\\[Nn]/g;
+  var TO_ICAL_NEWLINE = /\\|;|,|\n/g;
+  var FROM_VCARD_NEWLINE = /\\\\|\\,|\\[Nn]/g;
+  var TO_VCARD_NEWLINE = /\\|,|\n/g;
+
+  function createTextType(fromNewline, toNewline) {
+    var result = {
+      matches: /.*/,
+
+      fromICAL: function(aValue, structuredEscape) {
+        return replaceNewline(aValue, fromNewline, structuredEscape);
+      },
+
+      toICAL: function(aValue, structuredEscape) {
+        var regEx = toNewline;
+        if (structuredEscape)
+          regEx = new RegExp(regEx.source + '|' + structuredEscape);
+        return aValue.replace(regEx, function(str) {
+          switch (str) {
+          case "\\":
+            return "\\\\";
+          case ";":
+            return "\\;";
+          case ",":
+            return "\\,";
+          case "\n":
+            return "\\n";
+          /* istanbul ignore next */
+          default:
+            return str;
+          }
+        });
+      }
+    };
+    return result;
+  }
+
+  // default types used multiple times
+  var DEFAULT_TYPE_TEXT = { defaultType: "text" };
+  var DEFAULT_TYPE_TEXT_MULTI = { defaultType: "text", multiValue: "," };
+  var DEFAULT_TYPE_TEXT_STRUCTURED = { defaultType: "text", structuredValue: ";" };
+  var DEFAULT_TYPE_INTEGER = { defaultType: "integer" };
+  var DEFAULT_TYPE_DATETIME_DATE = { defaultType: "date-time", allowedTypes: ["date-time", "date"] };
+  var DEFAULT_TYPE_DATETIME = { defaultType: "date-time" };
+  var DEFAULT_TYPE_URI = { defaultType: "uri" };
+  var DEFAULT_TYPE_UTCOFFSET = { defaultType: "utc-offset" };
+  var DEFAULT_TYPE_RECUR = { defaultType: "recur" };
+  var DEFAULT_TYPE_DATE_ANDOR_TIME = { defaultType: "date-and-or-time", allowedTypes: ["date-time", "date", "text"] };
+
+  function replaceNewlineReplace(string) {
+    switch (string) {
+      case "\\\\":
+        return "\\";
+      case "\\;":
+        return ";";
+      case "\\,":
+        return ",";
+      case "\\n":
+      case "\\N":
+        return "\n";
+      /* istanbul ignore next */
+      default:
+        return string;
+    }
+  }
+
+  function replaceNewline(value, newline, structuredEscape) {
+    // avoid regex when possible.
+    if (value.indexOf('\\') === -1) {
+      return value;
+    }
+    if (structuredEscape)
+      newline = new RegExp(newline.source + '|\\\\' + structuredEscape);
+    return value.replace(newline, replaceNewlineReplace);
+  }
+
+  var commonProperties = {
+    "categories": DEFAULT_TYPE_TEXT_MULTI,
+    "url": DEFAULT_TYPE_URI,
+    "version": DEFAULT_TYPE_TEXT,
+    "uid": DEFAULT_TYPE_TEXT
+  };
+
+  var commonValues = {
+    "boolean": {
+      values: ["TRUE", "FALSE"],
+
+      fromICAL: function(aValue) {
+        switch (aValue) {
+          case 'TRUE':
+            return true;
+          case 'FALSE':
+            return false;
+          default:
+            //TODO: parser warning
+            return false;
+        }
+      },
+
+      toICAL: function(aValue) {
+        if (aValue) {
+          return 'TRUE';
+        }
+        return 'FALSE';
+      }
+
+    },
+    float: {
+      matches: /^[+-]?\d+\.\d+$/,
+
+      fromICAL: function(aValue) {
+        var parsed = parseFloat(aValue);
+        if (ICAL.helpers.isStrictlyNaN(parsed)) {
+          // TODO: parser warning
+          return 0.0;
+        }
+        return parsed;
+      },
+
+      toICAL: function(aValue) {
+        return String(aValue);
+      }
+    },
+    integer: {
+      fromICAL: function(aValue) {
+        var parsed = parseInt(aValue);
+        if (ICAL.helpers.isStrictlyNaN(parsed)) {
+          return 0;
+        }
+        return parsed;
+      },
+
+      toICAL: function(aValue) {
+        return String(aValue);
+      }
+    },
+    "utc-offset": {
+      toICAL: function(aValue) {
+        if (aValue.length < 7) {
+          // no seconds
+          // -0500
+          return aValue.substr(0, 3) +
+                 aValue.substr(4, 2);
+        } else {
+          // seconds
+          // -050000
+          return aValue.substr(0, 3) +
+                 aValue.substr(4, 2) +
+                 aValue.substr(7, 2);
+        }
+      },
+
+      fromICAL: function(aValue) {
+        if (aValue.length < 6) {
+          // no seconds
+          // -05:00
+          return aValue.substr(0, 3) + ':' +
+                 aValue.substr(3, 2);
+        } else {
+          // seconds
+          // -05:00:00
+          return aValue.substr(0, 3) + ':' +
+                 aValue.substr(3, 2) + ':' +
+                 aValue.substr(5, 2);
+        }
+      },
+
+      decorate: function(aValue) {
+        return ICAL.UtcOffset.fromString(aValue);
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toString();
+      }
+    }
+  };
+
+  var icalParams = {
+    // Although the syntax is DQUOTE uri DQUOTE, I don't think we should
+    // enfoce anything aside from it being a valid content line.
+    //
+    // At least some params require - if multi values are used - DQUOTEs
+    // for each of its values - e.g. delegated-from="uri1","uri2"
+    // To indicate this, I introduced the new k/v pair
+    // multiValueSeparateDQuote: true
+    //
+    // "ALTREP": { ... },
+
+    // CN just wants a param-value
+    // "CN": { ... }
+
+    "cutype": {
+      values: ["INDIVIDUAL", "GROUP", "RESOURCE", "ROOM", "UNKNOWN"],
+      allowXName: true,
+      allowIanaToken: true
+    },
+
+    "delegated-from": {
+      valueType: "cal-address",
+      multiValue: ",",
+      multiValueSeparateDQuote: true
+    },
+    "delegated-to": {
+      valueType: "cal-address",
+      multiValue: ",",
+      multiValueSeparateDQuote: true
+    },
+    // "DIR": { ... }, // See ALTREP
+    "encoding": {
+      values: ["8BIT", "BASE64"]
+    },
+    // "FMTTYPE": { ... }, // See ALTREP
+    "fbtype": {
+      values: ["FREE", "BUSY", "BUSY-UNAVAILABLE", "BUSY-TENTATIVE"],
+      allowXName: true,
+      allowIanaToken: true
+    },
+    // "LANGUAGE": { ... }, // See ALTREP
+    "member": {
+      valueType: "cal-address",
+      multiValue: ",",
+      multiValueSeparateDQuote: true
+    },
+    "partstat": {
+      // TODO These values are actually different per-component
+      values: ["NEEDS-ACTION", "ACCEPTED", "DECLINED", "TENTATIVE",
+               "DELEGATED", "COMPLETED", "IN-PROCESS"],
+      allowXName: true,
+      allowIanaToken: true
+    },
+    "range": {
+      values: ["THISANDFUTURE"]
+    },
+    "related": {
+      values: ["START", "END"]
+    },
+    "reltype": {
+      values: ["PARENT", "CHILD", "SIBLING"],
+      allowXName: true,
+      allowIanaToken: true
+    },
+    "role": {
+      values: ["REQ-PARTICIPANT", "CHAIR",
+               "OPT-PARTICIPANT", "NON-PARTICIPANT"],
+      allowXName: true,
+      allowIanaToken: true
+    },
+    "rsvp": {
+      values: ["TRUE", "FALSE"]
+    },
+    "sent-by": {
+      valueType: "cal-address"
+    },
+    "tzid": {
+      matches: /^\//
+    },
+    "value": {
+      // since the value here is a 'type' lowercase is used.
+      values: ["binary", "boolean", "cal-address", "date", "date-time",
+               "duration", "float", "integer", "period", "recur", "text",
+               "time", "uri", "utc-offset"],
+      allowXName: true,
+      allowIanaToken: true
+    }
+  };
+
+  // When adding a value here, be sure to add it to the parameter types!
+  var icalValues = ICAL.helpers.extend(commonValues, {
+    text: createTextType(FROM_ICAL_NEWLINE, TO_ICAL_NEWLINE),
+
+    uri: {
+      // TODO
+      /* ... */
+    },
+
+    "binary": {
+      decorate: function(aString) {
+        return ICAL.Binary.fromString(aString);
+      },
+
+      undecorate: function(aBinary) {
+        return aBinary.toString();
+      }
+    },
+    "cal-address": {
+      // needs to be an uri
+    },
+    "date": {
+      decorate: function(aValue, aProp) {
+        if (design.strict) {
+          return ICAL.Time.fromDateString(aValue, aProp);
+        } else {
+          return ICAL.Time.fromString(aValue, aProp);
+        }
+      },
+
+      /**
+       * undecorates a time object.
+       */
+      undecorate: function(aValue) {
+        return aValue.toString();
+      },
+
+      fromICAL: function(aValue) {
+        // from: 20120901
+        // to: 2012-09-01
+        if (!design.strict && aValue.length >= 15) {
+          // This is probably a date-time, e.g. 20120901T130000Z
+          return icalValues["date-time"].fromICAL(aValue);
+        } else {
+          return aValue.substr(0, 4) + '-' +
+                 aValue.substr(4, 2) + '-' +
+                 aValue.substr(6, 2);
+        }
+      },
+
+      toICAL: function(aValue) {
+        // from: 2012-09-01
+        // to: 20120901
+        var len = aValue.length;
+
+        if (len == 10) {
+          return aValue.substr(0, 4) +
+                 aValue.substr(5, 2) +
+                 aValue.substr(8, 2);
+        } else if (len >= 19) {
+          return icalValues["date-time"].toICAL(aValue);
+        } else {
+          //TODO: serialize warning?
+          return aValue;
+        }
+
+      }
+    },
+    "date-time": {
+      fromICAL: function(aValue) {
+        // from: 20120901T130000
+        // to: 2012-09-01T13:00:00
+        if (!design.strict && aValue.length == 8) {
+          // This is probably a date, e.g. 20120901
+          return icalValues.date.fromICAL(aValue);
+        } else {
+          var result = aValue.substr(0, 4) + '-' +
+                       aValue.substr(4, 2) + '-' +
+                       aValue.substr(6, 2) + 'T' +
+                       aValue.substr(9, 2) + ':' +
+                       aValue.substr(11, 2) + ':' +
+                       aValue.substr(13, 2);
+
+          if (aValue[15] && aValue[15] === 'Z') {
+            result += 'Z';
+          }
+
+          return result;
+        }
+      },
+
+      toICAL: function(aValue) {
+        // from: 2012-09-01T13:00:00
+        // to: 20120901T130000
+        var len = aValue.length;
+
+        if (len == 10 && !design.strict) {
+          return icalValues.date.toICAL(aValue);
+        } else if (len >= 19) {
+          var result = aValue.substr(0, 4) +
+                       aValue.substr(5, 2) +
+                       // grab the (DDTHH) segment
+                       aValue.substr(8, 5) +
+                       // MM
+                       aValue.substr(14, 2) +
+                       // SS
+                       aValue.substr(17, 2);
+
+          if (aValue[19] && aValue[19] === 'Z') {
+            result += 'Z';
+          }
+          return result;
+        } else {
+          // TODO: error
+          return aValue;
+        }
+      },
+
+      decorate: function(aValue, aProp) {
+        if (design.strict) {
+          return ICAL.Time.fromDateTimeString(aValue, aProp);
+        } else {
+          return ICAL.Time.fromString(aValue, aProp);
+        }
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toString();
+      }
+    },
+    duration: {
+      decorate: function(aValue) {
+        return ICAL.Duration.fromString(aValue);
+      },
+      undecorate: function(aValue) {
+        return aValue.toString();
+      }
+    },
+    period: {
+
+      fromICAL: function(string) {
+        var parts = string.split('/');
+        parts[0] = icalValues['date-time'].fromICAL(parts[0]);
+
+        if (!ICAL.Duration.isValueString(parts[1])) {
+          parts[1] = icalValues['date-time'].fromICAL(parts[1]);
+        }
+
+        return parts;
+      },
+
+      toICAL: function(parts) {
+        if (!design.strict && parts[0].length == 10) {
+          parts[0] = icalValues.date.toICAL(parts[0]);
+        } else {
+          parts[0] = icalValues['date-time'].toICAL(parts[0]);
+        }
+
+        if (!ICAL.Duration.isValueString(parts[1])) {
+          if (!design.strict && parts[1].length == 10) {
+            parts[1] = icalValues.date.toICAL(parts[1]);
+          } else {
+            parts[1] = icalValues['date-time'].toICAL(parts[1]);
+          }
+        }
+
+        return parts.join("/");
+      },
+
+      decorate: function(aValue, aProp) {
+        return ICAL.Period.fromJSON(aValue, aProp, !design.strict);
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toJSON();
+      }
+    },
+    recur: {
+      fromICAL: function(string) {
+        return ICAL.Recur._stringToData(string, true);
+      },
+
+      toICAL: function(data) {
+        var str = "";
+        for (var k in data) {
+          /* istanbul ignore if */
+          if (!Object.prototype.hasOwnProperty.call(data, k)) {
+            continue;
+          }
+          var val = data[k];
+          if (k == "until") {
+            if (val.length > 10) {
+              val = icalValues['date-time'].toICAL(val);
+            } else {
+              val = icalValues.date.toICAL(val);
+            }
+          } else if (k == "wkst") {
+            if (typeof val === 'number') {
+              val = ICAL.Recur.numericDayToIcalDay(val);
+            }
+          } else if (Array.isArray(val)) {
+            val = val.join(",");
+          }
+          str += k.toUpperCase() + "=" + val + ";";
+        }
+        return str.substr(0, str.length - 1);
+      },
+
+      decorate: function decorate(aValue) {
+        return ICAL.Recur.fromData(aValue);
+      },
+
+      undecorate: function(aRecur) {
+        return aRecur.toJSON();
+      }
+    },
+
+    time: {
+      fromICAL: function(aValue) {
+        // from: MMHHSS(Z)?
+        // to: HH:MM:SS(Z)?
+        if (aValue.length < 6) {
+          // TODO: parser exception?
+          return aValue;
+        }
+
+        // HH::MM::SSZ?
+        var result = aValue.substr(0, 2) + ':' +
+                     aValue.substr(2, 2) + ':' +
+                     aValue.substr(4, 2);
+
+        if (aValue[6] === 'Z') {
+          result += 'Z';
+        }
+
+        return result;
+      },
+
+      toICAL: function(aValue) {
+        // from: HH:MM:SS(Z)?
+        // to: MMHHSS(Z)?
+        if (aValue.length < 8) {
+          //TODO: error
+          return aValue;
+        }
+
+        var result = aValue.substr(0, 2) +
+                     aValue.substr(3, 2) +
+                     aValue.substr(6, 2);
+
+        if (aValue[8] === 'Z') {
+          result += 'Z';
+        }
+
+        return result;
+      }
+    }
+  });
+
+  var icalProperties = ICAL.helpers.extend(commonProperties, {
+
+    "action": DEFAULT_TYPE_TEXT,
+    "attach": { defaultType: "uri" },
+    "attendee": { defaultType: "cal-address" },
+    "calscale": DEFAULT_TYPE_TEXT,
+    "class": DEFAULT_TYPE_TEXT,
+    "comment": DEFAULT_TYPE_TEXT,
+    "completed": DEFAULT_TYPE_DATETIME,
+    "contact": DEFAULT_TYPE_TEXT,
+    "created": DEFAULT_TYPE_DATETIME,
+    "description": DEFAULT_TYPE_TEXT,
+    "dtend": DEFAULT_TYPE_DATETIME_DATE,
+    "dtstamp": DEFAULT_TYPE_DATETIME,
+    "dtstart": DEFAULT_TYPE_DATETIME_DATE,
+    "due": DEFAULT_TYPE_DATETIME_DATE,
+    "duration": { defaultType: "duration" },
+    "exdate": {
+      defaultType: "date-time",
+      allowedTypes: ["date-time", "date"],
+      multiValue: ','
+    },
+    "exrule": DEFAULT_TYPE_RECUR,
+    "freebusy": { defaultType: "period", multiValue: "," },
+    "geo": { defaultType: "float", structuredValue: ";" },
+    "last-modified": DEFAULT_TYPE_DATETIME,
+    "location": DEFAULT_TYPE_TEXT,
+    "method": DEFAULT_TYPE_TEXT,
+    "organizer": { defaultType: "cal-address" },
+    "percent-complete": DEFAULT_TYPE_INTEGER,
+    "priority": DEFAULT_TYPE_INTEGER,
+    "prodid": DEFAULT_TYPE_TEXT,
+    "related-to": DEFAULT_TYPE_TEXT,
+    "repeat": DEFAULT_TYPE_INTEGER,
+    "rdate": {
+      defaultType: "date-time",
+      allowedTypes: ["date-time", "date", "period"],
+      multiValue: ',',
+      detectType: function(string) {
+        if (string.indexOf('/') !== -1) {
+          return 'period';
+        }
+        return (string.indexOf('T') === -1) ? 'date' : 'date-time';
+      }
+    },
+    "recurrence-id": DEFAULT_TYPE_DATETIME_DATE,
+    "resources": DEFAULT_TYPE_TEXT_MULTI,
+    "request-status": DEFAULT_TYPE_TEXT_STRUCTURED,
+    "rrule": DEFAULT_TYPE_RECUR,
+    "sequence": DEFAULT_TYPE_INTEGER,
+    "status": DEFAULT_TYPE_TEXT,
+    "summary": DEFAULT_TYPE_TEXT,
+    "transp": DEFAULT_TYPE_TEXT,
+    "trigger": { defaultType: "duration", allowedTypes: ["duration", "date-time"] },
+    "tzoffsetfrom": DEFAULT_TYPE_UTCOFFSET,
+    "tzoffsetto": DEFAULT_TYPE_UTCOFFSET,
+    "tzurl": DEFAULT_TYPE_URI,
+    "tzid": DEFAULT_TYPE_TEXT,
+    "tzname": DEFAULT_TYPE_TEXT
+  });
+
+  // When adding a value here, be sure to add it to the parameter types!
+  var vcardValues = ICAL.helpers.extend(commonValues, {
+    text: createTextType(FROM_VCARD_NEWLINE, TO_VCARD_NEWLINE),
+    uri: createTextType(FROM_VCARD_NEWLINE, TO_VCARD_NEWLINE),
+
+    date: {
+      decorate: function(aValue) {
+        return ICAL.VCardTime.fromDateAndOrTimeString(aValue, "date");
+      },
+      undecorate: function(aValue) {
+        return aValue.toString();
+      },
+      fromICAL: function(aValue) {
+        if (aValue.length == 8) {
+          return icalValues.date.fromICAL(aValue);
+        } else if (aValue[0] == '-' && aValue.length == 6) {
+          return aValue.substr(0, 4) + '-' + aValue.substr(4);
+        } else {
+          return aValue;
+        }
+      },
+      toICAL: function(aValue) {
+        if (aValue.length == 10) {
+          return icalValues.date.toICAL(aValue);
+        } else if (aValue[0] == '-' && aValue.length == 7) {
+          return aValue.substr(0, 4) + aValue.substr(5);
+        } else {
+          return aValue;
+        }
+      }
+    },
+
+    time: {
+      decorate: function(aValue) {
+        return ICAL.VCardTime.fromDateAndOrTimeString("T" + aValue, "time");
+      },
+      undecorate: function(aValue) {
+        return aValue.toString();
+      },
+      fromICAL: function(aValue) {
+        var splitzone = vcardValues.time._splitZone(aValue, true);
+        var zone = splitzone[0], value = splitzone[1];
+
+        //console.log("SPLIT: ",splitzone);
+
+        if (value.length == 6) {
+          value = value.substr(0, 2) + ':' +
+                  value.substr(2, 2) + ':' +
+                  value.substr(4, 2);
+        } else if (value.length == 4 && value[0] != '-') {
+          value = value.substr(0, 2) + ':' + value.substr(2, 2);
+        } else if (value.length == 5) {
+          value = value.substr(0, 3) + ':' + value.substr(3, 2);
+        }
+
+        if (zone.length == 5 && (zone[0] == '-' || zone[0] == '+')) {
+          zone = zone.substr(0, 3) + ':' + zone.substr(3);
+        }
+
+        return value + zone;
+      },
+
+      toICAL: function(aValue) {
+        var splitzone = vcardValues.time._splitZone(aValue);
+        var zone = splitzone[0], value = splitzone[1];
+
+        if (value.length == 8) {
+          value = value.substr(0, 2) +
+                  value.substr(3, 2) +
+                  value.substr(6, 2);
+        } else if (value.length == 5 && value[0] != '-') {
+          value = value.substr(0, 2) + value.substr(3, 2);
+        } else if (value.length == 6) {
+          value = value.substr(0, 3) + value.substr(4, 2);
+        }
+
+        if (zone.length == 6 && (zone[0] == '-' || zone[0] == '+')) {
+          zone = zone.substr(0, 3) + zone.substr(4);
+        }
+
+        return value + zone;
+      },
+
+      _splitZone: function(aValue, isFromIcal) {
+        var lastChar = aValue.length - 1;
+        var signChar = aValue.length - (isFromIcal ? 5 : 6);
+        var sign = aValue[signChar];
+        var zone, value;
+
+        if (aValue[lastChar] == 'Z') {
+          zone = aValue[lastChar];
+          value = aValue.substr(0, lastChar);
+        } else if (aValue.length > 6 && (sign == '-' || sign == '+')) {
+          zone = aValue.substr(signChar);
+          value = aValue.substr(0, signChar);
+        } else {
+          zone = "";
+          value = aValue;
+        }
+
+        return [zone, value];
+      }
+    },
+
+    "date-time": {
+      decorate: function(aValue) {
+        return ICAL.VCardTime.fromDateAndOrTimeString(aValue, "date-time");
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toString();
+      },
+
+      fromICAL: function(aValue) {
+        return vcardValues['date-and-or-time'].fromICAL(aValue);
+      },
+
+      toICAL: function(aValue) {
+        return vcardValues['date-and-or-time'].toICAL(aValue);
+      }
+    },
+
+    "date-and-or-time": {
+      decorate: function(aValue) {
+        return ICAL.VCardTime.fromDateAndOrTimeString(aValue, "date-and-or-time");
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toString();
+      },
+
+      fromICAL: function(aValue) {
+        var parts = aValue.split('T');
+        return (parts[0] ? vcardValues.date.fromICAL(parts[0]) : '') +
+               (parts[1] ? 'T' + vcardValues.time.fromICAL(parts[1]) : '');
+      },
+
+      toICAL: function(aValue) {
+        var parts = aValue.split('T');
+        return vcardValues.date.toICAL(parts[0]) +
+               (parts[1] ? 'T' + vcardValues.time.toICAL(parts[1]) : '');
+
+      }
+    },
+    timestamp: icalValues['date-time'],
+    "language-tag": {
+      matches: /^[a-zA-Z0-9-]+$/ // Could go with a more strict regex here
+    }
+  });
+
+  var vcardParams = {
+    "type": {
+      valueType: "text",
+      multiValue: ","
+    },
+    "value": {
+      // since the value here is a 'type' lowercase is used.
+      values: ["text", "uri", "date", "time", "date-time", "date-and-or-time",
+               "timestamp", "boolean", "integer", "float", "utc-offset",
+               "language-tag"],
+      allowXName: true,
+      allowIanaToken: true
+    }
+  };
+
+  var vcardProperties = ICAL.helpers.extend(commonProperties, {
+    "adr": { defaultType: "text", structuredValue: ";", multiValue: "," },
+    "anniversary": DEFAULT_TYPE_DATE_ANDOR_TIME,
+    "bday": DEFAULT_TYPE_DATE_ANDOR_TIME,
+    "caladruri": DEFAULT_TYPE_URI,
+    "caluri": DEFAULT_TYPE_URI,
+    "clientpidmap": DEFAULT_TYPE_TEXT_STRUCTURED,
+    "email": DEFAULT_TYPE_TEXT,
+    "fburl": DEFAULT_TYPE_URI,
+    "fn": DEFAULT_TYPE_TEXT,
+    "gender": DEFAULT_TYPE_TEXT_STRUCTURED,
+    "geo": DEFAULT_TYPE_URI,
+    "impp": DEFAULT_TYPE_URI,
+    "key": DEFAULT_TYPE_URI,
+    "kind": DEFAULT_TYPE_TEXT,
+    "lang": { defaultType: "language-tag" },
+    "logo": DEFAULT_TYPE_URI,
+    "member": DEFAULT_TYPE_URI,
+    "n": { defaultType: "text", structuredValue: ";", multiValue: "," },
+    "nickname": DEFAULT_TYPE_TEXT_MULTI,
+    "note": DEFAULT_TYPE_TEXT,
+    "org": { defaultType: "text", structuredValue: ";" },
+    "photo": DEFAULT_TYPE_URI,
+    "related": DEFAULT_TYPE_URI,
+    "rev": { defaultType: "timestamp" },
+    "role": DEFAULT_TYPE_TEXT,
+    "sound": DEFAULT_TYPE_URI,
+    "source": DEFAULT_TYPE_URI,
+    "tel": { defaultType: "uri", allowedTypes: ["uri", "text"] },
+    "title": DEFAULT_TYPE_TEXT,
+    "tz": { defaultType: "text", allowedTypes: ["text", "utc-offset", "uri"] },
+    "xml": DEFAULT_TYPE_TEXT
+  });
+
+  var vcard3Values = ICAL.helpers.extend(commonValues, {
+    binary: icalValues.binary,
+    date: vcardValues.date,
+    "date-time": vcardValues["date-time"],
+    "phone-number": {
+      // TODO
+      /* ... */
+    },
+    uri: icalValues.uri,
+    text: icalValues.text,
+    time: icalValues.time,
+    vcard: icalValues.text,
+    "utc-offset": {
+      toICAL: function(aValue) {
+        return aValue.substr(0, 7);
+      },
+
+      fromICAL: function(aValue) {
+        return aValue.substr(0, 7);
+      },
+
+      decorate: function(aValue) {
+        return ICAL.UtcOffset.fromString(aValue);
+      },
+
+      undecorate: function(aValue) {
+        return aValue.toString();
+      }
+    }
+  });
+
+  var vcard3Params = {
+    "type": {
+      valueType: "text",
+      multiValue: ","
+    },
+    "value": {
+      // since the value here is a 'type' lowercase is used.
+      values: ["text", "uri", "date", "date-time", "phone-number", "time",
+               "boolean", "integer", "float", "utc-offset", "vcard", "binary"],
+      allowXName: true,
+      allowIanaToken: true
+    }
+  };
+
+  var vcard3Properties = ICAL.helpers.extend(commonProperties, {
+    fn: DEFAULT_TYPE_TEXT,
+    n: { defaultType: "text", structuredValue: ";", multiValue: "," },
+    nickname: DEFAULT_TYPE_TEXT_MULTI,
+    photo: { defaultType: "binary", allowedTypes: ["binary", "uri"] },
+    bday: {
+      defaultType: "date-time",
+      allowedTypes: ["date-time", "date"],
+      detectType: function(string) {
+        return (string.indexOf('T') === -1) ? 'date' : 'date-time';
+      }
+    },
+
+    adr: { defaultType: "text", structuredValue: ";", multiValue: "," },
+    label: DEFAULT_TYPE_TEXT,
+
+    tel: { defaultType: "phone-number" },
+    email: DEFAULT_TYPE_TEXT,
+    mailer: DEFAULT_TYPE_TEXT,
+
+    tz: { defaultType: "utc-offset", allowedTypes: ["utc-offset", "text"] },
+    geo: { defaultType: "float", structuredValue: ";" },
+
+    title: DEFAULT_TYPE_TEXT,
+    role: DEFAULT_TYPE_TEXT,
+    logo: { defaultType: "binary", allowedTypes: ["binary", "uri"] },
+    agent: { defaultType: "vcard", allowedTypes: ["vcard", "text", "uri"] },
+    org: DEFAULT_TYPE_TEXT_STRUCTURED,
+
+    note: DEFAULT_TYPE_TEXT_MULTI,
+    prodid: DEFAULT_TYPE_TEXT,
+    rev: {
+      defaultType: "date-time",
+      allowedTypes: ["date-time", "date"],
+      detectType: function(string) {
+        return (string.indexOf('T') === -1) ? 'date' : 'date-time';
+      }
+    },
+    "sort-string": DEFAULT_TYPE_TEXT,
+    sound: { defaultType: "binary", allowedTypes: ["binary", "uri"] },
+
+    class: DEFAULT_TYPE_TEXT,
+    key: { defaultType: "binary", allowedTypes: ["binary", "text"] }
+  });
+
+  /**
+   * iCalendar design set
+   * @type {ICAL.design.designSet}
+   */
+  var icalSet = {
+    value: icalValues,
+    param: icalParams,
+    property: icalProperties
+  };
+
+  /**
+   * vCard 4.0 design set
+   * @type {ICAL.design.designSet}
+   */
+  var vcardSet = {
+    value: vcardValues,
+    param: vcardParams,
+    property: vcardProperties
+  };
+
+  /**
+   * vCard 3.0 design set
+   * @type {ICAL.design.designSet}
+   */
+  var vcard3Set = {
+    value: vcard3Values,
+    param: vcard3Params,
+    property: vcard3Properties
+  };
+
+  /**
+   * The design data, used by the parser to determine types for properties and
+   * other metadata needed to produce correct jCard/jCal data.
+   *
+   * @alias ICAL.design
+   * @namespace
+   */
+  var design = {
+    /**
+     * A designSet describes value, parameter and property data. It is used by
+     * ther parser and stringifier in components and properties to determine they
+     * should be represented.
+     *
+     * @typedef {Object} designSet
+     * @memberOf ICAL.design
+     * @property {Object} value       Definitions for value types, keys are type names
+     * @property {Object} param       Definitions for params, keys are param names
+     * @property {Object} property    Defintions for properties, keys are property names
+     */
+
+    /**
+     * Can be set to false to make the parser more lenient.
+     */
+    strict: true,
+
+    /**
+     * The default set for new properties and components if none is specified.
+     * @type {ICAL.design.designSet}
+     */
+    defaultSet: icalSet,
+
+    /**
+     * The default type for unknown properties
+     * @type {String}
+     */
+    defaultType: 'unknown',
+
+    /**
+     * Holds the design set for known top-level components
+     *
+     * @type {Object}
+     * @property {ICAL.design.designSet} vcard       vCard VCARD
+     * @property {ICAL.design.designSet} vevent      iCalendar VEVENT
+     * @property {ICAL.design.designSet} vtodo       iCalendar VTODO
+     * @property {ICAL.design.designSet} vjournal    iCalendar VJOURNAL
+     * @property {ICAL.design.designSet} valarm      iCalendar VALARM
+     * @property {ICAL.design.designSet} vtimezone   iCalendar VTIMEZONE
+     * @property {ICAL.design.designSet} daylight    iCalendar DAYLIGHT
+     * @property {ICAL.design.designSet} standard    iCalendar STANDARD
+     *
+     * @example
+     * var propertyName = 'fn';
+     * var componentDesign = ICAL.design.components.vcard;
+     * var propertyDetails = componentDesign.property[propertyName];
+     * if (propertyDetails.defaultType == 'text') {
+     *   // Yep, sure is...
+     * }
+     */
+    components: {
+      vcard: vcardSet,
+      vcard3: vcard3Set,
+      vevent: icalSet,
+      vtodo: icalSet,
+      vjournal: icalSet,
+      valarm: icalSet,
+      vtimezone: icalSet,
+      daylight: icalSet,
+      standard: icalSet
+    },
+
+
+    /**
+     * The design set for iCalendar (rfc5545/rfc7265) components.
+     * @type {ICAL.design.designSet}
+     */
+    icalendar: icalSet,
+
+    /**
+     * The design set for vCard (rfc6350/rfc7095) components.
+     * @type {ICAL.design.designSet}
+     */
+    vcard: vcardSet,
+
+    /**
+     * The design set for vCard (rfc2425/rfc2426/rfc7095) components.
+     * @type {ICAL.design.designSet}
+     */
+    vcard3: vcard3Set,
+
+    /**
+     * Gets the design set for the given component name.
+     *
+     * @param {String} componentName        The name of the component
+     * @return {ICAL.design.designSet}      The design set for the component
+     */
+    getDesignSet: function(componentName) {
+      var isInDesign = componentName && componentName in design.components;
+      return isInDesign ? design.components[componentName] : design.defaultSet;
+    }
+  };
+
+  return design;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * Contains various functions to convert jCal and jCard data back into
+ * iCalendar and vCard.
+ * @namespace
+ */
+ICAL.stringify = (function() {
+  'use strict';
+
+  var LINE_ENDING = '\r\n';
+  var DEFAULT_VALUE_TYPE = 'unknown';
+
+  var design = ICAL.design;
+  var helpers = ICAL.helpers;
+
+  /**
+   * Convert a full jCal/jCard array into a iCalendar/vCard string.
+   *
+   * @function ICAL.stringify
+   * @variation function
+   * @param {Array} jCal    The jCal/jCard document
+   * @return {String}       The stringified iCalendar/vCard document
+   */
+  function stringify(jCal) {
+    if (typeof jCal[0] == "string") {
+      // This is a single component
+      jCal = [jCal];
+    }
+
+    var i = 0;
+    var len = jCal.length;
+    var result = '';
+
+    for (; i < len; i++) {
+      result += stringify.component(jCal[i]) + LINE_ENDING;
+    }
+
+    return result;
+  }
+
+  /**
+   * Converts an jCal component array into a ICAL string.
+   * Recursive will resolve sub-components.
+   *
+   * Exact component/property order is not saved all
+   * properties will come before subcomponents.
+   *
+   * @function ICAL.stringify.component
+   * @param {Array} component
+   *        jCal/jCard fragment of a component
+   * @param {ICAL.design.designSet} designSet
+   *        The design data to use for this component
+   * @return {String}       The iCalendar/vCard string
+   */
+  stringify.component = function(component, designSet) {
+    var name = component[0].toUpperCase();
+    var result = 'BEGIN:' + name + LINE_ENDING;
+
+    var props = component[1];
+    var propIdx = 0;
+    var propLen = props.length;
+
+    var designSetName = component[0];
+    // rfc6350 requires that in vCard 4.0 the first component is the VERSION
+    // component with as value 4.0, note that 3.0 does not have this requirement.
+    if (designSetName === 'vcard' && component[1].length > 0 &&
+            !(component[1][0][0] === "version" && component[1][0][3] === "4.0")) {
+      designSetName = "vcard3";
+    }
+    designSet = designSet || design.getDesignSet(designSetName);
+
+    for (; propIdx < propLen; propIdx++) {
+      result += stringify.property(props[propIdx], designSet) + LINE_ENDING;
+    }
+
+    // Ignore subcomponents if none exist, e.g. in vCard.
+    var comps = component[2] || [];
+    var compIdx = 0;
+    var compLen = comps.length;
+
+    for (; compIdx < compLen; compIdx++) {
+      result += stringify.component(comps[compIdx], designSet) + LINE_ENDING;
+    }
+
+    result += 'END:' + name;
+    return result;
+  };
+
+  /**
+   * Converts a single jCal/jCard property to a iCalendar/vCard string.
+   *
+   * @function ICAL.stringify.property
+   * @param {Array} property
+   *        jCal/jCard property array
+   * @param {ICAL.design.designSet} designSet
+   *        The design data to use for this property
+   * @param {Boolean} noFold
+   *        If true, the line is not folded
+   * @return {String}       The iCalendar/vCard string
+   */
+  stringify.property = function(property, designSet, noFold) {
+    var name = property[0].toUpperCase();
+    var jsName = property[0];
+    var params = property[1];
+
+    var line = name;
+
+    var paramName;
+    for (paramName in params) {
+      var value = params[paramName];
+
+      /* istanbul ignore else */
+      if (params.hasOwnProperty(paramName)) {
+        var multiValue = (paramName in designSet.param) && designSet.param[paramName].multiValue;
+        if (multiValue && Array.isArray(value)) {
+          if (designSet.param[paramName].multiValueSeparateDQuote) {
+            multiValue = '"' + multiValue + '"';
+          }
+          value = value.map(stringify._rfc6868Unescape);
+          value = stringify.multiValue(value, multiValue, "unknown", null, designSet);
+        } else {
+          value = stringify._rfc6868Unescape(value);
+        }
+
+
+        line += ';' + paramName.toUpperCase();
+        line += '=' + stringify.propertyValue(value);
+      }
+    }
+
+    if (property.length === 3) {
+      // If there are no values, we must assume a blank value
+      return line + ':';
+    }
+
+    var valueType = property[2];
+
+    if (!designSet) {
+      designSet = design.defaultSet;
+    }
+
+    var propDetails;
+    var multiValue = false;
+    var structuredValue = false;
+    var isDefault = false;
+
+    if (jsName in designSet.property) {
+      propDetails = designSet.property[jsName];
+
+      if ('multiValue' in propDetails) {
+        multiValue = propDetails.multiValue;
+      }
+
+      if (('structuredValue' in propDetails) && Array.isArray(property[3])) {
+        structuredValue = propDetails.structuredValue;
+      }
+
+      if ('defaultType' in propDetails) {
+        if (valueType === propDetails.defaultType) {
+          isDefault = true;
+        }
+      } else {
+        if (valueType === DEFAULT_VALUE_TYPE) {
+          isDefault = true;
+        }
+      }
+    } else {
+      if (valueType === DEFAULT_VALUE_TYPE) {
+        isDefault = true;
+      }
+    }
+
+    // push the VALUE property if type is not the default
+    // for the current property.
+    if (!isDefault) {
+      // value will never contain ;/:/, so we don't escape it here.
+      line += ';VALUE=' + valueType.toUpperCase();
+    }
+
+    line += ':';
+
+    if (multiValue && structuredValue) {
+      line += stringify.multiValue(
+        property[3], structuredValue, valueType, multiValue, designSet, structuredValue
+      );
+    } else if (multiValue) {
+      line += stringify.multiValue(
+        property.slice(3), multiValue, valueType, null, designSet, false
+      );
+    } else if (structuredValue) {
+      line += stringify.multiValue(
+        property[3], structuredValue, valueType, null, designSet, structuredValue
+      );
+    } else {
+      line += stringify.value(property[3], valueType, designSet, false);
+    }
+
+    return noFold ? line : ICAL.helpers.foldline(line);
+  };
+
+  /**
+   * Handles escaping of property values that may contain:
+   *
+   *    COLON (:), SEMICOLON (;), or COMMA (,)
+   *
+   * If any of the above are present the result is wrapped
+   * in double quotes.
+   *
+   * @function ICAL.stringify.propertyValue
+   * @param {String} value      Raw property value
+   * @return {String}           Given or escaped value when needed
+   */
+  stringify.propertyValue = function(value) {
+
+    if ((helpers.unescapedIndexOf(value, ',') === -1) &&
+        (helpers.unescapedIndexOf(value, ':') === -1) &&
+        (helpers.unescapedIndexOf(value, ';') === -1)) {
+
+      return value;
+    }
+
+    return '"' + value + '"';
+  };
+
+  /**
+   * Converts an array of ical values into a single
+   * string based on a type and a delimiter value (like ",").
+   *
+   * @function ICAL.stringify.multiValue
+   * @param {Array} values      List of values to convert
+   * @param {String} delim      Used to join the values (",", ";", ":")
+   * @param {String} type       Lowecase ical value type
+   *        (like boolean, date-time, etc..)
+   * @param {?String} innerMulti If set, each value will again be processed
+   *        Used for structured values
+   * @param {ICAL.design.designSet} designSet
+   *        The design data to use for this property
+   *
+   * @return {String}           iCalendar/vCard string for value
+   */
+  stringify.multiValue = function(values, delim, type, innerMulti, designSet, structuredValue) {
+    var result = '';
+    var len = values.length;
+    var i = 0;
+
+    for (; i < len; i++) {
+      if (innerMulti && Array.isArray(values[i])) {
+        result += stringify.multiValue(values[i], innerMulti, type, null, designSet, structuredValue);
+      } else {
+        result += stringify.value(values[i], type, designSet, structuredValue);
+      }
+
+      if (i !== (len - 1)) {
+        result += delim;
+      }
+    }
+
+    return result;
+  };
+
+  /**
+   * Processes a single ical value runs the associated "toICAL" method from the
+   * design value type if available to convert the value.
+   *
+   * @function ICAL.stringify.value
+   * @param {String|Number} value       A formatted value
+   * @param {String} type               Lowercase iCalendar/vCard value type
+   *  (like boolean, date-time, etc..)
+   * @return {String}                   iCalendar/vCard value for single value
+   */
+  stringify.value = function(value, type, designSet, structuredValue) {
+    if (type in designSet.value && 'toICAL' in designSet.value[type]) {
+      return designSet.value[type].toICAL(value, structuredValue);
+    }
+    return value;
+  };
+
+  /**
+   * Internal helper for rfc6868. Exposing this on ICAL.stringify so that
+   * hackers can disable the rfc6868 parsing if the really need to.
+   *
+   * @param {String} val        The value to unescape
+   * @return {String}           The escaped value
+   */
+  stringify._rfc6868Unescape = function(val) {
+    return val.replace(/[\n^"]/g, function(x) {
+      return RFC6868_REPLACE_MAP[x];
+    });
+  };
+  var RFC6868_REPLACE_MAP = { '"': "^'", "\n": "^n", "^": "^^" };
+
+  return stringify;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * Contains various functions to parse iCalendar and vCard data.
+ * @namespace
+ */
+ICAL.parse = (function() {
+  'use strict';
+
+  var CHAR = /[^ \t]/;
+  var MULTIVALUE_DELIMITER = ',';
+  var VALUE_DELIMITER = ':';
+  var PARAM_DELIMITER = ';';
+  var PARAM_NAME_DELIMITER = '=';
+  var DEFAULT_VALUE_TYPE = 'unknown';
+  var DEFAULT_PARAM_TYPE = 'text';
+
+  var design = ICAL.design;
+  var helpers = ICAL.helpers;
+
+  /**
+   * An error that occurred during parsing.
+   *
+   * @param {String} message        The error message
+   * @memberof ICAL.parse
+   * @extends {Error}
+   * @class
+   */
+  function ParserError(message) {
+    this.message = message;
+    this.name = 'ParserError';
+
+    try {
+      throw new Error();
+    } catch (e) {
+      if (e.stack) {
+        var split = e.stack.split('\n');
+        split.shift();
+        this.stack = split.join('\n');
+      }
+    }
+  }
+
+  ParserError.prototype = Error.prototype;
+
+  /**
+   * Parses iCalendar or vCard data into a raw jCal object. Consult
+   * documentation on the {@tutorial layers|layers of parsing} for more
+   * details.
+   *
+   * @function ICAL.parse
+   * @variation function
+   * @todo Fix the API to be more clear on the return type
+   * @param {String} input      The string data to parse
+   * @return {Object|Object[]}  A single jCal object, or an array thereof
+   */
+  function parser(input) {
+    var state = {};
+    var root = state.component = [];
+
+    state.stack = [root];
+
+    parser._eachLine(input, function(err, line) {
+      parser._handleContentLine(line, state);
+    });
+
+
+    // when there are still items on the stack
+    // throw a fatal error, a component was not closed
+    // correctly in that case.
+    if (state.stack.length > 1) {
+      throw new ParserError(
+        'invalid ical body. component began but did not end'
+      );
+    }
+
+    state = null;
+
+    return (root.length == 1 ? root[0] : root);
+  }
+
+  /**
+   * Parse an iCalendar property value into the jCal for a single property
+   *
+   * @function ICAL.parse.property
+   * @param {String} str
+   *   The iCalendar property string to parse
+   * @param {ICAL.design.designSet=} designSet
+   *   The design data to use for this property
+   * @return {Object}
+   *   The jCal Object containing the property
+   */
+  parser.property = function(str, designSet) {
+    var state = {
+      component: [[], []],
+      designSet: designSet || design.defaultSet
+    };
+    parser._handleContentLine(str, state);
+    return state.component[1][0];
+  };
+
+  /**
+   * Convenience method to parse a component. You can use ICAL.parse() directly
+   * instead.
+   *
+   * @function ICAL.parse.component
+   * @see ICAL.parse(function)
+   * @param {String} str    The iCalendar component string to parse
+   * @return {Object}       The jCal Object containing the component
+   */
+  parser.component = function(str) {
+    return parser(str);
+  };
+
+  // classes & constants
+  parser.ParserError = ParserError;
+
+  /**
+   * The state for parsing content lines from an iCalendar/vCard string.
+   *
+   * @private
+   * @memberof ICAL.parse
+   * @typedef {Object} parserState
+   * @property {ICAL.design.designSet} designSet    The design set to use for parsing
+   * @property {ICAL.Component[]} stack             The stack of components being processed
+   * @property {ICAL.Component} component           The currently active component
+   */
+
+
+  /**
+   * Handles a single line of iCalendar/vCard, updating the state.
+   *
+   * @private
+   * @function ICAL.parse._handleContentLine
+   * @param {String} line               The content line to process
+   * @param {ICAL.parse.parserState}    The current state of the line parsing
+   */
+  parser._handleContentLine = function(line, state) {
+    // break up the parts of the line
+    var valuePos = line.indexOf(VALUE_DELIMITER);
+    var paramPos = line.indexOf(PARAM_DELIMITER);
+
+    var lastParamIndex;
+    var lastValuePos;
+
+    // name of property or begin/end
+    var name;
+    var value;
+    // params is only overridden if paramPos !== -1.
+    // we can't do params = params || {} later on
+    // because it sacrifices ops.
+    var params = {};
+
+    /**
+     * Different property cases
+     *
+     *
+     * 1. RRULE:FREQ=foo
+     *    // FREQ= is not a param but the value
+     *
+     * 2. ATTENDEE;ROLE=REQ-PARTICIPANT;
+     *    // ROLE= is a param because : has not happened yet
+     */
+      // when the parameter delimiter is after the
+      // value delimiter then its not a parameter.
+
+    if ((paramPos !== -1 && valuePos !== -1)) {
+      // when the parameter delimiter is after the
+      // value delimiter then its not a parameter.
+      if (paramPos > valuePos) {
+        paramPos = -1;
+      }
+    }
+
+    var parsedParams;
+    if (paramPos !== -1) {
+      name = line.substring(0, paramPos).toLowerCase();
+      parsedParams = parser._parseParameters(line.substring(paramPos), 0, state.designSet);
+      if (parsedParams[2] == -1) {
+        throw new ParserError("Invalid parameters in '" + line + "'");
+      }
+      params = parsedParams[0];
+      lastParamIndex = parsedParams[1].length + parsedParams[2] + paramPos;
+      if ((lastValuePos =
+        line.substring(lastParamIndex).indexOf(VALUE_DELIMITER)) !== -1) {
+        value = line.substring(lastParamIndex + lastValuePos + 1);
+      } else {
+        throw new ParserError("Missing parameter value in '" + line + "'");
+      }
+    } else if (valuePos !== -1) {
+      // without parmeters (BEGIN:VCAENDAR, CLASS:PUBLIC)
+      name = line.substring(0, valuePos).toLowerCase();
+      value = line.substring(valuePos + 1);
+
+      if (name === 'begin') {
+        var newComponent = [value.toLowerCase(), [], []];
+        if (state.stack.length === 1) {
+          state.component.push(newComponent);
+        } else {
+          state.component[2].push(newComponent);
+        }
+        state.stack.push(state.component);
+        state.component = newComponent;
+        if (!state.designSet) {
+          state.designSet = design.getDesignSet(state.component[0]);
+        }
+        return;
+      } else if (name === 'end') {
+        state.component = state.stack.pop();
+        return;
+      }
+      // If its not begin/end, then this is a property with an empty value,
+      // which should be considered valid.
+    } else {
+      /**
+       * Invalid line.
+       * The rational to throw an error is we will
+       * never be certain that the rest of the file
+       * is sane and its unlikely that we can serialize
+       * the result correctly either.
+       */
+      throw new ParserError(
+        'invalid line (no token ";" or ":") "' + line + '"'
+      );
+    }
+
+    var valueType;
+    var multiValue = false;
+    var structuredValue = false;
+    var propertyDetails;
+
+    if (name in state.designSet.property) {
+      propertyDetails = state.designSet.property[name];
+
+      if ('multiValue' in propertyDetails) {
+        multiValue = propertyDetails.multiValue;
+      }
+
+      if ('structuredValue' in propertyDetails) {
+        structuredValue = propertyDetails.structuredValue;
+      }
+
+      if (value && 'detectType' in propertyDetails) {
+        valueType = propertyDetails.detectType(value);
+      }
+    }
+
+    // attempt to determine value
+    if (!valueType) {
+      if (!('value' in params)) {
+        if (propertyDetails) {
+          valueType = propertyDetails.defaultType;
+        } else {
+          valueType = DEFAULT_VALUE_TYPE;
+        }
+      } else {
+        // possible to avoid this?
+        valueType = params.value.toLowerCase();
+      }
+    }
+
+    delete params.value;
+
+    /**
+     * Note on `var result` juggling:
+     *
+     * I observed that building the array in pieces has adverse
+     * effects on performance, so where possible we inline the creation.
+     * Its a little ugly but resulted in ~2000 additional ops/sec.
+     */
+
+    var result;
+    if (multiValue && structuredValue) {
+      value = parser._parseMultiValue(value, structuredValue, valueType, [], multiValue, state.designSet, structuredValue);
+      result = [name, params, valueType, value];
+    } else if (multiValue) {
+      result = [name, params, valueType];
+      parser._parseMultiValue(value, multiValue, valueType, result, null, state.designSet, false);
+    } else if (structuredValue) {
+      value = parser._parseMultiValue(value, structuredValue, valueType, [], null, state.designSet, structuredValue);
+      result = [name, params, valueType, value];
+    } else {
+      value = parser._parseValue(value, valueType, state.designSet, false);
+      result = [name, params, valueType, value];
+    }
+    // rfc6350 requires that in vCard 4.0 the first component is the VERSION
+    // component with as value 4.0, note that 3.0 does not have this requirement.
+    if (state.component[0] === 'vcard' && state.component[1].length === 0 &&
+            !(name === 'version' && value === '4.0')) {
+      state.designSet = design.getDesignSet("vcard3");
+    }
+    state.component[1].push(result);
+  };
+
+  /**
+   * Parse a value from the raw value into the jCard/jCal value.
+   *
+   * @private
+   * @function ICAL.parse._parseValue
+   * @param {String} value          Original value
+   * @param {String} type           Type of value
+   * @param {Object} designSet      The design data to use for this value
+   * @return {Object} varies on type
+   */
+  parser._parseValue = function(value, type, designSet, structuredValue) {
+    if (type in designSet.value && 'fromICAL' in designSet.value[type]) {
+      return designSet.value[type].fromICAL(value, structuredValue);
+    }
+    return value;
+  };
+
+  /**
+   * Parse parameters from a string to object.
+   *
+   * @function ICAL.parse._parseParameters
+   * @private
+   * @param {String} line           A single unfolded line
+   * @param {Numeric} start         Position to start looking for properties
+   * @param {Object} designSet      The design data to use for this property
+   * @return {Object} key/value pairs
+   */
+  parser._parseParameters = function(line, start, designSet) {
+    var lastParam = start;
+    var pos = 0;
+    var delim = PARAM_NAME_DELIMITER;
+    var result = {};
+    var name, lcname;
+    var value, valuePos = -1;
+    var type, multiValue, mvdelim;
+
+    // find the next '=' sign
+    // use lastParam and pos to find name
+    // check if " is used if so get value from "->"
+    // then increment pos to find next ;
+
+    while ((pos !== false) &&
+           (pos = helpers.unescapedIndexOf(line, delim, pos + 1)) !== -1) {
+
+      name = line.substr(lastParam + 1, pos - lastParam - 1);
+      if (name.length == 0) {
+        throw new ParserError("Empty parameter name in '" + line + "'");
+      }
+      lcname = name.toLowerCase();
+      mvdelim = false;
+      multiValue = false;
+
+      if (lcname in designSet.param && designSet.param[lcname].valueType) {
+        type = designSet.param[lcname].valueType;
+      } else {
+        type = DEFAULT_PARAM_TYPE;
+      }
+
+      if (lcname in designSet.param) {
+        multiValue = designSet.param[lcname].multiValue;
+        if (designSet.param[lcname].multiValueSeparateDQuote) {
+          mvdelim = parser._rfc6868Escape('"' + multiValue + '"');
+        }
+      }
+
+      var nextChar = line[pos + 1];
+      if (nextChar === '"') {
+        valuePos = pos + 2;
+        pos = helpers.unescapedIndexOf(line, '"', valuePos);
+        if (multiValue && pos != -1) {
+            var extendedValue = true;
+            while (extendedValue) {
+              if (line[pos + 1] == multiValue && line[pos + 2] == '"') {
+                pos = helpers.unescapedIndexOf(line, '"', pos + 3);
+              } else {
+                extendedValue = false;
+              }
+            }
+          }
+        if (pos === -1) {
+          throw new ParserError(
+            'invalid line (no matching double quote) "' + line + '"'
+          );
+        }
+        value = line.substr(valuePos, pos - valuePos);
+        lastParam = helpers.unescapedIndexOf(line, PARAM_DELIMITER, pos);
+        if (lastParam === -1) {
+          pos = false;
+        }
+      } else {
+        valuePos = pos + 1;
+
+        // move to next ";"
+        var nextPos = helpers.unescapedIndexOf(line, PARAM_DELIMITER, valuePos);
+        var propValuePos = helpers.unescapedIndexOf(line, VALUE_DELIMITER, valuePos);
+        if (propValuePos !== -1 && nextPos > propValuePos) {
+          // this is a delimiter in the property value, let's stop here
+          nextPos = propValuePos;
+          pos = false;
+        } else if (nextPos === -1) {
+          // no ";"
+          if (propValuePos === -1) {
+            nextPos = line.length;
+          } else {
+            nextPos = propValuePos;
+          }
+          pos = false;
+        } else {
+          lastParam = nextPos;
+          pos = nextPos;
+        }
+
+        value = line.substr(valuePos, nextPos - valuePos);
+      }
+
+      value = parser._rfc6868Escape(value);
+      if (multiValue) {
+        var delimiter = mvdelim || multiValue;
+        value = parser._parseMultiValue(value, delimiter, type, [], null, designSet);
+      } else {
+        value = parser._parseValue(value, type, designSet);
+      }
+
+      if (multiValue && (lcname in result)) {
+        if (Array.isArray(result[lcname])) {
+          result[lcname].push(value);
+        } else {
+          result[lcname] = [
+            result[lcname],
+            value
+          ];
+        }
+      } else {
+        result[lcname] = value;
+      }
+    }
+    return [result, value, valuePos];
+  };
+
+  /**
+   * Internal helper for rfc6868. Exposing this on ICAL.parse so that
+   * hackers can disable the rfc6868 parsing if the really need to.
+   *
+   * @function ICAL.parse._rfc6868Escape
+   * @param {String} val        The value to escape
+   * @return {String}           The escaped value
+   */
+  parser._rfc6868Escape = function(val) {
+    return val.replace(/\^['n^]/g, function(x) {
+      return RFC6868_REPLACE_MAP[x];
+    });
+  };
+  var RFC6868_REPLACE_MAP = { "^'": '"', "^n": "\n", "^^": "^" };
+
+  /**
+   * Parse a multi value string. This function is used either for parsing
+   * actual multi-value property's values, or for handling parameter values. It
+   * can be used for both multi-value properties and structured value properties.
+   *
+   * @private
+   * @function ICAL.parse._parseMultiValue
+   * @param {String} buffer     The buffer containing the full value
+   * @param {String} delim      The multi-value delimiter
+   * @param {String} type       The value type to be parsed
+   * @param {Array.<?>} result        The array to append results to, varies on value type
+   * @param {String} innerMulti The inner delimiter to split each value with
+   * @param {ICAL.design.designSet} designSet   The design data for this value
+   * @return {?|Array.<?>}            Either an array of results, or the first result
+   */
+  parser._parseMultiValue = function(buffer, delim, type, result, innerMulti, designSet, structuredValue) {
+    var pos = 0;
+    var lastPos = 0;
+    var value;
+    if (delim.length === 0) {
+      return buffer;
+    }
+
+    // split each piece
+    while ((pos = helpers.unescapedIndexOf(buffer, delim, lastPos)) !== -1) {
+      value = buffer.substr(lastPos, pos - lastPos);
+      if (innerMulti) {
+        value = parser._parseMultiValue(value, innerMulti, type, [], null, designSet, structuredValue);
+      } else {
+        value = parser._parseValue(value, type, designSet, structuredValue);
+      }
+      result.push(value);
+      lastPos = pos + delim.length;
+    }
+
+    // on the last piece take the rest of string
+    value = buffer.substr(lastPos);
+    if (innerMulti) {
+      value = parser._parseMultiValue(value, innerMulti, type, [], null, designSet, structuredValue);
+    } else {
+      value = parser._parseValue(value, type, designSet, structuredValue);
+    }
+    result.push(value);
+
+    return result.length == 1 ? result[0] : result;
+  };
+
+  /**
+   * Process a complete buffer of iCalendar/vCard data line by line, correctly
+   * unfolding content. Each line will be processed with the given callback
+   *
+   * @private
+   * @function ICAL.parse._eachLine
+   * @param {String} buffer                         The buffer to process
+   * @param {function(?String, String)} callback    The callback for each line
+   */
+  parser._eachLine = function(buffer, callback) {
+    var len = buffer.length;
+    var lastPos = buffer.search(CHAR);
+    var pos = lastPos;
+    var line;
+    var firstChar;
+
+    var newlineOffset;
+
+    do {
+      pos = buffer.indexOf('\n', lastPos) + 1;
+
+      if (pos > 1 && buffer[pos - 2] === '\r') {
+        newlineOffset = 2;
+      } else {
+        newlineOffset = 1;
+      }
+
+      if (pos === 0) {
+        pos = len;
+        newlineOffset = 0;
+      }
+
+      firstChar = buffer[lastPos];
+
+      if (firstChar === ' ' || firstChar === '\t') {
+        // add to line
+        line += buffer.substr(
+          lastPos + 1,
+          pos - lastPos - (newlineOffset + 1)
+        );
+      } else {
+        if (line)
+          callback(null, line);
+        // push line
+        line = buffer.substr(
+          lastPos,
+          pos - lastPos - newlineOffset
+        );
+      }
+
+      lastPos = pos;
+    } while (pos !== len);
+
+    // extra ending line
+    line = line.trim();
+
+    if (line.length)
+      callback(null, line);
+  };
+
+  return parser;
+
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.Component = (function() {
+  'use strict';
+
+  var PROPERTY_INDEX = 1;
+  var COMPONENT_INDEX = 2;
+  var NAME_INDEX = 0;
+
+  /**
+   * @classdesc
+   * Wraps a jCal component, adding convenience methods to add, remove and
+   * update subcomponents and properties.
+   *
+   * @class
+   * @alias ICAL.Component
+   * @param {Array|String} jCal         Raw jCal component data OR name of new
+   *                                      component
+   * @param {ICAL.Component} parent     Parent component to associate
+   */
+  function Component(jCal, parent) {
+    if (typeof(jCal) === 'string') {
+      // jCal spec (name, properties, components)
+      jCal = [jCal, [], []];
+    }
+
+    // mostly for legacy reasons.
+    this.jCal = jCal;
+
+    this.parent = parent || null;
+  }
+
+  Component.prototype = {
+    /**
+     * Hydrated properties are inserted into the _properties array at the same
+     * position as in the jCal array, so its possible the array contains
+     * undefined values for unhydrdated properties. To avoid iterating the
+     * array when checking if all properties have been hydrated, we save the
+     * count here.
+     *
+     * @type {Number}
+     * @private
+     */
+    _hydratedPropertyCount: 0,
+
+    /**
+     * The same count as for _hydratedPropertyCount, but for subcomponents
+     *
+     * @type {Number}
+     * @private
+     */
+    _hydratedComponentCount: 0,
+
+    /**
+     * The name of this component
+     * @readonly
+     */
+    get name() {
+      return this.jCal[NAME_INDEX];
+    },
+
+    /**
+     * The design set for this component, e.g. icalendar vs vcard
+     *
+     * @type {ICAL.design.designSet}
+     * @private
+     */
+    get _designSet() {
+      var parentDesign = this.parent && this.parent._designSet;
+      return parentDesign || ICAL.design.getDesignSet(this.name);
+    },
+
+    _hydrateComponent: function(index) {
+      if (!this._components) {
+        this._components = [];
+        this._hydratedComponentCount = 0;
+      }
+
+      if (this._components[index]) {
+        return this._components[index];
+      }
+
+      var comp = new Component(
+        this.jCal[COMPONENT_INDEX][index],
+        this
+      );
+
+      this._hydratedComponentCount++;
+      return (this._components[index] = comp);
+    },
+
+    _hydrateProperty: function(index) {
+      if (!this._properties) {
+        this._properties = [];
+        this._hydratedPropertyCount = 0;
+      }
+
+      if (this._properties[index]) {
+        return this._properties[index];
+      }
+
+      var prop = new ICAL.Property(
+        this.jCal[PROPERTY_INDEX][index],
+        this
+      );
+
+      this._hydratedPropertyCount++;
+      return (this._properties[index] = prop);
+    },
+
+    /**
+     * Finds first sub component, optionally filtered by name.
+     *
+     * @param {String=} name        Optional name to filter by
+     * @return {?ICAL.Component}     The found subcomponent
+     */
+    getFirstSubcomponent: function(name) {
+      if (name) {
+        var i = 0;
+        var comps = this.jCal[COMPONENT_INDEX];
+        var len = comps.length;
+
+        for (; i < len; i++) {
+          if (comps[i][NAME_INDEX] === name) {
+            var result = this._hydrateComponent(i);
+            return result;
+          }
+        }
+      } else {
+        if (this.jCal[COMPONENT_INDEX].length) {
+          return this._hydrateComponent(0);
+        }
+      }
+
+      // ensure we return a value (strict mode)
+      return null;
+    },
+
+    /**
+     * Finds all sub components, optionally filtering by name.
+     *
+     * @param {String=} name            Optional name to filter by
+     * @return {ICAL.Component[]}       The found sub components
+     */
+    getAllSubcomponents: function(name) {
+      var jCalLen = this.jCal[COMPONENT_INDEX].length;
+      var i = 0;
+
+      if (name) {
+        var comps = this.jCal[COMPONENT_INDEX];
+        var result = [];
+
+        for (; i < jCalLen; i++) {
+          if (name === comps[i][NAME_INDEX]) {
+            result.push(
+              this._hydrateComponent(i)
+            );
+          }
+        }
+        return result;
+      } else {
+        if (!this._components ||
+            (this._hydratedComponentCount !== jCalLen)) {
+          for (; i < jCalLen; i++) {
+            this._hydrateComponent(i);
+          }
+        }
+
+        return this._components || [];
+      }
+    },
+
+    /**
+     * Returns true when a named property exists.
+     *
+     * @param {String} name     The property name
+     * @return {Boolean}        True, when property is found
+     */
+    hasProperty: function(name) {
+      var props = this.jCal[PROPERTY_INDEX];
+      var len = props.length;
+
+      var i = 0;
+      for (; i < len; i++) {
+        // 0 is property name
+        if (props[i][NAME_INDEX] === name) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+
+    /**
+     * Finds the first property, optionally with the given name.
+     *
+     * @param {String=} name        Lowercase property name
+     * @return {?ICAL.Property}     The found property
+     */
+    getFirstProperty: function(name) {
+      if (name) {
+        var i = 0;
+        var props = this.jCal[PROPERTY_INDEX];
+        var len = props.length;
+
+        for (; i < len; i++) {
+          if (props[i][NAME_INDEX] === name) {
+            var result = this._hydrateProperty(i);
+            return result;
+          }
+        }
+      } else {
+        if (this.jCal[PROPERTY_INDEX].length) {
+          return this._hydrateProperty(0);
+        }
+      }
+
+      return null;
+    },
+
+    /**
+     * Returns first property's value, if available.
+     *
+     * @param {String=} name    Lowercase property name
+     * @return {?String}        The found property value.
+     */
+    getFirstPropertyValue: function(name) {
+      var prop = this.getFirstProperty(name);
+      if (prop) {
+        return prop.getFirstValue();
+      }
+
+      return null;
+    },
+
+    /**
+     * Get all properties in the component, optionally filtered by name.
+     *
+     * @param {String=} name        Lowercase property name
+     * @return {ICAL.Property[]}    List of properties
+     */
+    getAllProperties: function(name) {
+      var jCalLen = this.jCal[PROPERTY_INDEX].length;
+      var i = 0;
+
+      if (name) {
+        var props = this.jCal[PROPERTY_INDEX];
+        var result = [];
+
+        for (; i < jCalLen; i++) {
+          if (name === props[i][NAME_INDEX]) {
+            result.push(
+              this._hydrateProperty(i)
+            );
+          }
+        }
+        return result;
+      } else {
+        if (!this._properties ||
+            (this._hydratedPropertyCount !== jCalLen)) {
+          for (; i < jCalLen; i++) {
+            this._hydrateProperty(i);
+          }
+        }
+
+        return this._properties || [];
+      }
+    },
+
+    _removeObjectByIndex: function(jCalIndex, cache, index) {
+      cache = cache || [];
+      // remove cached version
+      if (cache[index]) {
+        var obj = cache[index];
+        if ("parent" in obj) {
+            obj.parent = null;
+        }
+      }
+
+      cache.splice(index, 1);
+
+      // remove it from the jCal
+      this.jCal[jCalIndex].splice(index, 1);
+    },
+
+    _removeObject: function(jCalIndex, cache, nameOrObject) {
+      var i = 0;
+      var objects = this.jCal[jCalIndex];
+      var len = objects.length;
+      var cached = this[cache];
+
+      if (typeof(nameOrObject) === 'string') {
+        for (; i < len; i++) {
+          if (objects[i][NAME_INDEX] === nameOrObject) {
+            this._removeObjectByIndex(jCalIndex, cached, i);
+            return true;
+          }
+        }
+      } else if (cached) {
+        for (; i < len; i++) {
+          if (cached[i] && cached[i] === nameOrObject) {
+            this._removeObjectByIndex(jCalIndex, cached, i);
+            return true;
+          }
+        }
+      }
+
+      return false;
+    },
+
+    _removeAllObjects: function(jCalIndex, cache, name) {
+      var cached = this[cache];
+
+      // Unfortunately we have to run through all children to reset their
+      // parent property.
+      var objects = this.jCal[jCalIndex];
+      var i = objects.length - 1;
+
+      // descending search required because splice
+      // is used and will effect the indices.
+      for (; i >= 0; i--) {
+        if (!name || objects[i][NAME_INDEX] === name) {
+          this._removeObjectByIndex(jCalIndex, cached, i);
+        }
+      }
+    },
+
+    /**
+     * Adds a single sub component.
+     *
+     * @param {ICAL.Component} component        The component to add
+     * @return {ICAL.Component}                 The passed in component
+     */
+    addSubcomponent: function(component) {
+      if (!this._components) {
+        this._components = [];
+        this._hydratedComponentCount = 0;
+      }
+
+      if (component.parent) {
+        component.parent.removeSubcomponent(component);
+      }
+
+      var idx = this.jCal[COMPONENT_INDEX].push(component.jCal);
+      this._components[idx - 1] = component;
+      this._hydratedComponentCount++;
+      component.parent = this;
+      return component;
+    },
+
+    /**
+     * Removes a single component by name or the instance of a specific
+     * component.
+     *
+     * @param {ICAL.Component|String} nameOrComp    Name of component, or component
+     * @return {Boolean}                            True when comp is removed
+     */
+    removeSubcomponent: function(nameOrComp) {
+      var removed = this._removeObject(COMPONENT_INDEX, '_components', nameOrComp);
+      if (removed) {
+        this._hydratedComponentCount--;
+      }
+      return removed;
+    },
+
+    /**
+     * Removes all components or (if given) all components by a particular
+     * name.
+     *
+     * @param {String=} name            Lowercase component name
+     */
+    removeAllSubcomponents: function(name) {
+      var removed = this._removeAllObjects(COMPONENT_INDEX, '_components', name);
+      this._hydratedComponentCount = 0;
+      return removed;
+    },
+
+    /**
+     * Adds an {@link ICAL.Property} to the component.
+     *
+     * @param {ICAL.Property} property      The property to add
+     * @return {ICAL.Property}              The passed in property
+     */
+    addProperty: function(property) {
+      if (!(property instanceof ICAL.Property)) {
+        throw new TypeError('must instance of ICAL.Property');
+      }
+
+      if (!this._properties) {
+        this._properties = [];
+        this._hydratedPropertyCount = 0;
+      }
+
+      if (property.parent) {
+        property.parent.removeProperty(property);
+      }
+
+      var idx = this.jCal[PROPERTY_INDEX].push(property.jCal);
+      this._properties[idx - 1] = property;
+      this._hydratedPropertyCount++;
+      property.parent = this;
+      return property;
+    },
+
+    /**
+     * Helper method to add a property with a value to the component.
+     *
+     * @param {String}               name         Property name to add
+     * @param {String|Number|Object} value        Property value
+     * @return {ICAL.Property}                    The created property
+     */
+    addPropertyWithValue: function(name, value) {
+      var prop = new ICAL.Property(name);
+      prop.setValue(value);
+
+      this.addProperty(prop);
+
+      return prop;
+    },
+
+    /**
+     * Helper method that will update or create a property of the given name
+     * and sets its value. If multiple properties with the given name exist,
+     * only the first is updated.
+     *
+     * @param {String}               name         Property name to update
+     * @param {String|Number|Object} value        Property value
+     * @return {ICAL.Property}                    The created property
+     */
+    updatePropertyWithValue: function(name, value) {
+      var prop = this.getFirstProperty(name);
+
+      if (prop) {
+        prop.setValue(value);
+      } else {
+        prop = this.addPropertyWithValue(name, value);
+      }
+
+      return prop;
+    },
+
+    /**
+     * Removes a single property by name or the instance of the specific
+     * property.
+     *
+     * @param {String|ICAL.Property} nameOrProp     Property name or instance to remove
+     * @return {Boolean}                            True, when deleted
+     */
+    removeProperty: function(nameOrProp) {
+      var removed = this._removeObject(PROPERTY_INDEX, '_properties', nameOrProp);
+      if (removed) {
+        this._hydratedPropertyCount--;
+      }
+      return removed;
+    },
+
+    /**
+     * Removes all properties associated with this component, optionally
+     * filtered by name.
+     *
+     * @param {String=} name        Lowercase property name
+     * @return {Boolean}            True, when deleted
+     */
+    removeAllProperties: function(name) {
+      var removed = this._removeAllObjects(PROPERTY_INDEX, '_properties', name);
+      this._hydratedPropertyCount = 0;
+      return removed;
+    },
+
+    /**
+     * Returns the Object representation of this component. The returned object
+     * is a live jCal object and should be cloned if modified.
+     * @return {Object}
+     */
+    toJSON: function() {
+      return this.jCal;
+    },
+
+    /**
+     * The string representation of this component.
+     * @return {String}
+     */
+    toString: function() {
+      return ICAL.stringify.component(
+        this.jCal, this._designSet
+      );
+    }
+  };
+
+  /**
+   * Create an {@link ICAL.Component} by parsing the passed iCalendar string.
+   *
+   * @param {String} str        The iCalendar string to parse
+   */
+  Component.fromString = function(str) {
+    return new Component(ICAL.parse.component(str));
+  };
+
+  return Component;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.Property = (function() {
+  'use strict';
+
+  var NAME_INDEX = 0;
+  var PROP_INDEX = 1;
+  var TYPE_INDEX = 2;
+  var VALUE_INDEX = 3;
+
+  var design = ICAL.design;
+
+  /**
+   * @classdesc
+   * Provides a layer on top of the raw jCal object for manipulating a single
+   * property, with its parameters and value.
+   *
+   * @description
+   * Its important to note that mutations done in the wrapper
+   * directly mutate the jCal object used to initialize.
+   *
+   * Can also be used to create new properties by passing
+   * the name of the property (as a String).
+   *
+   * @class
+   * @alias ICAL.Property
+   * @param {Array|String} jCal         Raw jCal representation OR
+   *  the new name of the property
+   *
+   * @param {ICAL.Component=} parent    Parent component
+   */
+  function Property(jCal, parent) {
+    this._parent = parent || null;
+
+    if (typeof(jCal) === 'string') {
+      // We are creating the property by name and need to detect the type
+      this.jCal = [jCal, {}, design.defaultType];
+      this.jCal[TYPE_INDEX] = this.getDefaultType();
+    } else {
+      this.jCal = jCal;
+    }
+    this._updateType();
+  }
+
+  Property.prototype = {
+
+    /**
+     * The value type for this property
+     * @readonly
+     * @type {String}
+     */
+    get type() {
+      return this.jCal[TYPE_INDEX];
+    },
+
+    /**
+     * The name of this property, in lowercase.
+     * @readonly
+     * @type {String}
+     */
+    get name() {
+      return this.jCal[NAME_INDEX];
+    },
+
+    /**
+     * The parent component for this property.
+     * @type {ICAL.Component}
+     */
+    get parent() {
+      return this._parent;
+    },
+
+    set parent(p) {
+      // Before setting the parent, check if the design set has changed. If it
+      // has, we later need to update the type if it was unknown before.
+      var designSetChanged = !this._parent || (p && p._designSet != this._parent._designSet);
+
+      this._parent = p;
+
+      if (this.type == design.defaultType && designSetChanged) {
+        this.jCal[TYPE_INDEX] = this.getDefaultType();
+        this._updateType();
+      }
+
+      return p;
+    },
+
+    /**
+     * The design set for this property, e.g. icalendar vs vcard
+     *
+     * @type {ICAL.design.designSet}
+     * @private
+     */
+    get _designSet() {
+      return this.parent ? this.parent._designSet : design.defaultSet;
+    },
+
+    /**
+     * Updates the type metadata from the current jCal type and design set.
+     *
+     * @private
+     */
+    _updateType: function() {
+      var designSet = this._designSet;
+
+      if (this.type in designSet.value) {
+        var designType = designSet.value[this.type];
+
+        if ('decorate' in designSet.value[this.type]) {
+          this.isDecorated = true;
+        } else {
+          this.isDecorated = false;
+        }
+
+        if (this.name in designSet.property) {
+          this.isMultiValue = ('multiValue' in designSet.property[this.name]);
+          this.isStructuredValue = ('structuredValue' in designSet.property[this.name]);
+        }
+      }
+    },
+
+    /**
+     * Hydrate a single value. The act of hydrating means turning the raw jCal
+     * value into a potentially wrapped object, for example {@link ICAL.Time}.
+     *
+     * @private
+     * @param {Number} index        The index of the value to hydrate
+     * @return {Object}             The decorated value.
+     */
+    _hydrateValue: function(index) {
+      if (this._values && this._values[index]) {
+        return this._values[index];
+      }
+
+      // for the case where there is no value.
+      if (this.jCal.length <= (VALUE_INDEX + index)) {
+        return null;
+      }
+
+      if (this.isDecorated) {
+        if (!this._values) {
+          this._values = [];
+        }
+        return (this._values[index] = this._decorate(
+          this.jCal[VALUE_INDEX + index]
+        ));
+      } else {
+        return this.jCal[VALUE_INDEX + index];
+      }
+    },
+
+    /**
+     * Decorate a single value, returning its wrapped object. This is used by
+     * the hydrate function to actually wrap the value.
+     *
+     * @private
+     * @param {?} value         The value to decorate
+     * @return {Object}         The decorated value
+     */
+    _decorate: function(value) {
+      return this._designSet.value[this.type].decorate(value, this);
+    },
+
+    /**
+     * Undecorate a single value, returning its raw jCal data.
+     *
+     * @private
+     * @param {Object} value         The value to undecorate
+     * @return {?}                   The undecorated value
+     */
+    _undecorate: function(value) {
+      return this._designSet.value[this.type].undecorate(value, this);
+    },
+
+    /**
+     * Sets the value at the given index while also hydrating it. The passed
+     * value can either be a decorated or undecorated value.
+     *
+     * @private
+     * @param {?} value             The value to set
+     * @param {Number} index        The index to set it at
+     */
+    _setDecoratedValue: function(value, index) {
+      if (!this._values) {
+        this._values = [];
+      }
+
+      if (typeof(value) === 'object' && 'icaltype' in value) {
+        // decorated value
+        this.jCal[VALUE_INDEX + index] = this._undecorate(value);
+        this._values[index] = value;
+      } else {
+        // undecorated value
+        this.jCal[VALUE_INDEX + index] = value;
+        this._values[index] = this._decorate(value);
+      }
+    },
+
+    /**
+     * Gets a parameter on the property.
+     *
+     * @param {String}        name   Property name (lowercase)
+     * @return {Array|String}        Property value
+     */
+    getParameter: function(name) {
+      if (name in this.jCal[PROP_INDEX]) {
+        return this.jCal[PROP_INDEX][name];
+      } else {
+        return undefined;
+      }
+    },
+
+    /**
+     * Gets first parameter on the property.
+     *
+     * @param {String}        name   Property name (lowercase)
+     * @return {String}        Property value
+     */
+    getFirstParameter: function(name) {
+      var parameters = this.getParameter(name);
+
+      if (Array.isArray(parameters)) {
+        return parameters[0];
+      }
+
+      return parameters;
+    },
+
+    /**
+     * Sets a parameter on the property.
+     *
+     * @param {String}       name     The parameter name
+     * @param {Array|String} value    The parameter value
+     */
+    setParameter: function(name, value) {
+      var lcname = name.toLowerCase();
+      if (typeof value === "string" &&
+          lcname in this._designSet.param &&
+          'multiValue' in this._designSet.param[lcname]) {
+          value = [value];
+      }
+      this.jCal[PROP_INDEX][name] = value;
+    },
+
+    /**
+     * Removes a parameter
+     *
+     * @param {String} name     The parameter name
+     */
+    removeParameter: function(name) {
+      delete this.jCal[PROP_INDEX][name];
+    },
+
+    /**
+     * Get the default type based on this property's name.
+     *
+     * @return {String}     The default type for this property
+     */
+    getDefaultType: function() {
+      var name = this.jCal[NAME_INDEX];
+      var designSet = this._designSet;
+
+      if (name in designSet.property) {
+        var details = designSet.property[name];
+        if ('defaultType' in details) {
+          return details.defaultType;
+        }
+      }
+      return design.defaultType;
+    },
+
+    /**
+     * Sets type of property and clears out any existing values of the current
+     * type.
+     *
+     * @param {String} type     New iCAL type (see design.*.values)
+     */
+    resetType: function(type) {
+      this.removeAllValues();
+      this.jCal[TYPE_INDEX] = type;
+      this._updateType();
+    },
+
+    /**
+     * Finds the first property value.
+     *
+     * @return {String}         First property value
+     */
+    getFirstValue: function() {
+      return this._hydrateValue(0);
+    },
+
+    /**
+     * Gets all values on the property.
+     *
+     * NOTE: this creates an array during each call.
+     *
+     * @return {Array}          List of values
+     */
+    getValues: function() {
+      var len = this.jCal.length - VALUE_INDEX;
+
+      if (len < 1) {
+        // its possible for a property to have no value.
+        return [];
+      }
+
+      var i = 0;
+      var result = [];
+
+      for (; i < len; i++) {
+        result[i] = this._hydrateValue(i);
+      }
+
+      return result;
+    },
+
+    /**
+     * Removes all values from this property
+     */
+    removeAllValues: function() {
+      if (this._values) {
+        this._values.length = 0;
+      }
+      this.jCal.length = 3;
+    },
+
+    /**
+     * Sets the values of the property.  Will overwrite the existing values.
+     * This can only be used for multi-value properties.
+     *
+     * @param {Array} values    An array of values
+     */
+    setValues: function(values) {
+      if (!this.isMultiValue) {
+        throw new Error(
+          this.name + ': does not not support mulitValue.\n' +
+          'override isMultiValue'
+        );
+      }
+
+      var len = values.length;
+      var i = 0;
+      this.removeAllValues();
+
+      if (len > 0 &&
+          typeof(values[0]) === 'object' &&
+          'icaltype' in values[0]) {
+        this.resetType(values[0].icaltype);
+      }
+
+      if (this.isDecorated) {
+        for (; i < len; i++) {
+          this._setDecoratedValue(values[i], i);
+        }
+      } else {
+        for (; i < len; i++) {
+          this.jCal[VALUE_INDEX + i] = values[i];
+        }
+      }
+    },
+
+    /**
+     * Sets the current value of the property. If this is a multi-value
+     * property, all other values will be removed.
+     *
+     * @param {String|Object} value     New property value.
+     */
+    setValue: function(value) {
+      this.removeAllValues();
+      if (typeof(value) === 'object' && 'icaltype' in value) {
+        this.resetType(value.icaltype);
+      }
+
+      if (this.isDecorated) {
+        this._setDecoratedValue(value, 0);
+      } else {
+        this.jCal[VALUE_INDEX] = value;
+      }
+    },
+
+    /**
+     * Returns the Object representation of this component. The returned object
+     * is a live jCal object and should be cloned if modified.
+     * @return {Object}
+     */
+    toJSON: function() {
+      return this.jCal;
+    },
+
+    /**
+     * The string representation of this component.
+     * @return {String}
+     */
+    toICALString: function() {
+      return ICAL.stringify.property(
+        this.jCal, this._designSet, true
+      );
+    }
+  };
+
+  /**
+   * Create an {@link ICAL.Property} by parsing the passed iCalendar string.
+   *
+   * @param {String} str                        The iCalendar string to parse
+   * @param {ICAL.design.designSet=} designSet  The design data to use for this property
+   * @return {ICAL.Property}                    The created iCalendar property
+   */
+  Property.fromString = function(str, designSet) {
+    return new Property(ICAL.parse.property(str, designSet));
+  };
+
+  return Property;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.UtcOffset = (function() {
+
+  /**
+   * @classdesc
+   * This class represents the "duration" value type, with various calculation
+   * and manipulation methods.
+   *
+   * @class
+   * @alias ICAL.UtcOffset
+   * @param {Object} aData          An object with members of the utc offset
+   * @param {Number=} aData.hours   The hours for the utc offset
+   * @param {Number=} aData.minutes The minutes in the utc offset
+   * @param {Number=} aData.factor  The factor for the utc-offset, either -1 or 1
+   */
+  function UtcOffset(aData) {
+    this.fromData(aData);
+  }
+
+  UtcOffset.prototype = {
+
+    /**
+     * The hours in the utc-offset
+     * @type {Number}
+     */
+    hours: 0,
+
+    /**
+     * The minutes in the utc-offset
+     * @type {Number}
+     */
+    minutes: 0,
+
+    /**
+     * The sign of the utc offset, 1 for positive offset, -1 for negative
+     * offsets.
+     * @type {Number}
+     */
+    factor: 1,
+
+    /**
+     * The type name, to be used in the jCal object.
+     * @constant
+     * @type {String}
+     * @default "utc-offset"
+     */
+    icaltype: "utc-offset",
+
+    /**
+     * Returns a clone of the utc offset object.
+     *
+     * @return {ICAL.UtcOffset}     The cloned object
+     */
+    clone: function() {
+      return ICAL.UtcOffset.fromSeconds(this.toSeconds());
+    },
+
+    /**
+     * Sets up the current instance using members from the passed data object.
+     *
+     * @param {Object} aData          An object with members of the utc offset
+     * @param {Number=} aData.hours   The hours for the utc offset
+     * @param {Number=} aData.minutes The minutes in the utc offset
+     * @param {Number=} aData.factor  The factor for the utc-offset, either -1 or 1
+     */
+    fromData: function(aData) {
+      if (aData) {
+        for (var key in aData) {
+          /* istanbul ignore else */
+          if (aData.hasOwnProperty(key)) {
+            this[key] = aData[key];
+          }
+        }
+      }
+      this._normalize();
+    },
+
+    /**
+     * Sets up the current instance from the given seconds value. The seconds
+     * value is truncated to the minute. Offsets are wrapped when the world
+     * ends, the hour after UTC+14:00 is UTC-12:00.
+     *
+     * @param {Number} aSeconds         The seconds to convert into an offset
+     */
+    fromSeconds: function(aSeconds) {
+      var secs = Math.abs(aSeconds);
+
+      this.factor = aSeconds < 0 ? -1 : 1;
+      this.hours = ICAL.helpers.trunc(secs / 3600);
+
+      secs -= (this.hours * 3600);
+      this.minutes = ICAL.helpers.trunc(secs / 60);
+      return this;
+    },
+
+    /**
+     * Convert the current offset to a value in seconds
+     *
+     * @return {Number}                 The offset in seconds
+     */
+    toSeconds: function() {
+      return this.factor * (60 * this.minutes + 3600 * this.hours);
+    },
+
+    /**
+     * Compare this utc offset with another one.
+     *
+     * @param {ICAL.UtcOffset} other        The other offset to compare with
+     * @return {Number}                     -1, 0 or 1 for less/equal/greater
+     */
+    compare: function icaltime_compare(other) {
+      var a = this.toSeconds();
+      var b = other.toSeconds();
+      return (a > b) - (b > a);
+    },
+
+    _normalize: function() {
+      // Range: 97200 seconds (with 1 hour inbetween)
+      var secs = this.toSeconds();
+      var factor = this.factor;
+      while (secs < -43200) { // = UTC-12:00
+        secs += 97200;
+      }
+      while (secs > 50400) { // = UTC+14:00
+        secs -= 97200;
+      }
+
+      this.fromSeconds(secs);
+
+      // Avoid changing the factor when on zero seconds
+      if (secs == 0) {
+        this.factor = factor;
+      }
+    },
+
+    /**
+     * The iCalendar string representation of this utc-offset.
+     * @return {String}
+     */
+    toICALString: function() {
+      return ICAL.design.icalendar.value['utc-offset'].toICAL(this.toString());
+    },
+
+    /**
+     * The string representation of this utc-offset.
+     * @return {String}
+     */
+    toString: function toString() {
+      return (this.factor == 1 ? "+" : "-") +
+              ICAL.helpers.pad2(this.hours) + ':' +
+              ICAL.helpers.pad2(this.minutes);
+    }
+  };
+
+  /**
+   * Creates a new {@link ICAL.UtcOffset} instance from the passed string.
+   *
+   * @param {String} aString    The string to parse
+   * @return {ICAL.Duration}    The created utc-offset instance
+   */
+  UtcOffset.fromString = function(aString) {
+    // -05:00
+    var options = {};
+    //TODO: support seconds per rfc5545 ?
+    options.factor = (aString[0] === '+') ? 1 : -1;
+    options.hours = ICAL.helpers.strictParseInt(aString.substr(1, 2));
+    options.minutes = ICAL.helpers.strictParseInt(aString.substr(4, 2));
+
+    return new ICAL.UtcOffset(options);
+  };
+
+  /**
+   * Creates a new {@link ICAL.UtcOffset} instance from the passed seconds
+   * value.
+   *
+   * @param {Number} aSeconds       The number of seconds to convert
+   */
+  UtcOffset.fromSeconds = function(aSeconds) {
+    var instance = new UtcOffset();
+    instance.fromSeconds(aSeconds);
+    return instance;
+  };
+
+  return UtcOffset;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.Binary = (function() {
+
+  /**
+   * @classdesc
+   * Represents the BINARY value type, which contains extra methods for
+   * encoding and decoding.
+   *
+   * @class
+   * @alias ICAL.Binary
+   * @param {String} aValue     The binary data for this value
+   */
+  function Binary(aValue) {
+    this.value = aValue;
+  }
+
+  Binary.prototype = {
+    /**
+     * The type name, to be used in the jCal object.
+     * @default "binary"
+     * @constant
+     */
+    icaltype: "binary",
+
+    /**
+     * Base64 decode the current value
+     *
+     * @return {String}         The base64-decoded value
+     */
+    decodeValue: function decodeValue() {
+      return this._b64_decode(this.value);
+    },
+
+    /**
+     * Encodes the passed parameter with base64 and sets the internal
+     * value to the result.
+     *
+     * @param {String} aValue      The raw binary value to encode
+     */
+    setEncodedValue: function setEncodedValue(aValue) {
+      this.value = this._b64_encode(aValue);
+    },
+
+    _b64_encode: function base64_encode(data) {
+      // http://kevin.vanzonneveld.net
+      // +   original by: Tyler Akins (http://rumkin.com)
+      // +   improved by: Bayron Guevara
+      // +   improved by: Thunder.m
+      // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // +   bugfixed by: Pellentesque Malesuada
+      // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // +   improved by: Rafał Kukawski (http://kukawski.pl)
+      // *     example 1: base64_encode('Kevin van Zonneveld');
+      // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
+      // mozilla has this native
+      // - but breaks in 2.0.0.12!
+      //if (typeof this.window['atob'] == 'function') {
+      //    return atob(data);
+      //}
+      var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                "abcdefghijklmnopqrstuvwxyz0123456789+/=";
+      var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+        ac = 0,
+        enc = "",
+        tmp_arr = [];
+
+      if (!data) {
+        return data;
+      }
+
+      do { // pack three octets into four hexets
+        o1 = data.charCodeAt(i++);
+        o2 = data.charCodeAt(i++);
+        o3 = data.charCodeAt(i++);
+
+        bits = o1 << 16 | o2 << 8 | o3;
+
+        h1 = bits >> 18 & 0x3f;
+        h2 = bits >> 12 & 0x3f;
+        h3 = bits >> 6 & 0x3f;
+        h4 = bits & 0x3f;
+
+        // use hexets to index into b64, and append result to encoded string
+        tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+      } while (i < data.length);
+
+      enc = tmp_arr.join('');
+
+      var r = data.length % 3;
+
+      return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+
+    },
+
+    _b64_decode: function base64_decode(data) {
+      // http://kevin.vanzonneveld.net
+      // +   original by: Tyler Akins (http://rumkin.com)
+      // +   improved by: Thunder.m
+      // +      input by: Aman Gupta
+      // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // +   bugfixed by: Onno Marsman
+      // +   bugfixed by: Pellentesque Malesuada
+      // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // +      input by: Brett Zamir (http://brett-zamir.me)
+      // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+      // *     example 1: base64_decode('S2V2aW4gdmFuIFpvbm5ldmVsZA==');
+      // *     returns 1: 'Kevin van Zonneveld'
+      // mozilla has this native
+      // - but breaks in 2.0.0.12!
+      //if (typeof this.window['btoa'] == 'function') {
+      //    return btoa(data);
+      //}
+      var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                "abcdefghijklmnopqrstuvwxyz0123456789+/=";
+      var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+        ac = 0,
+        dec = "",
+        tmp_arr = [];
+
+      if (!data) {
+        return data;
+      }
+
+      data += '';
+
+      do { // unpack four hexets into three octets using index points in b64
+        h1 = b64.indexOf(data.charAt(i++));
+        h2 = b64.indexOf(data.charAt(i++));
+        h3 = b64.indexOf(data.charAt(i++));
+        h4 = b64.indexOf(data.charAt(i++));
+
+        bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+
+        o1 = bits >> 16 & 0xff;
+        o2 = bits >> 8 & 0xff;
+        o3 = bits & 0xff;
+
+        if (h3 == 64) {
+          tmp_arr[ac++] = String.fromCharCode(o1);
+        } else if (h4 == 64) {
+          tmp_arr[ac++] = String.fromCharCode(o1, o2);
+        } else {
+          tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
+        }
+      } while (i < data.length);
+
+      dec = tmp_arr.join('');
+
+      return dec;
+    },
+
+    /**
+     * The string representation of this value
+     * @return {String}
+     */
+    toString: function() {
+      return this.value;
+    }
+  };
+
+  /**
+   * Creates a binary value from the given string.
+   *
+   * @param {String} aString        The binary value string
+   * @return {ICAL.Binary}          The binary value instance
+   */
+  Binary.fromString = function(aString) {
+    return new Binary(aString);
+  };
+
+  return Binary;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+
+(function() {
+  /**
+   * @classdesc
+   * This class represents the "period" value type, with various calculation
+   * and manipulation methods.
+   *
+   * @description
+   * The passed data object cannot contain both and end date and a duration.
+   *
+   * @class
+   * @param {Object} aData                  An object with members of the period
+   * @param {ICAL.Time=} aData.start        The start of the period
+   * @param {ICAL.Time=} aData.end          The end of the period
+   * @param {ICAL.Duration=} aData.duration The duration of the period
+   */
+  ICAL.Period = function icalperiod(aData) {
+    this.wrappedJSObject = this;
+
+    if (aData && 'start' in aData) {
+      if (aData.start && !(aData.start instanceof ICAL.Time)) {
+        throw new TypeError('.start must be an instance of ICAL.Time');
+      }
+      this.start = aData.start;
+    }
+
+    if (aData && aData.end && aData.duration) {
+      throw new Error('cannot accept both end and duration');
+    }
+
+    if (aData && 'end' in aData) {
+      if (aData.end && !(aData.end instanceof ICAL.Time)) {
+        throw new TypeError('.end must be an instance of ICAL.Time');
+      }
+      this.end = aData.end;
+    }
+
+    if (aData && 'duration' in aData) {
+      if (aData.duration && !(aData.duration instanceof ICAL.Duration)) {
+        throw new TypeError('.duration must be an instance of ICAL.Duration');
+      }
+      this.duration = aData.duration;
+    }
+  };
+
+  ICAL.Period.prototype = {
+
+    /**
+     * The start of the period
+     * @type {ICAL.Time}
+     */
+    start: null,
+
+    /**
+     * The end of the period
+     * @type {ICAL.Time}
+     */
+    end: null,
+
+    /**
+     * The duration of the period
+     * @type {ICAL.Duration}
+     */
+    duration: null,
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "icalperiod"
+     */
+    icalclass: "icalperiod",
+
+    /**
+     * The type name, to be used in the jCal object.
+     * @constant
+     * @type {String}
+     * @default "period"
+     */
+    icaltype: "period",
+
+    /**
+     * Returns a clone of the duration object.
+     *
+     * @return {ICAL.Period}      The cloned object
+     */
+    clone: function() {
+      return ICAL.Period.fromData({
+        start: this.start ? this.start.clone() : null,
+        end: this.end ? this.end.clone() : null,
+        duration: this.duration ? this.duration.clone() : null
+      });
+    },
+
+    /**
+     * Calculates the duration of the period, either directly or by subtracting
+     * start from end date.
+     *
+     * @return {ICAL.Duration}      The calculated duration
+     */
+    getDuration: function duration() {
+      if (this.duration) {
+        return this.duration;
+      } else {
+        return this.end.subtractDate(this.start);
+      }
+    },
+
+    /**
+     * Calculates the end date of the period, either directly or by adding
+     * duration to start date.
+     *
+     * @return {ICAL.Time}          The calculated end date
+     */
+    getEnd: function() {
+      if (this.end) {
+        return this.end;
+      } else {
+        var end = this.start.clone();
+        end.addDuration(this.duration);
+        return end;
+      }
+    },
+
+    /**
+     * The string representation of this period.
+     * @return {String}
+     */
+    toString: function toString() {
+      return this.start + "/" + (this.end || this.duration);
+    },
+
+    /**
+     * The jCal representation of this period type.
+     * @return {Object}
+     */
+    toJSON: function() {
+      return [this.start.toString(), (this.end || this.duration).toString()];
+    },
+
+    /**
+     * The iCalendar string representation of this period.
+     * @return {String}
+     */
+    toICALString: function() {
+      return this.start.toICALString() + "/" +
+             (this.end || this.duration).toICALString();
+    }
+  };
+
+  /**
+   * Creates a new {@link ICAL.Period} instance from the passed string.
+   *
+   * @param {String} str            The string to parse
+   * @param {ICAL.Property} prop    The property this period will be on
+   * @return {ICAL.Period}          The created period instance
+   */
+  ICAL.Period.fromString = function fromString(str, prop) {
+    var parts = str.split('/');
+
+    if (parts.length !== 2) {
+      throw new Error(
+        'Invalid string value: "' + str + '" must contain a "/" char.'
+      );
+    }
+
+    var options = {
+      start: ICAL.Time.fromDateTimeString(parts[0], prop)
+    };
+
+    var end = parts[1];
+
+    if (ICAL.Duration.isValueString(end)) {
+      options.duration = ICAL.Duration.fromString(end);
+    } else {
+      options.end = ICAL.Time.fromDateTimeString(end, prop);
+    }
+
+    return new ICAL.Period(options);
+  };
+
+  /**
+   * Creates a new {@link ICAL.Period} instance from the given data object.
+   * The passed data object cannot contain both and end date and a duration.
+   *
+   * @param {Object} aData                  An object with members of the period
+   * @param {ICAL.Time=} aData.start        The start of the period
+   * @param {ICAL.Time=} aData.end          The end of the period
+   * @param {ICAL.Duration=} aData.duration The duration of the period
+   * @return {ICAL.Period}                  The period instance
+   */
+  ICAL.Period.fromData = function fromData(aData) {
+    return new ICAL.Period(aData);
+  };
+
+  /**
+   * Returns a new period instance from the given jCal data array. The first
+   * member is always the start date string, the second member is either a
+   * duration or end date string.
+   *
+   * @param {Array<String,String>} aData    The jCal data array
+   * @param {ICAL.Property} aProp           The property this jCal data is on
+   * @param {Boolean} aLenient              If true, data value can be both date and date-time
+   * @return {ICAL.Period}                  The period instance
+   */
+  ICAL.Period.fromJSON = function(aData, aProp, aLenient) {
+    function fromDateOrDateTimeString(aValue, aProp) {
+      if (aLenient) {
+        return ICAL.Time.fromString(aValue, aProp);
+      } else {
+        return ICAL.Time.fromDateTimeString(aValue, aProp);
+      }
+    }
+
+    if (ICAL.Duration.isValueString(aData[1])) {
+      return ICAL.Period.fromData({
+        start: fromDateOrDateTimeString(aData[0], aProp),
+        duration: ICAL.Duration.fromString(aData[1])
+      });
+    } else {
+      return ICAL.Period.fromData({
+        start: fromDateOrDateTimeString(aData[0], aProp),
+        end: fromDateOrDateTimeString(aData[1], aProp)
+      });
+    }
+  };
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+
+(function() {
+  var DURATION_LETTERS = /([PDWHMTS]{1,1})/;
+
+  /**
+   * @classdesc
+   * This class represents the "duration" value type, with various calculation
+   * and manipulation methods.
+   *
+   * @class
+   * @alias ICAL.Duration
+   * @param {Object} data               An object with members of the duration
+   * @param {Number} data.weeks         Duration in weeks
+   * @param {Number} data.days          Duration in days
+   * @param {Number} data.hours         Duration in hours
+   * @param {Number} data.minutes       Duration in minutes
+   * @param {Number} data.seconds       Duration in seconds
+   * @param {Boolean} data.isNegative   If true, the duration is negative
+   */
+  ICAL.Duration = function icalduration(data) {
+    this.wrappedJSObject = this;
+    this.fromData(data);
+  };
+
+  ICAL.Duration.prototype = {
+    /**
+     * The weeks in this duration
+     * @type {Number}
+     * @default 0
+     */
+    weeks: 0,
+
+    /**
+     * The days in this duration
+     * @type {Number}
+     * @default 0
+     */
+    days: 0,
+
+    /**
+     * The days in this duration
+     * @type {Number}
+     * @default 0
+     */
+    hours: 0,
+
+    /**
+     * The minutes in this duration
+     * @type {Number}
+     * @default 0
+     */
+    minutes: 0,
+
+    /**
+     * The seconds in this duration
+     * @type {Number}
+     * @default 0
+     */
+    seconds: 0,
+
+    /**
+     * The seconds in this duration
+     * @type {Boolean}
+     * @default false
+     */
+    isNegative: false,
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "icalduration"
+     */
+    icalclass: "icalduration",
+
+    /**
+     * The type name, to be used in the jCal object.
+     * @constant
+     * @type {String}
+     * @default "duration"
+     */
+    icaltype: "duration",
+
+    /**
+     * Returns a clone of the duration object.
+     *
+     * @return {ICAL.Duration}      The cloned object
+     */
+    clone: function clone() {
+      return ICAL.Duration.fromData(this);
+    },
+
+    /**
+     * The duration value expressed as a number of seconds.
+     *
+     * @return {Number}             The duration value in seconds
+     */
+    toSeconds: function toSeconds() {
+      var seconds = this.seconds + 60 * this.minutes + 3600 * this.hours +
+                    86400 * this.days + 7 * 86400 * this.weeks;
+      return (this.isNegative ? -seconds : seconds);
+    },
+
+    /**
+     * Reads the passed seconds value into this duration object. Afterwards,
+     * members like {@link ICAL.Duration#days days} and {@link ICAL.Duration#weeks weeks} will be set up
+     * accordingly.
+     *
+     * @param {Number} aSeconds     The duration value in seconds
+     * @return {ICAL.Duration}      Returns this instance
+     */
+    fromSeconds: function fromSeconds(aSeconds) {
+      var secs = Math.abs(aSeconds);
+
+      this.isNegative = (aSeconds < 0);
+      this.days = ICAL.helpers.trunc(secs / 86400);
+
+      // If we have a flat number of weeks, use them.
+      if (this.days % 7 == 0) {
+        this.weeks = this.days / 7;
+        this.days = 0;
+      } else {
+        this.weeks = 0;
+      }
+
+      secs -= (this.days + 7 * this.weeks) * 86400;
+
+      this.hours = ICAL.helpers.trunc(secs / 3600);
+      secs -= this.hours * 3600;
+
+      this.minutes = ICAL.helpers.trunc(secs / 60);
+      secs -= this.minutes * 60;
+
+      this.seconds = secs;
+      return this;
+    },
+
+    /**
+     * Sets up the current instance using members from the passed data object.
+     *
+     * @param {Object} aData               An object with members of the duration
+     * @param {Number} aData.weeks         Duration in weeks
+     * @param {Number} aData.days          Duration in days
+     * @param {Number} aData.hours         Duration in hours
+     * @param {Number} aData.minutes       Duration in minutes
+     * @param {Number} aData.seconds       Duration in seconds
+     * @param {Boolean} aData.isNegative   If true, the duration is negative
+     */
+    fromData: function fromData(aData) {
+      var propsToCopy = ["weeks", "days", "hours",
+                         "minutes", "seconds", "isNegative"];
+      for (var key in propsToCopy) {
+        /* istanbul ignore if */
+        if (!propsToCopy.hasOwnProperty(key)) {
+          continue;
+        }
+        var prop = propsToCopy[key];
+        if (aData && prop in aData) {
+          this[prop] = aData[prop];
+        } else {
+          this[prop] = 0;
+        }
+      }
+    },
+
+    /**
+     * Resets the duration instance to the default values, i.e. PT0S
+     */
+    reset: function reset() {
+      this.isNegative = false;
+      this.weeks = 0;
+      this.days = 0;
+      this.hours = 0;
+      this.minutes = 0;
+      this.seconds = 0;
+    },
+
+    /**
+     * Compares the duration instance with another one.
+     *
+     * @param {ICAL.Duration} aOther        The instance to compare with
+     * @return {Number}                     -1, 0 or 1 for less/equal/greater
+     */
+    compare: function compare(aOther) {
+      var thisSeconds = this.toSeconds();
+      var otherSeconds = aOther.toSeconds();
+      return (thisSeconds > otherSeconds) - (thisSeconds < otherSeconds);
+    },
+
+    /**
+     * Normalizes the duration instance. For example, a duration with a value
+     * of 61 seconds will be normalized to 1 minute and 1 second.
+     */
+    normalize: function normalize() {
+      this.fromSeconds(this.toSeconds());
+    },
+
+    /**
+     * The string representation of this duration.
+     * @return {String}
+     */
+    toString: function toString() {
+      if (this.toSeconds() == 0) {
+        return "PT0S";
+      } else {
+        var str = "";
+        if (this.isNegative) str += "-";
+        str += "P";
+        if (this.weeks) str += this.weeks + "W";
+        if (this.days) str += this.days + "D";
+
+        if (this.hours || this.minutes || this.seconds) {
+          str += "T";
+          if (this.hours) str += this.hours + "H";
+          if (this.minutes) str += this.minutes + "M";
+          if (this.seconds) str += this.seconds + "S";
+        }
+        return str;
+      }
+    },
+
+    /**
+     * The iCalendar string representation of this duration.
+     * @return {String}
+     */
+    toICALString: function() {
+      return this.toString();
+    }
+  };
+
+  /**
+   * Returns a new ICAL.Duration instance from the passed seconds value.
+   *
+   * @param {Number} aSeconds       The seconds to create the instance from
+   * @return {ICAL.Duration}        The newly created duration instance
+   */
+  ICAL.Duration.fromSeconds = function icalduration_from_seconds(aSeconds) {
+    return (new ICAL.Duration()).fromSeconds(aSeconds);
+  };
+
+  /**
+   * Internal helper function to handle a chunk of a duration.
+   *
+   * @param {String} letter type of duration chunk
+   * @param {String} number numeric value or -/+
+   * @param {Object} dict target to assign values to
+   */
+  function parseDurationChunk(letter, number, object) {
+    var type;
+    switch (letter) {
+      case 'P':
+        if (number && number === '-') {
+          object.isNegative = true;
+        } else {
+          object.isNegative = false;
+        }
+        // period
+        break;
+      case 'D':
+        type = 'days';
+        break;
+      case 'W':
+        type = 'weeks';
+        break;
+      case 'H':
+        type = 'hours';
+        break;
+      case 'M':
+        type = 'minutes';
+        break;
+      case 'S':
+        type = 'seconds';
+        break;
+      default:
+        // Not a valid chunk
+        return 0;
+    }
+
+    if (type) {
+      if (!number && number !== 0) {
+        throw new Error(
+          'invalid duration value: Missing number before "' + letter + '"'
+        );
+      }
+      var num = parseInt(number, 10);
+      if (ICAL.helpers.isStrictlyNaN(num)) {
+        throw new Error(
+          'invalid duration value: Invalid number "' + number + '" before "' + letter + '"'
+        );
+      }
+      object[type] = num;
+    }
+
+    return 1;
+  }
+
+  /**
+   * Checks if the given string is an iCalendar duration value.
+   *
+   * @param {String} value      The raw ical value
+   * @return {Boolean}          True, if the given value is of the
+   *                              duration ical type
+   */
+  ICAL.Duration.isValueString = function(string) {
+    return (string[0] === 'P' || string[1] === 'P');
+  };
+
+  /**
+   * Creates a new {@link ICAL.Duration} instance from the passed string.
+   *
+   * @param {String} aStr       The string to parse
+   * @return {ICAL.Duration}    The created duration instance
+   */
+  ICAL.Duration.fromString = function icalduration_from_string(aStr) {
+    var pos = 0;
+    var dict = Object.create(null);
+    var chunks = 0;
+
+    while ((pos = aStr.search(DURATION_LETTERS)) !== -1) {
+      var type = aStr[pos];
+      var numeric = aStr.substr(0, pos);
+      aStr = aStr.substr(pos + 1);
+
+      chunks += parseDurationChunk(type, numeric, dict);
+    }
+
+    if (chunks < 2) {
+      // There must be at least a chunk with "P" and some unit chunk
+      throw new Error(
+        'invalid duration value: Not enough duration components in "' + aStr + '"'
+      );
+    }
+
+    return new ICAL.Duration(dict);
+  };
+
+  /**
+   * Creates a new ICAL.Duration instance from the given data object.
+   *
+   * @param {Object} aData               An object with members of the duration
+   * @param {Number} aData.weeks         Duration in weeks
+   * @param {Number} aData.days          Duration in days
+   * @param {Number} aData.hours         Duration in hours
+   * @param {Number} aData.minutes       Duration in minutes
+   * @param {Number} aData.seconds       Duration in seconds
+   * @param {Boolean} aData.isNegative   If true, the duration is negative
+   * @return {ICAL.Duration}             The createad duration instance
+   */
+  ICAL.Duration.fromData = function icalduration_from_data(aData) {
+    return new ICAL.Duration(aData);
+  };
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2012 */
+
+
+
+(function() {
+  var OPTIONS = ["tzid", "location", "tznames",
+                 "latitude", "longitude"];
+
+  /**
+   * @classdesc
+   * Timezone representation, created by passing in a tzid and component.
+   *
+   * @example
+   * var vcalendar;
+   * var timezoneComp = vcalendar.getFirstSubcomponent('vtimezone');
+   * var tzid = timezoneComp.getFirstPropertyValue('tzid');
+   *
+   * var timezone = new ICAL.Timezone({
+   *   component: timezoneComp,
+   *   tzid
+   * });
+   *
+   * @class
+   * @param {ICAL.Component|Object} data options for class
+   * @param {String|ICAL.Component} data.component
+   *        If data is a simple object, then this member can be set to either a
+   *        string containing the component data, or an already parsed
+   *        ICAL.Component
+   * @param {String} data.tzid      The timezone identifier
+   * @param {String} data.location  The timezone locationw
+   * @param {String} data.tznames   An alternative string representation of the
+   *                                  timezone
+   * @param {Number} data.latitude  The latitude of the timezone
+   * @param {Number} data.longitude The longitude of the timezone
+   */
+  ICAL.Timezone = function icaltimezone(data) {
+    this.wrappedJSObject = this;
+    this.fromData(data);
+  };
+
+  ICAL.Timezone.prototype = {
+
+    /**
+     * Timezone identifier
+     * @type {String}
+     */
+    tzid: "",
+
+    /**
+     * Timezone location
+     * @type {String}
+     */
+    location: "",
+
+    /**
+     * Alternative timezone name, for the string representation
+     * @type {String}
+     */
+    tznames: "",
+
+    /**
+     * The primary latitude for the timezone.
+     * @type {Number}
+     */
+    latitude: 0.0,
+
+    /**
+     * The primary longitude for the timezone.
+     * @type {Number}
+     */
+    longitude: 0.0,
+
+    /**
+     * The vtimezone component for this timezone.
+     * @type {ICAL.Component}
+     */
+    component: null,
+
+    /**
+     * The year this timezone has been expanded to. All timezone transition
+     * dates until this year are known and can be used for calculation
+     *
+     * @private
+     * @type {Number}
+     */
+    expandedUntilYear: 0,
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "icaltimezone"
+     */
+    icalclass: "icaltimezone",
+
+    /**
+     * Sets up the current instance using members from the passed data object.
+     *
+     * @param {ICAL.Component|Object} aData options for class
+     * @param {String|ICAL.Component} aData.component
+     *        If aData is a simple object, then this member can be set to either a
+     *        string containing the component data, or an already parsed
+     *        ICAL.Component
+     * @param {String} aData.tzid      The timezone identifier
+     * @param {String} aData.location  The timezone locationw
+     * @param {String} aData.tznames   An alternative string representation of the
+     *                                  timezone
+     * @param {Number} aData.latitude  The latitude of the timezone
+     * @param {Number} aData.longitude The longitude of the timezone
+     */
+    fromData: function fromData(aData) {
+      this.expandedUntilYear = 0;
+      this.changes = [];
+
+      if (aData instanceof ICAL.Component) {
+        // Either a component is passed directly
+        this.component = aData;
+      } else {
+        // Otherwise the component may be in the data object
+        if (aData && "component" in aData) {
+          if (typeof aData.component == "string") {
+            // If a string was passed, parse it as a component
+            var jCal = ICAL.parse(aData.component);
+            this.component = new ICAL.Component(jCal);
+          } else if (aData.component instanceof ICAL.Component) {
+            // If it was a component already, then just set it
+            this.component = aData.component;
+          } else {
+            // Otherwise just null out the component
+            this.component = null;
+          }
+        }
+
+        // Copy remaining passed properties
+        for (var key in OPTIONS) {
+          /* istanbul ignore else */
+          if (OPTIONS.hasOwnProperty(key)) {
+            var prop = OPTIONS[key];
+            if (aData && prop in aData) {
+              this[prop] = aData[prop];
+            }
+          }
+        }
+      }
+
+      // If we have a component but no TZID, attempt to get it from the
+      // component's properties.
+      if (this.component instanceof ICAL.Component && !this.tzid) {
+        this.tzid = this.component.getFirstPropertyValue('tzid');
+      }
+
+      return this;
+    },
+
+    /**
+     * Finds the utcOffset the given time would occur in this timezone.
+     *
+     * @param {ICAL.Time} tt        The time to check for
+     * @return {Number} utc offset in seconds
+     */
+    utcOffset: function utcOffset(tt) {
+      if (this == ICAL.Timezone.utcTimezone || this == ICAL.Timezone.localTimezone) {
+        return 0;
+      }
+
+      this._ensureCoverage(tt.year);
+
+      if (!this.changes.length) {
+        return 0;
+      }
+
+      var tt_change = {
+        year: tt.year,
+        month: tt.month,
+        day: tt.day,
+        hour: tt.hour,
+        minute: tt.minute,
+        second: tt.second
+      };
+
+      var change_num = this._findNearbyChange(tt_change);
+      var change_num_to_use = -1;
+      var step = 1;
+
+      // TODO: replace with bin search?
+      for (;;) {
+        var change = ICAL.helpers.clone(this.changes[change_num], true);
+        if (change.utcOffset < change.prevUtcOffset) {
+          ICAL.Timezone.adjust_change(change, 0, 0, 0, change.utcOffset);
+        } else {
+          ICAL.Timezone.adjust_change(change, 0, 0, 0,
+                                          change.prevUtcOffset);
+        }
+
+        var cmp = ICAL.Timezone._compare_change_fn(tt_change, change);
+
+        if (cmp >= 0) {
+          change_num_to_use = change_num;
+        } else {
+          step = -1;
+        }
+
+        if (step == -1 && change_num_to_use != -1) {
+          break;
+        }
+
+        change_num += step;
+
+        if (change_num < 0) {
+          return 0;
+        }
+
+        if (change_num >= this.changes.length) {
+          break;
+        }
+      }
+
+      var zone_change = this.changes[change_num_to_use];
+      var utcOffset_change = zone_change.utcOffset - zone_change.prevUtcOffset;
+
+      if (utcOffset_change < 0 && change_num_to_use > 0) {
+        var tmp_change = ICAL.helpers.clone(zone_change, true);
+        ICAL.Timezone.adjust_change(tmp_change, 0, 0, 0,
+                                        tmp_change.prevUtcOffset);
+
+        if (ICAL.Timezone._compare_change_fn(tt_change, tmp_change) < 0) {
+          var prev_zone_change = this.changes[change_num_to_use - 1];
+
+          var want_daylight = false; // TODO
+
+          if (zone_change.is_daylight != want_daylight &&
+              prev_zone_change.is_daylight == want_daylight) {
+            zone_change = prev_zone_change;
+          }
+        }
+      }
+
+      // TODO return is_daylight?
+      return zone_change.utcOffset;
+    },
+
+    _findNearbyChange: function icaltimezone_find_nearby_change(change) {
+      // find the closest match
+      var idx = ICAL.helpers.binsearchInsert(
+        this.changes,
+        change,
+        ICAL.Timezone._compare_change_fn
+      );
+
+      if (idx >= this.changes.length) {
+        return this.changes.length - 1;
+      }
+
+      return idx;
+    },
+
+    _ensureCoverage: function(aYear) {
+      if (ICAL.Timezone._minimumExpansionYear == -1) {
+        var today = ICAL.Time.now();
+        ICAL.Timezone._minimumExpansionYear = today.year;
+      }
+
+      var changesEndYear = aYear;
+      if (changesEndYear < ICAL.Timezone._minimumExpansionYear) {
+        changesEndYear = ICAL.Timezone._minimumExpansionYear;
+      }
+
+      changesEndYear += ICAL.Timezone.EXTRA_COVERAGE;
+
+      if (changesEndYear > ICAL.Timezone.MAX_YEAR) {
+        changesEndYear = ICAL.Timezone.MAX_YEAR;
+      }
+
+      if (!this.changes.length || this.expandedUntilYear < aYear) {
+        var subcomps = this.component.getAllSubcomponents();
+        var compLen = subcomps.length;
+        var compIdx = 0;
+
+        for (; compIdx < compLen; compIdx++) {
+          this._expandComponent(
+            subcomps[compIdx], changesEndYear, this.changes
+          );
+        }
+
+        this.changes.sort(ICAL.Timezone._compare_change_fn);
+        this.expandedUntilYear = changesEndYear;
+      }
+    },
+
+    _expandComponent: function(aComponent, aYear, changes) {
+      if (!aComponent.hasProperty("dtstart") ||
+          !aComponent.hasProperty("tzoffsetto") ||
+          !aComponent.hasProperty("tzoffsetfrom")) {
+        return null;
+      }
+
+      var dtstart = aComponent.getFirstProperty("dtstart").getFirstValue();
+      var change;
+
+      function convert_tzoffset(offset) {
+        return offset.factor * (offset.hours * 3600 + offset.minutes * 60);
+      }
+
+      function init_changes() {
+        var changebase = {};
+        changebase.is_daylight = (aComponent.name == "daylight");
+        changebase.utcOffset = convert_tzoffset(
+          aComponent.getFirstProperty("tzoffsetto").getFirstValue()
+        );
+
+        changebase.prevUtcOffset = convert_tzoffset(
+          aComponent.getFirstProperty("tzoffsetfrom").getFirstValue()
+        );
+
+        return changebase;
+      }
+
+      if (!aComponent.hasProperty("rrule") && !aComponent.hasProperty("rdate")) {
+        change = init_changes();
+        change.year = dtstart.year;
+        change.month = dtstart.month;
+        change.day = dtstart.day;
+        change.hour = dtstart.hour;
+        change.minute = dtstart.minute;
+        change.second = dtstart.second;
+
+        ICAL.Timezone.adjust_change(change, 0, 0, 0,
+                                        -change.prevUtcOffset);
+        changes.push(change);
+      } else {
+        var props = aComponent.getAllProperties("rdate");
+        for (var rdatekey in props) {
+          /* istanbul ignore if */
+          if (!props.hasOwnProperty(rdatekey)) {
+            continue;
+          }
+          var rdate = props[rdatekey];
+          var time = rdate.getFirstValue();
+          change = init_changes();
+
+          change.year = time.year;
+          change.month = time.month;
+          change.day = time.day;
+
+          if (time.isDate) {
+            change.hour = dtstart.hour;
+            change.minute = dtstart.minute;
+            change.second = dtstart.second;
+
+            if (dtstart.zone != ICAL.Timezone.utcTimezone) {
+              ICAL.Timezone.adjust_change(change, 0, 0, 0,
+                                              -change.prevUtcOffset);
+            }
+          } else {
+            change.hour = time.hour;
+            change.minute = time.minute;
+            change.second = time.second;
+
+            if (time.zone != ICAL.Timezone.utcTimezone) {
+              ICAL.Timezone.adjust_change(change, 0, 0, 0,
+                                              -change.prevUtcOffset);
+            }
+          }
+
+          changes.push(change);
+        }
+
+        var rrule = aComponent.getFirstProperty("rrule");
+
+        if (rrule) {
+          rrule = rrule.getFirstValue();
+          change = init_changes();
+
+          if (rrule.until && rrule.until.zone == ICAL.Timezone.utcTimezone) {
+            rrule.until.adjust(0, 0, 0, change.prevUtcOffset);
+            rrule.until.zone = ICAL.Timezone.localTimezone;
+          }
+
+          var iterator = rrule.iterator(dtstart);
+
+          var occ;
+          while ((occ = iterator.next())) {
+            change = init_changes();
+            if (occ.year > aYear || !occ) {
+              break;
+            }
+
+            change.year = occ.year;
+            change.month = occ.month;
+            change.day = occ.day;
+            change.hour = occ.hour;
+            change.minute = occ.minute;
+            change.second = occ.second;
+            change.isDate = occ.isDate;
+
+            ICAL.Timezone.adjust_change(change, 0, 0, 0,
+                                            -change.prevUtcOffset);
+            changes.push(change);
+          }
+        }
+      }
+
+      return changes;
+    },
+
+    /**
+     * The string representation of this timezone.
+     * @return {String}
+     */
+    toString: function toString() {
+      return (this.tznames ? this.tznames : this.tzid);
+    }
+  };
+
+  ICAL.Timezone._compare_change_fn = function icaltimezone_compare_change_fn(a, b) {
+    if (a.year < b.year) return -1;
+    else if (a.year > b.year) return 1;
+
+    if (a.month < b.month) return -1;
+    else if (a.month > b.month) return 1;
+
+    if (a.day < b.day) return -1;
+    else if (a.day > b.day) return 1;
+
+    if (a.hour < b.hour) return -1;
+    else if (a.hour > b.hour) return 1;
+
+    if (a.minute < b.minute) return -1;
+    else if (a.minute > b.minute) return 1;
+
+    if (a.second < b.second) return -1;
+    else if (a.second > b.second) return 1;
+
+    return 0;
+  };
+
+  /**
+   * Convert the date/time from one zone to the next.
+   *
+   * @param {ICAL.Time} tt                  The time to convert
+   * @param {ICAL.Timezone} from_zone       The source zone to convert from
+   * @param {ICAL.Timezone} to_zone         The target zone to convert to
+   * @return {ICAL.Time}                    The converted date/time object
+   */
+  ICAL.Timezone.convert_time = function icaltimezone_convert_time(tt, from_zone, to_zone) {
+    if (tt.isDate ||
+        from_zone.tzid == to_zone.tzid ||
+        from_zone == ICAL.Timezone.localTimezone ||
+        to_zone == ICAL.Timezone.localTimezone) {
+      tt.zone = to_zone;
+      return tt;
+    }
+
+    var utcOffset = from_zone.utcOffset(tt);
+    tt.adjust(0, 0, 0, - utcOffset);
+
+    utcOffset = to_zone.utcOffset(tt);
+    tt.adjust(0, 0, 0, utcOffset);
+
+    return null;
+  };
+
+  /**
+   * Creates a new ICAL.Timezone instance from the passed data object.
+   *
+   * @param {ICAL.Component|Object} aData options for class
+   * @param {String|ICAL.Component} aData.component
+   *        If aData is a simple object, then this member can be set to either a
+   *        string containing the component data, or an already parsed
+   *        ICAL.Component
+   * @param {String} aData.tzid      The timezone identifier
+   * @param {String} aData.location  The timezone locationw
+   * @param {String} aData.tznames   An alternative string representation of the
+   *                                  timezone
+   * @param {Number} aData.latitude  The latitude of the timezone
+   * @param {Number} aData.longitude The longitude of the timezone
+   */
+  ICAL.Timezone.fromData = function icaltimezone_fromData(aData) {
+    var tt = new ICAL.Timezone();
+    return tt.fromData(aData);
+  };
+
+  /**
+   * The instance describing the UTC timezone
+   * @type {ICAL.Timezone}
+   * @constant
+   * @instance
+   */
+  ICAL.Timezone.utcTimezone = ICAL.Timezone.fromData({
+    tzid: "UTC"
+  });
+
+  /**
+   * The instance describing the local timezone
+   * @type {ICAL.Timezone}
+   * @constant
+   * @instance
+   */
+  ICAL.Timezone.localTimezone = ICAL.Timezone.fromData({
+    tzid: "floating"
+  });
+
+  /**
+   * Adjust a timezone change object.
+   * @private
+   * @param {Object} change     The timezone change object
+   * @param {Number} days       The extra amount of days
+   * @param {Number} hours      The extra amount of hours
+   * @param {Number} minutes    The extra amount of minutes
+   * @param {Number} seconds    The extra amount of seconds
+   */
+  ICAL.Timezone.adjust_change = function icaltimezone_adjust_change(change, days, hours, minutes, seconds) {
+    return ICAL.Time.prototype.adjust.call(
+      change,
+      days,
+      hours,
+      minutes,
+      seconds,
+      change
+    );
+  };
+
+  ICAL.Timezone._minimumExpansionYear = -1;
+  ICAL.Timezone.MAX_YEAR = 2035; // TODO this is because of time_t, which we don't need. Still usefull?
+  ICAL.Timezone.EXTRA_COVERAGE = 5;
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.TimezoneService = (function() {
+  var zones;
+
+  /**
+   * @classdesc
+   * Singleton class to contain timezones.  Right now its all manual registry in
+   * the future we may use this class to download timezone information or handle
+   * loading pre-expanded timezones.
+   *
+   * @namespace
+   * @alias ICAL.TimezoneService
+   */
+  var TimezoneService = {
+    get count() {
+      return Object.keys(zones).length;
+    },
+
+    reset: function() {
+      zones = Object.create(null);
+      var utc = ICAL.Timezone.utcTimezone;
+
+      zones.Z = utc;
+      zones.UTC = utc;
+      zones.GMT = utc;
+    },
+
+    /**
+     * Checks if timezone id has been registered.
+     *
+     * @param {String} tzid     Timezone identifier (e.g. America/Los_Angeles)
+     * @return {Boolean}        False, when not present
+     */
+    has: function(tzid) {
+      return !!zones[tzid];
+    },
+
+    /**
+     * Returns a timezone by its tzid if present.
+     *
+     * @param {String} tzid     Timezone identifier (e.g. America/Los_Angeles)
+     * @return {?ICAL.Timezone} The timezone, or null if not found
+     */
+    get: function(tzid) {
+      return zones[tzid];
+    },
+
+    /**
+     * Registers a timezone object or component.
+     *
+     * @param {String=} name
+     *        The name of the timezone. Defaults to the component's TZID if not
+     *        passed.
+     * @param {ICAL.Component|ICAL.Timezone} zone
+     *        The initialized zone or vtimezone.
+     */
+    register: function(name, timezone) {
+      if (name instanceof ICAL.Component) {
+        if (name.name === 'vtimezone') {
+          timezone = new ICAL.Timezone(name);
+          name = timezone.tzid;
+        }
+      }
+
+      if (timezone instanceof ICAL.Timezone) {
+        zones[name] = timezone;
+      } else {
+        throw new TypeError('timezone must be ICAL.Timezone or ICAL.Component');
+      }
+    },
+
+    /**
+     * Removes a timezone by its tzid from the list.
+     *
+     * @param {String} tzid     Timezone identifier (e.g. America/Los_Angeles)
+     * @return {?ICAL.Timezone} The removed timezone, or null if not registered
+     */
+    remove: function(tzid) {
+      return (delete zones[tzid]);
+    }
+  };
+
+  // initialize defaults
+  TimezoneService.reset();
+
+  return TimezoneService;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+
+(function() {
+
+  /**
+   * @classdesc
+   * iCalendar Time representation (similar to JS Date object).  Fully
+   * independent of system (OS) timezone / time.  Unlike JS Date, the month
+   * January is 1, not zero.
+   *
+   * @example
+   * var time = new ICAL.Time({
+   *   year: 2012,
+   *   month: 10,
+   *   day: 11
+   *   minute: 0,
+   *   second: 0,
+   *   isDate: false
+   * });
+   *
+   *
+   * @alias ICAL.Time
+   * @class
+   * @param {Object} data           Time initialization
+   * @param {Number=} data.year     The year for this date
+   * @param {Number=} data.month    The month for this date
+   * @param {Number=} data.day      The day for this date
+   * @param {Number=} data.hour     The hour for this date
+   * @param {Number=} data.minute   The minute for this date
+   * @param {Number=} data.second   The second for this date
+   * @param {Boolean=} data.isDate  If true, the instance represents a date (as
+   *                                  opposed to a date-time)
+   * @param {ICAL.Timezone} zone timezone this position occurs in
+   */
+  ICAL.Time = function icaltime(data, zone) {
+    this.wrappedJSObject = this;
+    var time = this._time = Object.create(null);
+
+    /* time defaults */
+    time.year = 0;
+    time.month = 1;
+    time.day = 1;
+    time.hour = 0;
+    time.minute = 0;
+    time.second = 0;
+    time.isDate = false;
+
+    this.fromData(data, zone);
+  };
+
+  ICAL.Time._dowCache = {};
+  ICAL.Time._wnCache = {};
+
+  ICAL.Time.prototype = {
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "icaltime"
+     */
+    icalclass: "icaltime",
+    _cachedUnixTime: null,
+
+    /**
+     * The type name, to be used in the jCal object. This value may change and
+     * is strictly defined by the {@link ICAL.Time#isDate isDate} member.
+     * @readonly
+     * @type {String}
+     * @default "date-time"
+     */
+    get icaltype() {
+      return this.isDate ? 'date' : 'date-time';
+    },
+
+    /**
+     * The timezone for this time.
+     * @type {ICAL.Timezone}
+     */
+    zone: null,
+
+    /**
+     * Internal uses to indicate that a change has been made and the next read
+     * operation must attempt to normalize the value (for example changing the
+     * day to 33).
+     *
+     * @type {Boolean}
+     * @private
+     */
+    _pendingNormalization: false,
+
+    /**
+     * Returns a clone of the time object.
+     *
+     * @return {ICAL.Time}              The cloned object
+     */
+    clone: function() {
+      return new ICAL.Time(this._time, this.zone);
+    },
+
+    /**
+     * Reset the time instance to epoch time
+     */
+    reset: function icaltime_reset() {
+      this.fromData(ICAL.Time.epochTime);
+      this.zone = ICAL.Timezone.utcTimezone;
+    },
+
+    /**
+     * Reset the time instance to the given date/time values.
+     *
+     * @param {Number} year             The year to set
+     * @param {Number} month            The month to set
+     * @param {Number} day              The day to set
+     * @param {Number} hour             The hour to set
+     * @param {Number} minute           The minute to set
+     * @param {Number} second           The second to set
+     * @param {ICAL.Timezone} timezone  The timezone to set
+     */
+    resetTo: function icaltime_resetTo(year, month, day,
+                                       hour, minute, second, timezone) {
+      this.fromData({
+        year: year,
+        month: month,
+        day: day,
+        hour: hour,
+        minute: minute,
+        second: second,
+        zone: timezone
+      });
+    },
+
+    /**
+     * Set up the current instance from the Javascript date value.
+     *
+     * @param {?Date} aDate     The Javascript Date to read, or null to reset
+     * @param {Boolean} useUTC  If true, the UTC values of the date will be used
+     */
+    fromJSDate: function icaltime_fromJSDate(aDate, useUTC) {
+      if (!aDate) {
+        this.reset();
+      } else {
+        if (useUTC) {
+          this.zone = ICAL.Timezone.utcTimezone;
+          this.year = aDate.getUTCFullYear();
+          this.month = aDate.getUTCMonth() + 1;
+          this.day = aDate.getUTCDate();
+          this.hour = aDate.getUTCHours();
+          this.minute = aDate.getUTCMinutes();
+          this.second = aDate.getUTCSeconds();
+        } else {
+          this.zone = ICAL.Timezone.localTimezone;
+          this.year = aDate.getFullYear();
+          this.month = aDate.getMonth() + 1;
+          this.day = aDate.getDate();
+          this.hour = aDate.getHours();
+          this.minute = aDate.getMinutes();
+          this.second = aDate.getSeconds();
+        }
+      }
+      this._cachedUnixTime = null;
+      return this;
+    },
+
+    /**
+     * Sets up the current instance using members from the passed data object.
+     *
+     * @param {Object} aData            Time initialization
+     * @param {Number=} aData.year      The year for this date
+     * @param {Number=} aData.month     The month for this date
+     * @param {Number=} aData.day       The day for this date
+     * @param {Number=} aData.hour      The hour for this date
+     * @param {Number=} aData.minute    The minute for this date
+     * @param {Number=} aData.second    The second for this date
+     * @param {Boolean=} aData.isDate   If true, the instance represents a date
+     *                                    (as opposed to a date-time)
+     * @param {ICAL.Timezone=} aZone    Timezone this position occurs in
+     */
+    fromData: function fromData(aData, aZone) {
+      if (aData) {
+        for (var key in aData) {
+          /* istanbul ignore else */
+          if (Object.prototype.hasOwnProperty.call(aData, key)) {
+            // ical type cannot be set
+            if (key === 'icaltype') continue;
+            this[key] = aData[key];
+          }
+        }
+      }
+
+      if (aZone) {
+        this.zone = aZone;
+      }
+
+      if (aData && !("isDate" in aData)) {
+        this.isDate = !("hour" in aData);
+      } else if (aData && ("isDate" in aData)) {
+        this.isDate = aData.isDate;
+      }
+
+      if (aData && "timezone" in aData) {
+        var zone = ICAL.TimezoneService.get(
+          aData.timezone
+        );
+
+        this.zone = zone || ICAL.Timezone.localTimezone;
+      }
+
+      if (aData && "zone" in aData) {
+        this.zone = aData.zone;
+      }
+
+      if (!this.zone) {
+        this.zone = ICAL.Timezone.localTimezone;
+      }
+
+      this._cachedUnixTime = null;
+      return this;
+    },
+
+    /**
+     * Calculate the day of week.
+     * @param {ICAL.Time.weekDay=} aWeekStart
+     *        The week start weekday, defaults to SUNDAY
+     * @return {ICAL.Time.weekDay}
+     */
+    dayOfWeek: function icaltime_dayOfWeek(aWeekStart) {
+      var firstDow = aWeekStart || ICAL.Time.SUNDAY;
+      var dowCacheKey = (this.year << 12) + (this.month << 8) + (this.day << 3) + firstDow;
+      if (dowCacheKey in ICAL.Time._dowCache) {
+        return ICAL.Time._dowCache[dowCacheKey];
+      }
+
+      // Using Zeller's algorithm
+      var q = this.day;
+      var m = this.month + (this.month < 3 ? 12 : 0);
+      var Y = this.year - (this.month < 3 ? 1 : 0);
+
+      var h = (q + Y + ICAL.helpers.trunc(((m + 1) * 26) / 10) + ICAL.helpers.trunc(Y / 4));
+      /* istanbul ignore else */
+      if (true /* gregorian */) {
+        h += ICAL.helpers.trunc(Y / 100) * 6 + ICAL.helpers.trunc(Y / 400);
+      } else {
+        h += 5;
+      }
+
+      // Normalize to 1 = wkst
+      h = ((h + 7 - firstDow) % 7) + 1;
+      ICAL.Time._dowCache[dowCacheKey] = h;
+      return h;
+    },
+
+    /**
+     * Calculate the day of year.
+     * @return {Number}
+     */
+    dayOfYear: function dayOfYear() {
+      var is_leap = (ICAL.Time.isLeapYear(this.year) ? 1 : 0);
+      var diypm = ICAL.Time.daysInYearPassedMonth;
+      return diypm[is_leap][this.month - 1] + this.day;
+    },
+
+    /**
+     * Returns a copy of the current date/time, rewound to the start of the
+     * week. The resulting ICAL.Time instance is of icaltype date, even if this
+     * is a date-time.
+     *
+     * @param {ICAL.Time.weekDay=} aWeekStart
+     *        The week start weekday, defaults to SUNDAY
+     * @return {ICAL.Time}      The start of the week (cloned)
+     */
+    startOfWeek: function startOfWeek(aWeekStart) {
+      var firstDow = aWeekStart || ICAL.Time.SUNDAY;
+      var result = this.clone();
+      result.day -= ((this.dayOfWeek() + 7 - firstDow) % 7);
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * Returns a copy of the current date/time, shifted to the end of the week.
+     * The resulting ICAL.Time instance is of icaltype date, even if this is a
+     * date-time.
+     *
+     * @param {ICAL.Time.weekDay=} aWeekStart
+     *        The week start weekday, defaults to SUNDAY
+     * @return {ICAL.Time}      The end of the week (cloned)
+     */
+    endOfWeek: function endOfWeek(aWeekStart) {
+      var firstDow = aWeekStart || ICAL.Time.SUNDAY;
+      var result = this.clone();
+      result.day += (7 - this.dayOfWeek() + firstDow - ICAL.Time.SUNDAY) % 7;
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * Returns a copy of the current date/time, rewound to the start of the
+     * month. The resulting ICAL.Time instance is of icaltype date, even if
+     * this is a date-time.
+     *
+     * @return {ICAL.Time}      The start of the month (cloned)
+     */
+    startOfMonth: function startOfMonth() {
+      var result = this.clone();
+      result.day = 1;
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * Returns a copy of the current date/time, shifted to the end of the
+     * month.  The resulting ICAL.Time instance is of icaltype date, even if
+     * this is a date-time.
+     *
+     * @return {ICAL.Time}      The end of the month (cloned)
+     */
+    endOfMonth: function endOfMonth() {
+      var result = this.clone();
+      result.day = ICAL.Time.daysInMonth(result.month, result.year);
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * Returns a copy of the current date/time, rewound to the start of the
+     * year. The resulting ICAL.Time instance is of icaltype date, even if
+     * this is a date-time.
+     *
+     * @return {ICAL.Time}      The start of the year (cloned)
+     */
+    startOfYear: function startOfYear() {
+      var result = this.clone();
+      result.day = 1;
+      result.month = 1;
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * Returns a copy of the current date/time, shifted to the end of the
+     * year.  The resulting ICAL.Time instance is of icaltype date, even if
+     * this is a date-time.
+     *
+     * @return {ICAL.Time}      The end of the year (cloned)
+     */
+    endOfYear: function endOfYear() {
+      var result = this.clone();
+      result.day = 31;
+      result.month = 12;
+      result.isDate = true;
+      result.hour = 0;
+      result.minute = 0;
+      result.second = 0;
+      return result;
+    },
+
+    /**
+     * First calculates the start of the week, then returns the day of year for
+     * this date. If the day falls into the previous year, the day is zero or negative.
+     *
+     * @param {ICAL.Time.weekDay=} aFirstDayOfWeek
+     *        The week start weekday, defaults to SUNDAY
+     * @return {Number}     The calculated day of year
+     */
+    startDoyWeek: function startDoyWeek(aFirstDayOfWeek) {
+      var firstDow = aFirstDayOfWeek || ICAL.Time.SUNDAY;
+      var delta = this.dayOfWeek() - firstDow;
+      if (delta < 0) delta += 7;
+      return this.dayOfYear() - delta;
+    },
+
+    /**
+     * Get the dominical letter for the current year. Letters range from A - G
+     * for common years, and AG to GF for leap years.
+     *
+     * @param {Number} yr           The year to retrieve the letter for
+     * @return {String}             The dominical letter.
+     */
+    getDominicalLetter: function() {
+      return ICAL.Time.getDominicalLetter(this.year);
+    },
+
+    /**
+     * Finds the nthWeekDay relative to the current month (not day).  The
+     * returned value is a day relative the month that this month belongs to so
+     * 1 would indicate the first of the month and 40 would indicate a day in
+     * the following month.
+     *
+     * @param {Number} aDayOfWeek   Day of the week see the day name constants
+     * @param {Number} aPos         Nth occurrence of a given week day values
+     *        of 1 and 0 both indicate the first weekday of that type. aPos may
+     *        be either positive or negative
+     *
+     * @return {Number} numeric value indicating a day relative
+     *                   to the current month of this time object
+     */
+    nthWeekDay: function icaltime_nthWeekDay(aDayOfWeek, aPos) {
+      var daysInMonth = ICAL.Time.daysInMonth(this.month, this.year);
+      var weekday;
+      var pos = aPos;
+
+      var start = 0;
+
+      var otherDay = this.clone();
+
+      if (pos >= 0) {
+        otherDay.day = 1;
+
+        // because 0 means no position has been given
+        // 1 and 0 indicate the same day.
+        if (pos != 0) {
+          // remove the extra numeric value
+          pos--;
+        }
+
+        // set current start offset to current day.
+        start = otherDay.day;
+
+        // find the current day of week
+        var startDow = otherDay.dayOfWeek();
+
+        // calculate the difference between current
+        // day of the week and desired day of the week
+        var offset = aDayOfWeek - startDow;
+
+
+        // if the offset goes into the past
+        // week we add 7 so its goes into the next
+        // week. We only want to go forward in time here.
+        if (offset < 0)
+          // this is really important otherwise we would
+          // end up with dates from in the past.
+          offset += 7;
+
+        // add offset to start so start is the same
+        // day of the week as the desired day of week.
+        start += offset;
+
+        // because we are going to add (and multiply)
+        // the numeric value of the day we subtract it
+        // from the start position so not to add it twice.
+        start -= aDayOfWeek;
+
+        // set week day
+        weekday = aDayOfWeek;
+      } else {
+
+        // then we set it to the last day in the current month
+        otherDay.day = daysInMonth;
+
+        // find the ends weekday
+        var endDow = otherDay.dayOfWeek();
+
+        pos++;
+
+        weekday = (endDow - aDayOfWeek);
+
+        if (weekday < 0) {
+          weekday += 7;
+        }
+
+        weekday = daysInMonth - weekday;
+      }
+
+      weekday += pos * 7;
+
+      return start + weekday;
+    },
+
+    /**
+     * Checks if current time is the nth weekday, relative to the current
+     * month.  Will always return false when rule resolves outside of current
+     * month.
+     *
+     * @param {ICAL.Time.weekDay} aDayOfWeek       Day of week to check
+     * @param {Number} aPos                        Relative position
+     * @return {Boolean}                           True, if its the nth weekday
+     */
+    isNthWeekDay: function(aDayOfWeek, aPos) {
+      var dow = this.dayOfWeek();
+
+      if (aPos === 0 && dow === aDayOfWeek) {
+        return true;
+      }
+
+      // get pos
+      var day = this.nthWeekDay(aDayOfWeek, aPos);
+
+      if (day === this.day) {
+        return true;
+      }
+
+      return false;
+    },
+
+    /**
+     * Calculates the ISO 8601 week number. The first week of a year is the
+     * week that contains the first Thursday. The year can have 53 weeks, if
+     * January 1st is a Friday.
+     *
+     * Note there are regions where the first week of the year is the one that
+     * starts on January 1st, which may offset the week number. Also, if a
+     * different week start is specified, this will also affect the week
+     * number.
+     *
+     * @see ICAL.Time.weekOneStarts
+     * @param {ICAL.Time.weekDay} aWeekStart        The weekday the week starts with
+     * @return {Number}                             The ISO week number
+     */
+    weekNumber: function weekNumber(aWeekStart) {
+      var wnCacheKey = (this.year << 12) + (this.month << 8) + (this.day << 3) + aWeekStart;
+      if (wnCacheKey in ICAL.Time._wnCache) {
+        return ICAL.Time._wnCache[wnCacheKey];
+      }
+      // This function courtesty of Julian Bucknall, published under the MIT license
+      // http://www.boyet.com/articles/publishedarticles/calculatingtheisoweeknumb.html
+      // plus some fixes to be able to use different week starts.
+      var week1;
+
+      var dt = this.clone();
+      dt.isDate = true;
+      var isoyear = this.year;
+
+      if (dt.month == 12 && dt.day > 25) {
+        week1 = ICAL.Time.weekOneStarts(isoyear + 1, aWeekStart);
+        if (dt.compare(week1) < 0) {
+          week1 = ICAL.Time.weekOneStarts(isoyear, aWeekStart);
+        } else {
+          isoyear++;
+        }
+      } else {
+        week1 = ICAL.Time.weekOneStarts(isoyear, aWeekStart);
+        if (dt.compare(week1) < 0) {
+          week1 = ICAL.Time.weekOneStarts(--isoyear, aWeekStart);
+        }
+      }
+
+      var daysBetween = (dt.subtractDate(week1).toSeconds() / 86400);
+      var answer = ICAL.helpers.trunc(daysBetween / 7) + 1;
+      ICAL.Time._wnCache[wnCacheKey] = answer;
+      return answer;
+    },
+
+    /**
+     * Adds the duration to the current time. The instance is modified in
+     * place.
+     *
+     * @param {ICAL.Duration} aDuration         The duration to add
+     */
+    addDuration: function icaltime_add(aDuration) {
+      var mult = (aDuration.isNegative ? -1 : 1);
+
+      // because of the duration optimizations it is much
+      // more efficient to grab all the values up front
+      // then set them directly (which will avoid a normalization call).
+      // So we don't actually normalize until we need it.
+      var second = this.second;
+      var minute = this.minute;
+      var hour = this.hour;
+      var day = this.day;
+
+      second += mult * aDuration.seconds;
+      minute += mult * aDuration.minutes;
+      hour += mult * aDuration.hours;
+      day += mult * aDuration.days;
+      day += mult * 7 * aDuration.weeks;
+
+      this.second = second;
+      this.minute = minute;
+      this.hour = hour;
+      this.day = day;
+
+      this._cachedUnixTime = null;
+    },
+
+    /**
+     * Subtract the date details (_excluding_ timezone).  Useful for finding
+     * the relative difference between two time objects excluding their
+     * timezone differences.
+     *
+     * @param {ICAL.Time} aDate     The date to substract
+     * @return {ICAL.Duration}      The difference as a duration
+     */
+    subtractDate: function icaltime_subtract(aDate) {
+      var unixTime = this.toUnixTime() + this.utcOffset();
+      var other = aDate.toUnixTime() + aDate.utcOffset();
+      return ICAL.Duration.fromSeconds(unixTime - other);
+    },
+
+    /**
+     * Subtract the date details, taking timezones into account.
+     *
+     * @param {ICAL.Time} aDate  The date to subtract
+     * @return {ICAL.Duration}  The difference in duration
+     */
+    subtractDateTz: function icaltime_subtract_abs(aDate) {
+      var unixTime = this.toUnixTime();
+      var other = aDate.toUnixTime();
+      return ICAL.Duration.fromSeconds(unixTime - other);
+    },
+
+    /**
+     * Compares the ICAL.Time instance with another one.
+     *
+     * @param {ICAL.Duration} aOther        The instance to compare with
+     * @return {Number}                     -1, 0 or 1 for less/equal/greater
+     */
+    compare: function icaltime_compare(other) {
+      var a = this.toUnixTime();
+      var b = other.toUnixTime();
+
+      if (a > b) return 1;
+      if (b > a) return -1;
+      return 0;
+    },
+
+    /**
+     * Compares only the date part of this instance with another one.
+     *
+     * @param {ICAL.Duration} other         The instance to compare with
+     * @param {ICAL.Timezone} tz            The timezone to compare in
+     * @return {Number}                     -1, 0 or 1 for less/equal/greater
+     */
+    compareDateOnlyTz: function icaltime_compareDateOnlyTz(other, tz) {
+      function cmp(attr) {
+        return ICAL.Time._cmp_attr(a, b, attr);
+      }
+      var a = this.convertToZone(tz);
+      var b = other.convertToZone(tz);
+      var rc = 0;
+
+      if ((rc = cmp("year")) != 0) return rc;
+      if ((rc = cmp("month")) != 0) return rc;
+      if ((rc = cmp("day")) != 0) return rc;
+
+      return rc;
+    },
+
+    /**
+     * Convert the instance into another timzone. The returned ICAL.Time
+     * instance is always a copy.
+     *
+     * @param {ICAL.Timezone} zone      The zone to convert to
+     * @return {ICAL.Time}              The copy, converted to the zone
+     */
+    convertToZone: function convertToZone(zone) {
+      var copy = this.clone();
+      var zone_equals = (this.zone.tzid == zone.tzid);
+
+      if (!this.isDate && !zone_equals) {
+        ICAL.Timezone.convert_time(copy, this.zone, zone);
+      }
+
+      copy.zone = zone;
+      return copy;
+    },
+
+    /**
+     * Calculates the UTC offset of the current date/time in the timezone it is
+     * in.
+     *
+     * @return {Number}     UTC offset in seconds
+     */
+    utcOffset: function utc_offset() {
+      if (this.zone == ICAL.Timezone.localTimezone ||
+          this.zone == ICAL.Timezone.utcTimezone) {
+        return 0;
+      } else {
+        return this.zone.utcOffset(this);
+      }
+    },
+
+    /**
+     * Returns an RFC 5545 compliant ical representation of this object.
+     *
+     * @return {String} ical date/date-time
+     */
+    toICALString: function() {
+      var string = this.toString();
+
+      if (string.length > 10) {
+        return ICAL.design.icalendar.value['date-time'].toICAL(string);
+      } else {
+        return ICAL.design.icalendar.value.date.toICAL(string);
+      }
+    },
+
+    /**
+     * The string representation of this date/time, in jCal form
+     * (including : and - separators).
+     * @return {String}
+     */
+    toString: function toString() {
+      var result = this.year + '-' +
+                   ICAL.helpers.pad2(this.month) + '-' +
+                   ICAL.helpers.pad2(this.day);
+
+      if (!this.isDate) {
+          result += 'T' + ICAL.helpers.pad2(this.hour) + ':' +
+                    ICAL.helpers.pad2(this.minute) + ':' +
+                    ICAL.helpers.pad2(this.second);
+
+        if (this.zone === ICAL.Timezone.utcTimezone) {
+          result += 'Z';
+        }
+      }
+
+      return result;
+    },
+
+    /**
+     * Converts the current instance to a Javascript date
+     * @return {Date}
+     */
+    toJSDate: function toJSDate() {
+      if (this.zone == ICAL.Timezone.localTimezone) {
+        if (this.isDate) {
+          return new Date(this.year, this.month - 1, this.day);
+        } else {
+          return new Date(this.year, this.month - 1, this.day,
+                          this.hour, this.minute, this.second, 0);
+        }
+      } else {
+        return new Date(this.toUnixTime() * 1000);
+      }
+    },
+
+    _normalize: function icaltime_normalize() {
+      var isDate = this._time.isDate;
+      if (this._time.isDate) {
+        this._time.hour = 0;
+        this._time.minute = 0;
+        this._time.second = 0;
+      }
+      this.adjust(0, 0, 0, 0);
+
+      return this;
+    },
+
+    /**
+     * Adjust the date/time by the given offset
+     *
+     * @param {Number} aExtraDays       The extra amount of days
+     * @param {Number} aExtraHours      The extra amount of hours
+     * @param {Number} aExtraMinutes    The extra amount of minutes
+     * @param {Number} aExtraSeconds    The extra amount of seconds
+     * @param {Number=} aTime           The time to adjust, defaults to the
+     *                                    current instance.
+     */
+    adjust: function icaltime_adjust(aExtraDays, aExtraHours,
+                                     aExtraMinutes, aExtraSeconds, aTime) {
+
+      var minutesOverflow, hoursOverflow,
+          daysOverflow = 0, yearsOverflow = 0;
+
+      var second, minute, hour, day;
+      var daysInMonth;
+
+      var time = aTime || this._time;
+
+      if (!time.isDate) {
+        second = time.second + aExtraSeconds;
+        time.second = second % 60;
+        minutesOverflow = ICAL.helpers.trunc(second / 60);
+        if (time.second < 0) {
+          time.second += 60;
+          minutesOverflow--;
+        }
+
+        minute = time.minute + aExtraMinutes + minutesOverflow;
+        time.minute = minute % 60;
+        hoursOverflow = ICAL.helpers.trunc(minute / 60);
+        if (time.minute < 0) {
+          time.minute += 60;
+          hoursOverflow--;
+        }
+
+        hour = time.hour + aExtraHours + hoursOverflow;
+
+        time.hour = hour % 24;
+        daysOverflow = ICAL.helpers.trunc(hour / 24);
+        if (time.hour < 0) {
+          time.hour += 24;
+          daysOverflow--;
+        }
+      }
+
+
+      // Adjust month and year first, because we need to know what month the day
+      // is in before adjusting it.
+      if (time.month > 12) {
+        yearsOverflow = ICAL.helpers.trunc((time.month - 1) / 12);
+      } else if (time.month < 1) {
+        yearsOverflow = ICAL.helpers.trunc(time.month / 12) - 1;
+      }
+
+      time.year += yearsOverflow;
+      time.month -= 12 * yearsOverflow;
+
+      // Now take care of the days (and adjust month if needed)
+      day = time.day + aExtraDays + daysOverflow;
+
+      if (day > 0) {
+        for (;;) {
+          daysInMonth = ICAL.Time.daysInMonth(time.month, time.year);
+          if (day <= daysInMonth) {
+            break;
+          }
+
+          time.month++;
+          if (time.month > 12) {
+            time.year++;
+            time.month = 1;
+          }
+
+          day -= daysInMonth;
+        }
+      } else {
+        while (day <= 0) {
+          if (time.month == 1) {
+            time.year--;
+            time.month = 12;
+          } else {
+            time.month--;
+          }
+
+          day += ICAL.Time.daysInMonth(time.month, time.year);
+        }
+      }
+
+      time.day = day;
+
+      this._cachedUnixTime = null;
+      return this;
+    },
+
+    /**
+     * Sets up the current instance from unix time, the number of seconds since
+     * January 1st, 1970.
+     *
+     * @param {Number} seconds      The seconds to set up with
+     */
+    fromUnixTime: function fromUnixTime(seconds) {
+      this.zone = ICAL.Timezone.utcTimezone;
+      var epoch = ICAL.Time.epochTime.clone();
+      epoch.adjust(0, 0, 0, seconds);
+
+      this.year = epoch.year;
+      this.month = epoch.month;
+      this.day = epoch.day;
+      this.hour = epoch.hour;
+      this.minute = epoch.minute;
+      this.second = Math.floor(epoch.second);
+
+      this._cachedUnixTime = null;
+    },
+
+    /**
+     * Converts the current instance to seconds since January 1st 1970.
+     *
+     * @return {Number}         Seconds since 1970
+     */
+    toUnixTime: function toUnixTime() {
+      if (this._cachedUnixTime !== null) {
+        return this._cachedUnixTime;
+      }
+      var offset = this.utcOffset();
+
+      // we use the offset trick to ensure
+      // that we are getting the actual UTC time
+      var ms = Date.UTC(
+        this.year,
+        this.month - 1,
+        this.day,
+        this.hour,
+        this.minute,
+        this.second - offset
+      );
+
+      // seconds
+      this._cachedUnixTime = ms / 1000;
+      return this._cachedUnixTime;
+    },
+
+    /**
+     * Converts time to into Object which can be serialized then re-created
+     * using the constructor.
+     *
+     * @example
+     * // toJSON will automatically be called
+     * var json = JSON.stringify(mytime);
+     *
+     * var deserialized = JSON.parse(json);
+     *
+     * var time = new ICAL.Time(deserialized);
+     *
+     * @return {Object}
+     */
+    toJSON: function() {
+      var copy = [
+        'year',
+        'month',
+        'day',
+        'hour',
+        'minute',
+        'second',
+        'isDate'
+      ];
+
+      var result = Object.create(null);
+
+      var i = 0;
+      var len = copy.length;
+      var prop;
+
+      for (; i < len; i++) {
+        prop = copy[i];
+        result[prop] = this[prop];
+      }
+
+      if (this.zone) {
+        result.timezone = this.zone.tzid;
+      }
+
+      return result;
+    }
+
+  };
+
+  (function setupNormalizeAttributes() {
+    // This needs to run before any instances are created!
+    function defineAttr(attr) {
+      Object.defineProperty(ICAL.Time.prototype, attr, {
+        get: function getTimeAttr() {
+          if (this._pendingNormalization) {
+            this._normalize();
+            this._pendingNormalization = false;
+          }
+
+          return this._time[attr];
+        },
+        set: function setTimeAttr(val) {
+          // Check if isDate will be set and if was not set to normalize date.
+          // This avoids losing days when seconds, minutes and hours are zeroed
+          // what normalize will do when time is a date.
+          if (attr === "isDate" && val && !this._time.isDate) {
+            this.adjust(0, 0, 0, 0);
+          }
+          this._cachedUnixTime = null;
+          this._pendingNormalization = true;
+          this._time[attr] = val;
+
+          return val;
+        }
+      });
+
+    }
+
+    /* istanbul ignore else */
+    if ("defineProperty" in Object) {
+      defineAttr("year");
+      defineAttr("month");
+      defineAttr("day");
+      defineAttr("hour");
+      defineAttr("minute");
+      defineAttr("second");
+      defineAttr("isDate");
+    }
+  })();
+
+  /**
+   * Returns the days in the given month
+   *
+   * @param {Number} month      The month to check
+   * @param {Number} year       The year to check
+   * @return {Number}           The number of days in the month
+   */
+  ICAL.Time.daysInMonth = function icaltime_daysInMonth(month, year) {
+    var _daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    var days = 30;
+
+    if (month < 1 || month > 12) return days;
+
+    days = _daysInMonth[month];
+
+    if (month == 2) {
+      days += ICAL.Time.isLeapYear(year);
+    }
+
+    return days;
+  };
+
+  /**
+   * Checks if the year is a leap year
+   *
+   * @param {Number} year       The year to check
+   * @return {Boolean}          True, if the year is a leap year
+   */
+  ICAL.Time.isLeapYear = function isLeapYear(year) {
+    if (year <= 1752) {
+      return ((year % 4) == 0);
+    } else {
+      return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
+    }
+  };
+
+  /**
+   * Create a new ICAL.Time from the day of year and year. The date is returned
+   * in floating timezone.
+   *
+   * @param {Number} aDayOfYear     The day of year
+   * @param {Number} aYear          The year to create the instance in
+   * @return {ICAL.Time}            The created instance with the calculated date
+   */
+  ICAL.Time.fromDayOfYear = function icaltime_fromDayOfYear(aDayOfYear, aYear) {
+    var year = aYear;
+    var doy = aDayOfYear;
+    var tt = new ICAL.Time();
+    tt.auto_normalize = false;
+    var is_leap = (ICAL.Time.isLeapYear(year) ? 1 : 0);
+
+    if (doy < 1) {
+      year--;
+      is_leap = (ICAL.Time.isLeapYear(year) ? 1 : 0);
+      doy += ICAL.Time.daysInYearPassedMonth[is_leap][12];
+      return ICAL.Time.fromDayOfYear(doy, year);
+    } else if (doy > ICAL.Time.daysInYearPassedMonth[is_leap][12]) {
+      is_leap = (ICAL.Time.isLeapYear(year) ? 1 : 0);
+      doy -= ICAL.Time.daysInYearPassedMonth[is_leap][12];
+      year++;
+      return ICAL.Time.fromDayOfYear(doy, year);
+    }
+
+    tt.year = year;
+    tt.isDate = true;
+
+    for (var month = 11; month >= 0; month--) {
+      if (doy > ICAL.Time.daysInYearPassedMonth[is_leap][month]) {
+        tt.month = month + 1;
+        tt.day = doy - ICAL.Time.daysInYearPassedMonth[is_leap][month];
+        break;
+      }
+    }
+
+    tt.auto_normalize = true;
+    return tt;
+  };
+
+  /**
+   * Returns a new ICAL.Time instance from a date string, e.g 2015-01-02.
+   *
+   * @deprecated                Use {@link ICAL.Time.fromDateString} instead
+   * @param {String} str        The string to create from
+   * @return {ICAL.Time}        The date/time instance
+   */
+  ICAL.Time.fromStringv2 = function fromString(str) {
+    return new ICAL.Time({
+      year: parseInt(str.substr(0, 4), 10),
+      month: parseInt(str.substr(5, 2), 10),
+      day: parseInt(str.substr(8, 2), 10),
+      isDate: true
+    });
+  };
+
+  /**
+   * Returns a new ICAL.Time instance from a date string, e.g 2015-01-02.
+   *
+   * @param {String} aValue     The string to create from
+   * @return {ICAL.Time}        The date/time instance
+   */
+  ICAL.Time.fromDateString = function(aValue) {
+    // Dates should have no timezone.
+    // Google likes to sometimes specify Z on dates
+    // we specifically ignore that to avoid issues.
+
+    // YYYY-MM-DD
+    // 2012-10-10
+    return new ICAL.Time({
+      year: ICAL.helpers.strictParseInt(aValue.substr(0, 4)),
+      month: ICAL.helpers.strictParseInt(aValue.substr(5, 2)),
+      day: ICAL.helpers.strictParseInt(aValue.substr(8, 2)),
+      isDate: true
+    });
+  };
+
+  /**
+   * Returns a new ICAL.Time instance from a date-time string, e.g
+   * 2015-01-02T03:04:05. If a property is specified, the timezone is set up
+   * from the property's TZID parameter.
+   *
+   * @param {String} aValue         The string to create from
+   * @param {ICAL.Property=} prop   The property the date belongs to
+   * @return {ICAL.Time}            The date/time instance
+   */
+  ICAL.Time.fromDateTimeString = function(aValue, prop) {
+    if (aValue.length < 19) {
+      throw new Error(
+        'invalid date-time value: "' + aValue + '"'
+      );
+    }
+
+    var zone;
+
+    if (aValue[19] && aValue[19] === 'Z') {
+      zone = 'Z';
+    } else if (prop) {
+      zone = prop.getParameter('tzid');
+    }
+
+    // 2012-10-10T10:10:10(Z)?
+    var time = new ICAL.Time({
+      year: ICAL.helpers.strictParseInt(aValue.substr(0, 4)),
+      month: ICAL.helpers.strictParseInt(aValue.substr(5, 2)),
+      day: ICAL.helpers.strictParseInt(aValue.substr(8, 2)),
+      hour: ICAL.helpers.strictParseInt(aValue.substr(11, 2)),
+      minute: ICAL.helpers.strictParseInt(aValue.substr(14, 2)),
+      second: ICAL.helpers.strictParseInt(aValue.substr(17, 2)),
+      timezone: zone
+    });
+
+    return time;
+  };
+
+  /**
+   * Returns a new ICAL.Time instance from a date or date-time string,
+   *
+   * @param {String} aValue         The string to create from
+   * @param {ICAL.Property=} prop   The property the date belongs to
+   * @return {ICAL.Time}            The date/time instance
+   */
+  ICAL.Time.fromString = function fromString(aValue, aProperty) {
+    if (aValue.length > 10) {
+      return ICAL.Time.fromDateTimeString(aValue, aProperty);
+    } else {
+      return ICAL.Time.fromDateString(aValue);
+    }
+  };
+
+  /**
+   * Creates a new ICAL.Time instance from the given Javascript Date.
+   *
+   * @param {?Date} aDate     The Javascript Date to read, or null to reset
+   * @param {Boolean} useUTC  If true, the UTC values of the date will be used
+   */
+  ICAL.Time.fromJSDate = function fromJSDate(aDate, useUTC) {
+    var tt = new ICAL.Time();
+    return tt.fromJSDate(aDate, useUTC);
+  };
+
+  /**
+   * Creates a new ICAL.Time instance from the the passed data object.
+   *
+   * @param {Object} aData            Time initialization
+   * @param {Number=} aData.year      The year for this date
+   * @param {Number=} aData.month     The month for this date
+   * @param {Number=} aData.day       The day for this date
+   * @param {Number=} aData.hour      The hour for this date
+   * @param {Number=} aData.minute    The minute for this date
+   * @param {Number=} aData.second    The second for this date
+   * @param {Boolean=} aData.isDate   If true, the instance represents a date
+   *                                    (as opposed to a date-time)
+   * @param {ICAL.Timezone=} aZone    Timezone this position occurs in
+   */
+  ICAL.Time.fromData = function fromData(aData, aZone) {
+    var t = new ICAL.Time();
+    return t.fromData(aData, aZone);
+  };
+
+  /**
+   * Creates a new ICAL.Time instance from the current moment.
+   * @return {ICAL.Time}
+   */
+  ICAL.Time.now = function icaltime_now() {
+    return ICAL.Time.fromJSDate(new Date(), false);
+  };
+
+  /**
+   * Returns the date on which ISO week number 1 starts.
+   *
+   * @see ICAL.Time#weekNumber
+   * @param {Number} aYear                  The year to search in
+   * @param {ICAL.Time.weekDay=} aWeekStart The week start weekday, used for calculation.
+   * @return {ICAL.Time}                    The date on which week number 1 starts
+   */
+  ICAL.Time.weekOneStarts = function weekOneStarts(aYear, aWeekStart) {
+    var t = ICAL.Time.fromData({
+      year: aYear,
+      month: 1,
+      day: 1,
+      isDate: true
+    });
+
+    var dow = t.dayOfWeek();
+    var wkst = aWeekStart || ICAL.Time.DEFAULT_WEEK_START;
+    if (dow > ICAL.Time.THURSDAY) {
+      t.day += 7;
+    }
+    if (wkst > ICAL.Time.THURSDAY) {
+      t.day -= 7;
+    }
+
+    t.day -= dow - wkst;
+
+    return t;
+  };
+
+  /**
+   * Get the dominical letter for the given year. Letters range from A - G for
+   * common years, and AG to GF for leap years.
+   *
+   * @param {Number} yr           The year to retrieve the letter for
+   * @return {String}             The dominical letter.
+   */
+  ICAL.Time.getDominicalLetter = function(yr) {
+    var LTRS = "GFEDCBA";
+    var dom = (yr + (yr / 4 | 0) + (yr / 400 | 0) - (yr / 100 | 0) - 1) % 7;
+    var isLeap = ICAL.Time.isLeapYear(yr);
+    if (isLeap) {
+      return LTRS[(dom + 6) % 7] + LTRS[dom];
+    } else {
+      return LTRS[dom];
+    }
+  };
+
+  /**
+   * January 1st, 1970 as an ICAL.Time.
+   * @type {ICAL.Time}
+   * @constant
+   * @instance
+   */
+  ICAL.Time.epochTime = ICAL.Time.fromData({
+    year: 1970,
+    month: 1,
+    day: 1,
+    hour: 0,
+    minute: 0,
+    second: 0,
+    isDate: false,
+    timezone: "Z"
+  });
+
+  ICAL.Time._cmp_attr = function _cmp_attr(a, b, attr) {
+    if (a[attr] > b[attr]) return 1;
+    if (a[attr] < b[attr]) return -1;
+    return 0;
+  };
+
+  /**
+   * The days that have passed in the year after a given month. The array has
+   * two members, one being an array of passed days for non-leap years, the
+   * other analog for leap years.
+   * @example
+   * var isLeapYear = ICAL.Time.isLeapYear(year);
+   * var passedDays = ICAL.Time.daysInYearPassedMonth[isLeapYear][month];
+   * @type {Array.<Array.<Number>>}
+   */
+  ICAL.Time.daysInYearPassedMonth = [
+    [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
+    [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]
+  ];
+
+  /**
+   * The weekday, 1 = SUNDAY, 7 = SATURDAY. Access via
+   * ICAL.Time.MONDAY, ICAL.Time.TUESDAY, ...
+   *
+   * @typedef {Number} weekDay
+   * @memberof ICAL.Time
+   */
+
+  ICAL.Time.SUNDAY = 1;
+  ICAL.Time.MONDAY = 2;
+  ICAL.Time.TUESDAY = 3;
+  ICAL.Time.WEDNESDAY = 4;
+  ICAL.Time.THURSDAY = 5;
+  ICAL.Time.FRIDAY = 6;
+  ICAL.Time.SATURDAY = 7;
+
+  /**
+   * The default weekday for the WKST part.
+   * @constant
+   * @default ICAL.Time.MONDAY
+   */
+  ICAL.Time.DEFAULT_WEEK_START = ICAL.Time.MONDAY;
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2015 */
+
+
+
+(function() {
+
+  /**
+   * Describes a vCard time, which has slight differences to the ICAL.Time.
+   * Properties can be null if not specified, for example for dates with
+   * reduced accuracy or truncation.
+   *
+   * Note that currently not all methods are correctly re-implemented for
+   * VCardTime. For example, comparison will have undefined results when some
+   * members are null.
+   *
+   * Also, normalization is not yet implemented for this class!
+   *
+   * @alias ICAL.VCardTime
+   * @class
+   * @extends {ICAL.Time}
+   * @param {Object} data                           The data for the time instance
+   * @param {Number=} data.year                     The year for this date
+   * @param {Number=} data.month                    The month for this date
+   * @param {Number=} data.day                      The day for this date
+   * @param {Number=} data.hour                     The hour for this date
+   * @param {Number=} data.minute                   The minute for this date
+   * @param {Number=} data.second                   The second for this date
+   * @param {ICAL.Timezone|ICAL.UtcOffset} zone     The timezone to use
+   * @param {String} icaltype                       The type for this date/time object
+   */
+  ICAL.VCardTime = function(data, zone, icaltype) {
+    this.wrappedJSObject = this;
+    var time = this._time = Object.create(null);
+
+    time.year = null;
+    time.month = null;
+    time.day = null;
+    time.hour = null;
+    time.minute = null;
+    time.second = null;
+
+    this.icaltype = icaltype || "date-and-or-time";
+
+    this.fromData(data, zone);
+  };
+  ICAL.helpers.inherits(ICAL.Time, ICAL.VCardTime, /** @lends ICAL.VCardTime */ {
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "vcardtime"
+     */
+    icalclass: "vcardtime",
+
+    /**
+     * The type name, to be used in the jCal object.
+     * @type {String}
+     * @default "date-and-or-time"
+     */
+    icaltype: "date-and-or-time",
+
+    /**
+     * The timezone. This can either be floating, UTC, or an instance of
+     * ICAL.UtcOffset.
+     * @type {ICAL.Timezone|ICAL.UtcOFfset}
+     */
+    zone: null,
+
+    /**
+     * Returns a clone of the vcard date/time object.
+     *
+     * @return {ICAL.VCardTime}     The cloned object
+     */
+    clone: function() {
+      return new ICAL.VCardTime(this._time, this.zone, this.icaltype);
+    },
+
+    _normalize: function() {
+      return this;
+    },
+
+    /**
+     * @inheritdoc
+     */
+    utcOffset: function() {
+      if (this.zone instanceof ICAL.UtcOffset) {
+        return this.zone.toSeconds();
+      } else {
+        return ICAL.Time.prototype.utcOffset.apply(this, arguments);
+      }
+    },
+
+    /**
+     * Returns an RFC 6350 compliant representation of this object.
+     *
+     * @return {String}         vcard date/time string
+     */
+    toICALString: function() {
+      return ICAL.design.vcard.value[this.icaltype].toICAL(this.toString());
+    },
+
+    /**
+     * The string representation of this date/time, in jCard form
+     * (including : and - separators).
+     * @return {String}
+     */
+    toString: function toString() {
+      var p2 = ICAL.helpers.pad2;
+      var y = this.year, m = this.month, d = this.day;
+      var h = this.hour, mm = this.minute, s = this.second;
+
+      var hasYear = y !== null, hasMonth = m !== null, hasDay = d !== null;
+      var hasHour = h !== null, hasMinute = mm !== null, hasSecond = s !== null;
+
+      var datepart = (hasYear ? p2(y) + (hasMonth || hasDay ? '-' : '') : (hasMonth || hasDay ? '--' : '')) +
+                     (hasMonth ? p2(m) : '') +
+                     (hasDay ? '-' + p2(d) : '');
+      var timepart = (hasHour ? p2(h) : '-') + (hasHour && hasMinute ? ':' : '') +
+                     (hasMinute ? p2(mm) : '') + (!hasHour && !hasMinute ? '-' : '') +
+                     (hasMinute && hasSecond ? ':' : '') +
+                     (hasSecond ? p2(s) : '');
+
+      var zone;
+      if (this.zone === ICAL.Timezone.utcTimezone) {
+        zone = 'Z';
+      } else if (this.zone instanceof ICAL.UtcOffset) {
+        zone = this.zone.toString();
+      } else if (this.zone === ICAL.Timezone.localTimezone) {
+        zone = '';
+      } else if (this.zone instanceof ICAL.Timezone) {
+        var offset = ICAL.UtcOffset.fromSeconds(this.zone.utcOffset(this));
+        zone = offset.toString();
+      } else {
+        zone = '';
+      }
+
+      switch (this.icaltype) {
+        case "time":
+          return timepart + zone;
+        case "date-and-or-time":
+        case "date-time":
+          return datepart + (timepart == '--' ? '' : 'T' + timepart + zone);
+        case "date":
+          return datepart;
+      }
+      return null;
+    }
+  });
+
+  /**
+   * Returns a new ICAL.VCardTime instance from a date and/or time string.
+   *
+   * @param {String} aValue     The string to create from
+   * @param {String} aIcalType  The type for this instance, e.g. date-and-or-time
+   * @return {ICAL.VCardTime}   The date/time instance
+   */
+  ICAL.VCardTime.fromDateAndOrTimeString = function(aValue, aIcalType) {
+    function part(v, s, e) {
+      return v ? ICAL.helpers.strictParseInt(v.substr(s, e)) : null;
+    }
+    var parts = aValue.split('T');
+    var dt = parts[0], tmz = parts[1];
+    var splitzone = tmz ? ICAL.design.vcard.value.time._splitZone(tmz) : [];
+    var zone = splitzone[0], tm = splitzone[1];
+
+    var stoi = ICAL.helpers.strictParseInt;
+    var dtlen = dt ? dt.length : 0;
+    var tmlen = tm ? tm.length : 0;
+
+    var hasDashDate = dt && dt[0] == '-' && dt[1] == '-';
+    var hasDashTime = tm && tm[0] == '-';
+
+    var o = {
+      year: hasDashDate ? null : part(dt, 0, 4),
+      month: hasDashDate && (dtlen == 4 || dtlen == 7) ? part(dt, 2, 2) : dtlen == 7 ? part(dt, 5, 2) : dtlen == 10 ? part(dt, 5, 2) : null,
+      day: dtlen == 5 ? part(dt, 3, 2) : dtlen == 7 && hasDashDate ? part(dt, 5, 2) : dtlen == 10 ? part(dt, 8, 2) : null,
+
+      hour: hasDashTime ? null : part(tm, 0, 2),
+      minute: hasDashTime && tmlen == 3 ? part(tm, 1, 2) : tmlen > 4 ? hasDashTime ? part(tm, 1, 2) : part(tm, 3, 2) : null,
+      second: tmlen == 4 ? part(tm, 2, 2) : tmlen == 6 ? part(tm, 4, 2) : tmlen == 8 ? part(tm, 6, 2) : null
+    };
+
+    if (zone == 'Z') {
+      zone = ICAL.Timezone.utcTimezone;
+    } else if (zone && zone[3] == ':') {
+      zone = ICAL.UtcOffset.fromString(zone);
+    } else {
+      zone = null;
+    }
+
+    return new ICAL.VCardTime(o, zone, aIcalType);
+  };
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+
+(function() {
+  var DOW_MAP = {
+    SU: ICAL.Time.SUNDAY,
+    MO: ICAL.Time.MONDAY,
+    TU: ICAL.Time.TUESDAY,
+    WE: ICAL.Time.WEDNESDAY,
+    TH: ICAL.Time.THURSDAY,
+    FR: ICAL.Time.FRIDAY,
+    SA: ICAL.Time.SATURDAY
+  };
+
+  var REVERSE_DOW_MAP = {};
+  for (var key in DOW_MAP) {
+    /* istanbul ignore else */
+    if (DOW_MAP.hasOwnProperty(key)) {
+      REVERSE_DOW_MAP[DOW_MAP[key]] = key;
+    }
+  }
+
+  var COPY_PARTS = ["BYSECOND", "BYMINUTE", "BYHOUR", "BYDAY",
+                    "BYMONTHDAY", "BYYEARDAY", "BYWEEKNO",
+                    "BYMONTH", "BYSETPOS"];
+
+  /**
+   * @classdesc
+   * This class represents the "recur" value type, with various calculation
+   * and manipulation methods.
+   *
+   * @class
+   * @alias ICAL.Recur
+   * @param {Object} data                               An object with members of the recurrence
+   * @param {ICAL.Recur.frequencyValues=} data.freq     The frequency value
+   * @param {Number=} data.interval                     The INTERVAL value
+   * @param {ICAL.Time.weekDay=} data.wkst              The week start value
+   * @param {ICAL.Time=} data.until                     The end of the recurrence set
+   * @param {Number=} data.count                        The number of occurrences
+   * @param {Array.<Number>=} data.bysecond             The seconds for the BYSECOND part
+   * @param {Array.<Number>=} data.byminute             The minutes for the BYMINUTE part
+   * @param {Array.<Number>=} data.byhour               The hours for the BYHOUR part
+   * @param {Array.<String>=} data.byday                The BYDAY values
+   * @param {Array.<Number>=} data.bymonthday           The days for the BYMONTHDAY part
+   * @param {Array.<Number>=} data.byyearday            The days for the BYYEARDAY part
+   * @param {Array.<Number>=} data.byweekno             The weeks for the BYWEEKNO part
+   * @param {Array.<Number>=} data.bymonth              The month for the BYMONTH part
+   * @param {Array.<Number>=} data.bysetpos             The positionals for the BYSETPOS part
+   */
+  ICAL.Recur = function icalrecur(data) {
+    this.wrappedJSObject = this;
+    this.parts = {};
+
+    if (data && typeof(data) === 'object') {
+      this.fromData(data);
+    }
+  };
+
+  ICAL.Recur.prototype = {
+    /**
+     * An object holding the BY-parts of the recurrence rule
+     * @type {Object}
+     */
+    parts: null,
+
+    /**
+     * The interval value for the recurrence rule.
+     * @type {Number}
+     */
+    interval: 1,
+
+    /**
+     * The week start day
+     *
+     * @type {ICAL.Time.weekDay}
+     * @default ICAL.Time.MONDAY
+     */
+    wkst: ICAL.Time.MONDAY,
+
+    /**
+     * The end of the recurrence
+     * @type {?ICAL.Time}
+     */
+    until: null,
+
+    /**
+     * The maximum number of occurrences
+     * @type {?Number}
+     */
+    count: null,
+
+    /**
+     * The frequency value.
+     * @type {ICAL.Recur.frequencyValues}
+     */
+    freq: null,
+
+    /**
+     * The class identifier.
+     * @constant
+     * @type {String}
+     * @default "icalrecur"
+     */
+    icalclass: "icalrecur",
+
+    /**
+     * The type name, to be used in the jCal object.
+     * @constant
+     * @type {String}
+     * @default "recur"
+     */
+    icaltype: "recur",
+
+    /**
+     * Create a new iterator for this recurrence rule. The passed start date
+     * must be the start date of the event, not the start of the range to
+     * search in.
+     *
+     * @example
+     * var recur = comp.getFirstPropertyValue('rrule');
+     * var dtstart = comp.getFirstPropertyValue('dtstart');
+     * var iter = recur.iterator(dtstart);
+     * for (var next = iter.next(); next; next = iter.next()) {
+     *   if (next.compare(rangeStart) < 0) {
+     *     continue;
+     *   }
+     *   console.log(next.toString());
+     * }
+     *
+     * @param {ICAL.Time} aStart        The item's start date
+     * @return {ICAL.RecurIterator}     The recurrence iterator
+     */
+    iterator: function(aStart) {
+      return new ICAL.RecurIterator({
+        rule: this,
+        dtstart: aStart
+      });
+    },
+
+    /**
+     * Returns a clone of the recurrence object.
+     *
+     * @return {ICAL.Recur}      The cloned object
+     */
+    clone: function clone() {
+      return new ICAL.Recur(this.toJSON());
+    },
+
+    /**
+     * Checks if the current rule is finite, i.e. has a count or until part.
+     *
+     * @return {Boolean}        True, if the rule is finite
+     */
+    isFinite: function isfinite() {
+      return !!(this.count || this.until);
+    },
+
+    /**
+     * Checks if the current rule has a count part, and not limited by an until
+     * part.
+     *
+     * @return {Boolean}        True, if the rule is by count
+     */
+    isByCount: function isbycount() {
+      return !!(this.count && !this.until);
+    },
+
+    /**
+     * Adds a component (part) to the recurrence rule. This is not a component
+     * in the sense of {@link ICAL.Component}, but a part of the recurrence
+     * rule, i.e. BYMONTH.
+     *
+     * @param {String} aType            The name of the component part
+     * @param {Array|String} aValue     The component value
+     */
+    addComponent: function addPart(aType, aValue) {
+      var ucname = aType.toUpperCase();
+      if (ucname in this.parts) {
+        this.parts[ucname].push(aValue);
+      } else {
+        this.parts[ucname] = [aValue];
+      }
+    },
+
+    /**
+     * Sets the component value for the given by-part.
+     *
+     * @param {String} aType        The component part name
+     * @param {Array} aValues       The component values
+     */
+    setComponent: function setComponent(aType, aValues) {
+      this.parts[aType.toUpperCase()] = aValues.slice();
+    },
+
+    /**
+     * Gets (a copy) of the requested component value.
+     *
+     * @param {String} aType        The component part name
+     * @return {Array}              The component part value
+     */
+    getComponent: function getComponent(aType) {
+      var ucname = aType.toUpperCase();
+      return (ucname in this.parts ? this.parts[ucname].slice() : []);
+    },
+
+    /**
+     * Retrieves the next occurrence after the given recurrence id. See the
+     * guide on {@tutorial terminology} for more details.
+     *
+     * NOTE: Currently, this method iterates all occurrences from the start
+     * date. It should not be called in a loop for performance reasons. If you
+     * would like to get more than one occurrence, you can iterate the
+     * occurrences manually, see the example on the
+     * {@link ICAL.Recur#iterator iterator} method.
+     *
+     * @param {ICAL.Time} aStartTime        The start of the event series
+     * @param {ICAL.Time} aRecurrenceId     The date of the last occurrence
+     * @return {ICAL.Time}                  The next occurrence after
+     */
+    getNextOccurrence: function getNextOccurrence(aStartTime, aRecurrenceId) {
+      var iter = this.iterator(aStartTime);
+      var next, cdt;
+
+      do {
+        next = iter.next();
+      } while (next && next.compare(aRecurrenceId) <= 0);
+
+      if (next && aRecurrenceId.zone) {
+        next.zone = aRecurrenceId.zone;
+      }
+
+      return next;
+    },
+
+    /**
+     * Sets up the current instance using members from the passed data object.
+     *
+     * @param {Object} data                               An object with members of the recurrence
+     * @param {ICAL.Recur.frequencyValues=} data.freq     The frequency value
+     * @param {Number=} data.interval                     The INTERVAL value
+     * @param {ICAL.Time.weekDay=} data.wkst              The week start value
+     * @param {ICAL.Time=} data.until                     The end of the recurrence set
+     * @param {Number=} data.count                        The number of occurrences
+     * @param {Array.<Number>=} data.bysecond             The seconds for the BYSECOND part
+     * @param {Array.<Number>=} data.byminute             The minutes for the BYMINUTE part
+     * @param {Array.<Number>=} data.byhour               The hours for the BYHOUR part
+     * @param {Array.<String>=} data.byday                The BYDAY values
+     * @param {Array.<Number>=} data.bymonthday           The days for the BYMONTHDAY part
+     * @param {Array.<Number>=} data.byyearday            The days for the BYYEARDAY part
+     * @param {Array.<Number>=} data.byweekno             The weeks for the BYWEEKNO part
+     * @param {Array.<Number>=} data.bymonth              The month for the BYMONTH part
+     * @param {Array.<Number>=} data.bysetpos             The positionals for the BYSETPOS part
+     */
+    fromData: function(data) {
+      for (var key in data) {
+        var uckey = key.toUpperCase();
+
+        if (uckey in partDesign) {
+          if (Array.isArray(data[key])) {
+            this.parts[uckey] = data[key];
+          } else {
+            this.parts[uckey] = [data[key]];
+          }
+        } else {
+          this[key] = data[key];
+        }
+      }
+
+      if (this.interval && typeof this.interval != "number") {
+        optionDesign.INTERVAL(this.interval, this);
+      }
+
+      if (this.wkst && typeof this.wkst != "number") {
+        this.wkst = ICAL.Recur.icalDayToNumericDay(this.wkst);
+      }
+
+      if (this.until && !(this.until instanceof ICAL.Time)) {
+        this.until = ICAL.Time.fromString(this.until);
+      }
+    },
+
+    /**
+     * The jCal representation of this recurrence type.
+     * @return {Object}
+     */
+    toJSON: function() {
+      var res = Object.create(null);
+      res.freq = this.freq;
+
+      if (this.count) {
+        res.count = this.count;
+      }
+
+      if (this.interval > 1) {
+        res.interval = this.interval;
+      }
+
+      for (var k in this.parts) {
+        /* istanbul ignore if */
+        if (!this.parts.hasOwnProperty(k)) {
+          continue;
+        }
+        var kparts = this.parts[k];
+        if (Array.isArray(kparts) && kparts.length == 1) {
+          res[k.toLowerCase()] = kparts[0];
+        } else {
+          res[k.toLowerCase()] = ICAL.helpers.clone(this.parts[k]);
+        }
+      }
+
+      if (this.until) {
+        res.until = this.until.toString();
+      }
+      if ('wkst' in this && this.wkst !== ICAL.Time.DEFAULT_WEEK_START) {
+        res.wkst = ICAL.Recur.numericDayToIcalDay(this.wkst);
+      }
+      return res;
+    },
+
+    /**
+     * The string representation of this recurrence rule.
+     * @return {String}
+     */
+    toString: function icalrecur_toString() {
+      // TODO retain order
+      var str = "FREQ=" + this.freq;
+      if (this.count) {
+        str += ";COUNT=" + this.count;
+      }
+      if (this.interval > 1) {
+        str += ";INTERVAL=" + this.interval;
+      }
+      for (var k in this.parts) {
+        /* istanbul ignore else */
+        if (this.parts.hasOwnProperty(k)) {
+          str += ";" + k + "=" + this.parts[k];
+        }
+      }
+      if (this.until) {
+        str += ';UNTIL=' + this.until.toICALString();
+      }
+      if ('wkst' in this && this.wkst !== ICAL.Time.DEFAULT_WEEK_START) {
+        str += ';WKST=' + ICAL.Recur.numericDayToIcalDay(this.wkst);
+      }
+      return str;
+    }
+  };
+
+  function parseNumericValue(type, min, max, value) {
+    var result = value;
+
+    if (value[0] === '+') {
+      result = value.substr(1);
+    }
+
+    result = ICAL.helpers.strictParseInt(result);
+
+    if (min !== undefined && value < min) {
+      throw new Error(
+        type + ': invalid value "' + value + '" must be > ' + min
+      );
+    }
+
+    if (max !== undefined && value > max) {
+      throw new Error(
+        type + ': invalid value "' + value + '" must be < ' + min
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Convert an ical representation of a day (SU, MO, etc..)
+   * into a numeric value of that day.
+   *
+   * @param {String} string     The iCalendar day name
+   * @param {ICAL.Time.weekDay=} aWeekStart
+   *        The week start weekday, defaults to SUNDAY
+   * @return {Number}           Numeric value of given day
+   */
+  ICAL.Recur.icalDayToNumericDay = function toNumericDay(string, aWeekStart) {
+    //XXX: this is here so we can deal
+    //     with possibly invalid string values.
+    var firstDow = aWeekStart || ICAL.Time.SUNDAY;
+    return ((DOW_MAP[string] - firstDow + 7) % 7) + 1;
+  };
+
+  /**
+   * Convert a numeric day value into its ical representation (SU, MO, etc..)
+   *
+   * @param {Number} num        Numeric value of given day
+   * @param {ICAL.Time.weekDay=} aWeekStart
+   *        The week start weekday, defaults to SUNDAY
+   * @return {String}           The ICAL day value, e.g SU,MO,...
+   */
+  ICAL.Recur.numericDayToIcalDay = function toIcalDay(num, aWeekStart) {
+    //XXX: this is here so we can deal with possibly invalid number values.
+    //     Also, this allows consistent mapping between day numbers and day
+    //     names for external users.
+    var firstDow = aWeekStart || ICAL.Time.SUNDAY;
+    var dow = (num + firstDow - ICAL.Time.SUNDAY);
+    if (dow > 7) {
+      dow -= 7;
+    }
+    return REVERSE_DOW_MAP[dow];
+  };
+
+  var VALID_DAY_NAMES = /^(SU|MO|TU|WE|TH|FR|SA)$/;
+  var VALID_BYDAY_PART = /^([+-])?(5[0-3]|[1-4][0-9]|[1-9])?(SU|MO|TU|WE|TH|FR|SA)$/;
+
+  /**
+   * Possible frequency values for the FREQ part
+   * (YEARLY, MONTHLY, WEEKLY, DAILY, HOURLY, MINUTELY, SECONDLY)
+   *
+   * @typedef {String} frequencyValues
+   * @memberof ICAL.Recur
+   */
+
+  var ALLOWED_FREQ = ['SECONDLY', 'MINUTELY', 'HOURLY',
+                      'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'];
+
+  var optionDesign = {
+    FREQ: function(value, dict, fmtIcal) {
+      // yes this is actually equal or faster then regex.
+      // upside here is we can enumerate the valid values.
+      if (ALLOWED_FREQ.indexOf(value) !== -1) {
+        dict.freq = value;
+      } else {
+        throw new Error(
+          'invalid frequency "' + value + '" expected: "' +
+          ALLOWED_FREQ.join(', ') + '"'
+        );
+      }
+    },
+
+    COUNT: function(value, dict, fmtIcal) {
+      dict.count = ICAL.helpers.strictParseInt(value);
+    },
+
+    INTERVAL: function(value, dict, fmtIcal) {
+      dict.interval = ICAL.helpers.strictParseInt(value);
+      if (dict.interval < 1) {
+        // 0 or negative values are not allowed, some engines seem to generate
+        // it though. Assume 1 instead.
+        dict.interval = 1;
+      }
+    },
+
+    UNTIL: function(value, dict, fmtIcal) {
+      if (value.length > 10) {
+        dict.until = ICAL.design.icalendar.value['date-time'].fromICAL(value);
+      } else {
+        dict.until = ICAL.design.icalendar.value.date.fromICAL(value);
+      }
+      if (!fmtIcal) {
+        dict.until = ICAL.Time.fromString(dict.until);
+      }
+    },
+
+    WKST: function(value, dict, fmtIcal) {
+      if (VALID_DAY_NAMES.test(value)) {
+        dict.wkst = ICAL.Recur.icalDayToNumericDay(value);
+      } else {
+        throw new Error('invalid WKST value "' + value + '"');
+      }
+    }
+  };
+
+  var partDesign = {
+    BYSECOND: parseNumericValue.bind(this, 'BYSECOND', 0, 60),
+    BYMINUTE: parseNumericValue.bind(this, 'BYMINUTE', 0, 59),
+    BYHOUR: parseNumericValue.bind(this, 'BYHOUR', 0, 23),
+    BYDAY: function(value) {
+      if (VALID_BYDAY_PART.test(value)) {
+        return value;
+      } else {
+        throw new Error('invalid BYDAY value "' + value + '"');
+      }
+    },
+    BYMONTHDAY: parseNumericValue.bind(this, 'BYMONTHDAY', -31, 31),
+    BYYEARDAY: parseNumericValue.bind(this, 'BYYEARDAY', -366, 366),
+    BYWEEKNO: parseNumericValue.bind(this, 'BYWEEKNO', -53, 53),
+    BYMONTH: parseNumericValue.bind(this, 'BYMONTH', 0, 12),
+    BYSETPOS: parseNumericValue.bind(this, 'BYSETPOS', -366, 366)
+  };
+
+
+  /**
+   * Creates a new {@link ICAL.Recur} instance from the passed string.
+   *
+   * @param {String} string         The string to parse
+   * @return {ICAL.Recur}           The created recurrence instance
+   */
+  ICAL.Recur.fromString = function(string) {
+    var data = ICAL.Recur._stringToData(string, false);
+    return new ICAL.Recur(data);
+  };
+
+  /**
+   * Creates a new {@link ICAL.Recur} instance using members from the passed
+   * data object.
+   *
+   * @param {Object} aData                              An object with members of the recurrence
+   * @param {ICAL.Recur.frequencyValues=} aData.freq    The frequency value
+   * @param {Number=} aData.interval                    The INTERVAL value
+   * @param {ICAL.Time.weekDay=} aData.wkst             The week start value
+   * @param {ICAL.Time=} aData.until                    The end of the recurrence set
+   * @param {Number=} aData.count                       The number of occurrences
+   * @param {Array.<Number>=} aData.bysecond            The seconds for the BYSECOND part
+   * @param {Array.<Number>=} aData.byminute            The minutes for the BYMINUTE part
+   * @param {Array.<Number>=} aData.byhour              The hours for the BYHOUR part
+   * @param {Array.<String>=} aData.byday               The BYDAY values
+   * @param {Array.<Number>=} aData.bymonthday          The days for the BYMONTHDAY part
+   * @param {Array.<Number>=} aData.byyearday           The days for the BYYEARDAY part
+   * @param {Array.<Number>=} aData.byweekno            The weeks for the BYWEEKNO part
+   * @param {Array.<Number>=} aData.bymonth             The month for the BYMONTH part
+   * @param {Array.<Number>=} aData.bysetpos            The positionals for the BYSETPOS part
+   */
+  ICAL.Recur.fromData = function(aData) {
+    return new ICAL.Recur(aData);
+  };
+
+  /**
+   * Converts a recurrence string to a data object, suitable for the fromData
+   * method.
+   *
+   * @param {String} string     The string to parse
+   * @param {Boolean} fmtIcal   If true, the string is considered to be an
+   *                              iCalendar string
+   * @return {ICAL.Recur}       The recurrence instance
+   */
+  ICAL.Recur._stringToData = function(string, fmtIcal) {
+    var dict = Object.create(null);
+
+    // split is slower in FF but fast enough.
+    // v8 however this is faster then manual split?
+    var values = string.split(';');
+    var len = values.length;
+
+    for (var i = 0; i < len; i++) {
+      var parts = values[i].split('=');
+      var ucname = parts[0].toUpperCase();
+      var lcname = parts[0].toLowerCase();
+      var name = (fmtIcal ? lcname : ucname);
+      var value = parts[1];
+
+      if (ucname in partDesign) {
+        var partArr = value.split(',');
+        var partArrIdx = 0;
+        var partArrLen = partArr.length;
+
+        for (; partArrIdx < partArrLen; partArrIdx++) {
+          partArr[partArrIdx] = partDesign[ucname](partArr[partArrIdx]);
+        }
+        dict[name] = (partArr.length == 1 ? partArr[0] : partArr);
+      } else if (ucname in optionDesign) {
+        optionDesign[ucname](value, dict, fmtIcal);
+      } else {
+        // Don't swallow unknown values. Just set them as they are.
+        dict[lcname] = value;
+      }
+    }
+
+    return dict;
+  };
+})();
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.RecurIterator = (function() {
+
+  /**
+   * @classdesc
+   * An iterator for a single recurrence rule. This class usually doesn't have
+   * to be instanciated directly, the convenience method
+   * {@link ICAL.Recur#iterator} can be used.
+   *
+   * @description
+   * The options object may contain additional members when resuming iteration from a previous run
+   *
+   * @description
+   * The options object may contain additional members when resuming iteration
+   * from a previous run.
+   *
+   * @class
+   * @alias ICAL.RecurIterator
+   * @param {Object} options                The iterator options
+   * @param {ICAL.Recur} options.rule       The rule to iterate.
+   * @param {ICAL.Time} options.dtstart     The start date of the event.
+   * @param {Boolean=} options.initialized  When true, assume that options are
+   *        from a previously constructed iterator. Initialization will not be
+   *        repeated.
+   */
+  function icalrecur_iterator(options) {
+    this.fromData(options);
+  }
+
+  icalrecur_iterator.prototype = {
+
+    /**
+     * True when iteration is finished.
+     * @type {Boolean}
+     */
+    completed: false,
+
+    /**
+     * The rule that is being iterated
+     * @type {ICAL.Recur}
+     */
+    rule: null,
+
+    /**
+     * The start date of the event being iterated.
+     * @type {ICAL.Time}
+     */
+    dtstart: null,
+
+    /**
+     * The last occurrence that was returned from the
+     * {@link ICAL.RecurIterator#next} method.
+     * @type {ICAL.Time}
+     */
+    last: null,
+
+    /**
+     * The sequence number from the occurrence
+     * @type {Number}
+     */
+    occurrence_number: 0,
+
+    /**
+     * The indices used for the {@link ICAL.RecurIterator#by_data} object.
+     * @type {Object}
+     * @private
+     */
+    by_indices: null,
+
+    /**
+     * If true, the iterator has already been initialized
+     * @type {Boolean}
+     * @private
+     */
+    initialized: false,
+
+    /**
+     * The initializd by-data.
+     * @type {Object}
+     * @private
+     */
+    by_data: null,
+
+    /**
+     * The expanded yeardays
+     * @type {Array}
+     * @private
+     */
+    days: null,
+
+    /**
+     * The index in the {@link ICAL.RecurIterator#days} array.
+     * @type {Number}
+     * @private
+     */
+    days_index: 0,
+
+    /**
+     * Initialize the recurrence iterator from the passed data object. This
+     * method is usually not called directly, you can initialize the iterator
+     * through the constructor.
+     *
+     * @param {Object} options                The iterator options
+     * @param {ICAL.Recur} options.rule       The rule to iterate.
+     * @param {ICAL.Time} options.dtstart     The start date of the event.
+     * @param {Boolean=} options.initialized  When true, assume that options are
+     *        from a previously constructed iterator. Initialization will not be
+     *        repeated.
+     */
+    fromData: function(options) {
+      this.rule = ICAL.helpers.formatClassType(options.rule, ICAL.Recur);
+
+      if (!this.rule) {
+        throw new Error('iterator requires a (ICAL.Recur) rule');
+      }
+
+      this.dtstart = ICAL.helpers.formatClassType(options.dtstart, ICAL.Time);
+
+      if (!this.dtstart) {
+        throw new Error('iterator requires a (ICAL.Time) dtstart');
+      }
+
+      if (options.by_data) {
+        this.by_data = options.by_data;
+      } else {
+        this.by_data = ICAL.helpers.clone(this.rule.parts, true);
+      }
+
+      if (options.occurrence_number)
+        this.occurrence_number = options.occurrence_number;
+
+      this.days = options.days || [];
+      if (options.last) {
+        this.last = ICAL.helpers.formatClassType(options.last, ICAL.Time);
+      }
+
+      this.by_indices = options.by_indices;
+
+      if (!this.by_indices) {
+        this.by_indices = {
+          "BYSECOND": 0,
+          "BYMINUTE": 0,
+          "BYHOUR": 0,
+          "BYDAY": 0,
+          "BYMONTH": 0,
+          "BYWEEKNO": 0,
+          "BYMONTHDAY": 0
+        };
+      }
+
+      this.initialized = options.initialized || false;
+
+      if (!this.initialized) {
+        this.init();
+      }
+    },
+
+    /**
+     * Intialize the iterator
+     * @private
+     */
+    init: function icalrecur_iterator_init() {
+      this.initialized = true;
+      this.last = this.dtstart.clone();
+      var parts = this.by_data;
+
+      if ("BYDAY" in parts) {
+        // libical does this earlier when the rule is loaded, but we postpone to
+        // now so we can preserve the original order.
+        this.sort_byday_rules(parts.BYDAY);
+      }
+
+      // If the BYYEARDAY appares, no other date rule part may appear
+      if ("BYYEARDAY" in parts) {
+        if ("BYMONTH" in parts || "BYWEEKNO" in parts ||
+            "BYMONTHDAY" in parts || "BYDAY" in parts) {
+          throw new Error("Invalid BYYEARDAY rule");
+        }
+      }
+
+      // BYWEEKNO and BYMONTHDAY rule parts may not both appear
+      if ("BYWEEKNO" in parts && "BYMONTHDAY" in parts) {
+        throw new Error("BYWEEKNO does not fit to BYMONTHDAY");
+      }
+
+      // For MONTHLY recurrences (FREQ=MONTHLY) neither BYYEARDAY nor
+      // BYWEEKNO may appear.
+      if (this.rule.freq == "MONTHLY" &&
+          ("BYYEARDAY" in parts || "BYWEEKNO" in parts)) {
+        throw new Error("For MONTHLY recurrences neither BYYEARDAY nor BYWEEKNO may appear");
+      }
+
+      // For WEEKLY recurrences (FREQ=WEEKLY) neither BYMONTHDAY nor
+      // BYYEARDAY may appear.
+      if (this.rule.freq == "WEEKLY" &&
+          ("BYYEARDAY" in parts || "BYMONTHDAY" in parts)) {
+        throw new Error("For WEEKLY recurrences neither BYMONTHDAY nor BYYEARDAY may appear");
+      }
+
+      // BYYEARDAY may only appear in YEARLY rules
+      if (this.rule.freq != "YEARLY" && "BYYEARDAY" in parts) {
+        throw new Error("BYYEARDAY may only appear in YEARLY rules");
+      }
+
+      this.last.second = this.setup_defaults("BYSECOND", "SECONDLY", this.dtstart.second);
+      this.last.minute = this.setup_defaults("BYMINUTE", "MINUTELY", this.dtstart.minute);
+      this.last.hour = this.setup_defaults("BYHOUR", "HOURLY", this.dtstart.hour);
+      this.last.day = this.setup_defaults("BYMONTHDAY", "DAILY", this.dtstart.day);
+      this.last.month = this.setup_defaults("BYMONTH", "MONTHLY", this.dtstart.month);
+
+      if (this.rule.freq == "WEEKLY") {
+        if ("BYDAY" in parts) {
+          var bydayParts = this.ruleDayOfWeek(parts.BYDAY[0], this.rule.wkst);
+          var pos = bydayParts[0];
+          var dow = bydayParts[1];
+          var wkdy = dow - this.last.dayOfWeek(this.rule.wkst);
+          if ((this.last.dayOfWeek(this.rule.wkst) < dow && wkdy >= 0) || wkdy < 0) {
+            // Initial time is after first day of BYDAY data
+            this.last.day += wkdy;
+          }
+        } else {
+          var dayName = ICAL.Recur.numericDayToIcalDay(this.dtstart.dayOfWeek());
+          parts.BYDAY = [dayName];
+        }
+      }
+
+      if (this.rule.freq == "YEARLY") {
+        for (;;) {
+          this.expand_year_days(this.last.year);
+          if (this.days.length > 0) {
+            break;
+          }
+          this.increment_year(this.rule.interval);
+        }
+
+        this._nextByYearDay();
+      }
+
+      if (this.rule.freq == "MONTHLY" && this.has_by_data("BYDAY")) {
+        var tempLast = null;
+        var initLast = this.last.clone();
+        var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+
+        // Check every weekday in BYDAY with relative dow and pos.
+        for (var i in this.by_data.BYDAY) {
+          /* istanbul ignore if */
+          if (!this.by_data.BYDAY.hasOwnProperty(i)) {
+            continue;
+          }
+          this.last = initLast.clone();
+          var bydayParts = this.ruleDayOfWeek(this.by_data.BYDAY[i]);
+          var pos = bydayParts[0];
+          var dow = bydayParts[1];
+          var dayOfMonth = this.last.nthWeekDay(dow, pos);
+
+          // If |pos| >= 6, the byday is invalid for a monthly rule.
+          if (pos >= 6 || pos <= -6) {
+            throw new Error("Malformed values in BYDAY part");
+          }
+
+          // If a Byday with pos=+/-5 is not in the current month it
+          // must be searched in the next months.
+          if (dayOfMonth > daysInMonth || dayOfMonth <= 0) {
+            // Skip if we have already found a "last" in this month.
+            if (tempLast && tempLast.month == initLast.month) {
+              continue;
+            }
+            while (dayOfMonth > daysInMonth || dayOfMonth <= 0) {
+              this.increment_month();
+              daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+              dayOfMonth = this.last.nthWeekDay(dow, pos);
+            }
+          }
+
+          this.last.day = dayOfMonth;
+          if (!tempLast || this.last.compare(tempLast) < 0) {
+            tempLast = this.last.clone();
+          }
+        }
+        this.last = tempLast.clone();
+
+        //XXX: This feels like a hack, but we need to initialize
+        //     the BYMONTHDAY case correctly and byDayAndMonthDay handles
+        //     this case. It accepts a special flag which will avoid incrementing
+        //     the initial value without the flag days that match the start time
+        //     would be missed.
+        if (this.has_by_data('BYMONTHDAY')) {
+          this._byDayAndMonthDay(true);
+        }
+
+        if (this.last.day > daysInMonth || this.last.day == 0) {
+          throw new Error("Malformed values in BYDAY part");
+        }
+
+      } else if (this.has_by_data("BYMONTHDAY")) {
+        if (this.last.day < 0) {
+          var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+          this.last.day = daysInMonth + this.last.day + 1;
+        }
+      }
+
+    },
+
+    /**
+     * Retrieve the next occurrence from the iterator.
+     * @return {ICAL.Time}
+     */
+    next: function icalrecur_iterator_next() {
+      var before = (this.last ? this.last.clone() : null);
+
+      if ((this.rule.count && this.occurrence_number >= this.rule.count) ||
+          (this.rule.until && this.last.compare(this.rule.until) > 0)) {
+
+        //XXX: right now this is just a flag and has no impact
+        //     we can simplify the above case to check for completed later.
+        this.completed = true;
+
+        return null;
+      }
+
+      if (this.occurrence_number == 0 && this.last.compare(this.dtstart) >= 0) {
+        // First of all, give the instance that was initialized
+        this.occurrence_number++;
+        return this.last;
+      }
+
+
+      var valid;
+      do {
+        valid = 1;
+
+        switch (this.rule.freq) {
+        case "SECONDLY":
+          this.next_second();
+          break;
+        case "MINUTELY":
+          this.next_minute();
+          break;
+        case "HOURLY":
+          this.next_hour();
+          break;
+        case "DAILY":
+          this.next_day();
+          break;
+        case "WEEKLY":
+          this.next_week();
+          break;
+        case "MONTHLY":
+          valid = this.next_month();
+          break;
+        case "YEARLY":
+          this.next_year();
+          break;
+
+        default:
+          return null;
+        }
+      } while (!this.check_contracting_rules() ||
+               this.last.compare(this.dtstart) < 0 ||
+               !valid);
+
+      // TODO is this valid?
+      if (this.last.compare(before) == 0) {
+        throw new Error("Same occurrence found twice, protecting " +
+                        "you from death by recursion");
+      }
+
+      if (this.rule.until && this.last.compare(this.rule.until) > 0) {
+        this.completed = true;
+        return null;
+      } else {
+        this.occurrence_number++;
+        return this.last;
+      }
+    },
+
+    next_second: function next_second() {
+      return this.next_generic("BYSECOND", "SECONDLY", "second", "minute");
+    },
+
+    increment_second: function increment_second(inc) {
+      return this.increment_generic(inc, "second", 60, "minute");
+    },
+
+    next_minute: function next_minute() {
+      return this.next_generic("BYMINUTE", "MINUTELY",
+                               "minute", "hour", "next_second");
+    },
+
+    increment_minute: function increment_minute(inc) {
+      return this.increment_generic(inc, "minute", 60, "hour");
+    },
+
+    next_hour: function next_hour() {
+      return this.next_generic("BYHOUR", "HOURLY", "hour",
+                               "monthday", "next_minute");
+    },
+
+    increment_hour: function increment_hour(inc) {
+      this.increment_generic(inc, "hour", 24, "monthday");
+    },
+
+    next_day: function next_day() {
+      var has_by_day = ("BYDAY" in this.by_data);
+      var this_freq = (this.rule.freq == "DAILY");
+
+      if (this.next_hour() == 0) {
+        return 0;
+      }
+
+      if (this_freq) {
+        this.increment_monthday(this.rule.interval);
+      } else {
+        this.increment_monthday(1);
+      }
+
+      return 0;
+    },
+
+    next_week: function next_week() {
+      var end_of_data = 0;
+
+      if (this.next_weekday_by_week() == 0) {
+        return end_of_data;
+      }
+
+      if (this.has_by_data("BYWEEKNO")) {
+        var idx = ++this.by_indices.BYWEEKNO;
+
+        if (this.by_indices.BYWEEKNO == this.by_data.BYWEEKNO.length) {
+          this.by_indices.BYWEEKNO = 0;
+          end_of_data = 1;
+        }
+
+        // HACK should be first month of the year
+        this.last.month = 1;
+        this.last.day = 1;
+
+        var week_no = this.by_data.BYWEEKNO[this.by_indices.BYWEEKNO];
+
+        this.last.day += 7 * week_no;
+
+        if (end_of_data) {
+          this.increment_year(1);
+        }
+      } else {
+        // Jump to the next week
+        this.increment_monthday(7 * this.rule.interval);
+      }
+
+      return end_of_data;
+    },
+
+    /**
+     * Normalize each by day rule for a given year/month.
+     * Takes into account ordering and negative rules
+     *
+     * @private
+     * @param {Number} year         Current year.
+     * @param {Number} month        Current month.
+     * @param {Array}  rules        Array of rules.
+     *
+     * @return {Array} sorted and normalized rules.
+     *                 Negative rules will be expanded to their
+     *                 correct positive values for easier processing.
+     */
+    normalizeByMonthDayRules: function(year, month, rules) {
+      var daysInMonth = ICAL.Time.daysInMonth(month, year);
+
+      // XXX: This is probably bad for performance to allocate
+      //      a new array for each month we scan, if possible
+      //      we should try to optimize this...
+      var newRules = [];
+
+      var ruleIdx = 0;
+      var len = rules.length;
+      var rule;
+
+      for (; ruleIdx < len; ruleIdx++) {
+        rule = rules[ruleIdx];
+
+        // if this rule falls outside of given
+        // month discard it.
+        if (Math.abs(rule) > daysInMonth) {
+          continue;
+        }
+
+        // negative case
+        if (rule < 0) {
+          // we add (not subtract its a negative number)
+          // one from the rule because 1 === last day of month
+          rule = daysInMonth + (rule + 1);
+        } else if (rule === 0) {
+          // skip zero its invalid.
+          continue;
+        }
+
+        // only add unique items...
+        if (newRules.indexOf(rule) === -1) {
+          newRules.push(rule);
+        }
+
+      }
+
+      // unique and sort
+      return newRules.sort(function(a, b) { return a - b; });
+    },
+
+    /**
+     * NOTES:
+     * We are given a list of dates in the month (BYMONTHDAY) (23, etc..)
+     * Also we are given a list of days (BYDAY) (MO, 2SU, etc..) when
+     * both conditions match a given date (this.last.day) iteration stops.
+     *
+     * @private
+     * @param {Boolean=} isInit     When given true will not increment the
+     *                                current day (this.last).
+     */
+    _byDayAndMonthDay: function(isInit) {
+      var byMonthDay; // setup in initMonth
+      var byDay = this.by_data.BYDAY;
+
+      var date;
+      var dateIdx = 0;
+      var dateLen; // setup in initMonth
+      var dayLen = byDay.length;
+
+      // we are not valid by default
+      var dataIsValid = 0;
+
+      var daysInMonth;
+      var self = this;
+      // we need a copy of this, because a DateTime gets normalized
+      // automatically if the day is out of range. At some points we
+      // set the last day to 0 to start counting.
+      var lastDay = this.last.day;
+
+      function initMonth() {
+        daysInMonth = ICAL.Time.daysInMonth(
+          self.last.month, self.last.year
+        );
+
+        byMonthDay = self.normalizeByMonthDayRules(
+          self.last.year,
+          self.last.month,
+          self.by_data.BYMONTHDAY
+        );
+
+        dateLen = byMonthDay.length;
+
+        // For the case of more than one occurrence in one month
+        // we have to be sure to start searching after the last
+        // found date or at the last BYMONTHDAY, unless we are
+        // initializing the iterator because in this case we have
+        // to consider the last found date too.
+        while (byMonthDay[dateIdx] <= lastDay &&
+               !(isInit && byMonthDay[dateIdx] == lastDay) &&
+               dateIdx < dateLen - 1) {
+          dateIdx++;
+        }
+      }
+
+      function nextMonth() {
+        // since the day is incremented at the start
+        // of the loop below, we need to start at 0
+        lastDay = 0;
+        self.increment_month();
+        dateIdx = 0;
+        initMonth();
+      }
+
+      initMonth();
+
+      // should come after initMonth
+      if (isInit) {
+        lastDay -= 1;
+      }
+
+      // Use a counter to avoid an infinite loop with malformed rules.
+      // Stop checking after 4 years so we consider also a leap year.
+      var monthsCounter = 48;
+
+      while (!dataIsValid && monthsCounter) {
+        monthsCounter--;
+        // increment the current date. This is really
+        // important otherwise we may fall into the infinite
+        // loop trap. The initial date takes care of the case
+        // where the current date is the date we are looking
+        // for.
+        date = lastDay + 1;
+
+        if (date > daysInMonth) {
+          nextMonth();
+          continue;
+        }
+
+        // find next date
+        var next = byMonthDay[dateIdx++];
+
+        // this logic is dependant on the BYMONTHDAYS
+        // being in order (which is done by #normalizeByMonthDayRules)
+        if (next >= date) {
+          // if the next month day is in the future jump to it.
+          lastDay = next;
+        } else {
+          // in this case the 'next' monthday has past
+          // we must move to the month.
+          nextMonth();
+          continue;
+        }
+
+        // Now we can loop through the day rules to see
+        // if one matches the current month date.
+        for (var dayIdx = 0; dayIdx < dayLen; dayIdx++) {
+          var parts = this.ruleDayOfWeek(byDay[dayIdx]);
+          var pos = parts[0];
+          var dow = parts[1];
+
+          this.last.day = lastDay;
+          if (this.last.isNthWeekDay(dow, pos)) {
+            // when we find the valid one we can mark
+            // the conditions as met and break the loop.
+            // (Because we have this condition above
+            //  it will also break the parent loop).
+            dataIsValid = 1;
+            break;
+          }
+        }
+
+        // Its completely possible that the combination
+        // cannot be matched in the current month.
+        // When we reach the end of possible combinations
+        // in the current month we iterate to the next one.
+        // since dateIdx is incremented right after getting
+        // "next", we don't need dateLen -1 here.
+        if (!dataIsValid && dateIdx === dateLen) {
+          nextMonth();
+          continue;
+        }
+      }
+
+      if (monthsCounter <= 0) {
+        // Checked 4 years without finding a Byday that matches
+        // a Bymonthday. Maybe the rule is not correct.
+        throw new Error("Malformed values in BYDAY combined with BYMONTHDAY parts");
+      }
+
+
+      return dataIsValid;
+    },
+
+    next_month: function next_month() {
+      var this_freq = (this.rule.freq == "MONTHLY");
+      var data_valid = 1;
+
+      if (this.next_hour() == 0) {
+        return data_valid;
+      }
+
+      if (this.has_by_data("BYDAY") && this.has_by_data("BYMONTHDAY")) {
+        data_valid = this._byDayAndMonthDay();
+      } else if (this.has_by_data("BYDAY")) {
+        var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+        var setpos = 0;
+        var setpos_total = 0;
+
+        if (this.has_by_data("BYSETPOS")) {
+          var last_day = this.last.day;
+          for (var day = 1; day <= daysInMonth; day++) {
+            this.last.day = day;
+            if (this.is_day_in_byday(this.last)) {
+              setpos_total++;
+              if (day <= last_day) {
+                setpos++;
+              }
+            }
+          }
+          this.last.day = last_day;
+        }
+
+        data_valid = 0;
+        for (var day = this.last.day + 1; day <= daysInMonth; day++) {
+          this.last.day = day;
+
+          if (this.is_day_in_byday(this.last)) {
+            if (!this.has_by_data("BYSETPOS") ||
+                this.check_set_position(++setpos) ||
+                this.check_set_position(setpos - setpos_total - 1)) {
+
+              data_valid = 1;
+              break;
+            }
+          }
+        }
+
+        if (day > daysInMonth) {
+          this.last.day = 1;
+          this.increment_month();
+
+          if (this.is_day_in_byday(this.last)) {
+            if (!this.has_by_data("BYSETPOS") || this.check_set_position(1)) {
+              data_valid = 1;
+            }
+          } else {
+            data_valid = 0;
+          }
+        }
+      } else if (this.has_by_data("BYMONTHDAY")) {
+        this.by_indices.BYMONTHDAY++;
+
+        if (this.by_indices.BYMONTHDAY >= this.by_data.BYMONTHDAY.length) {
+          this.by_indices.BYMONTHDAY = 0;
+          this.increment_month();
+        }
+
+        var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+        var day = this.by_data.BYMONTHDAY[this.by_indices.BYMONTHDAY];
+
+        if (day < 0) {
+          day = daysInMonth + day + 1;
+        }
+
+        if (day > daysInMonth) {
+          this.last.day = 1;
+          data_valid = this.is_day_in_byday(this.last);
+        } else {
+          this.last.day = day;
+        }
+
+      } else {
+        this.increment_month();
+        var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+        if (this.by_data.BYMONTHDAY[0] > daysInMonth) {
+          data_valid = 0;
+        } else {
+          this.last.day = this.by_data.BYMONTHDAY[0];
+        }
+      }
+
+      return data_valid;
+    },
+
+    next_weekday_by_week: function next_weekday_by_week() {
+      var end_of_data = 0;
+
+      if (this.next_hour() == 0) {
+        return end_of_data;
+      }
+
+      if (!this.has_by_data("BYDAY")) {
+        return 1;
+      }
+
+      for (;;) {
+        var tt = new ICAL.Time();
+        this.by_indices.BYDAY++;
+
+        if (this.by_indices.BYDAY == Object.keys(this.by_data.BYDAY).length) {
+          this.by_indices.BYDAY = 0;
+          end_of_data = 1;
+        }
+
+        var coded_day = this.by_data.BYDAY[this.by_indices.BYDAY];
+        var parts = this.ruleDayOfWeek(coded_day);
+        var dow = parts[1];
+
+        dow -= this.rule.wkst;
+
+        if (dow < 0) {
+          dow += 7;
+        }
+
+        tt.year = this.last.year;
+        tt.month = this.last.month;
+        tt.day = this.last.day;
+
+        var startOfWeek = tt.startDoyWeek(this.rule.wkst);
+
+        if (dow + startOfWeek < 1) {
+          // The selected date is in the previous year
+          if (!end_of_data) {
+            continue;
+          }
+        }
+
+        var next = ICAL.Time.fromDayOfYear(startOfWeek + dow,
+                                                  this.last.year);
+
+        /**
+         * The normalization horrors below are due to
+         * the fact that when the year/month/day changes
+         * it can effect the other operations that come after.
+         */
+        this.last.year = next.year;
+        this.last.month = next.month;
+        this.last.day = next.day;
+
+        return end_of_data;
+      }
+    },
+
+    next_year: function next_year() {
+
+      if (this.next_hour() == 0) {
+        return 0;
+      }
+
+      if (++this.days_index == this.days.length) {
+        this.days_index = 0;
+        do {
+          this.increment_year(this.rule.interval);
+          this.expand_year_days(this.last.year);
+        } while (this.days.length == 0);
+      }
+
+      this._nextByYearDay();
+
+      return 1;
+    },
+
+    _nextByYearDay: function _nextByYearDay() {
+        var doy = this.days[this.days_index];
+        var year = this.last.year;
+        if (doy < 1) {
+            // Time.fromDayOfYear(doy, year) indexes relative to the
+            // start of the given year. That is different from the
+            // semantics of BYYEARDAY where negative indexes are an
+            // offset from the end of the given year.
+            doy += 1;
+            year += 1;
+        }
+        var next = ICAL.Time.fromDayOfYear(doy, year);
+        this.last.day = next.day;
+        this.last.month = next.month;
+    },
+
+    /**
+     * @param dow (eg: '1TU', '-1MO')
+     * @param {ICAL.Time.weekDay=} aWeekStart The week start weekday
+     * @return [pos, numericDow] (eg: [1, 3]) numericDow is relative to aWeekStart
+     */
+    ruleDayOfWeek: function ruleDayOfWeek(dow, aWeekStart) {
+      var matches = dow.match(/([+-]?[0-9])?(MO|TU|WE|TH|FR|SA|SU)/);
+      if (matches) {
+        var pos = parseInt(matches[1] || 0, 10);
+        dow = ICAL.Recur.icalDayToNumericDay(matches[2], aWeekStart);
+        return [pos, dow];
+      } else {
+        return [0, 0];
+      }
+    },
+
+    next_generic: function next_generic(aRuleType, aInterval, aDateAttr,
+                                        aFollowingAttr, aPreviousIncr) {
+      var has_by_rule = (aRuleType in this.by_data);
+      var this_freq = (this.rule.freq == aInterval);
+      var end_of_data = 0;
+
+      if (aPreviousIncr && this[aPreviousIncr]() == 0) {
+        return end_of_data;
+      }
+
+      if (has_by_rule) {
+        this.by_indices[aRuleType]++;
+        var idx = this.by_indices[aRuleType];
+        var dta = this.by_data[aRuleType];
+
+        if (this.by_indices[aRuleType] == dta.length) {
+          this.by_indices[aRuleType] = 0;
+          end_of_data = 1;
+        }
+        this.last[aDateAttr] = dta[this.by_indices[aRuleType]];
+      } else if (this_freq) {
+        this["increment_" + aDateAttr](this.rule.interval);
+      }
+
+      if (has_by_rule && end_of_data && this_freq) {
+        this["increment_" + aFollowingAttr](1);
+      }
+
+      return end_of_data;
+    },
+
+    increment_monthday: function increment_monthday(inc) {
+      for (var i = 0; i < inc; i++) {
+        var daysInMonth = ICAL.Time.daysInMonth(this.last.month, this.last.year);
+        this.last.day++;
+
+        if (this.last.day > daysInMonth) {
+          this.last.day -= daysInMonth;
+          this.increment_month();
+        }
+      }
+    },
+
+    increment_month: function increment_month() {
+      this.last.day = 1;
+      if (this.has_by_data("BYMONTH")) {
+        this.by_indices.BYMONTH++;
+
+        if (this.by_indices.BYMONTH == this.by_data.BYMONTH.length) {
+          this.by_indices.BYMONTH = 0;
+          this.increment_year(1);
+        }
+
+        this.last.month = this.by_data.BYMONTH[this.by_indices.BYMONTH];
+      } else {
+        if (this.rule.freq == "MONTHLY") {
+          this.last.month += this.rule.interval;
+        } else {
+          this.last.month++;
+        }
+
+        this.last.month--;
+        var years = ICAL.helpers.trunc(this.last.month / 12);
+        this.last.month %= 12;
+        this.last.month++;
+
+        if (years != 0) {
+          this.increment_year(years);
+        }
+      }
+    },
+
+    increment_year: function increment_year(inc) {
+      this.last.year += inc;
+    },
+
+    increment_generic: function increment_generic(inc, aDateAttr,
+                                                  aFactor, aNextIncrement) {
+      this.last[aDateAttr] += inc;
+      var nextunit = ICAL.helpers.trunc(this.last[aDateAttr] / aFactor);
+      this.last[aDateAttr] %= aFactor;
+      if (nextunit != 0) {
+        this["increment_" + aNextIncrement](nextunit);
+      }
+    },
+
+    has_by_data: function has_by_data(aRuleType) {
+      return (aRuleType in this.rule.parts);
+    },
+
+    expand_year_days: function expand_year_days(aYear) {
+      var t = new ICAL.Time();
+      this.days = [];
+
+      // We need our own copy with a few keys set
+      var parts = {};
+      var rules = ["BYDAY", "BYWEEKNO", "BYMONTHDAY", "BYMONTH", "BYYEARDAY"];
+      for (var p in rules) {
+        /* istanbul ignore else */
+        if (rules.hasOwnProperty(p)) {
+          var part = rules[p];
+          if (part in this.rule.parts) {
+            parts[part] = this.rule.parts[part];
+          }
+        }
+      }
+
+      if ("BYMONTH" in parts && "BYWEEKNO" in parts) {
+        var valid = 1;
+        var validWeeks = {};
+        t.year = aYear;
+        t.isDate = true;
+
+        for (var monthIdx = 0; monthIdx < this.by_data.BYMONTH.length; monthIdx++) {
+          var month = this.by_data.BYMONTH[monthIdx];
+          t.month = month;
+          t.day = 1;
+          var first_week = t.weekNumber(this.rule.wkst);
+          t.day = ICAL.Time.daysInMonth(month, aYear);
+          var last_week = t.weekNumber(this.rule.wkst);
+          for (monthIdx = first_week; monthIdx < last_week; monthIdx++) {
+            validWeeks[monthIdx] = 1;
+          }
+        }
+
+        for (var weekIdx = 0; weekIdx < this.by_data.BYWEEKNO.length && valid; weekIdx++) {
+          var weekno = this.by_data.BYWEEKNO[weekIdx];
+          if (weekno < 52) {
+            valid &= validWeeks[weekIdx];
+          } else {
+            valid = 0;
+          }
+        }
+
+        if (valid) {
+          delete parts.BYMONTH;
+        } else {
+          delete parts.BYWEEKNO;
+        }
+      }
+
+      var partCount = Object.keys(parts).length;
+
+      if (partCount == 0) {
+        var t1 = this.dtstart.clone();
+        t1.year = this.last.year;
+        this.days.push(t1.dayOfYear());
+      } else if (partCount == 1 && "BYMONTH" in parts) {
+        for (var monthkey in this.by_data.BYMONTH) {
+          /* istanbul ignore if */
+          if (!this.by_data.BYMONTH.hasOwnProperty(monthkey)) {
+            continue;
+          }
+          var t2 = this.dtstart.clone();
+          t2.year = aYear;
+          t2.month = this.by_data.BYMONTH[monthkey];
+          t2.isDate = true;
+          this.days.push(t2.dayOfYear());
+        }
+      } else if (partCount == 1 && "BYMONTHDAY" in parts) {
+        for (var monthdaykey in this.by_data.BYMONTHDAY) {
+          /* istanbul ignore if */
+          if (!this.by_data.BYMONTHDAY.hasOwnProperty(monthdaykey)) {
+            continue;
+          }
+          var t3 = this.dtstart.clone();
+          var day_ = this.by_data.BYMONTHDAY[monthdaykey];
+          if (day_ < 0) {
+            var daysInMonth = ICAL.Time.daysInMonth(t3.month, aYear);
+            day_ = day_ + daysInMonth + 1;
+          }
+          t3.day = day_;
+          t3.year = aYear;
+          t3.isDate = true;
+          this.days.push(t3.dayOfYear());
+        }
+      } else if (partCount == 2 &&
+                 "BYMONTHDAY" in parts &&
+                 "BYMONTH" in parts) {
+        for (var monthkey in this.by_data.BYMONTH) {
+          /* istanbul ignore if */
+          if (!this.by_data.BYMONTH.hasOwnProperty(monthkey)) {
+            continue;
+          }
+          var month_ = this.by_data.BYMONTH[monthkey];
+          var daysInMonth = ICAL.Time.daysInMonth(month_, aYear);
+          for (var monthdaykey in this.by_data.BYMONTHDAY) {
+            /* istanbul ignore if */
+            if (!this.by_data.BYMONTHDAY.hasOwnProperty(monthdaykey)) {
+              continue;
+            }
+            var day_ = this.by_data.BYMONTHDAY[monthdaykey];
+            if (day_ < 0) {
+              day_ = day_ + daysInMonth + 1;
+            }
+            t.day = day_;
+            t.month = month_;
+            t.year = aYear;
+            t.isDate = true;
+
+            this.days.push(t.dayOfYear());
+          }
+        }
+      } else if (partCount == 1 && "BYWEEKNO" in parts) {
+        // TODO unimplemented in libical
+      } else if (partCount == 2 &&
+                 "BYWEEKNO" in parts &&
+                 "BYMONTHDAY" in parts) {
+        // TODO unimplemented in libical
+      } else if (partCount == 1 && "BYDAY" in parts) {
+        this.days = this.days.concat(this.expand_by_day(aYear));
+      } else if (partCount == 2 && "BYDAY" in parts && "BYMONTH" in parts) {
+        for (var monthkey in this.by_data.BYMONTH) {
+          /* istanbul ignore if */
+          if (!this.by_data.BYMONTH.hasOwnProperty(monthkey)) {
+            continue;
+          }
+          var month = this.by_data.BYMONTH[monthkey];
+          var daysInMonth = ICAL.Time.daysInMonth(month, aYear);
+
+          t.year = aYear;
+          t.month = this.by_data.BYMONTH[monthkey];
+          t.day = 1;
+          t.isDate = true;
+
+          var first_dow = t.dayOfWeek();
+          var doy_offset = t.dayOfYear() - 1;
+
+          t.day = daysInMonth;
+          var last_dow = t.dayOfWeek();
+
+          if (this.has_by_data("BYSETPOS")) {
+            var set_pos_counter = 0;
+            var by_month_day = [];
+            for (var day = 1; day <= daysInMonth; day++) {
+              t.day = day;
+              if (this.is_day_in_byday(t)) {
+                by_month_day.push(day);
+              }
+            }
+
+            for (var spIndex = 0; spIndex < by_month_day.length; spIndex++) {
+              if (this.check_set_position(spIndex + 1) ||
+                  this.check_set_position(spIndex - by_month_day.length)) {
+                this.days.push(doy_offset + by_month_day[spIndex]);
+              }
+            }
+          } else {
+            for (var daycodedkey in this.by_data.BYDAY) {
+              /* istanbul ignore if */
+              if (!this.by_data.BYDAY.hasOwnProperty(daycodedkey)) {
+                continue;
+              }
+              var coded_day = this.by_data.BYDAY[daycodedkey];
+              var bydayParts = this.ruleDayOfWeek(coded_day);
+              var pos = bydayParts[0];
+              var dow = bydayParts[1];
+              var month_day;
+
+              var first_matching_day = ((dow + 7 - first_dow) % 7) + 1;
+              var last_matching_day = daysInMonth - ((last_dow + 7 - dow) % 7);
+
+              if (pos == 0) {
+                for (var day = first_matching_day; day <= daysInMonth; day += 7) {
+                  this.days.push(doy_offset + day);
+                }
+              } else if (pos > 0) {
+                month_day = first_matching_day + (pos - 1) * 7;
+
+                if (month_day <= daysInMonth) {
+                  this.days.push(doy_offset + month_day);
+                }
+              } else {
+                month_day = last_matching_day + (pos + 1) * 7;
+
+                if (month_day > 0) {
+                  this.days.push(doy_offset + month_day);
+                }
+              }
+            }
+          }
+        }
+        // Return dates in order of occurrence (1,2,3,...) instead
+        // of by groups of weekdays (1,8,15,...,2,9,16,...).
+        this.days.sort(function(a, b) { return a - b; }); // Comparator function allows to sort numbers.
+      } else if (partCount == 2 && "BYDAY" in parts && "BYMONTHDAY" in parts) {
+        var expandedDays = this.expand_by_day(aYear);
+
+        for (var daykey in expandedDays) {
+          /* istanbul ignore if */
+          if (!expandedDays.hasOwnProperty(daykey)) {
+            continue;
+          }
+          var day = expandedDays[daykey];
+          var tt = ICAL.Time.fromDayOfYear(day, aYear);
+          if (this.by_data.BYMONTHDAY.indexOf(tt.day) >= 0) {
+            this.days.push(day);
+          }
+        }
+      } else if (partCount == 3 &&
+                 "BYDAY" in parts &&
+                 "BYMONTHDAY" in parts &&
+                 "BYMONTH" in parts) {
+        var expandedDays = this.expand_by_day(aYear);
+
+        for (var daykey in expandedDays) {
+          /* istanbul ignore if */
+          if (!expandedDays.hasOwnProperty(daykey)) {
+            continue;
+          }
+          var day = expandedDays[daykey];
+          var tt = ICAL.Time.fromDayOfYear(day, aYear);
+
+          if (this.by_data.BYMONTH.indexOf(tt.month) >= 0 &&
+              this.by_data.BYMONTHDAY.indexOf(tt.day) >= 0) {
+            this.days.push(day);
+          }
+        }
+      } else if (partCount == 2 && "BYDAY" in parts && "BYWEEKNO" in parts) {
+        var expandedDays = this.expand_by_day(aYear);
+
+        for (var daykey in expandedDays) {
+          /* istanbul ignore if */
+          if (!expandedDays.hasOwnProperty(daykey)) {
+            continue;
+          }
+          var day = expandedDays[daykey];
+          var tt = ICAL.Time.fromDayOfYear(day, aYear);
+          var weekno = tt.weekNumber(this.rule.wkst);
+
+          if (this.by_data.BYWEEKNO.indexOf(weekno)) {
+            this.days.push(day);
+          }
+        }
+      } else if (partCount == 3 &&
+                 "BYDAY" in parts &&
+                 "BYWEEKNO" in parts &&
+                 "BYMONTHDAY" in parts) {
+        // TODO unimplemted in libical
+      } else if (partCount == 1 && "BYYEARDAY" in parts) {
+        this.days = this.days.concat(this.by_data.BYYEARDAY);
+      } else {
+        this.days = [];
+      }
+      return 0;
+    },
+
+    expand_by_day: function expand_by_day(aYear) {
+
+      var days_list = [];
+      var tmp = this.last.clone();
+
+      tmp.year = aYear;
+      tmp.month = 1;
+      tmp.day = 1;
+      tmp.isDate = true;
+
+      var start_dow = tmp.dayOfWeek();
+
+      tmp.month = 12;
+      tmp.day = 31;
+      tmp.isDate = true;
+
+      var end_dow = tmp.dayOfWeek();
+      var end_year_day = tmp.dayOfYear();
+
+      for (var daykey in this.by_data.BYDAY) {
+        /* istanbul ignore if */
+        if (!this.by_data.BYDAY.hasOwnProperty(daykey)) {
+          continue;
+        }
+        var day = this.by_data.BYDAY[daykey];
+        var parts = this.ruleDayOfWeek(day);
+        var pos = parts[0];
+        var dow = parts[1];
+
+        if (pos == 0) {
+          var tmp_start_doy = ((dow + 7 - start_dow) % 7) + 1;
+
+          for (var doy = tmp_start_doy; doy <= end_year_day; doy += 7) {
+            days_list.push(doy);
+          }
+
+        } else if (pos > 0) {
+          var first;
+          if (dow >= start_dow) {
+            first = dow - start_dow + 1;
+          } else {
+            first = dow - start_dow + 8;
+          }
+
+          days_list.push(first + (pos - 1) * 7);
+        } else {
+          var last;
+          pos = -pos;
+
+          if (dow <= end_dow) {
+            last = end_year_day - end_dow + dow;
+          } else {
+            last = end_year_day - end_dow + dow - 7;
+          }
+
+          days_list.push(last - (pos - 1) * 7);
+        }
+      }
+      return days_list;
+    },
+
+    is_day_in_byday: function is_day_in_byday(tt) {
+      for (var daykey in this.by_data.BYDAY) {
+        /* istanbul ignore if */
+        if (!this.by_data.BYDAY.hasOwnProperty(daykey)) {
+          continue;
+        }
+        var day = this.by_data.BYDAY[daykey];
+        var parts = this.ruleDayOfWeek(day);
+        var pos = parts[0];
+        var dow = parts[1];
+        var this_dow = tt.dayOfWeek();
+
+        if ((pos == 0 && dow == this_dow) ||
+            (tt.nthWeekDay(dow, pos) == tt.day)) {
+          return 1;
+        }
+      }
+
+      return 0;
+    },
+
+    /**
+     * Checks if given value is in BYSETPOS.
+     *
+     * @private
+     * @param {Numeric} aPos position to check for.
+     * @return {Boolean} false unless BYSETPOS rules exist
+     *                   and the given value is present in rules.
+     */
+    check_set_position: function check_set_position(aPos) {
+      if (this.has_by_data('BYSETPOS')) {
+        var idx = this.by_data.BYSETPOS.indexOf(aPos);
+        // negative numbers are not false-y
+        return idx !== -1;
+      }
+      return false;
+    },
+
+    sort_byday_rules: function icalrecur_sort_byday_rules(aRules) {
+      for (var i = 0; i < aRules.length; i++) {
+        for (var j = 0; j < i; j++) {
+          var one = this.ruleDayOfWeek(aRules[j], this.rule.wkst)[1];
+          var two = this.ruleDayOfWeek(aRules[i], this.rule.wkst)[1];
+
+          if (one > two) {
+            var tmp = aRules[i];
+            aRules[i] = aRules[j];
+            aRules[j] = tmp;
+          }
+        }
+      }
+    },
+
+    check_contract_restriction: function check_contract_restriction(aRuleType, v) {
+      var indexMapValue = icalrecur_iterator._indexMap[aRuleType];
+      var ruleMapValue = icalrecur_iterator._expandMap[this.rule.freq][indexMapValue];
+      var pass = false;
+
+      if (aRuleType in this.by_data &&
+          ruleMapValue == icalrecur_iterator.CONTRACT) {
+
+        var ruleType = this.by_data[aRuleType];
+
+        for (var bydatakey in ruleType) {
+          /* istanbul ignore else */
+          if (ruleType.hasOwnProperty(bydatakey)) {
+            if (ruleType[bydatakey] == v) {
+              pass = true;
+              break;
+            }
+          }
+        }
+      } else {
+        // Not a contracting byrule or has no data, test passes
+        pass = true;
+      }
+      return pass;
+    },
+
+    check_contracting_rules: function check_contracting_rules() {
+      var dow = this.last.dayOfWeek();
+      var weekNo = this.last.weekNumber(this.rule.wkst);
+      var doy = this.last.dayOfYear();
+
+      return (this.check_contract_restriction("BYSECOND", this.last.second) &&
+              this.check_contract_restriction("BYMINUTE", this.last.minute) &&
+              this.check_contract_restriction("BYHOUR", this.last.hour) &&
+              this.check_contract_restriction("BYDAY", ICAL.Recur.numericDayToIcalDay(dow)) &&
+              this.check_contract_restriction("BYWEEKNO", weekNo) &&
+              this.check_contract_restriction("BYMONTHDAY", this.last.day) &&
+              this.check_contract_restriction("BYMONTH", this.last.month) &&
+              this.check_contract_restriction("BYYEARDAY", doy));
+    },
+
+    setup_defaults: function setup_defaults(aRuleType, req, deftime) {
+      var indexMapValue = icalrecur_iterator._indexMap[aRuleType];
+      var ruleMapValue = icalrecur_iterator._expandMap[this.rule.freq][indexMapValue];
+
+      if (ruleMapValue != icalrecur_iterator.CONTRACT) {
+        if (!(aRuleType in this.by_data)) {
+          this.by_data[aRuleType] = [deftime];
+        }
+        if (this.rule.freq != req) {
+          return this.by_data[aRuleType][0];
+        }
+      }
+      return deftime;
+    },
+
+    /**
+     * Convert iterator into a serialize-able object.  Will preserve current
+     * iteration sequence to ensure the seamless continuation of the recurrence
+     * rule.
+     * @return {Object}
+     */
+    toJSON: function() {
+      var result = Object.create(null);
+
+      result.initialized = this.initialized;
+      result.rule = this.rule.toJSON();
+      result.dtstart = this.dtstart.toJSON();
+      result.by_data = this.by_data;
+      result.days = this.days;
+      result.last = this.last.toJSON();
+      result.by_indices = this.by_indices;
+      result.occurrence_number = this.occurrence_number;
+
+      return result;
+    }
+  };
+
+  icalrecur_iterator._indexMap = {
+    "BYSECOND": 0,
+    "BYMINUTE": 1,
+    "BYHOUR": 2,
+    "BYDAY": 3,
+    "BYMONTHDAY": 4,
+    "BYYEARDAY": 5,
+    "BYWEEKNO": 6,
+    "BYMONTH": 7,
+    "BYSETPOS": 8
+  };
+
+  icalrecur_iterator._expandMap = {
+    "SECONDLY": [1, 1, 1, 1, 1, 1, 1, 1],
+    "MINUTELY": [2, 1, 1, 1, 1, 1, 1, 1],
+    "HOURLY": [2, 2, 1, 1, 1, 1, 1, 1],
+    "DAILY": [2, 2, 2, 1, 1, 1, 1, 1],
+    "WEEKLY": [2, 2, 2, 2, 3, 3, 1, 1],
+    "MONTHLY": [2, 2, 2, 2, 2, 3, 3, 1],
+    "YEARLY": [2, 2, 2, 2, 2, 2, 2, 2]
+  };
+  icalrecur_iterator.UNKNOWN = 0;
+  icalrecur_iterator.CONTRACT = 1;
+  icalrecur_iterator.EXPAND = 2;
+  icalrecur_iterator.ILLEGAL = 3;
+
+  return icalrecur_iterator;
+
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.RecurExpansion = (function() {
+  function formatTime(item) {
+    return ICAL.helpers.formatClassType(item, ICAL.Time);
+  }
+
+  function compareTime(a, b) {
+    return a.compare(b);
+  }
+
+  function isRecurringComponent(comp) {
+    return comp.hasProperty('rdate') ||
+           comp.hasProperty('rrule') ||
+           comp.hasProperty('recurrence-id');
+  }
+
+  /**
+   * @classdesc
+   * Primary class for expanding recurring rules.  Can take multiple rrules,
+   * rdates, exdate(s) and iterate (in order) over each next occurrence.
+   *
+   * Once initialized this class can also be serialized saved and continue
+   * iteration from the last point.
+   *
+   * NOTE: it is intended that this class is to be used
+   *       with ICAL.Event which handles recurrence exceptions.
+   *
+   * @example
+   * // assuming event is a parsed ical component
+   * var event;
+   *
+   * var expand = new ICAL.RecurExpansion({
+   *   component: event,
+   *   dtstart: event.getFirstPropertyValue('dtstart')
+   * });
+   *
+   * // remember there are infinite rules
+   * // so its a good idea to limit the scope
+   * // of the iterations then resume later on.
+   *
+   * // next is always an ICAL.Time or null
+   * var next;
+   *
+   * while (someCondition && (next = expand.next())) {
+   *   // do something with next
+   * }
+   *
+   * // save instance for later
+   * var json = JSON.stringify(expand);
+   *
+   * //...
+   *
+   * // NOTE: if the component's properties have
+   * //       changed you will need to rebuild the
+   * //       class and start over. This only works
+   * //       when the component's recurrence info is the same.
+   * var expand = new ICAL.RecurExpansion(JSON.parse(json));
+   *
+   * @description
+   * The options object can be filled with the specified initial values. It can
+   * also contain additional members, as a result of serializing a previous
+   * expansion state, as shown in the example.
+   *
+   * @class
+   * @alias ICAL.RecurExpansion
+   * @param {Object} options
+   *        Recurrence expansion options
+   * @param {ICAL.Time} options.dtstart
+   *        Start time of the event
+   * @param {ICAL.Component=} options.component
+   *        Component for expansion, required if not resuming.
+   */
+  function RecurExpansion(options) {
+    this.ruleDates = [];
+    this.exDates = [];
+    this.fromData(options);
+  }
+
+  RecurExpansion.prototype = {
+    /**
+     * True when iteration is fully completed.
+     * @type {Boolean}
+     */
+    complete: false,
+
+    /**
+     * Array of rrule iterators.
+     *
+     * @type {ICAL.RecurIterator[]}
+     * @private
+     */
+    ruleIterators: null,
+
+    /**
+     * Array of rdate instances.
+     *
+     * @type {ICAL.Time[]}
+     * @private
+     */
+    ruleDates: null,
+
+    /**
+     * Array of exdate instances.
+     *
+     * @type {ICAL.Time[]}
+     * @private
+     */
+    exDates: null,
+
+    /**
+     * Current position in ruleDates array.
+     * @type {Number}
+     * @private
+     */
+    ruleDateInc: 0,
+
+    /**
+     * Current position in exDates array
+     * @type {Number}
+     * @private
+     */
+    exDateInc: 0,
+
+    /**
+     * Current negative date.
+     *
+     * @type {ICAL.Time}
+     * @private
+     */
+    exDate: null,
+
+    /**
+     * Current additional date.
+     *
+     * @type {ICAL.Time}
+     * @private
+     */
+    ruleDate: null,
+
+    /**
+     * Start date of recurring rules.
+     *
+     * @type {ICAL.Time}
+     */
+    dtstart: null,
+
+    /**
+     * Last expanded time
+     *
+     * @type {ICAL.Time}
+     */
+    last: null,
+
+    /**
+     * Initialize the recurrence expansion from the data object. The options
+     * object may also contain additional members, see the
+     * {@link ICAL.RecurExpansion constructor} for more details.
+     *
+     * @param {Object} options
+     *        Recurrence expansion options
+     * @param {ICAL.Time} options.dtstart
+     *        Start time of the event
+     * @param {ICAL.Component=} options.component
+     *        Component for expansion, required if not resuming.
+     */
+    fromData: function(options) {
+      var start = ICAL.helpers.formatClassType(options.dtstart, ICAL.Time);
+
+      if (!start) {
+        throw new Error('.dtstart (ICAL.Time) must be given');
+      } else {
+        this.dtstart = start;
+      }
+
+      if (options.component) {
+        this._init(options.component);
+      } else {
+        this.last = formatTime(options.last) || start.clone();
+
+        if (!options.ruleIterators) {
+          throw new Error('.ruleIterators or .component must be given');
+        }
+
+        this.ruleIterators = options.ruleIterators.map(function(item) {
+          return ICAL.helpers.formatClassType(item, ICAL.RecurIterator);
+        });
+
+        this.ruleDateInc = options.ruleDateInc;
+        this.exDateInc = options.exDateInc;
+
+        if (options.ruleDates) {
+          this.ruleDates = options.ruleDates.map(formatTime);
+          this.ruleDate = this.ruleDates[this.ruleDateInc];
+        }
+
+        if (options.exDates) {
+          this.exDates = options.exDates.map(formatTime);
+          this.exDate = this.exDates[this.exDateInc];
+        }
+
+        if (typeof(options.complete) !== 'undefined') {
+          this.complete = options.complete;
+        }
+      }
+    },
+
+    /**
+     * Retrieve the next occurrence in the series.
+     * @return {ICAL.Time}
+     */
+    next: function() {
+      var iter;
+      var ruleOfDay;
+      var next;
+      var compare;
+
+      var maxTries = 500;
+      var currentTry = 0;
+
+      while (true) {
+        if (currentTry++ > maxTries) {
+          throw new Error(
+            'max tries have occured, rule may be impossible to forfill.'
+          );
+        }
+
+        next = this.ruleDate;
+        iter = this._nextRecurrenceIter(this.last);
+
+        // no more matches
+        // because we increment the rule day or rule
+        // _after_ we choose a value this should be
+        // the only spot where we need to worry about the
+        // end of events.
+        if (!next && !iter) {
+          // there are no more iterators or rdates
+          this.complete = true;
+          break;
+        }
+
+        // no next rule day or recurrence rule is first.
+        if (!next || (iter && next.compare(iter.last) > 0)) {
+          // must be cloned, recur will reuse the time element.
+          next = iter.last.clone();
+          // move to next so we can continue
+          iter.next();
+        }
+
+        // if the ruleDate is still next increment it.
+        if (this.ruleDate === next) {
+          this._nextRuleDay();
+        }
+
+        this.last = next;
+
+        // check the negative rules
+        if (this.exDate) {
+          compare = this.exDate.compare(this.last);
+
+          if (compare < 0) {
+            this._nextExDay();
+          }
+
+          // if the current rule is excluded skip it.
+          if (compare === 0) {
+            this._nextExDay();
+            continue;
+          }
+        }
+
+        //XXX: The spec states that after we resolve the final
+        //     list of dates we execute exdate this seems somewhat counter
+        //     intuitive to what I have seen most servers do so for now
+        //     I exclude based on the original date not the one that may
+        //     have been modified by the exception.
+        return this.last;
+      }
+    },
+
+    /**
+     * Converts object into a serialize-able format. This format can be passed
+     * back into the expansion to resume iteration.
+     * @return {Object}
+     */
+    toJSON: function() {
+      function toJSON(item) {
+        return item.toJSON();
+      }
+
+      var result = Object.create(null);
+      result.ruleIterators = this.ruleIterators.map(toJSON);
+
+      if (this.ruleDates) {
+        result.ruleDates = this.ruleDates.map(toJSON);
+      }
+
+      if (this.exDates) {
+        result.exDates = this.exDates.map(toJSON);
+      }
+
+      result.ruleDateInc = this.ruleDateInc;
+      result.exDateInc = this.exDateInc;
+      result.last = this.last.toJSON();
+      result.dtstart = this.dtstart.toJSON();
+      result.complete = this.complete;
+
+      return result;
+    },
+
+    /**
+     * Extract all dates from the properties in the given component. The
+     * properties will be filtered by the property name.
+     *
+     * @private
+     * @param {ICAL.Component} component        The component to search in
+     * @param {String} propertyName             The property name to search for
+     * @return {ICAL.Time[]}                    The extracted dates.
+     */
+    _extractDates: function(component, propertyName) {
+      function handleProp(prop) {
+        idx = ICAL.helpers.binsearchInsert(
+          result,
+          prop,
+          compareTime
+        );
+
+        // ordered insert
+        result.splice(idx, 0, prop);
+      }
+
+      var result = [];
+      var props = component.getAllProperties(propertyName);
+      var len = props.length;
+      var i = 0;
+      var prop;
+
+      var idx;
+
+      for (; i < len; i++) {
+        props[i].getValues().forEach(handleProp);
+      }
+
+      return result;
+    },
+
+    /**
+     * Initialize the recurrence expansion.
+     *
+     * @private
+     * @param {ICAL.Component} component    The component to initialize from.
+     */
+    _init: function(component) {
+      this.ruleIterators = [];
+
+      this.last = this.dtstart.clone();
+
+      // to provide api consistency non-recurring
+      // events can also use the iterator though it will
+      // only return a single time.
+      if (!isRecurringComponent(component)) {
+        this.ruleDate = this.last.clone();
+        this.complete = true;
+        return;
+      }
+
+      if (component.hasProperty('rdate')) {
+        this.ruleDates = this._extractDates(component, 'rdate');
+
+        // special hack for cases where first rdate is prior
+        // to the start date. We only check for the first rdate.
+        // This is mostly for google's crazy recurring date logic
+        // (contacts birthdays).
+        if ((this.ruleDates[0]) &&
+            (this.ruleDates[0].compare(this.dtstart) < 0)) {
+
+          this.ruleDateInc = 0;
+          this.last = this.ruleDates[0].clone();
+        } else {
+          this.ruleDateInc = ICAL.helpers.binsearchInsert(
+            this.ruleDates,
+            this.last,
+            compareTime
+          );
+        }
+
+        this.ruleDate = this.ruleDates[this.ruleDateInc];
+      }
+
+      if (component.hasProperty('rrule')) {
+        var rules = component.getAllProperties('rrule');
+        var i = 0;
+        var len = rules.length;
+
+        var rule;
+        var iter;
+
+        for (; i < len; i++) {
+          rule = rules[i].getFirstValue();
+          iter = rule.iterator(this.dtstart);
+          this.ruleIterators.push(iter);
+
+          // increment to the next occurrence so future
+          // calls to next return times beyond the initial iteration.
+          // XXX: I find this suspicious might be a bug?
+          iter.next();
+        }
+      }
+
+      if (component.hasProperty('exdate')) {
+        this.exDates = this._extractDates(component, 'exdate');
+        // if we have a .last day we increment the index to beyond it.
+        this.exDateInc = ICAL.helpers.binsearchInsert(
+          this.exDates,
+          this.last,
+          compareTime
+        );
+
+        this.exDate = this.exDates[this.exDateInc];
+      }
+    },
+
+    /**
+     * Advance to the next exdate
+     * @private
+     */
+    _nextExDay: function() {
+      this.exDate = this.exDates[++this.exDateInc];
+    },
+
+    /**
+     * Advance to the next rule date
+     * @private
+     */
+    _nextRuleDay: function() {
+      this.ruleDate = this.ruleDates[++this.ruleDateInc];
+    },
+
+    /**
+     * Find and return the recurrence rule with the most recent event and
+     * return it.
+     *
+     * @private
+     * @return {?ICAL.RecurIterator}    Found iterator.
+     */
+    _nextRecurrenceIter: function() {
+      var iters = this.ruleIterators;
+
+      if (iters.length === 0) {
+        return null;
+      }
+
+      var len = iters.length;
+      var iter;
+      var iterTime;
+      var iterIdx = 0;
+      var chosenIter;
+
+      // loop through each iterator
+      for (; iterIdx < len; iterIdx++) {
+        iter = iters[iterIdx];
+        iterTime = iter.last;
+
+        // if iteration is complete
+        // then we must exclude it from
+        // the search and remove it.
+        if (iter.completed) {
+          len--;
+          if (iterIdx !== 0) {
+            iterIdx--;
+          }
+          iters.splice(iterIdx, 1);
+          continue;
+        }
+
+        // find the most recent possible choice
+        if (!chosenIter || chosenIter.last.compare(iterTime) > 0) {
+          // that iterator is saved
+          chosenIter = iter;
+        }
+      }
+
+      // the chosen iterator is returned but not mutated
+      // this iterator contains the most recent event.
+      return chosenIter;
+    }
+  };
+
+  return RecurExpansion;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.Event = (function() {
+
+  /**
+   * @classdesc
+   * ICAL.js is organized into multiple layers. The bottom layer is a raw jCal
+   * object, followed by the component/property layer. The highest level is the
+   * event representation, which this class is part of. See the
+   * {@tutorial layers} guide for more details.
+   *
+   * @class
+   * @alias ICAL.Event
+   * @param {ICAL.Component=} component         The ICAL.Component to base this event on
+   * @param {Object} options                    Options for this event
+   * @param {Boolean} options.strictExceptions
+   *          When true, will verify exceptions are related by their UUID
+   * @param {Array<ICAL.Component|ICAL.Event>} options.exceptions
+   *          Exceptions to this event, either as components or events. If not
+   *            specified exceptions will automatically be set in relation of
+   *            component's parent
+   */
+  function Event(component, options) {
+    if (!(component instanceof ICAL.Component)) {
+      options = component;
+      component = null;
+    }
+
+    if (component) {
+      this.component = component;
+    } else {
+      this.component = new ICAL.Component('vevent');
+    }
+
+    this._rangeExceptionCache = Object.create(null);
+    this.exceptions = Object.create(null);
+    this.rangeExceptions = [];
+
+    if (options && options.strictExceptions) {
+      this.strictExceptions = options.strictExceptions;
+    }
+
+    if (options && options.exceptions) {
+      options.exceptions.forEach(this.relateException, this);
+    } else if (this.component.parent && !this.isRecurrenceException()) {
+      this.component.parent.getAllSubcomponents('vevent').forEach(function(event) {
+        if (event.hasProperty('recurrence-id')) {
+          this.relateException(event);
+        }
+      }, this);
+    }
+  }
+
+  Event.prototype = {
+
+    THISANDFUTURE: 'THISANDFUTURE',
+
+    /**
+     * List of related event exceptions.
+     *
+     * @type {ICAL.Event[]}
+     */
+    exceptions: null,
+
+    /**
+     * When true, will verify exceptions are related by their UUID.
+     *
+     * @type {Boolean}
+     */
+    strictExceptions: false,
+
+    /**
+     * Relates a given event exception to this object.  If the given component
+     * does not share the UID of this event it cannot be related and will throw
+     * an exception.
+     *
+     * If this component is an exception it cannot have other exceptions
+     * related to it.
+     *
+     * @param {ICAL.Component|ICAL.Event} obj       Component or event
+     */
+    relateException: function(obj) {
+      if (this.isRecurrenceException()) {
+        throw new Error('cannot relate exception to exceptions');
+      }
+
+      if (obj instanceof ICAL.Component) {
+        obj = new ICAL.Event(obj);
+      }
+
+      if (this.strictExceptions && obj.uid !== this.uid) {
+        throw new Error('attempted to relate unrelated exception');
+      }
+
+      var id = obj.recurrenceId.toString();
+
+      // we don't sort or manage exceptions directly
+      // here the recurrence expander handles that.
+      this.exceptions[id] = obj;
+
+      // index RANGE=THISANDFUTURE exceptions so we can
+      // look them up later in getOccurrenceDetails.
+      if (obj.modifiesFuture()) {
+        var item = [
+          obj.recurrenceId.toUnixTime(), id
+        ];
+
+        // we keep them sorted so we can find the nearest
+        // value later on...
+        var idx = ICAL.helpers.binsearchInsert(
+          this.rangeExceptions,
+          item,
+          compareRangeException
+        );
+
+        this.rangeExceptions.splice(idx, 0, item);
+      }
+    },
+
+    /**
+     * Checks if this record is an exception and has the RANGE=THISANDFUTURE
+     * value.
+     *
+     * @return {Boolean}        True, when exception is within range
+     */
+    modifiesFuture: function() {
+      if (!this.component.hasProperty('recurrence-id')) {
+        return false;
+      }
+
+      var range = this.component.getFirstProperty('recurrence-id').getParameter('range');
+      return range === this.THISANDFUTURE;
+    },
+
+    /**
+     * Finds the range exception nearest to the given date.
+     *
+     * @param {ICAL.Time} time usually an occurrence time of an event
+     * @return {?ICAL.Event} the related event/exception or null
+     */
+    findRangeException: function(time) {
+      if (!this.rangeExceptions.length) {
+        return null;
+      }
+
+      var utc = time.toUnixTime();
+      var idx = ICAL.helpers.binsearchInsert(
+        this.rangeExceptions,
+        [utc],
+        compareRangeException
+      );
+
+      idx -= 1;
+
+      // occurs before
+      if (idx < 0) {
+        return null;
+      }
+
+      var rangeItem = this.rangeExceptions[idx];
+
+      /* istanbul ignore next: sanity check only */
+      if (utc < rangeItem[0]) {
+        return null;
+      }
+
+      return rangeItem[1];
+    },
+
+    /**
+     * This object is returned by {@link ICAL.Event#getOccurrenceDetails getOccurrenceDetails}
+     *
+     * @typedef {Object} occurrenceDetails
+     * @memberof ICAL.Event
+     * @property {ICAL.Time} recurrenceId       The passed in recurrence id
+     * @property {ICAL.Event} item              The occurrence
+     * @property {ICAL.Time} startDate          The start of the occurrence
+     * @property {ICAL.Time} endDate            The end of the occurrence
+     */
+
+    /**
+     * Returns the occurrence details based on its start time.  If the
+     * occurrence has an exception will return the details for that exception.
+     *
+     * NOTE: this method is intend to be used in conjunction
+     *       with the {@link ICAL.Event#iterator iterator} method.
+     *
+     * @param {ICAL.Time} occurrence time occurrence
+     * @return {ICAL.Event.occurrenceDetails} Information about the occurrence
+     */
+    getOccurrenceDetails: function(occurrence) {
+      var id = occurrence.toString();
+      var utcId = occurrence.convertToZone(ICAL.Timezone.utcTimezone).toString();
+      var item;
+      var result = {
+        //XXX: Clone?
+        recurrenceId: occurrence
+      };
+
+      if (id in this.exceptions) {
+        item = result.item = this.exceptions[id];
+        result.startDate = item.startDate;
+        result.endDate = item.endDate;
+        result.item = item;
+      } else if (utcId in this.exceptions) {
+        item = this.exceptions[utcId];
+        result.startDate = item.startDate;
+        result.endDate = item.endDate;
+        result.item = item;
+      } else {
+        // range exceptions (RANGE=THISANDFUTURE) have a
+        // lower priority then direct exceptions but
+        // must be accounted for first. Their item is
+        // always the first exception with the range prop.
+        var rangeExceptionId = this.findRangeException(
+          occurrence
+        );
+        var end;
+
+        if (rangeExceptionId) {
+          var exception = this.exceptions[rangeExceptionId];
+
+          // range exception must modify standard time
+          // by the difference (if any) in start/end times.
+          result.item = exception;
+
+          var startDiff = this._rangeExceptionCache[rangeExceptionId];
+
+          if (!startDiff) {
+            var original = exception.recurrenceId.clone();
+            var newStart = exception.startDate.clone();
+
+            // zones must be same otherwise subtract may be incorrect.
+            original.zone = newStart.zone;
+            startDiff = newStart.subtractDate(original);
+
+            this._rangeExceptionCache[rangeExceptionId] = startDiff;
+          }
+
+          var start = occurrence.clone();
+          start.zone = exception.startDate.zone;
+          start.addDuration(startDiff);
+
+          end = start.clone();
+          end.addDuration(exception.duration);
+
+          result.startDate = start;
+          result.endDate = end;
+        } else {
+          // no range exception standard expansion
+          end = occurrence.clone();
+          end.addDuration(this.duration);
+
+          result.endDate = end;
+          result.startDate = occurrence;
+          result.item = this;
+        }
+      }
+
+      return result;
+    },
+
+    /**
+     * Builds a recur expansion instance for a specific point in time (defaults
+     * to startDate).
+     *
+     * @param {ICAL.Time} startTime     Starting point for expansion
+     * @return {ICAL.RecurExpansion}    Expansion object
+     */
+    iterator: function(startTime) {
+      return new ICAL.RecurExpansion({
+        component: this.component,
+        dtstart: startTime || this.startDate
+      });
+    },
+
+    /**
+     * Checks if the event is recurring
+     *
+     * @return {Boolean}        True, if event is recurring
+     */
+    isRecurring: function() {
+      var comp = this.component;
+      return comp.hasProperty('rrule') || comp.hasProperty('rdate');
+    },
+
+    /**
+     * Checks if the event describes a recurrence exception. See
+     * {@tutorial terminology} for details.
+     *
+     * @return {Boolean}    True, if the event describes a recurrence exception
+     */
+    isRecurrenceException: function() {
+      return this.component.hasProperty('recurrence-id');
+    },
+
+    /**
+     * Returns the types of recurrences this event may have.
+     *
+     * Returned as an object with the following possible keys:
+     *
+     *    - YEARLY
+     *    - MONTHLY
+     *    - WEEKLY
+     *    - DAILY
+     *    - MINUTELY
+     *    - SECONDLY
+     *
+     * @return {Object.<ICAL.Recur.frequencyValues, Boolean>}
+     *          Object of recurrence flags
+     */
+    getRecurrenceTypes: function() {
+      var rules = this.component.getAllProperties('rrule');
+      var i = 0;
+      var len = rules.length;
+      var result = Object.create(null);
+
+      for (; i < len; i++) {
+        var value = rules[i].getFirstValue();
+        result[value.freq] = true;
+      }
+
+      return result;
+    },
+
+    /**
+     * The uid of this event
+     * @type {String}
+     */
+    get uid() {
+      return this._firstProp('uid');
+    },
+
+    set uid(value) {
+      this._setProp('uid', value);
+    },
+
+    /**
+     * The start date
+     * @type {ICAL.Time}
+     */
+    get startDate() {
+      return this._firstProp('dtstart');
+    },
+
+    set startDate(value) {
+      this._setTime('dtstart', value);
+    },
+
+    /**
+     * The end date. This can be the result directly from the property, or the
+     * end date calculated from start date and duration. Setting the property
+     * will remove any duration properties.
+     * @type {ICAL.Time}
+     */
+    get endDate() {
+      var endDate = this._firstProp('dtend');
+      if (!endDate) {
+          var duration = this._firstProp('duration');
+          endDate = this.startDate.clone();
+          if (duration) {
+              endDate.addDuration(duration);
+          } else if (endDate.isDate) {
+              endDate.day += 1;
+          }
+      }
+      return endDate;
+    },
+
+    set endDate(value) {
+      if (this.component.hasProperty('duration')) {
+        this.component.removeProperty('duration');
+      }
+      this._setTime('dtend', value);
+    },
+
+    /**
+     * The duration. This can be the result directly from the property, or the
+     * duration calculated from start date and end date. Setting the property
+     * will remove any `dtend` properties.
+     * @type {ICAL.Duration}
+     */
+    get duration() {
+      var duration = this._firstProp('duration');
+      if (!duration) {
+        return this.endDate.subtractDateTz(this.startDate);
+      }
+      return duration;
+    },
+
+    set duration(value) {
+      if (this.component.hasProperty('dtend')) {
+        this.component.removeProperty('dtend');
+      }
+
+      this._setProp('duration', value);
+    },
+
+    /**
+     * The location of the event.
+     * @type {String}
+     */
+    get location() {
+      return this._firstProp('location');
+    },
+
+    set location(value) {
+      return this._setProp('location', value);
+    },
+
+    /**
+     * The attendees in the event
+     * @type {ICAL.Property[]}
+     * @readonly
+     */
+    get attendees() {
+      //XXX: This is way lame we should have a better
+      //     data structure for this later.
+      return this.component.getAllProperties('attendee');
+    },
+
+
+    /**
+     * The event summary
+     * @type {String}
+     */
+    get summary() {
+      return this._firstProp('summary');
+    },
+
+    set summary(value) {
+      this._setProp('summary', value);
+    },
+
+    /**
+     * The event description.
+     * @type {String}
+     */
+    get description() {
+      return this._firstProp('description');
+    },
+
+    set description(value) {
+      this._setProp('description', value);
+    },
+
+    /**
+     * The organizer value as an uri. In most cases this is a mailto: uri, but
+     * it can also be something else, like urn:uuid:...
+     * @type {String}
+     */
+    get organizer() {
+      return this._firstProp('organizer');
+    },
+
+    set organizer(value) {
+      this._setProp('organizer', value);
+    },
+
+    /**
+     * The sequence value for this event. Used for scheduling
+     * see {@tutorial terminology}.
+     * @type {Number}
+     */
+    get sequence() {
+      return this._firstProp('sequence');
+    },
+
+    set sequence(value) {
+      this._setProp('sequence', value);
+    },
+
+    /**
+     * The recurrence id for this event. See {@tutorial terminology} for details.
+     * @type {ICAL.Time}
+     */
+    get recurrenceId() {
+      return this._firstProp('recurrence-id');
+    },
+
+    set recurrenceId(value) {
+      this._setTime('recurrence-id', value);
+    },
+
+    /**
+     * Set/update a time property's value.
+     * This will also update the TZID of the property.
+     *
+     * TODO: this method handles the case where we are switching
+     * from a known timezone to an implied timezone (one without TZID).
+     * This does _not_ handle the case of moving between a known
+     *  (by TimezoneService) timezone to an unknown timezone...
+     *
+     * We will not add/remove/update the VTIMEZONE subcomponents
+     *  leading to invalid ICAL data...
+     * @private
+     * @param {String} propName     The property name
+     * @param {ICAL.Time} time      The time to set
+     */
+    _setTime: function(propName, time) {
+      var prop = this.component.getFirstProperty(propName);
+
+      if (!prop) {
+        prop = new ICAL.Property(propName);
+        this.component.addProperty(prop);
+      }
+
+      // utc and local don't get a tzid
+      if (
+        time.zone === ICAL.Timezone.localTimezone ||
+        time.zone === ICAL.Timezone.utcTimezone
+      ) {
+        // remove the tzid
+        prop.removeParameter('tzid');
+      } else {
+        prop.setParameter('tzid', time.zone.tzid);
+      }
+
+      prop.setValue(time);
+    },
+
+    _setProp: function(name, value) {
+      this.component.updatePropertyWithValue(name, value);
+    },
+
+    _firstProp: function(name) {
+      return this.component.getFirstPropertyValue(name);
+    },
+
+    /**
+     * The string representation of this event.
+     * @return {String}
+     */
+    toString: function() {
+      return this.component.toString();
+    }
+
+  };
+
+  function compareRangeException(a, b) {
+    if (a[0] > b[0]) return 1;
+    if (b[0] > a[0]) return -1;
+    return 0;
+  }
+
+  return Event;
+}());
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * Portions Copyright (C) Philipp Kewisch, 2011-2015 */
+
+
+/**
+ * This symbol is further described later on
+ * @ignore
+ */
+ICAL.ComponentParser = (function() {
+  /**
+   * @classdesc
+   * The ComponentParser is used to process a String or jCal Object,
+   * firing callbacks for various found components, as well as completion.
+   *
+   * @example
+   * var options = {
+   *   // when false no events will be emitted for type
+   *   parseEvent: true,
+   *   parseTimezone: true
+   * };
+   *
+   * var parser = new ICAL.ComponentParser(options);
+   *
+   * parser.onevent(eventComponent) {
+   *   //...
+   * }
+   *
+   * // ontimezone, etc...
+   *
+   * parser.oncomplete = function() {
+   *
+   * };
+   *
+   * parser.process(stringOrComponent);
+   *
+   * @class
+   * @alias ICAL.ComponentParser
+   * @param {Object=} options        Component parser options
+   * @param {Boolean} options.parseEvent        Whether events should be parsed
+   * @param {Boolean} options.parseTimezeone    Whether timezones should be parsed
+   */
+  function ComponentParser(options) {
+    if (typeof(options) === 'undefined') {
+      options = {};
+    }
+
+    var key;
+    for (key in options) {
+      /* istanbul ignore else */
+      if (options.hasOwnProperty(key)) {
+        this[key] = options[key];
+      }
+    }
+  }
+
+  ComponentParser.prototype = {
+
+    /**
+     * When true, parse events
+     *
+     * @type {Boolean}
+     */
+    parseEvent: true,
+
+    /**
+     * When true, parse timezones
+     *
+     * @type {Boolean}
+     */
+    parseTimezone: true,
+
+
+    /* SAX like events here for reference */
+
+    /**
+     * Fired when parsing is complete
+     * @callback
+     */
+    oncomplete: /* istanbul ignore next */ function() {},
+
+    /**
+     * Fired if an error occurs during parsing.
+     *
+     * @callback
+     * @param {Error} err details of error
+     */
+    onerror: /* istanbul ignore next */ function(err) {},
+
+    /**
+     * Fired when a top level component (VTIMEZONE) is found
+     *
+     * @callback
+     * @param {ICAL.Timezone} component     Timezone object
+     */
+    ontimezone: /* istanbul ignore next */ function(component) {},
+
+    /**
+     * Fired when a top level component (VEVENT) is found.
+     *
+     * @callback
+     * @param {ICAL.Event} component    Top level component
+     */
+    onevent: /* istanbul ignore next */ function(component) {},
+
+    /**
+     * Process a string or parse ical object.  This function itself will return
+     * nothing but will start the parsing process.
+     *
+     * Events must be registered prior to calling this method.
+     *
+     * @param {ICAL.Component|String|Object} ical      The component to process,
+     *        either in its final form, as a jCal Object, or string representation
+     */
+    process: function(ical) {
+      //TODO: this is sync now in the future we will have a incremental parser.
+      if (typeof(ical) === 'string') {
+        ical = ICAL.parse(ical);
+      }
+
+      if (!(ical instanceof ICAL.Component)) {
+        ical = new ICAL.Component(ical);
+      }
+
+      var components = ical.getAllSubcomponents();
+      var i = 0;
+      var len = components.length;
+      var component;
+
+      for (; i < len; i++) {
+        component = components[i];
+
+        switch (component.name) {
+          case 'vtimezone':
+            if (this.parseTimezone) {
+              var tzid = component.getFirstPropertyValue('tzid');
+              if (tzid) {
+                this.ontimezone(new ICAL.Timezone({
+                  tzid: tzid,
+                  component: component
+                }));
+              }
+            }
+            break;
+          case 'vevent':
+            if (this.parseEvent) {
+              this.onevent(new ICAL.Event(component));
+            }
+            break;
+          default:
+            continue;
+        }
+      }
+
+      //XXX: ideally we should do a "nextTick" here
+      //     so in all cases this is actually async.
+      this.oncomplete();
+    }
+  };
+
+  return ComponentParser;
+}());
+
+},{}],"../node_modules/cross-fetch/dist/browser-ponyfill.js":[function(require,module,exports) {
+var __self__ = (function (root) {
+function F() {
+this.fetch = false;
+this.DOMException = root.DOMException
+}
+F.prototype = root;
+return new F();
+})(typeof self !== 'undefined' ? self : this);
+(function(self) {
+
+var irrelevant = (function (exports) {
+
+  var support = {
+    searchParams: 'URLSearchParams' in self,
+    iterable: 'Symbol' in self && 'iterator' in Symbol,
+    blob:
+      'FileReader' in self &&
+      'Blob' in self &&
+      (function() {
+        try {
+          new Blob();
+          return true
+        } catch (e) {
+          return false
+        }
+      })(),
+    formData: 'FormData' in self,
+    arrayBuffer: 'ArrayBuffer' in self
+  };
+
+  function isDataView(obj) {
+    return obj && DataView.prototype.isPrototypeOf(obj)
+  }
+
+  if (support.arrayBuffer) {
+    var viewClasses = [
+      '[object Int8Array]',
+      '[object Uint8Array]',
+      '[object Uint8ClampedArray]',
+      '[object Int16Array]',
+      '[object Uint16Array]',
+      '[object Int32Array]',
+      '[object Uint32Array]',
+      '[object Float32Array]',
+      '[object Float64Array]'
+    ];
+
+    var isArrayBufferView =
+      ArrayBuffer.isView ||
+      function(obj) {
+        return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+      };
+  }
+
+  function normalizeName(name) {
+    if (typeof name !== 'string') {
+      name = String(name);
+    }
+    if (/[^a-z0-9\-#$%&'*+.^_`|~]/i.test(name)) {
+      throw new TypeError('Invalid character in header field name')
+    }
+    return name.toLowerCase()
+  }
+
+  function normalizeValue(value) {
+    if (typeof value !== 'string') {
+      value = String(value);
+    }
+    return value
+  }
+
+  // Build a destructive iterator for the value list
+  function iteratorFor(items) {
+    var iterator = {
+      next: function() {
+        var value = items.shift();
+        return {done: value === undefined, value: value}
+      }
+    };
+
+    if (support.iterable) {
+      iterator[Symbol.iterator] = function() {
+        return iterator
+      };
+    }
+
+    return iterator
+  }
+
+  function Headers(headers) {
+    this.map = {};
+
+    if (headers instanceof Headers) {
+      headers.forEach(function(value, name) {
+        this.append(name, value);
+      }, this);
+    } else if (Array.isArray(headers)) {
+      headers.forEach(function(header) {
+        this.append(header[0], header[1]);
+      }, this);
+    } else if (headers) {
+      Object.getOwnPropertyNames(headers).forEach(function(name) {
+        this.append(name, headers[name]);
+      }, this);
+    }
+  }
+
+  Headers.prototype.append = function(name, value) {
+    name = normalizeName(name);
+    value = normalizeValue(value);
+    var oldValue = this.map[name];
+    this.map[name] = oldValue ? oldValue + ', ' + value : value;
+  };
+
+  Headers.prototype['delete'] = function(name) {
+    delete this.map[normalizeName(name)];
+  };
+
+  Headers.prototype.get = function(name) {
+    name = normalizeName(name);
+    return this.has(name) ? this.map[name] : null
+  };
+
+  Headers.prototype.has = function(name) {
+    return this.map.hasOwnProperty(normalizeName(name))
+  };
+
+  Headers.prototype.set = function(name, value) {
+    this.map[normalizeName(name)] = normalizeValue(value);
+  };
+
+  Headers.prototype.forEach = function(callback, thisArg) {
+    for (var name in this.map) {
+      if (this.map.hasOwnProperty(name)) {
+        callback.call(thisArg, this.map[name], name, this);
+      }
+    }
+  };
+
+  Headers.prototype.keys = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push(name);
+    });
+    return iteratorFor(items)
+  };
+
+  Headers.prototype.values = function() {
+    var items = [];
+    this.forEach(function(value) {
+      items.push(value);
+    });
+    return iteratorFor(items)
+  };
+
+  Headers.prototype.entries = function() {
+    var items = [];
+    this.forEach(function(value, name) {
+      items.push([name, value]);
+    });
+    return iteratorFor(items)
+  };
+
+  if (support.iterable) {
+    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
+  }
+
+  function consumed(body) {
+    if (body.bodyUsed) {
+      return Promise.reject(new TypeError('Already read'))
+    }
+    body.bodyUsed = true;
+  }
+
+  function fileReaderReady(reader) {
+    return new Promise(function(resolve, reject) {
+      reader.onload = function() {
+        resolve(reader.result);
+      };
+      reader.onerror = function() {
+        reject(reader.error);
+      };
+    })
+  }
+
+  function readBlobAsArrayBuffer(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsArrayBuffer(blob);
+    return promise
+  }
+
+  function readBlobAsText(blob) {
+    var reader = new FileReader();
+    var promise = fileReaderReady(reader);
+    reader.readAsText(blob);
+    return promise
+  }
+
+  function readArrayBufferAsText(buf) {
+    var view = new Uint8Array(buf);
+    var chars = new Array(view.length);
+
+    for (var i = 0; i < view.length; i++) {
+      chars[i] = String.fromCharCode(view[i]);
+    }
+    return chars.join('')
+  }
+
+  function bufferClone(buf) {
+    if (buf.slice) {
+      return buf.slice(0)
+    } else {
+      var view = new Uint8Array(buf.byteLength);
+      view.set(new Uint8Array(buf));
+      return view.buffer
+    }
+  }
+
+  function Body() {
+    this.bodyUsed = false;
+
+    this._initBody = function(body) {
+      this._bodyInit = body;
+      if (!body) {
+        this._bodyText = '';
+      } else if (typeof body === 'string') {
+        this._bodyText = body;
+      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+        this._bodyBlob = body;
+      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+        this._bodyFormData = body;
+      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+        this._bodyText = body.toString();
+      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+        this._bodyArrayBuffer = bufferClone(body.buffer);
+        // IE 10-11 can't handle a DataView body.
+        this._bodyInit = new Blob([this._bodyArrayBuffer]);
+      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+        this._bodyArrayBuffer = bufferClone(body);
+      } else {
+        this._bodyText = body = Object.prototype.toString.call(body);
+      }
+
+      if (!this.headers.get('content-type')) {
+        if (typeof body === 'string') {
+          this.headers.set('content-type', 'text/plain;charset=UTF-8');
+        } else if (this._bodyBlob && this._bodyBlob.type) {
+          this.headers.set('content-type', this._bodyBlob.type);
+        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+        }
+      }
+    };
+
+    if (support.blob) {
+      this.blob = function() {
+        var rejected = consumed(this);
+        if (rejected) {
+          return rejected
+        }
+
+        if (this._bodyBlob) {
+          return Promise.resolve(this._bodyBlob)
+        } else if (this._bodyArrayBuffer) {
+          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+        } else if (this._bodyFormData) {
+          throw new Error('could not read FormData body as blob')
+        } else {
+          return Promise.resolve(new Blob([this._bodyText]))
+        }
+      };
+
+      this.arrayBuffer = function() {
+        if (this._bodyArrayBuffer) {
+          return consumed(this) || Promise.resolve(this._bodyArrayBuffer)
+        } else {
+          return this.blob().then(readBlobAsArrayBuffer)
+        }
+      };
+    }
+
+    this.text = function() {
+      var rejected = consumed(this);
+      if (rejected) {
+        return rejected
+      }
+
+      if (this._bodyBlob) {
+        return readBlobAsText(this._bodyBlob)
+      } else if (this._bodyArrayBuffer) {
+        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+      } else if (this._bodyFormData) {
+        throw new Error('could not read FormData body as text')
+      } else {
+        return Promise.resolve(this._bodyText)
+      }
+    };
+
+    if (support.formData) {
+      this.formData = function() {
+        return this.text().then(decode)
+      };
+    }
+
+    this.json = function() {
+      return this.text().then(JSON.parse)
+    };
+
+    return this
+  }
+
+  // HTTP methods whose capitalization should be normalized
+  var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
+
+  function normalizeMethod(method) {
+    var upcased = method.toUpperCase();
+    return methods.indexOf(upcased) > -1 ? upcased : method
+  }
+
+  function Request(input, options) {
+    options = options || {};
+    var body = options.body;
+
+    if (input instanceof Request) {
+      if (input.bodyUsed) {
+        throw new TypeError('Already read')
+      }
+      this.url = input.url;
+      this.credentials = input.credentials;
+      if (!options.headers) {
+        this.headers = new Headers(input.headers);
+      }
+      this.method = input.method;
+      this.mode = input.mode;
+      this.signal = input.signal;
+      if (!body && input._bodyInit != null) {
+        body = input._bodyInit;
+        input.bodyUsed = true;
+      }
+    } else {
+      this.url = String(input);
+    }
+
+    this.credentials = options.credentials || this.credentials || 'same-origin';
+    if (options.headers || !this.headers) {
+      this.headers = new Headers(options.headers);
+    }
+    this.method = normalizeMethod(options.method || this.method || 'GET');
+    this.mode = options.mode || this.mode || null;
+    this.signal = options.signal || this.signal;
+    this.referrer = null;
+
+    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+      throw new TypeError('Body not allowed for GET or HEAD requests')
+    }
+    this._initBody(body);
+  }
+
+  Request.prototype.clone = function() {
+    return new Request(this, {body: this._bodyInit})
+  };
+
+  function decode(body) {
+    var form = new FormData();
+    body
+      .trim()
+      .split('&')
+      .forEach(function(bytes) {
+        if (bytes) {
+          var split = bytes.split('=');
+          var name = split.shift().replace(/\+/g, ' ');
+          var value = split.join('=').replace(/\+/g, ' ');
+          form.append(decodeURIComponent(name), decodeURIComponent(value));
+        }
+      });
+    return form
+  }
+
+  function parseHeaders(rawHeaders) {
+    var headers = new Headers();
+    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+    // https://tools.ietf.org/html/rfc7230#section-3.2
+    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
+    preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
+      var parts = line.split(':');
+      var key = parts.shift().trim();
+      if (key) {
+        var value = parts.join(':').trim();
+        headers.append(key, value);
+      }
+    });
+    return headers
+  }
+
+  Body.call(Request.prototype);
+
+  function Response(bodyInit, options) {
+    if (!options) {
+      options = {};
+    }
+
+    this.type = 'default';
+    this.status = options.status === undefined ? 200 : options.status;
+    this.ok = this.status >= 200 && this.status < 300;
+    this.statusText = 'statusText' in options ? options.statusText : 'OK';
+    this.headers = new Headers(options.headers);
+    this.url = options.url || '';
+    this._initBody(bodyInit);
+  }
+
+  Body.call(Response.prototype);
+
+  Response.prototype.clone = function() {
+    return new Response(this._bodyInit, {
+      status: this.status,
+      statusText: this.statusText,
+      headers: new Headers(this.headers),
+      url: this.url
+    })
+  };
+
+  Response.error = function() {
+    var response = new Response(null, {status: 0, statusText: ''});
+    response.type = 'error';
+    return response
+  };
+
+  var redirectStatuses = [301, 302, 303, 307, 308];
+
+  Response.redirect = function(url, status) {
+    if (redirectStatuses.indexOf(status) === -1) {
+      throw new RangeError('Invalid status code')
+    }
+
+    return new Response(null, {status: status, headers: {location: url}})
+  };
+
+  exports.DOMException = self.DOMException;
+  try {
+    new exports.DOMException();
+  } catch (err) {
+    exports.DOMException = function(message, name) {
+      this.message = message;
+      this.name = name;
+      var error = Error(message);
+      this.stack = error.stack;
+    };
+    exports.DOMException.prototype = Object.create(Error.prototype);
+    exports.DOMException.prototype.constructor = exports.DOMException;
+  }
+
+  function fetch(input, init) {
+    return new Promise(function(resolve, reject) {
+      var request = new Request(input, init);
+
+      if (request.signal && request.signal.aborted) {
+        return reject(new exports.DOMException('Aborted', 'AbortError'))
+      }
+
+      var xhr = new XMLHttpRequest();
+
+      function abortXhr() {
+        xhr.abort();
+      }
+
+      xhr.onload = function() {
+        var options = {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+        };
+        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
+        var body = 'response' in xhr ? xhr.response : xhr.responseText;
+        resolve(new Response(body, options));
+      };
+
+      xhr.onerror = function() {
+        reject(new TypeError('Network request failed'));
+      };
+
+      xhr.ontimeout = function() {
+        reject(new TypeError('Network request failed'));
+      };
+
+      xhr.onabort = function() {
+        reject(new exports.DOMException('Aborted', 'AbortError'));
+      };
+
+      xhr.open(request.method, request.url, true);
+
+      if (request.credentials === 'include') {
+        xhr.withCredentials = true;
+      } else if (request.credentials === 'omit') {
+        xhr.withCredentials = false;
+      }
+
+      if ('responseType' in xhr && support.blob) {
+        xhr.responseType = 'blob';
+      }
+
+      request.headers.forEach(function(value, name) {
+        xhr.setRequestHeader(name, value);
+      });
+
+      if (request.signal) {
+        request.signal.addEventListener('abort', abortXhr);
+
+        xhr.onreadystatechange = function() {
+          // DONE (success or failure)
+          if (xhr.readyState === 4) {
+            request.signal.removeEventListener('abort', abortXhr);
+          }
+        };
+      }
+
+      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
+    })
+  }
+
+  fetch.polyfill = true;
+
+  if (!self.fetch) {
+    self.fetch = fetch;
+    self.Headers = Headers;
+    self.Request = Request;
+    self.Response = Response;
+  }
+
+  exports.Headers = Headers;
+  exports.Request = Request;
+  exports.Response = Response;
+  exports.fetch = fetch;
+
+  return exports;
+
+}({}));
+})(__self__);
+delete __self__.fetch.polyfill
+exports = __self__.fetch // To enable: import fetch from 'cross-fetch'
+exports.default = __self__.fetch // For TypeScript consumers without esModuleInterop.
+exports.fetch = __self__.fetch // To enable: import {fetch} from 'cross-fetch'
+exports.Headers = __self__.Headers
+exports.Request = __self__.Request
+exports.Response = __self__.Response
+module.exports = exports
+
+},{}],"../node_modules/uuid/dist/esm-browser/rng.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = rng;
+// Unique ID creation requires a high quality random # generator. In the browser we therefore
+// require the crypto API and do not support built-in fallback to lower quality random number
+// generators (like Math.random()).
+// getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
+// find the complete implementation of crypto (msCrypto) on IE11.
+var getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== 'undefined' && typeof msCrypto.getRandomValues === 'function' && msCrypto.getRandomValues.bind(msCrypto);
+var rnds8 = new Uint8Array(16);
+
+function rng() {
+  if (!getRandomValues) {
+    throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
+  }
+
+  return getRandomValues(rnds8);
+}
+},{}],"../node_modules/uuid/dist/esm-browser/bytesToUuid.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/**
+ * Convert array of 16 byte values to UUID string format of the form:
+ * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+ */
+var byteToHex = [];
+
+for (var i = 0; i < 256; ++i) {
+  byteToHex.push((i + 0x100).toString(16).substr(1));
+}
+
+function bytesToUuid(buf, offset_) {
+  var offset = offset_ || 0; // Note: Be careful editing this code!  It's been tuned for performance
+  // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+
+  return (byteToHex[buf[offset + 0]] + byteToHex[buf[offset + 1]] + byteToHex[buf[offset + 2]] + byteToHex[buf[offset + 3]] + '-' + byteToHex[buf[offset + 4]] + byteToHex[buf[offset + 5]] + '-' + byteToHex[buf[offset + 6]] + byteToHex[buf[offset + 7]] + '-' + byteToHex[buf[offset + 8]] + byteToHex[buf[offset + 9]] + '-' + byteToHex[buf[offset + 10]] + byteToHex[buf[offset + 11]] + byteToHex[buf[offset + 12]] + byteToHex[buf[offset + 13]] + byteToHex[buf[offset + 14]] + byteToHex[buf[offset + 15]]).toLowerCase();
+}
+
+var _default = bytesToUuid;
+exports.default = _default;
+},{}],"../node_modules/uuid/dist/esm-browser/v1.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _rng = _interopRequireDefault(require("./rng.js"));
+
+var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// **`v1()` - Generate time-based UUID**
+//
+// Inspired by https://github.com/LiosK/UUID.js
+// and http://docs.python.org/library/uuid.html
+var _nodeId;
+
+var _clockseq; // Previous uuid creation time
+
+
+var _lastMSecs = 0;
+var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
+
+function v1(options, buf, offset) {
+  var i = buf && offset || 0;
+  var b = buf || new Array(16);
+  options = options || {};
+  var node = options.node || _nodeId;
+  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+  // specified.  We do this lazily to minimize issues related to insufficient
+  // system entropy.  See #189
+
+  if (node == null || clockseq == null) {
+    var seedBytes = options.random || (options.rng || _rng.default)();
+
+    if (node == null) {
+      // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+      node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
+    }
+
+    if (clockseq == null) {
+      // Per 4.2.2, randomize (14 bit) clockseq
+      clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+    }
+  } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+  // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+  // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+  // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+
+
+  var msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
+  // cycle to simulate higher resolution clock
+
+  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
+
+  var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+  // time interval
+
+
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  } // Per 4.2.1.2 Throw error if too many uuids are requested
+
+
+  if (nsecs >= 10000) {
+    throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+
+  msecs += 12219292800000; // `time_low`
+
+  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff; // `time_mid`
+
+  var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff; // `time_high_and_version`
+
+  b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+
+  b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+
+  b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
+
+  b[i++] = clockseq & 0xff; // `node`
+
+  for (var n = 0; n < 6; ++n) {
+    b[i + n] = node[n];
+  }
+
+  return buf || (0, _bytesToUuid.default)(b);
+}
+
+var _default = v1;
+exports.default = _default;
+},{"./rng.js":"../node_modules/uuid/dist/esm-browser/rng.js","./bytesToUuid.js":"../node_modules/uuid/dist/esm-browser/bytesToUuid.js"}],"../node_modules/uuid/dist/esm-browser/v35.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.URL = exports.DNS = void 0;
+exports.default = _default;
+
+var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function uuidToBytes(uuid) {
+  // Note: We assume we're being passed a valid uuid string
+  var bytes = [];
+  uuid.replace(/[a-fA-F0-9]{2}/g, function (hex) {
+    bytes.push(parseInt(hex, 16));
+  });
+  return bytes;
+}
+
+function stringToBytes(str) {
+  str = unescape(encodeURIComponent(str)); // UTF8 escape
+
+  var bytes = [];
+
+  for (var i = 0; i < str.length; ++i) {
+    bytes.push(str.charCodeAt(i));
+  }
+
+  return bytes;
+}
+
+var DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+exports.DNS = DNS;
+var URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+exports.URL = URL;
+
+function _default(name, version, hashfunc) {
+  function generateUUID(value, namespace, buf, offset) {
+    if (typeof value === 'string') {
+      value = stringToBytes(value);
+    }
+
+    if (typeof namespace === 'string') {
+      namespace = uuidToBytes(namespace);
+    }
+
+    if (!Array.isArray(value)) {
+      throw TypeError('value must be an array of bytes');
+    }
+
+    if (!Array.isArray(namespace) || namespace.length !== 16) {
+      throw TypeError('namespace must be uuid string or an Array of 16 byte values');
+    } // Per 4.3
+
+
+    var bytes = hashfunc(namespace.concat(value));
+    bytes[6] = bytes[6] & 0x0f | version;
+    bytes[8] = bytes[8] & 0x3f | 0x80;
+
+    if (buf) {
+      offset = offset || 0;
+
+      for (var i = 0; i < 16; ++i) {
+        buf[offset + i] = bytes[i];
+      }
+
+      return buf;
+    }
+
+    return (0, _bytesToUuid.default)(bytes);
+  } // Function#name is not settable on some platforms (#270)
+
+
+  try {
+    generateUUID.name = name; // eslint-disable-next-line no-empty
+  } catch (err) {} // For CommonJS default export support
+
+
+  generateUUID.DNS = DNS;
+  generateUUID.URL = URL;
+  return generateUUID;
+}
+},{"./bytesToUuid.js":"../node_modules/uuid/dist/esm-browser/bytesToUuid.js"}],"../node_modules/uuid/dist/esm-browser/md5.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+/*
+ * Browser-compatible JavaScript MD5
+ *
+ * Modification of JavaScript MD5
+ * https://github.com/blueimp/JavaScript-MD5
+ *
+ * Copyright 2011, Sebastian Tschan
+ * https://blueimp.net
+ *
+ * Licensed under the MIT license:
+ * https://opensource.org/licenses/MIT
+ *
+ * Based on
+ * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+ * Digest Algorithm, as defined in RFC 1321.
+ * Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
+ * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+ * Distributed under the BSD License
+ * See http://pajhome.org.uk/crypt/md5 for more info.
+ */
+function md5(bytes) {
+  if (typeof bytes === 'string') {
+    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
+
+    bytes = new Uint8Array(msg.length);
+
+    for (var i = 0; i < msg.length; ++i) {
+      bytes[i] = msg.charCodeAt(i);
+    }
+  }
+
+  return md5ToHexEncodedArray(wordsToMd5(bytesToWords(bytes), bytes.length * 8));
+}
+/*
+ * Convert an array of little-endian words to an array of bytes
+ */
+
+
+function md5ToHexEncodedArray(input) {
+  var output = [];
+  var length32 = input.length * 32;
+  var hexTab = '0123456789abcdef';
+
+  for (var i = 0; i < length32; i += 8) {
+    var x = input[i >> 5] >>> i % 32 & 0xff;
+    var hex = parseInt(hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f), 16);
+    output.push(hex);
+  }
+
+  return output;
+}
+/**
+ * Calculate output length with padding and bit length
+ */
+
+
+function getOutputLength(inputLength8) {
+  return (inputLength8 + 64 >>> 9 << 4) + 14 + 1;
+}
+/*
+ * Calculate the MD5 of an array of little-endian words, and a bit length.
+ */
+
+
+function wordsToMd5(x, len) {
+  /* append padding */
+  x[len >> 5] |= 0x80 << len % 32;
+  x[getOutputLength(len) - 1] = len;
+  var a = 1732584193;
+  var b = -271733879;
+  var c = -1732584194;
+  var d = 271733878;
+
+  for (var i = 0; i < x.length; i += 16) {
+    var olda = a;
+    var oldb = b;
+    var oldc = c;
+    var oldd = d;
+    a = md5ff(a, b, c, d, x[i], 7, -680876936);
+    d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
+    c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
+    b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
+    a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
+    d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
+    c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
+    b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
+    a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
+    d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
+    c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
+    b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
+    a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
+    d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
+    c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
+    b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
+    a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
+    d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
+    c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
+    b = md5gg(b, c, d, a, x[i], 20, -373897302);
+    a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
+    d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
+    c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
+    b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
+    a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
+    d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
+    c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
+    b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
+    a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
+    d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
+    c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
+    b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
+    a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
+    d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
+    c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
+    b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
+    a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
+    d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
+    c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
+    b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
+    a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
+    d = md5hh(d, a, b, c, x[i], 11, -358537222);
+    c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
+    b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
+    a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
+    d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
+    c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
+    b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
+    a = md5ii(a, b, c, d, x[i], 6, -198630844);
+    d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
+    c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
+    b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
+    a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
+    d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
+    c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
+    b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
+    a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
+    d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
+    c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
+    b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
+    a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
+    d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
+    c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
+    b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
+    a = safeAdd(a, olda);
+    b = safeAdd(b, oldb);
+    c = safeAdd(c, oldc);
+    d = safeAdd(d, oldd);
+  }
+
+  return [a, b, c, d];
+}
+/*
+ * Convert an array bytes to an array of little-endian words
+ * Characters >255 have their high-byte silently ignored.
+ */
+
+
+function bytesToWords(input) {
+  if (input.length === 0) {
+    return [];
+  }
+
+  var length8 = input.length * 8;
+  var output = new Uint32Array(getOutputLength(length8));
+
+  for (var i = 0; i < length8; i += 8) {
+    output[i >> 5] |= (input[i / 8] & 0xff) << i % 32;
+  }
+
+  return output;
+}
+/*
+ * Add integers, wrapping at 2^32. This uses 16-bit operations internally
+ * to work around bugs in some JS interpreters.
+ */
+
+
+function safeAdd(x, y) {
+  var lsw = (x & 0xffff) + (y & 0xffff);
+  var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+  return msw << 16 | lsw & 0xffff;
+}
+/*
+ * Bitwise rotate a 32-bit number to the left.
+ */
+
+
+function bitRotateLeft(num, cnt) {
+  return num << cnt | num >>> 32 - cnt;
+}
+/*
+ * These functions implement the four basic operations the algorithm uses.
+ */
+
+
+function md5cmn(q, a, b, x, s, t) {
+  return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
+}
+
+function md5ff(a, b, c, d, x, s, t) {
+  return md5cmn(b & c | ~b & d, a, b, x, s, t);
+}
+
+function md5gg(a, b, c, d, x, s, t) {
+  return md5cmn(b & d | c & ~d, a, b, x, s, t);
+}
+
+function md5hh(a, b, c, d, x, s, t) {
+  return md5cmn(b ^ c ^ d, a, b, x, s, t);
+}
+
+function md5ii(a, b, c, d, x, s, t) {
+  return md5cmn(c ^ (b | ~d), a, b, x, s, t);
+}
+
+var _default = md5;
+exports.default = _default;
+},{}],"../node_modules/uuid/dist/esm-browser/v3.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _v = _interopRequireDefault(require("./v35.js"));
+
+var _md = _interopRequireDefault(require("./md5.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var v3 = (0, _v.default)('v3', 0x30, _md.default);
+var _default = v3;
+exports.default = _default;
+},{"./v35.js":"../node_modules/uuid/dist/esm-browser/v35.js","./md5.js":"../node_modules/uuid/dist/esm-browser/md5.js"}],"../node_modules/uuid/dist/esm-browser/v4.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _rng = _interopRequireDefault(require("./rng.js"));
+
+var _bytesToUuid = _interopRequireDefault(require("./bytesToUuid.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function v4(options, buf, offset) {
+  options = options || {};
+
+  var rnds = options.random || (options.rng || _rng.default)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+
+  rnds[6] = rnds[6] & 0x0f | 0x40;
+  rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+  if (buf) {
+    offset = offset || 0;
+
+    for (var i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+
+    return buf;
+  }
+
+  return (0, _bytesToUuid.default)(rnds);
+}
+
+var _default = v4;
+exports.default = _default;
+},{"./rng.js":"../node_modules/uuid/dist/esm-browser/rng.js","./bytesToUuid.js":"../node_modules/uuid/dist/esm-browser/bytesToUuid.js"}],"../node_modules/uuid/dist/esm-browser/sha1.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+// Adapted from Chris Veness' SHA1 code at
+// http://www.movable-type.co.uk/scripts/sha1.html
+function f(s, x, y, z) {
+  switch (s) {
+    case 0:
+      return x & y ^ ~x & z;
+
+    case 1:
+      return x ^ y ^ z;
+
+    case 2:
+      return x & y ^ x & z ^ y & z;
+
+    case 3:
+      return x ^ y ^ z;
+  }
+}
+
+function ROTL(x, n) {
+  return x << n | x >>> 32 - n;
+}
+
+function sha1(bytes) {
+  var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
+  var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+
+  if (typeof bytes === 'string') {
+    var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
+
+    bytes = [];
+
+    for (var i = 0; i < msg.length; ++i) {
+      bytes.push(msg.charCodeAt(i));
+    }
+  }
+
+  bytes.push(0x80);
+  var l = bytes.length / 4 + 2;
+  var N = Math.ceil(l / 16);
+  var M = new Array(N);
+
+  for (var _i = 0; _i < N; ++_i) {
+    var arr = new Uint32Array(16);
+
+    for (var j = 0; j < 16; ++j) {
+      arr[j] = bytes[_i * 64 + j * 4] << 24 | bytes[_i * 64 + j * 4 + 1] << 16 | bytes[_i * 64 + j * 4 + 2] << 8 | bytes[_i * 64 + j * 4 + 3];
+    }
+
+    M[_i] = arr;
+  }
+
+  M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
+  M[N - 1][14] = Math.floor(M[N - 1][14]);
+  M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
+
+  for (var _i2 = 0; _i2 < N; ++_i2) {
+    var W = new Uint32Array(80);
+
+    for (var t = 0; t < 16; ++t) {
+      W[t] = M[_i2][t];
+    }
+
+    for (var _t = 16; _t < 80; ++_t) {
+      W[_t] = ROTL(W[_t - 3] ^ W[_t - 8] ^ W[_t - 14] ^ W[_t - 16], 1);
+    }
+
+    var a = H[0];
+    var b = H[1];
+    var c = H[2];
+    var d = H[3];
+    var e = H[4];
+
+    for (var _t2 = 0; _t2 < 80; ++_t2) {
+      var s = Math.floor(_t2 / 20);
+      var T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[_t2] >>> 0;
+      e = d;
+      d = c;
+      c = ROTL(b, 30) >>> 0;
+      b = a;
+      a = T;
+    }
+
+    H[0] = H[0] + a >>> 0;
+    H[1] = H[1] + b >>> 0;
+    H[2] = H[2] + c >>> 0;
+    H[3] = H[3] + d >>> 0;
+    H[4] = H[4] + e >>> 0;
+  }
+
+  return [H[0] >> 24 & 0xff, H[0] >> 16 & 0xff, H[0] >> 8 & 0xff, H[0] & 0xff, H[1] >> 24 & 0xff, H[1] >> 16 & 0xff, H[1] >> 8 & 0xff, H[1] & 0xff, H[2] >> 24 & 0xff, H[2] >> 16 & 0xff, H[2] >> 8 & 0xff, H[2] & 0xff, H[3] >> 24 & 0xff, H[3] >> 16 & 0xff, H[3] >> 8 & 0xff, H[3] & 0xff, H[4] >> 24 & 0xff, H[4] >> 16 & 0xff, H[4] >> 8 & 0xff, H[4] & 0xff];
+}
+
+var _default = sha1;
+exports.default = _default;
+},{}],"../node_modules/uuid/dist/esm-browser/v5.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _v = _interopRequireDefault(require("./v35.js"));
+
+var _sha = _interopRequireDefault(require("./sha1.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var v5 = (0, _v.default)('v5', 0x50, _sha.default);
+var _default = v5;
+exports.default = _default;
+},{"./v35.js":"../node_modules/uuid/dist/esm-browser/v35.js","./sha1.js":"../node_modules/uuid/dist/esm-browser/sha1.js"}],"../node_modules/uuid/dist/esm-browser/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "v1", {
+  enumerable: true,
+  get: function () {
+    return _v.default;
+  }
+});
+Object.defineProperty(exports, "v3", {
+  enumerable: true,
+  get: function () {
+    return _v2.default;
+  }
+});
+Object.defineProperty(exports, "v4", {
+  enumerable: true,
+  get: function () {
+    return _v3.default;
+  }
+});
+Object.defineProperty(exports, "v5", {
+  enumerable: true,
+  get: function () {
+    return _v4.default;
+  }
+});
+
+var _v = _interopRequireDefault(require("./v1.js"));
+
+var _v2 = _interopRequireDefault(require("./v3.js"));
+
+var _v3 = _interopRequireDefault(require("./v4.js"));
+
+var _v4 = _interopRequireDefault(require("./v5.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+},{"./v1.js":"../node_modules/uuid/dist/esm-browser/v1.js","./v3.js":"../node_modules/uuid/dist/esm-browser/v3.js","./v4.js":"../node_modules/uuid/dist/esm-browser/v4.js","./v5.js":"../node_modules/uuid/dist/esm-browser/v5.js"}],"../node_modules/date-fns/esm/_lib/requiredArgs/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = requiredArgs;
+
+function requiredArgs(required, args) {
+  if (args.length < required) {
+    throw new TypeError(required + ' argument' + (required > 1 ? 's' : '') + ' required, but only ' + args.length + ' present');
+  }
+}
+},{}],"../node_modules/date-fns/esm/toDate/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = toDate;
+
+var _index = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name toDate
+ * @category Common Helpers
+ * @summary Convert the given argument to an instance of Date.
+ *
+ * @description
+ * Convert the given argument to an instance of Date.
+ *
+ * If the argument is an instance of Date, the function returns its clone.
+ *
+ * If the argument is a number, it is treated as a timestamp.
+ *
+ * If the argument is none of the above, the function returns Invalid Date.
+ *
+ * **Note**: *all* Date arguments passed to any *date-fns* function is processed by `toDate`.
+ *
+ * @param {Date|Number} argument - the value to convert
+ * @returns {Date} the parsed date in the local time zone
+ * @throws {TypeError} 1 argument required
+ *
+ * @example
+ * // Clone the date:
+ * const result = toDate(new Date(2014, 1, 11, 11, 30, 30))
+ * //=> Tue Feb 11 2014 11:30:30
+ *
+ * @example
+ * // Convert the timestamp to date:
+ * const result = toDate(1392098430000)
+ * //=> Tue Feb 11 2014 11:30:30
+ */
+function toDate(argument) {
+  (0, _index.default)(1, arguments);
+  var argStr = Object.prototype.toString.call(argument); // Clone the date
+
+  if (argument instanceof Date || typeof argument === 'object' && argStr === '[object Date]') {
+    // Prevent the date to lose the milliseconds when passed to new Date() in IE10
+    return new Date(argument.getTime());
+  } else if (typeof argument === 'number' || argStr === '[object Number]') {
+    return new Date(argument);
+  } else {
+    if ((typeof argument === 'string' || argStr === '[object String]') && typeof console !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.warn("Starting with v2.0.0-beta.1 date-fns doesn't accept strings as date arguments. Please use `parseISO` to parse strings. See: https://git.io/fjule"); // eslint-disable-next-line no-console
+
+      console.warn(new Error().stack);
+    }
+
+    return new Date(NaN);
+  }
+}
+},{"../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/isValid/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = isValid;
+
+var _index = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name isValid
+ * @category Common Helpers
+ * @summary Is the given date valid?
+ *
+ * @description
+ * Returns false if argument is Invalid Date and true otherwise.
+ * Argument is converted to Date using `toDate`. See [toDate]{@link https://date-fns.org/docs/toDate}
+ * Invalid Date is a Date, whose time value is NaN.
+ *
+ * Time value of Date: http://es5.github.io/#x15.9.1.1
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * - Now `isValid` doesn't throw an exception
+ *   if the first argument is not an instance of Date.
+ *   Instead, argument is converted beforehand using `toDate`.
+ *
+ *   Examples:
+ *
+ *   | `isValid` argument        | Before v2.0.0 | v2.0.0 onward |
+ *   |---------------------------|---------------|---------------|
+ *   | `new Date()`              | `true`        | `true`        |
+ *   | `new Date('2016-01-01')`  | `true`        | `true`        |
+ *   | `new Date('')`            | `false`       | `false`       |
+ *   | `new Date(1488370835081)` | `true`        | `true`        |
+ *   | `new Date(NaN)`           | `false`       | `false`       |
+ *   | `'2016-01-01'`            | `TypeError`   | `false`       |
+ *   | `''`                      | `TypeError`   | `false`       |
+ *   | `1488370835081`           | `TypeError`   | `true`        |
+ *   | `NaN`                     | `TypeError`   | `false`       |
+ *
+ *   We introduce this change to make *date-fns* consistent with ECMAScript behavior
+ *   that try to coerce arguments to the expected type
+ *   (which is also the case with other *date-fns* functions).
+ *
+ * @param {*} date - the date to check
+ * @returns {Boolean} the date is valid
+ * @throws {TypeError} 1 argument required
+ *
+ * @example
+ * // For the valid date:
+ * var result = isValid(new Date(2014, 1, 31))
+ * //=> true
+ *
+ * @example
+ * // For the value, convertable into a date:
+ * var result = isValid(1393804800000)
+ * //=> true
+ *
+ * @example
+ * // For the invalid date:
+ * var result = isValid(new Date(''))
+ * //=> false
+ */
+function isValid(dirtyDate) {
+  (0, _index2.default)(1, arguments);
+  var date = (0, _index.default)(dirtyDate);
+  return !isNaN(date);
+}
+},{"../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/locale/en-US/_lib/formatDistance/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = formatDistance;
+var formatDistanceLocale = {
+  lessThanXSeconds: {
+    one: 'less than a second',
+    other: 'less than {{count}} seconds'
+  },
+  xSeconds: {
+    one: '1 second',
+    other: '{{count}} seconds'
+  },
+  halfAMinute: 'half a minute',
+  lessThanXMinutes: {
+    one: 'less than a minute',
+    other: 'less than {{count}} minutes'
+  },
+  xMinutes: {
+    one: '1 minute',
+    other: '{{count}} minutes'
+  },
+  aboutXHours: {
+    one: 'about 1 hour',
+    other: 'about {{count}} hours'
+  },
+  xHours: {
+    one: '1 hour',
+    other: '{{count}} hours'
+  },
+  xDays: {
+    one: '1 day',
+    other: '{{count}} days'
+  },
+  aboutXWeeks: {
+    one: 'about 1 week',
+    other: 'about {{count}} weeks'
+  },
+  xWeeks: {
+    one: '1 week',
+    other: '{{count}} weeks'
+  },
+  aboutXMonths: {
+    one: 'about 1 month',
+    other: 'about {{count}} months'
+  },
+  xMonths: {
+    one: '1 month',
+    other: '{{count}} months'
+  },
+  aboutXYears: {
+    one: 'about 1 year',
+    other: 'about {{count}} years'
+  },
+  xYears: {
+    one: '1 year',
+    other: '{{count}} years'
+  },
+  overXYears: {
+    one: 'over 1 year',
+    other: 'over {{count}} years'
+  },
+  almostXYears: {
+    one: 'almost 1 year',
+    other: 'almost {{count}} years'
+  }
+};
+
+function formatDistance(token, count, options) {
+  options = options || {};
+  var result;
+
+  if (typeof formatDistanceLocale[token] === 'string') {
+    result = formatDistanceLocale[token];
+  } else if (count === 1) {
+    result = formatDistanceLocale[token].one;
+  } else {
+    result = formatDistanceLocale[token].other.replace('{{count}}', count);
+  }
+
+  if (options.addSuffix) {
+    if (options.comparison > 0) {
+      return 'in ' + result;
+    } else {
+      return result + ' ago';
+    }
+  }
+
+  return result;
+}
+},{}],"../node_modules/date-fns/esm/locale/_lib/buildFormatLongFn/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildFormatLongFn;
+
+function buildFormatLongFn(args) {
+  return function (dirtyOptions) {
+    var options = dirtyOptions || {};
+    var width = options.width ? String(options.width) : args.defaultWidth;
+    var format = args.formats[width] || args.formats[args.defaultWidth];
+    return format;
+  };
+}
+},{}],"../node_modules/date-fns/esm/locale/en-US/_lib/formatLong/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("../../../_lib/buildFormatLongFn/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var dateFormats = {
+  full: 'EEEE, MMMM do, y',
+  long: 'MMMM do, y',
+  medium: 'MMM d, y',
+  short: 'MM/dd/yyyy'
+};
+var timeFormats = {
+  full: 'h:mm:ss a zzzz',
+  long: 'h:mm:ss a z',
+  medium: 'h:mm:ss a',
+  short: 'h:mm a'
+};
+var dateTimeFormats = {
+  full: "{{date}} 'at' {{time}}",
+  long: "{{date}} 'at' {{time}}",
+  medium: '{{date}}, {{time}}',
+  short: '{{date}}, {{time}}'
+};
+var formatLong = {
+  date: (0, _index.default)({
+    formats: dateFormats,
+    defaultWidth: 'full'
+  }),
+  time: (0, _index.default)({
+    formats: timeFormats,
+    defaultWidth: 'full'
+  }),
+  dateTime: (0, _index.default)({
+    formats: dateTimeFormats,
+    defaultWidth: 'full'
+  })
+};
+var _default = formatLong;
+exports.default = _default;
+},{"../../../_lib/buildFormatLongFn/index.js":"../node_modules/date-fns/esm/locale/_lib/buildFormatLongFn/index.js"}],"../node_modules/date-fns/esm/locale/en-US/_lib/formatRelative/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = formatRelative;
+var formatRelativeLocale = {
+  lastWeek: "'last' eeee 'at' p",
+  yesterday: "'yesterday at' p",
+  today: "'today at' p",
+  tomorrow: "'tomorrow at' p",
+  nextWeek: "eeee 'at' p",
+  other: 'P'
+};
+
+function formatRelative(token, _date, _baseDate, _options) {
+  return formatRelativeLocale[token];
+}
+},{}],"../node_modules/date-fns/esm/locale/_lib/buildLocalizeFn/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildLocalizeFn;
+
+function buildLocalizeFn(args) {
+  return function (dirtyIndex, dirtyOptions) {
+    var options = dirtyOptions || {};
+    var context = options.context ? String(options.context) : 'standalone';
+    var valuesArray;
+
+    if (context === 'formatting' && args.formattingValues) {
+      var defaultWidth = args.defaultFormattingWidth || args.defaultWidth;
+      var width = options.width ? String(options.width) : defaultWidth;
+      valuesArray = args.formattingValues[width] || args.formattingValues[defaultWidth];
+    } else {
+      var _defaultWidth = args.defaultWidth;
+
+      var _width = options.width ? String(options.width) : args.defaultWidth;
+
+      valuesArray = args.values[_width] || args.values[_defaultWidth];
+    }
+
+    var index = args.argumentCallback ? args.argumentCallback(dirtyIndex) : dirtyIndex;
+    return valuesArray[index];
+  };
+}
+},{}],"../node_modules/date-fns/esm/locale/en-US/_lib/localize/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("../../../_lib/buildLocalizeFn/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var eraValues = {
+  narrow: ['B', 'A'],
+  abbreviated: ['BC', 'AD'],
+  wide: ['Before Christ', 'Anno Domini']
+};
+var quarterValues = {
+  narrow: ['1', '2', '3', '4'],
+  abbreviated: ['Q1', 'Q2', 'Q3', 'Q4'],
+  wide: ['1st quarter', '2nd quarter', '3rd quarter', '4th quarter'] // Note: in English, the names of days of the week and months are capitalized.
+  // If you are making a new locale based on this one, check if the same is true for the language you're working on.
+  // Generally, formatted dates should look like they are in the middle of a sentence,
+  // e.g. in Spanish language the weekdays and months should be in the lowercase.
+
+};
+var monthValues = {
+  narrow: ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'],
+  abbreviated: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  wide: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+};
+var dayValues = {
+  narrow: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
+  short: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  abbreviated: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  wide: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+};
+var dayPeriodValues = {
+  narrow: {
+    am: 'a',
+    pm: 'p',
+    midnight: 'mi',
+    noon: 'n',
+    morning: 'morning',
+    afternoon: 'afternoon',
+    evening: 'evening',
+    night: 'night'
+  },
+  abbreviated: {
+    am: 'AM',
+    pm: 'PM',
+    midnight: 'midnight',
+    noon: 'noon',
+    morning: 'morning',
+    afternoon: 'afternoon',
+    evening: 'evening',
+    night: 'night'
+  },
+  wide: {
+    am: 'a.m.',
+    pm: 'p.m.',
+    midnight: 'midnight',
+    noon: 'noon',
+    morning: 'morning',
+    afternoon: 'afternoon',
+    evening: 'evening',
+    night: 'night'
+  }
+};
+var formattingDayPeriodValues = {
+  narrow: {
+    am: 'a',
+    pm: 'p',
+    midnight: 'mi',
+    noon: 'n',
+    morning: 'in the morning',
+    afternoon: 'in the afternoon',
+    evening: 'in the evening',
+    night: 'at night'
+  },
+  abbreviated: {
+    am: 'AM',
+    pm: 'PM',
+    midnight: 'midnight',
+    noon: 'noon',
+    morning: 'in the morning',
+    afternoon: 'in the afternoon',
+    evening: 'in the evening',
+    night: 'at night'
+  },
+  wide: {
+    am: 'a.m.',
+    pm: 'p.m.',
+    midnight: 'midnight',
+    noon: 'noon',
+    morning: 'in the morning',
+    afternoon: 'in the afternoon',
+    evening: 'in the evening',
+    night: 'at night'
+  }
+};
+
+function ordinalNumber(dirtyNumber, _dirtyOptions) {
+  var number = Number(dirtyNumber); // If ordinal numbers depend on context, for example,
+  // if they are different for different grammatical genders,
+  // use `options.unit`:
+  //
+  //   var options = dirtyOptions || {}
+  //   var unit = String(options.unit)
+  //
+  // where `unit` can be 'year', 'quarter', 'month', 'week', 'date', 'dayOfYear',
+  // 'day', 'hour', 'minute', 'second'
+
+  var rem100 = number % 100;
+
+  if (rem100 > 20 || rem100 < 10) {
+    switch (rem100 % 10) {
+      case 1:
+        return number + 'st';
+
+      case 2:
+        return number + 'nd';
+
+      case 3:
+        return number + 'rd';
+    }
+  }
+
+  return number + 'th';
+}
+
+var localize = {
+  ordinalNumber: ordinalNumber,
+  era: (0, _index.default)({
+    values: eraValues,
+    defaultWidth: 'wide'
+  }),
+  quarter: (0, _index.default)({
+    values: quarterValues,
+    defaultWidth: 'wide',
+    argumentCallback: function (quarter) {
+      return Number(quarter) - 1;
+    }
+  }),
+  month: (0, _index.default)({
+    values: monthValues,
+    defaultWidth: 'wide'
+  }),
+  day: (0, _index.default)({
+    values: dayValues,
+    defaultWidth: 'wide'
+  }),
+  dayPeriod: (0, _index.default)({
+    values: dayPeriodValues,
+    defaultWidth: 'wide',
+    formattingValues: formattingDayPeriodValues,
+    defaultFormattingWidth: 'wide'
+  })
+};
+var _default = localize;
+exports.default = _default;
+},{"../../../_lib/buildLocalizeFn/index.js":"../node_modules/date-fns/esm/locale/_lib/buildLocalizeFn/index.js"}],"../node_modules/date-fns/esm/locale/_lib/buildMatchPatternFn/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildMatchPatternFn;
+
+function buildMatchPatternFn(args) {
+  return function (dirtyString, dirtyOptions) {
+    var string = String(dirtyString);
+    var options = dirtyOptions || {};
+    var matchResult = string.match(args.matchPattern);
+
+    if (!matchResult) {
+      return null;
+    }
+
+    var matchedString = matchResult[0];
+    var parseResult = string.match(args.parsePattern);
+
+    if (!parseResult) {
+      return null;
+    }
+
+    var value = args.valueCallback ? args.valueCallback(parseResult[0]) : parseResult[0];
+    value = options.valueCallback ? options.valueCallback(value) : value;
+    return {
+      value: value,
+      rest: string.slice(matchedString.length)
+    };
+  };
+}
+},{}],"../node_modules/date-fns/esm/locale/_lib/buildMatchFn/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = buildMatchFn;
+
+function buildMatchFn(args) {
+  return function (dirtyString, dirtyOptions) {
+    var string = String(dirtyString);
+    var options = dirtyOptions || {};
+    var width = options.width;
+    var matchPattern = width && args.matchPatterns[width] || args.matchPatterns[args.defaultMatchWidth];
+    var matchResult = string.match(matchPattern);
+
+    if (!matchResult) {
+      return null;
+    }
+
+    var matchedString = matchResult[0];
+    var parsePatterns = width && args.parsePatterns[width] || args.parsePatterns[args.defaultParseWidth];
+    var value;
+
+    if (Object.prototype.toString.call(parsePatterns) === '[object Array]') {
+      value = findIndex(parsePatterns, function (pattern) {
+        return pattern.test(matchedString);
+      });
+    } else {
+      value = findKey(parsePatterns, function (pattern) {
+        return pattern.test(matchedString);
+      });
+    }
+
+    value = args.valueCallback ? args.valueCallback(value) : value;
+    value = options.valueCallback ? options.valueCallback(value) : value;
+    return {
+      value: value,
+      rest: string.slice(matchedString.length)
+    };
+  };
+}
+
+function findKey(object, predicate) {
+  for (var key in object) {
+    if (object.hasOwnProperty(key) && predicate(object[key])) {
+      return key;
+    }
+  }
+}
+
+function findIndex(array, predicate) {
+  for (var key = 0; key < array.length; key++) {
+    if (predicate(array[key])) {
+      return key;
+    }
+  }
+}
+},{}],"../node_modules/date-fns/esm/locale/en-US/_lib/match/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("../../../_lib/buildMatchPatternFn/index.js"));
+
+var _index2 = _interopRequireDefault(require("../../../_lib/buildMatchFn/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var matchOrdinalNumberPattern = /^(\d+)(th|st|nd|rd)?/i;
+var parseOrdinalNumberPattern = /\d+/i;
+var matchEraPatterns = {
+  narrow: /^(b|a)/i,
+  abbreviated: /^(b\.?\s?c\.?|b\.?\s?c\.?\s?e\.?|a\.?\s?d\.?|c\.?\s?e\.?)/i,
+  wide: /^(before christ|before common era|anno domini|common era)/i
+};
+var parseEraPatterns = {
+  any: [/^b/i, /^(a|c)/i]
+};
+var matchQuarterPatterns = {
+  narrow: /^[1234]/i,
+  abbreviated: /^q[1234]/i,
+  wide: /^[1234](th|st|nd|rd)? quarter/i
+};
+var parseQuarterPatterns = {
+  any: [/1/i, /2/i, /3/i, /4/i]
+};
+var matchMonthPatterns = {
+  narrow: /^[jfmasond]/i,
+  abbreviated: /^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i,
+  wide: /^(january|february|march|april|may|june|july|august|september|october|november|december)/i
+};
+var parseMonthPatterns = {
+  narrow: [/^j/i, /^f/i, /^m/i, /^a/i, /^m/i, /^j/i, /^j/i, /^a/i, /^s/i, /^o/i, /^n/i, /^d/i],
+  any: [/^ja/i, /^f/i, /^mar/i, /^ap/i, /^may/i, /^jun/i, /^jul/i, /^au/i, /^s/i, /^o/i, /^n/i, /^d/i]
+};
+var matchDayPatterns = {
+  narrow: /^[smtwf]/i,
+  short: /^(su|mo|tu|we|th|fr|sa)/i,
+  abbreviated: /^(sun|mon|tue|wed|thu|fri|sat)/i,
+  wide: /^(sunday|monday|tuesday|wednesday|thursday|friday|saturday)/i
+};
+var parseDayPatterns = {
+  narrow: [/^s/i, /^m/i, /^t/i, /^w/i, /^t/i, /^f/i, /^s/i],
+  any: [/^su/i, /^m/i, /^tu/i, /^w/i, /^th/i, /^f/i, /^sa/i]
+};
+var matchDayPeriodPatterns = {
+  narrow: /^(a|p|mi|n|(in the|at) (morning|afternoon|evening|night))/i,
+  any: /^([ap]\.?\s?m\.?|midnight|noon|(in the|at) (morning|afternoon|evening|night))/i
+};
+var parseDayPeriodPatterns = {
+  any: {
+    am: /^a/i,
+    pm: /^p/i,
+    midnight: /^mi/i,
+    noon: /^no/i,
+    morning: /morning/i,
+    afternoon: /afternoon/i,
+    evening: /evening/i,
+    night: /night/i
+  }
+};
+var match = {
+  ordinalNumber: (0, _index.default)({
+    matchPattern: matchOrdinalNumberPattern,
+    parsePattern: parseOrdinalNumberPattern,
+    valueCallback: function (value) {
+      return parseInt(value, 10);
+    }
+  }),
+  era: (0, _index2.default)({
+    matchPatterns: matchEraPatterns,
+    defaultMatchWidth: 'wide',
+    parsePatterns: parseEraPatterns,
+    defaultParseWidth: 'any'
+  }),
+  quarter: (0, _index2.default)({
+    matchPatterns: matchQuarterPatterns,
+    defaultMatchWidth: 'wide',
+    parsePatterns: parseQuarterPatterns,
+    defaultParseWidth: 'any',
+    valueCallback: function (index) {
+      return index + 1;
+    }
+  }),
+  month: (0, _index2.default)({
+    matchPatterns: matchMonthPatterns,
+    defaultMatchWidth: 'wide',
+    parsePatterns: parseMonthPatterns,
+    defaultParseWidth: 'any'
+  }),
+  day: (0, _index2.default)({
+    matchPatterns: matchDayPatterns,
+    defaultMatchWidth: 'wide',
+    parsePatterns: parseDayPatterns,
+    defaultParseWidth: 'any'
+  }),
+  dayPeriod: (0, _index2.default)({
+    matchPatterns: matchDayPeriodPatterns,
+    defaultMatchWidth: 'any',
+    parsePatterns: parseDayPeriodPatterns,
+    defaultParseWidth: 'any'
+  })
+};
+var _default = match;
+exports.default = _default;
+},{"../../../_lib/buildMatchPatternFn/index.js":"../node_modules/date-fns/esm/locale/_lib/buildMatchPatternFn/index.js","../../../_lib/buildMatchFn/index.js":"../node_modules/date-fns/esm/locale/_lib/buildMatchFn/index.js"}],"../node_modules/date-fns/esm/locale/en-US/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("./_lib/formatDistance/index.js"));
+
+var _index2 = _interopRequireDefault(require("./_lib/formatLong/index.js"));
+
+var _index3 = _interopRequireDefault(require("./_lib/formatRelative/index.js"));
+
+var _index4 = _interopRequireDefault(require("./_lib/localize/index.js"));
+
+var _index5 = _interopRequireDefault(require("./_lib/match/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @type {Locale}
+ * @category Locales
+ * @summary English locale (United States).
+ * @language English
+ * @iso-639-2 eng
+ * @author Sasha Koss [@kossnocorp]{@link https://github.com/kossnocorp}
+ * @author Lesha Koss [@leshakoss]{@link https://github.com/leshakoss}
+ */
+var locale = {
+  code: 'en-US',
+  formatDistance: _index.default,
+  formatLong: _index2.default,
+  formatRelative: _index3.default,
+  localize: _index4.default,
+  match: _index5.default,
+  options: {
+    weekStartsOn: 0
+    /* Sunday */
+    ,
+    firstWeekContainsDate: 1
+  }
+};
+var _default = locale;
+exports.default = _default;
+},{"./_lib/formatDistance/index.js":"../node_modules/date-fns/esm/locale/en-US/_lib/formatDistance/index.js","./_lib/formatLong/index.js":"../node_modules/date-fns/esm/locale/en-US/_lib/formatLong/index.js","./_lib/formatRelative/index.js":"../node_modules/date-fns/esm/locale/en-US/_lib/formatRelative/index.js","./_lib/localize/index.js":"../node_modules/date-fns/esm/locale/en-US/_lib/localize/index.js","./_lib/match/index.js":"../node_modules/date-fns/esm/locale/en-US/_lib/match/index.js"}],"../node_modules/date-fns/esm/_lib/toInteger/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = toInteger;
+
+function toInteger(dirtyNumber) {
+  if (dirtyNumber === null || dirtyNumber === true || dirtyNumber === false) {
+    return NaN;
+  }
+
+  var number = Number(dirtyNumber);
+
+  if (isNaN(number)) {
+    return number;
+  }
+
+  return number < 0 ? Math.ceil(number) : Math.floor(number);
+}
+},{}],"../node_modules/date-fns/esm/addMilliseconds/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = addMilliseconds;
+
+var _index = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name addMilliseconds
+ * @category Millisecond Helpers
+ * @summary Add the specified number of milliseconds to the given date.
+ *
+ * @description
+ * Add the specified number of milliseconds to the given date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Number} amount - the amount of milliseconds to be added. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ * @returns {Date} the new date with the milliseconds added
+ * @throws {TypeError} 2 arguments required
+ *
+ * @example
+ * // Add 750 milliseconds to 10 July 2014 12:45:30.000:
+ * var result = addMilliseconds(new Date(2014, 6, 10, 12, 45, 30, 0), 750)
+ * //=> Thu Jul 10 2014 12:45:30.750
+ */
+function addMilliseconds(dirtyDate, dirtyAmount) {
+  (0, _index3.default)(2, arguments);
+  var timestamp = (0, _index2.default)(dirtyDate).getTime();
+  var amount = (0, _index.default)(dirtyAmount);
+  return new Date(timestamp + amount);
+}
+},{"../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/subMilliseconds/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = subMilliseconds;
+
+var _index = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../addMilliseconds/index.js"));
+
+var _index3 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name subMilliseconds
+ * @category Millisecond Helpers
+ * @summary Subtract the specified number of milliseconds from the given date.
+ *
+ * @description
+ * Subtract the specified number of milliseconds from the given date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Number} amount - the amount of milliseconds to be subtracted. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ * @returns {Date} the new date with the milliseconds subtracted
+ * @throws {TypeError} 2 arguments required
+ *
+ * @example
+ * // Subtract 750 milliseconds from 10 July 2014 12:45:30.000:
+ * var result = subMilliseconds(new Date(2014, 6, 10, 12, 45, 30, 0), 750)
+ * //=> Thu Jul 10 2014 12:45:29.250
+ */
+function subMilliseconds(dirtyDate, dirtyAmount) {
+  (0, _index3.default)(2, arguments);
+  var amount = (0, _index.default)(dirtyAmount);
+  return (0, _index2.default)(dirtyDate, -amount);
+}
+},{"../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../addMilliseconds/index.js":"../node_modules/date-fns/esm/addMilliseconds/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/addLeadingZeros/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = addLeadingZeros;
+
+function addLeadingZeros(number, targetLength) {
+  var sign = number < 0 ? '-' : '';
+  var output = Math.abs(number).toString();
+
+  while (output.length < targetLength) {
+    output = '0' + output;
+  }
+
+  return sign + output;
+}
+},{}],"../node_modules/date-fns/esm/_lib/format/lightFormatters/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("../../addLeadingZeros/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/*
+ * |     | Unit                           |     | Unit                           |
+ * |-----|--------------------------------|-----|--------------------------------|
+ * |  a  | AM, PM                         |  A* |                                |
+ * |  d  | Day of month                   |  D  |                                |
+ * |  h  | Hour [1-12]                    |  H  | Hour [0-23]                    |
+ * |  m  | Minute                         |  M  | Month                          |
+ * |  s  | Second                         |  S  | Fraction of second             |
+ * |  y  | Year (abs)                     |  Y  |                                |
+ *
+ * Letters marked by * are not implemented but reserved by Unicode standard.
+ */
+var formatters = {
+  // Year
+  y: function (date, token) {
+    // From http://www.unicode.org/reports/tr35/tr35-31/tr35-dates.html#Date_Format_tokens
+    // | Year     |     y | yy |   yyy |  yyyy | yyyyy |
+    // |----------|-------|----|-------|-------|-------|
+    // | AD 1     |     1 | 01 |   001 |  0001 | 00001 |
+    // | AD 12    |    12 | 12 |   012 |  0012 | 00012 |
+    // | AD 123   |   123 | 23 |   123 |  0123 | 00123 |
+    // | AD 1234  |  1234 | 34 |  1234 |  1234 | 01234 |
+    // | AD 12345 | 12345 | 45 | 12345 | 12345 | 12345 |
+    var signedYear = date.getUTCFullYear(); // Returns 1 for 1 BC (which is year 0 in JavaScript)
+
+    var year = signedYear > 0 ? signedYear : 1 - signedYear;
+    return (0, _index.default)(token === 'yy' ? year % 100 : year, token.length);
+  },
+  // Month
+  M: function (date, token) {
+    var month = date.getUTCMonth();
+    return token === 'M' ? String(month + 1) : (0, _index.default)(month + 1, 2);
+  },
+  // Day of the month
+  d: function (date, token) {
+    return (0, _index.default)(date.getUTCDate(), token.length);
+  },
+  // AM or PM
+  a: function (date, token) {
+    var dayPeriodEnumValue = date.getUTCHours() / 12 >= 1 ? 'pm' : 'am';
+
+    switch (token) {
+      case 'a':
+      case 'aa':
+      case 'aaa':
+        return dayPeriodEnumValue.toUpperCase();
+
+      case 'aaaaa':
+        return dayPeriodEnumValue[0];
+
+      case 'aaaa':
+      default:
+        return dayPeriodEnumValue === 'am' ? 'a.m.' : 'p.m.';
+    }
+  },
+  // Hour [1-12]
+  h: function (date, token) {
+    return (0, _index.default)(date.getUTCHours() % 12 || 12, token.length);
+  },
+  // Hour [0-23]
+  H: function (date, token) {
+    return (0, _index.default)(date.getUTCHours(), token.length);
+  },
+  // Minute
+  m: function (date, token) {
+    return (0, _index.default)(date.getUTCMinutes(), token.length);
+  },
+  // Second
+  s: function (date, token) {
+    return (0, _index.default)(date.getUTCSeconds(), token.length);
+  },
+  // Fraction of second
+  S: function (date, token) {
+    var numberOfDigits = token.length;
+    var milliseconds = date.getUTCMilliseconds();
+    var fractionalSeconds = Math.floor(milliseconds * Math.pow(10, numberOfDigits - 3));
+    return (0, _index.default)(fractionalSeconds, token.length);
+  }
+};
+var _default = formatters;
+exports.default = _default;
+},{"../../addLeadingZeros/index.js":"../node_modules/date-fns/esm/_lib/addLeadingZeros/index.js"}],"../node_modules/date-fns/esm/_lib/getUTCDayOfYear/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getUTCDayOfYear;
+
+var _index = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_DAY = 86400000; // This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+
+function getUTCDayOfYear(dirtyDate) {
+  (0, _index2.default)(1, arguments);
+  var date = (0, _index.default)(dirtyDate);
+  var timestamp = date.getTime();
+  date.setUTCMonth(0, 1);
+  date.setUTCHours(0, 0, 0, 0);
+  var startOfYearTimestamp = date.getTime();
+  var difference = timestamp - startOfYearTimestamp;
+  return Math.floor(difference / MILLISECONDS_IN_DAY) + 1;
+}
+},{"../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/startOfUTCISOWeek/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = startOfUTCISOWeek;
+
+var _index = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function startOfUTCISOWeek(dirtyDate) {
+  (0, _index2.default)(1, arguments);
+  var weekStartsOn = 1;
+  var date = (0, _index.default)(dirtyDate);
+  var day = date.getUTCDay();
+  var diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+  date.setUTCDate(date.getUTCDate() - diff);
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
+}
+},{"../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/getUTCISOWeekYear/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getUTCISOWeekYear;
+
+var _index = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../startOfUTCISOWeek/index.js"));
+
+var _index3 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function getUTCISOWeekYear(dirtyDate) {
+  (0, _index3.default)(1, arguments);
+  var date = (0, _index.default)(dirtyDate);
+  var year = date.getUTCFullYear();
+  var fourthOfJanuaryOfNextYear = new Date(0);
+  fourthOfJanuaryOfNextYear.setUTCFullYear(year + 1, 0, 4);
+  fourthOfJanuaryOfNextYear.setUTCHours(0, 0, 0, 0);
+  var startOfNextYear = (0, _index2.default)(fourthOfJanuaryOfNextYear);
+  var fourthOfJanuaryOfThisYear = new Date(0);
+  fourthOfJanuaryOfThisYear.setUTCFullYear(year, 0, 4);
+  fourthOfJanuaryOfThisYear.setUTCHours(0, 0, 0, 0);
+  var startOfThisYear = (0, _index2.default)(fourthOfJanuaryOfThisYear);
+
+  if (date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+},{"../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../startOfUTCISOWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCISOWeek/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/startOfUTCISOWeekYear/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = startOfUTCISOWeekYear;
+
+var _index = _interopRequireDefault(require("../getUTCISOWeekYear/index.js"));
+
+var _index2 = _interopRequireDefault(require("../startOfUTCISOWeek/index.js"));
+
+var _index3 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function startOfUTCISOWeekYear(dirtyDate) {
+  (0, _index3.default)(1, arguments);
+  var year = (0, _index.default)(dirtyDate);
+  var fourthOfJanuary = new Date(0);
+  fourthOfJanuary.setUTCFullYear(year, 0, 4);
+  fourthOfJanuary.setUTCHours(0, 0, 0, 0);
+  var date = (0, _index2.default)(fourthOfJanuary);
+  return date;
+}
+},{"../getUTCISOWeekYear/index.js":"../node_modules/date-fns/esm/_lib/getUTCISOWeekYear/index.js","../startOfUTCISOWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCISOWeek/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/getUTCISOWeek/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getUTCISOWeek;
+
+var _index = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../startOfUTCISOWeek/index.js"));
+
+var _index3 = _interopRequireDefault(require("../startOfUTCISOWeekYear/index.js"));
+
+var _index4 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_WEEK = 604800000; // This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+
+function getUTCISOWeek(dirtyDate) {
+  (0, _index4.default)(1, arguments);
+  var date = (0, _index.default)(dirtyDate);
+  var diff = (0, _index2.default)(date).getTime() - (0, _index3.default)(date).getTime(); // Round the number of days to the nearest integer
+  // because the number of milliseconds in a week is not constant
+  // (e.g. it's different in the week of the daylight saving time clock shift)
+
+  return Math.round(diff / MILLISECONDS_IN_WEEK) + 1;
+}
+},{"../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../startOfUTCISOWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCISOWeek/index.js","../startOfUTCISOWeekYear/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCISOWeekYear/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/startOfUTCWeek/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = startOfUTCWeek;
+
+var _index = _interopRequireDefault(require("../toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function startOfUTCWeek(dirtyDate, dirtyOptions) {
+  (0, _index3.default)(1, arguments);
+  var options = dirtyOptions || {};
+  var locale = options.locale;
+  var localeWeekStartsOn = locale && locale.options && locale.options.weekStartsOn;
+  var defaultWeekStartsOn = localeWeekStartsOn == null ? 0 : (0, _index.default)(localeWeekStartsOn);
+  var weekStartsOn = options.weekStartsOn == null ? defaultWeekStartsOn : (0, _index.default)(options.weekStartsOn); // Test if weekStartsOn is between 0 and 6 _and_ is not NaN
+
+  if (!(weekStartsOn >= 0 && weekStartsOn <= 6)) {
+    throw new RangeError('weekStartsOn must be between 0 and 6 inclusively');
+  }
+
+  var date = (0, _index2.default)(dirtyDate);
+  var day = date.getUTCDay();
+  var diff = (day < weekStartsOn ? 7 : 0) + day - weekStartsOn;
+  date.setUTCDate(date.getUTCDate() - diff);
+  date.setUTCHours(0, 0, 0, 0);
+  return date;
+}
+},{"../toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/getUTCWeekYear/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getUTCWeekYear;
+
+var _index = _interopRequireDefault(require("../toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("../startOfUTCWeek/index.js"));
+
+var _index4 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function getUTCWeekYear(dirtyDate, dirtyOptions) {
+  (0, _index4.default)(1, arguments);
+  var date = (0, _index2.default)(dirtyDate, dirtyOptions);
+  var year = date.getUTCFullYear();
+  var options = dirtyOptions || {};
+  var locale = options.locale;
+  var localeFirstWeekContainsDate = locale && locale.options && locale.options.firstWeekContainsDate;
+  var defaultFirstWeekContainsDate = localeFirstWeekContainsDate == null ? 1 : (0, _index.default)(localeFirstWeekContainsDate);
+  var firstWeekContainsDate = options.firstWeekContainsDate == null ? defaultFirstWeekContainsDate : (0, _index.default)(options.firstWeekContainsDate); // Test if weekStartsOn is between 1 and 7 _and_ is not NaN
+
+  if (!(firstWeekContainsDate >= 1 && firstWeekContainsDate <= 7)) {
+    throw new RangeError('firstWeekContainsDate must be between 1 and 7 inclusively');
+  }
+
+  var firstWeekOfNextYear = new Date(0);
+  firstWeekOfNextYear.setUTCFullYear(year + 1, 0, firstWeekContainsDate);
+  firstWeekOfNextYear.setUTCHours(0, 0, 0, 0);
+  var startOfNextYear = (0, _index3.default)(firstWeekOfNextYear, dirtyOptions);
+  var firstWeekOfThisYear = new Date(0);
+  firstWeekOfThisYear.setUTCFullYear(year, 0, firstWeekContainsDate);
+  firstWeekOfThisYear.setUTCHours(0, 0, 0, 0);
+  var startOfThisYear = (0, _index3.default)(firstWeekOfThisYear, dirtyOptions);
+
+  if (date.getTime() >= startOfNextYear.getTime()) {
+    return year + 1;
+  } else if (date.getTime() >= startOfThisYear.getTime()) {
+    return year;
+  } else {
+    return year - 1;
+  }
+}
+},{"../toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../startOfUTCWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCWeek/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/startOfUTCWeekYear/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = startOfUTCWeekYear;
+
+var _index = _interopRequireDefault(require("../toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../getUTCWeekYear/index.js"));
+
+var _index3 = _interopRequireDefault(require("../startOfUTCWeek/index.js"));
+
+var _index4 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+function startOfUTCWeekYear(dirtyDate, dirtyOptions) {
+  (0, _index4.default)(1, arguments);
+  var options = dirtyOptions || {};
+  var locale = options.locale;
+  var localeFirstWeekContainsDate = locale && locale.options && locale.options.firstWeekContainsDate;
+  var defaultFirstWeekContainsDate = localeFirstWeekContainsDate == null ? 1 : (0, _index.default)(localeFirstWeekContainsDate);
+  var firstWeekContainsDate = options.firstWeekContainsDate == null ? defaultFirstWeekContainsDate : (0, _index.default)(options.firstWeekContainsDate);
+  var year = (0, _index2.default)(dirtyDate, dirtyOptions);
+  var firstWeek = new Date(0);
+  firstWeek.setUTCFullYear(year, 0, firstWeekContainsDate);
+  firstWeek.setUTCHours(0, 0, 0, 0);
+  var date = (0, _index3.default)(firstWeek, dirtyOptions);
+  return date;
+}
+},{"../toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../getUTCWeekYear/index.js":"../node_modules/date-fns/esm/_lib/getUTCWeekYear/index.js","../startOfUTCWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCWeek/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/getUTCWeek/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getUTCWeek;
+
+var _index = _interopRequireDefault(require("../../toDate/index.js"));
+
+var _index2 = _interopRequireDefault(require("../startOfUTCWeek/index.js"));
+
+var _index3 = _interopRequireDefault(require("../startOfUTCWeekYear/index.js"));
+
+var _index4 = _interopRequireDefault(require("../requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_WEEK = 604800000; // This function will be a part of public API when UTC function will be implemented.
+// See issue: https://github.com/date-fns/date-fns/issues/376
+
+function getUTCWeek(dirtyDate, options) {
+  (0, _index4.default)(1, arguments);
+  var date = (0, _index.default)(dirtyDate);
+  var diff = (0, _index2.default)(date, options).getTime() - (0, _index3.default)(date, options).getTime(); // Round the number of days to the nearest integer
+  // because the number of milliseconds in a week is not constant
+  // (e.g. it's different in the week of the daylight saving time clock shift)
+
+  return Math.round(diff / MILLISECONDS_IN_WEEK) + 1;
+}
+},{"../../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../startOfUTCWeek/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCWeek/index.js","../startOfUTCWeekYear/index.js":"../node_modules/date-fns/esm/_lib/startOfUTCWeekYear/index.js","../requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/_lib/format/formatters/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _index = _interopRequireDefault(require("../lightFormatters/index.js"));
+
+var _index2 = _interopRequireDefault(require("../../../_lib/getUTCDayOfYear/index.js"));
+
+var _index3 = _interopRequireDefault(require("../../../_lib/getUTCISOWeek/index.js"));
+
+var _index4 = _interopRequireDefault(require("../../../_lib/getUTCISOWeekYear/index.js"));
+
+var _index5 = _interopRequireDefault(require("../../../_lib/getUTCWeek/index.js"));
+
+var _index6 = _interopRequireDefault(require("../../../_lib/getUTCWeekYear/index.js"));
+
+var _index7 = _interopRequireDefault(require("../../addLeadingZeros/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var dayPeriodEnum = {
+  am: 'am',
+  pm: 'pm',
+  midnight: 'midnight',
+  noon: 'noon',
+  morning: 'morning',
+  afternoon: 'afternoon',
+  evening: 'evening',
+  night: 'night'
+  /*
+   * |     | Unit                           |     | Unit                           |
+   * |-----|--------------------------------|-----|--------------------------------|
+   * |  a  | AM, PM                         |  A* | Milliseconds in day            |
+   * |  b  | AM, PM, noon, midnight         |  B  | Flexible day period            |
+   * |  c  | Stand-alone local day of week  |  C* | Localized hour w/ day period   |
+   * |  d  | Day of month                   |  D  | Day of year                    |
+   * |  e  | Local day of week              |  E  | Day of week                    |
+   * |  f  |                                |  F* | Day of week in month           |
+   * |  g* | Modified Julian day            |  G  | Era                            |
+   * |  h  | Hour [1-12]                    |  H  | Hour [0-23]                    |
+   * |  i! | ISO day of week                |  I! | ISO week of year               |
+   * |  j* | Localized hour w/ day period   |  J* | Localized hour w/o day period  |
+   * |  k  | Hour [1-24]                    |  K  | Hour [0-11]                    |
+   * |  l* | (deprecated)                   |  L  | Stand-alone month              |
+   * |  m  | Minute                         |  M  | Month                          |
+   * |  n  |                                |  N  |                                |
+   * |  o! | Ordinal number modifier        |  O  | Timezone (GMT)                 |
+   * |  p! | Long localized time            |  P! | Long localized date            |
+   * |  q  | Stand-alone quarter            |  Q  | Quarter                        |
+   * |  r* | Related Gregorian year         |  R! | ISO week-numbering year        |
+   * |  s  | Second                         |  S  | Fraction of second             |
+   * |  t! | Seconds timestamp              |  T! | Milliseconds timestamp         |
+   * |  u  | Extended year                  |  U* | Cyclic year                    |
+   * |  v* | Timezone (generic non-locat.)  |  V* | Timezone (location)            |
+   * |  w  | Local week of year             |  W* | Week of month                  |
+   * |  x  | Timezone (ISO-8601 w/o Z)      |  X  | Timezone (ISO-8601)            |
+   * |  y  | Year (abs)                     |  Y  | Local week-numbering year      |
+   * |  z  | Timezone (specific non-locat.) |  Z* | Timezone (aliases)             |
+   *
+   * Letters marked by * are not implemented but reserved by Unicode standard.
+   *
+   * Letters marked by ! are non-standard, but implemented by date-fns:
+   * - `o` modifies the previous token to turn it into an ordinal (see `format` docs)
+   * - `i` is ISO day of week. For `i` and `ii` is returns numeric ISO week days,
+   *   i.e. 7 for Sunday, 1 for Monday, etc.
+   * - `I` is ISO week of year, as opposed to `w` which is local week of year.
+   * - `R` is ISO week-numbering year, as opposed to `Y` which is local week-numbering year.
+   *   `R` is supposed to be used in conjunction with `I` and `i`
+   *   for universal ISO week-numbering date, whereas
+   *   `Y` is supposed to be used in conjunction with `w` and `e`
+   *   for week-numbering date specific to the locale.
+   * - `P` is long localized date format
+   * - `p` is long localized time format
+   */
+
+};
+var formatters = {
+  // Era
+  G: function (date, token, localize) {
+    var era = date.getUTCFullYear() > 0 ? 1 : 0;
+
+    switch (token) {
+      // AD, BC
+      case 'G':
+      case 'GG':
+      case 'GGG':
+        return localize.era(era, {
+          width: 'abbreviated'
+        });
+      // A, B
+
+      case 'GGGGG':
+        return localize.era(era, {
+          width: 'narrow'
+        });
+      // Anno Domini, Before Christ
+
+      case 'GGGG':
+      default:
+        return localize.era(era, {
+          width: 'wide'
+        });
+    }
+  },
+  // Year
+  y: function (date, token, localize) {
+    // Ordinal number
+    if (token === 'yo') {
+      var signedYear = date.getUTCFullYear(); // Returns 1 for 1 BC (which is year 0 in JavaScript)
+
+      var year = signedYear > 0 ? signedYear : 1 - signedYear;
+      return localize.ordinalNumber(year, {
+        unit: 'year'
+      });
+    }
+
+    return _index.default.y(date, token);
+  },
+  // Local week-numbering year
+  Y: function (date, token, localize, options) {
+    var signedWeekYear = (0, _index6.default)(date, options); // Returns 1 for 1 BC (which is year 0 in JavaScript)
+
+    var weekYear = signedWeekYear > 0 ? signedWeekYear : 1 - signedWeekYear; // Two digit year
+
+    if (token === 'YY') {
+      var twoDigitYear = weekYear % 100;
+      return (0, _index7.default)(twoDigitYear, 2);
+    } // Ordinal number
+
+
+    if (token === 'Yo') {
+      return localize.ordinalNumber(weekYear, {
+        unit: 'year'
+      });
+    } // Padding
+
+
+    return (0, _index7.default)(weekYear, token.length);
+  },
+  // ISO week-numbering year
+  R: function (date, token) {
+    var isoWeekYear = (0, _index4.default)(date); // Padding
+
+    return (0, _index7.default)(isoWeekYear, token.length);
+  },
+  // Extended year. This is a single number designating the year of this calendar system.
+  // The main difference between `y` and `u` localizers are B.C. years:
+  // | Year | `y` | `u` |
+  // |------|-----|-----|
+  // | AC 1 |   1 |   1 |
+  // | BC 1 |   1 |   0 |
+  // | BC 2 |   2 |  -1 |
+  // Also `yy` always returns the last two digits of a year,
+  // while `uu` pads single digit years to 2 characters and returns other years unchanged.
+  u: function (date, token) {
+    var year = date.getUTCFullYear();
+    return (0, _index7.default)(year, token.length);
+  },
+  // Quarter
+  Q: function (date, token, localize) {
+    var quarter = Math.ceil((date.getUTCMonth() + 1) / 3);
+
+    switch (token) {
+      // 1, 2, 3, 4
+      case 'Q':
+        return String(quarter);
+      // 01, 02, 03, 04
+
+      case 'QQ':
+        return (0, _index7.default)(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+
+      case 'Qo':
+        return localize.ordinalNumber(quarter, {
+          unit: 'quarter'
+        });
+      // Q1, Q2, Q3, Q4
+
+      case 'QQQ':
+        return localize.quarter(quarter, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+
+      case 'QQQQQ':
+        return localize.quarter(quarter, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+      // 1st quarter, 2nd quarter, ...
+
+      case 'QQQQ':
+      default:
+        return localize.quarter(quarter, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // Stand-alone quarter
+  q: function (date, token, localize) {
+    var quarter = Math.ceil((date.getUTCMonth() + 1) / 3);
+
+    switch (token) {
+      // 1, 2, 3, 4
+      case 'q':
+        return String(quarter);
+      // 01, 02, 03, 04
+
+      case 'qq':
+        return (0, _index7.default)(quarter, 2);
+      // 1st, 2nd, 3rd, 4th
+
+      case 'qo':
+        return localize.ordinalNumber(quarter, {
+          unit: 'quarter'
+        });
+      // Q1, Q2, Q3, Q4
+
+      case 'qqq':
+        return localize.quarter(quarter, {
+          width: 'abbreviated',
+          context: 'standalone'
+        });
+      // 1, 2, 3, 4 (narrow quarter; could be not numerical)
+
+      case 'qqqqq':
+        return localize.quarter(quarter, {
+          width: 'narrow',
+          context: 'standalone'
+        });
+      // 1st quarter, 2nd quarter, ...
+
+      case 'qqqq':
+      default:
+        return localize.quarter(quarter, {
+          width: 'wide',
+          context: 'standalone'
+        });
+    }
+  },
+  // Month
+  M: function (date, token, localize) {
+    var month = date.getUTCMonth();
+
+    switch (token) {
+      case 'M':
+      case 'MM':
+        return _index.default.M(date, token);
+      // 1st, 2nd, ..., 12th
+
+      case 'Mo':
+        return localize.ordinalNumber(month + 1, {
+          unit: 'month'
+        });
+      // Jan, Feb, ..., Dec
+
+      case 'MMM':
+        return localize.month(month, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+      // J, F, ..., D
+
+      case 'MMMMM':
+        return localize.month(month, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+      // January, February, ..., December
+
+      case 'MMMM':
+      default:
+        return localize.month(month, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // Stand-alone month
+  L: function (date, token, localize) {
+    var month = date.getUTCMonth();
+
+    switch (token) {
+      // 1, 2, ..., 12
+      case 'L':
+        return String(month + 1);
+      // 01, 02, ..., 12
+
+      case 'LL':
+        return (0, _index7.default)(month + 1, 2);
+      // 1st, 2nd, ..., 12th
+
+      case 'Lo':
+        return localize.ordinalNumber(month + 1, {
+          unit: 'month'
+        });
+      // Jan, Feb, ..., Dec
+
+      case 'LLL':
+        return localize.month(month, {
+          width: 'abbreviated',
+          context: 'standalone'
+        });
+      // J, F, ..., D
+
+      case 'LLLLL':
+        return localize.month(month, {
+          width: 'narrow',
+          context: 'standalone'
+        });
+      // January, February, ..., December
+
+      case 'LLLL':
+      default:
+        return localize.month(month, {
+          width: 'wide',
+          context: 'standalone'
+        });
+    }
+  },
+  // Local week of year
+  w: function (date, token, localize, options) {
+    var week = (0, _index5.default)(date, options);
+
+    if (token === 'wo') {
+      return localize.ordinalNumber(week, {
+        unit: 'week'
+      });
+    }
+
+    return (0, _index7.default)(week, token.length);
+  },
+  // ISO week of year
+  I: function (date, token, localize) {
+    var isoWeek = (0, _index3.default)(date);
+
+    if (token === 'Io') {
+      return localize.ordinalNumber(isoWeek, {
+        unit: 'week'
+      });
+    }
+
+    return (0, _index7.default)(isoWeek, token.length);
+  },
+  // Day of the month
+  d: function (date, token, localize) {
+    if (token === 'do') {
+      return localize.ordinalNumber(date.getUTCDate(), {
+        unit: 'date'
+      });
+    }
+
+    return _index.default.d(date, token);
+  },
+  // Day of year
+  D: function (date, token, localize) {
+    var dayOfYear = (0, _index2.default)(date);
+
+    if (token === 'Do') {
+      return localize.ordinalNumber(dayOfYear, {
+        unit: 'dayOfYear'
+      });
+    }
+
+    return (0, _index7.default)(dayOfYear, token.length);
+  },
+  // Day of week
+  E: function (date, token, localize) {
+    var dayOfWeek = date.getUTCDay();
+
+    switch (token) {
+      // Tue
+      case 'E':
+      case 'EE':
+      case 'EEE':
+        return localize.day(dayOfWeek, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+      // T
+
+      case 'EEEEE':
+        return localize.day(dayOfWeek, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+      // Tu
+
+      case 'EEEEEE':
+        return localize.day(dayOfWeek, {
+          width: 'short',
+          context: 'formatting'
+        });
+      // Tuesday
+
+      case 'EEEE':
+      default:
+        return localize.day(dayOfWeek, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // Local day of week
+  e: function (date, token, localize, options) {
+    var dayOfWeek = date.getUTCDay();
+    var localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+
+    switch (token) {
+      // Numerical value (Nth day of week with current locale or weekStartsOn)
+      case 'e':
+        return String(localDayOfWeek);
+      // Padded numerical value
+
+      case 'ee':
+        return (0, _index7.default)(localDayOfWeek, 2);
+      // 1st, 2nd, ..., 7th
+
+      case 'eo':
+        return localize.ordinalNumber(localDayOfWeek, {
+          unit: 'day'
+        });
+
+      case 'eee':
+        return localize.day(dayOfWeek, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+      // T
+
+      case 'eeeee':
+        return localize.day(dayOfWeek, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+      // Tu
+
+      case 'eeeeee':
+        return localize.day(dayOfWeek, {
+          width: 'short',
+          context: 'formatting'
+        });
+      // Tuesday
+
+      case 'eeee':
+      default:
+        return localize.day(dayOfWeek, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // Stand-alone local day of week
+  c: function (date, token, localize, options) {
+    var dayOfWeek = date.getUTCDay();
+    var localDayOfWeek = (dayOfWeek - options.weekStartsOn + 8) % 7 || 7;
+
+    switch (token) {
+      // Numerical value (same as in `e`)
+      case 'c':
+        return String(localDayOfWeek);
+      // Padded numerical value
+
+      case 'cc':
+        return (0, _index7.default)(localDayOfWeek, token.length);
+      // 1st, 2nd, ..., 7th
+
+      case 'co':
+        return localize.ordinalNumber(localDayOfWeek, {
+          unit: 'day'
+        });
+
+      case 'ccc':
+        return localize.day(dayOfWeek, {
+          width: 'abbreviated',
+          context: 'standalone'
+        });
+      // T
+
+      case 'ccccc':
+        return localize.day(dayOfWeek, {
+          width: 'narrow',
+          context: 'standalone'
+        });
+      // Tu
+
+      case 'cccccc':
+        return localize.day(dayOfWeek, {
+          width: 'short',
+          context: 'standalone'
+        });
+      // Tuesday
+
+      case 'cccc':
+      default:
+        return localize.day(dayOfWeek, {
+          width: 'wide',
+          context: 'standalone'
+        });
+    }
+  },
+  // ISO day of week
+  i: function (date, token, localize) {
+    var dayOfWeek = date.getUTCDay();
+    var isoDayOfWeek = dayOfWeek === 0 ? 7 : dayOfWeek;
+
+    switch (token) {
+      // 2
+      case 'i':
+        return String(isoDayOfWeek);
+      // 02
+
+      case 'ii':
+        return (0, _index7.default)(isoDayOfWeek, token.length);
+      // 2nd
+
+      case 'io':
+        return localize.ordinalNumber(isoDayOfWeek, {
+          unit: 'day'
+        });
+      // Tue
+
+      case 'iii':
+        return localize.day(dayOfWeek, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+      // T
+
+      case 'iiiii':
+        return localize.day(dayOfWeek, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+      // Tu
+
+      case 'iiiiii':
+        return localize.day(dayOfWeek, {
+          width: 'short',
+          context: 'formatting'
+        });
+      // Tuesday
+
+      case 'iiii':
+      default:
+        return localize.day(dayOfWeek, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // AM or PM
+  a: function (date, token, localize) {
+    var hours = date.getUTCHours();
+    var dayPeriodEnumValue = hours / 12 >= 1 ? 'pm' : 'am';
+
+    switch (token) {
+      case 'a':
+      case 'aa':
+      case 'aaa':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+
+      case 'aaaaa':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+
+      case 'aaaa':
+      default:
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // AM, PM, midnight, noon
+  b: function (date, token, localize) {
+    var hours = date.getUTCHours();
+    var dayPeriodEnumValue;
+
+    if (hours === 12) {
+      dayPeriodEnumValue = dayPeriodEnum.noon;
+    } else if (hours === 0) {
+      dayPeriodEnumValue = dayPeriodEnum.midnight;
+    } else {
+      dayPeriodEnumValue = hours / 12 >= 1 ? 'pm' : 'am';
+    }
+
+    switch (token) {
+      case 'b':
+      case 'bb':
+      case 'bbb':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+
+      case 'bbbbb':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+
+      case 'bbbb':
+      default:
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // in the morning, in the afternoon, in the evening, at night
+  B: function (date, token, localize) {
+    var hours = date.getUTCHours();
+    var dayPeriodEnumValue;
+
+    if (hours >= 17) {
+      dayPeriodEnumValue = dayPeriodEnum.evening;
+    } else if (hours >= 12) {
+      dayPeriodEnumValue = dayPeriodEnum.afternoon;
+    } else if (hours >= 4) {
+      dayPeriodEnumValue = dayPeriodEnum.morning;
+    } else {
+      dayPeriodEnumValue = dayPeriodEnum.night;
+    }
+
+    switch (token) {
+      case 'B':
+      case 'BB':
+      case 'BBB':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'abbreviated',
+          context: 'formatting'
+        });
+
+      case 'BBBBB':
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'narrow',
+          context: 'formatting'
+        });
+
+      case 'BBBB':
+      default:
+        return localize.dayPeriod(dayPeriodEnumValue, {
+          width: 'wide',
+          context: 'formatting'
+        });
+    }
+  },
+  // Hour [1-12]
+  h: function (date, token, localize) {
+    if (token === 'ho') {
+      var hours = date.getUTCHours() % 12;
+      if (hours === 0) hours = 12;
+      return localize.ordinalNumber(hours, {
+        unit: 'hour'
+      });
+    }
+
+    return _index.default.h(date, token);
+  },
+  // Hour [0-23]
+  H: function (date, token, localize) {
+    if (token === 'Ho') {
+      return localize.ordinalNumber(date.getUTCHours(), {
+        unit: 'hour'
+      });
+    }
+
+    return _index.default.H(date, token);
+  },
+  // Hour [0-11]
+  K: function (date, token, localize) {
+    var hours = date.getUTCHours() % 12;
+
+    if (token === 'Ko') {
+      return localize.ordinalNumber(hours, {
+        unit: 'hour'
+      });
+    }
+
+    return (0, _index7.default)(hours, token.length);
+  },
+  // Hour [1-24]
+  k: function (date, token, localize) {
+    var hours = date.getUTCHours();
+    if (hours === 0) hours = 24;
+
+    if (token === 'ko') {
+      return localize.ordinalNumber(hours, {
+        unit: 'hour'
+      });
+    }
+
+    return (0, _index7.default)(hours, token.length);
+  },
+  // Minute
+  m: function (date, token, localize) {
+    if (token === 'mo') {
+      return localize.ordinalNumber(date.getUTCMinutes(), {
+        unit: 'minute'
+      });
+    }
+
+    return _index.default.m(date, token);
+  },
+  // Second
+  s: function (date, token, localize) {
+    if (token === 'so') {
+      return localize.ordinalNumber(date.getUTCSeconds(), {
+        unit: 'second'
+      });
+    }
+
+    return _index.default.s(date, token);
+  },
+  // Fraction of second
+  S: function (date, token) {
+    return _index.default.S(date, token);
+  },
+  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
+  X: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = originalDate.getTimezoneOffset();
+
+    if (timezoneOffset === 0) {
+      return 'Z';
+    }
+
+    switch (token) {
+      // Hours and optional minutes
+      case 'X':
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XX`
+
+      case 'XXXX':
+      case 'XX':
+        // Hours and minutes without `:` delimiter
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XXX`
+
+      case 'XXXXX':
+      case 'XXX': // Hours and minutes with `:` delimiter
+
+      default:
+        return formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
+  x: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = originalDate.getTimezoneOffset();
+
+    switch (token) {
+      // Hours and optional minutes
+      case 'x':
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xx`
+
+      case 'xxxx':
+      case 'xx':
+        // Hours and minutes without `:` delimiter
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimiter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xxx`
+
+      case 'xxxxx':
+      case 'xxx': // Hours and minutes with `:` delimiter
+
+      default:
+        return formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (GMT)
+  O: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = originalDate.getTimezoneOffset();
+
+    switch (token) {
+      // Short
+      case 'O':
+      case 'OO':
+      case 'OOO':
+        return 'GMT' + formatTimezoneShort(timezoneOffset, ':');
+      // Long
+
+      case 'OOOO':
+      default:
+        return 'GMT' + formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (specific non-location)
+  z: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = originalDate.getTimezoneOffset();
+
+    switch (token) {
+      // Short
+      case 'z':
+      case 'zz':
+      case 'zzz':
+        return 'GMT' + formatTimezoneShort(timezoneOffset, ':');
+      // Long
+
+      case 'zzzz':
+      default:
+        return 'GMT' + formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Seconds timestamp
+  t: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timestamp = Math.floor(originalDate.getTime() / 1000);
+    return (0, _index7.default)(timestamp, token.length);
+  },
+  // Milliseconds timestamp
+  T: function (date, token, _localize, options) {
+    var originalDate = options._originalDate || date;
+    var timestamp = originalDate.getTime();
+    return (0, _index7.default)(timestamp, token.length);
+  }
+};
+
+function formatTimezoneShort(offset, dirtyDelimiter) {
+  var sign = offset > 0 ? '-' : '+';
+  var absOffset = Math.abs(offset);
+  var hours = Math.floor(absOffset / 60);
+  var minutes = absOffset % 60;
+
+  if (minutes === 0) {
+    return sign + String(hours);
+  }
+
+  var delimiter = dirtyDelimiter || '';
+  return sign + String(hours) + delimiter + (0, _index7.default)(minutes, 2);
+}
+
+function formatTimezoneWithOptionalMinutes(offset, dirtyDelimiter) {
+  if (offset % 60 === 0) {
+    var sign = offset > 0 ? '-' : '+';
+    return sign + (0, _index7.default)(Math.abs(offset) / 60, 2);
+  }
+
+  return formatTimezone(offset, dirtyDelimiter);
+}
+
+function formatTimezone(offset, dirtyDelimiter) {
+  var delimiter = dirtyDelimiter || '';
+  var sign = offset > 0 ? '-' : '+';
+  var absOffset = Math.abs(offset);
+  var hours = (0, _index7.default)(Math.floor(absOffset / 60), 2);
+  var minutes = (0, _index7.default)(absOffset % 60, 2);
+  return sign + hours + delimiter + minutes;
+}
+
+var _default = formatters;
+exports.default = _default;
+},{"../lightFormatters/index.js":"../node_modules/date-fns/esm/_lib/format/lightFormatters/index.js","../../../_lib/getUTCDayOfYear/index.js":"../node_modules/date-fns/esm/_lib/getUTCDayOfYear/index.js","../../../_lib/getUTCISOWeek/index.js":"../node_modules/date-fns/esm/_lib/getUTCISOWeek/index.js","../../../_lib/getUTCISOWeekYear/index.js":"../node_modules/date-fns/esm/_lib/getUTCISOWeekYear/index.js","../../../_lib/getUTCWeek/index.js":"../node_modules/date-fns/esm/_lib/getUTCWeek/index.js","../../../_lib/getUTCWeekYear/index.js":"../node_modules/date-fns/esm/_lib/getUTCWeekYear/index.js","../../addLeadingZeros/index.js":"../node_modules/date-fns/esm/_lib/addLeadingZeros/index.js"}],"../node_modules/date-fns/esm/_lib/format/longFormatters/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+function dateLongFormatter(pattern, formatLong) {
+  switch (pattern) {
+    case 'P':
+      return formatLong.date({
+        width: 'short'
+      });
+
+    case 'PP':
+      return formatLong.date({
+        width: 'medium'
+      });
+
+    case 'PPP':
+      return formatLong.date({
+        width: 'long'
+      });
+
+    case 'PPPP':
+    default:
+      return formatLong.date({
+        width: 'full'
+      });
+  }
+}
+
+function timeLongFormatter(pattern, formatLong) {
+  switch (pattern) {
+    case 'p':
+      return formatLong.time({
+        width: 'short'
+      });
+
+    case 'pp':
+      return formatLong.time({
+        width: 'medium'
+      });
+
+    case 'ppp':
+      return formatLong.time({
+        width: 'long'
+      });
+
+    case 'pppp':
+    default:
+      return formatLong.time({
+        width: 'full'
+      });
+  }
+}
+
+function dateTimeLongFormatter(pattern, formatLong) {
+  var matchResult = pattern.match(/(P+)(p+)?/);
+  var datePattern = matchResult[1];
+  var timePattern = matchResult[2];
+
+  if (!timePattern) {
+    return dateLongFormatter(pattern, formatLong);
+  }
+
+  var dateTimeFormat;
+
+  switch (datePattern) {
+    case 'P':
+      dateTimeFormat = formatLong.dateTime({
+        width: 'short'
+      });
+      break;
+
+    case 'PP':
+      dateTimeFormat = formatLong.dateTime({
+        width: 'medium'
+      });
+      break;
+
+    case 'PPP':
+      dateTimeFormat = formatLong.dateTime({
+        width: 'long'
+      });
+      break;
+
+    case 'PPPP':
+    default:
+      dateTimeFormat = formatLong.dateTime({
+        width: 'full'
+      });
+      break;
+  }
+
+  return dateTimeFormat.replace('{{date}}', dateLongFormatter(datePattern, formatLong)).replace('{{time}}', timeLongFormatter(timePattern, formatLong));
+}
+
+var longFormatters = {
+  p: timeLongFormatter,
+  P: dateTimeLongFormatter
+};
+var _default = longFormatters;
+exports.default = _default;
+},{}],"../node_modules/date-fns/esm/_lib/getTimezoneOffsetInMilliseconds/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getTimezoneOffsetInMilliseconds;
+var MILLISECONDS_IN_MINUTE = 60000;
+
+function getDateMillisecondsPart(date) {
+  return date.getTime() % MILLISECONDS_IN_MINUTE;
+}
+/**
+ * Google Chrome as of 67.0.3396.87 introduced timezones with offset that includes seconds.
+ * They usually appear for dates that denote time before the timezones were introduced
+ * (e.g. for 'Europe/Prague' timezone the offset is GMT+00:57:44 before 1 October 1891
+ * and GMT+01:00:00 after that date)
+ *
+ * Date#getTimezoneOffset returns the offset in minutes and would return 57 for the example above,
+ * which would lead to incorrect calculations.
+ *
+ * This function returns the timezone offset in milliseconds that takes seconds in account.
+ */
+
+
+function getTimezoneOffsetInMilliseconds(dirtyDate) {
+  var date = new Date(dirtyDate.getTime());
+  var baseTimezoneOffset = Math.ceil(date.getTimezoneOffset());
+  date.setSeconds(0, 0);
+  var hasNegativeUTCOffset = baseTimezoneOffset > 0;
+  var millisecondsPartOfTimezoneOffset = hasNegativeUTCOffset ? (MILLISECONDS_IN_MINUTE + getDateMillisecondsPart(date)) % MILLISECONDS_IN_MINUTE : getDateMillisecondsPart(date);
+  return baseTimezoneOffset * MILLISECONDS_IN_MINUTE + millisecondsPartOfTimezoneOffset;
+}
+},{}],"../node_modules/date-fns/esm/_lib/protectedTokens/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.isProtectedDayOfYearToken = isProtectedDayOfYearToken;
+exports.isProtectedWeekYearToken = isProtectedWeekYearToken;
+exports.throwProtectedError = throwProtectedError;
+var protectedDayOfYearTokens = ['D', 'DD'];
+var protectedWeekYearTokens = ['YY', 'YYYY'];
+
+function isProtectedDayOfYearToken(token) {
+  return protectedDayOfYearTokens.indexOf(token) !== -1;
+}
+
+function isProtectedWeekYearToken(token) {
+  return protectedWeekYearTokens.indexOf(token) !== -1;
+}
+
+function throwProtectedError(token, format, input) {
+  if (token === 'YYYY') {
+    throw new RangeError("Use `yyyy` instead of `YYYY` (in `".concat(format, "`) for formatting years to the input `").concat(input, "`; see: https://git.io/fxCyr"));
+  } else if (token === 'YY') {
+    throw new RangeError("Use `yy` instead of `YY` (in `".concat(format, "`) for formatting years to the input `").concat(input, "`; see: https://git.io/fxCyr"));
+  } else if (token === 'D') {
+    throw new RangeError("Use `d` instead of `D` (in `".concat(format, "`) for formatting days of the month to the input `").concat(input, "`; see: https://git.io/fxCyr"));
+  } else if (token === 'DD') {
+    throw new RangeError("Use `dd` instead of `DD` (in `".concat(format, "`) for formatting days of the month to the input `").concat(input, "`; see: https://git.io/fxCyr"));
+  }
+}
+},{}],"../node_modules/date-fns/esm/format/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = format;
+
+var _index = _interopRequireDefault(require("../isValid/index.js"));
+
+var _index2 = _interopRequireDefault(require("../locale/en-US/index.js"));
+
+var _index3 = _interopRequireDefault(require("../subMilliseconds/index.js"));
+
+var _index4 = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index5 = _interopRequireDefault(require("../_lib/format/formatters/index.js"));
+
+var _index6 = _interopRequireDefault(require("../_lib/format/longFormatters/index.js"));
+
+var _index7 = _interopRequireDefault(require("../_lib/getTimezoneOffsetInMilliseconds/index.js"));
+
+var _index8 = require("../_lib/protectedTokens/index.js");
+
+var _index9 = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+var _index10 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// This RegExp consists of three parts separated by `|`:
+// - [yYQqMLwIdDecihHKkms]o matches any available ordinal number token
+//   (one of the certain letters followed by `o`)
+// - (\w)\1* matches any sequences of the same letter
+// - '' matches two quote characters in a row
+// - '(''|[^'])+('|$) matches anything surrounded by two quote characters ('),
+//   except a single quote symbol, which ends the sequence.
+//   Two quote characters do not end the sequence.
+//   If there is no matching single quote
+//   then the sequence will continue until the end of the string.
+// - . matches any single character unmatched by previous parts of the RegExps
+var formattingTokensRegExp = /[yYQqMLwIdDecihHKkms]o|(\w)\1*|''|'(''|[^'])+('|$)|./g; // This RegExp catches symbols escaped by quotes, and also
+// sequences of symbols P, p, and the combinations like `PPPPPPPppppp`
+
+var longFormattingTokensRegExp = /P+p+|P+|p+|''|'(''|[^'])+('|$)|./g;
+var escapedStringRegExp = /^'([^]*?)'?$/;
+var doubleQuoteRegExp = /''/g;
+var unescapedLatinCharacterRegExp = /[a-zA-Z]/;
+/**
+ * @name format
+ * @category Common Helpers
+ * @summary Format the date.
+ *
+ * @description
+ * Return the formatted date string in the given format. The result may vary by locale.
+ *
+ * > ⚠️ Please note that the `format` tokens differ from Moment.js and other libraries.
+ * > See: https://git.io/fxCyr
+ *
+ * The characters wrapped between two single quotes characters (') are escaped.
+ * Two single quotes in a row, whether inside or outside a quoted sequence, represent a 'real' single quote.
+ * (see the last example)
+ *
+ * Format of the string is based on Unicode Technical Standard #35:
+ * https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table
+ * with a few additions (see note 7 below the table).
+ *
+ * Accepted patterns:
+ * | Unit                            | Pattern | Result examples                   | Notes |
+ * |---------------------------------|---------|-----------------------------------|-------|
+ * | Era                             | G..GGG  | AD, BC                            |       |
+ * |                                 | GGGG    | Anno Domini, Before Christ        | 2     |
+ * |                                 | GGGGG   | A, B                              |       |
+ * | Calendar year                   | y       | 44, 1, 1900, 2017                 | 5     |
+ * |                                 | yo      | 44th, 1st, 0th, 17th              | 5,7   |
+ * |                                 | yy      | 44, 01, 00, 17                    | 5     |
+ * |                                 | yyy     | 044, 001, 1900, 2017              | 5     |
+ * |                                 | yyyy    | 0044, 0001, 1900, 2017            | 5     |
+ * |                                 | yyyyy   | ...                               | 3,5   |
+ * | Local week-numbering year       | Y       | 44, 1, 1900, 2017                 | 5     |
+ * |                                 | Yo      | 44th, 1st, 1900th, 2017th         | 5,7   |
+ * |                                 | YY      | 44, 01, 00, 17                    | 5,8   |
+ * |                                 | YYY     | 044, 001, 1900, 2017              | 5     |
+ * |                                 | YYYY    | 0044, 0001, 1900, 2017            | 5,8   |
+ * |                                 | YYYYY   | ...                               | 3,5   |
+ * | ISO week-numbering year         | R       | -43, 0, 1, 1900, 2017             | 5,7   |
+ * |                                 | RR      | -43, 00, 01, 1900, 2017           | 5,7   |
+ * |                                 | RRR     | -043, 000, 001, 1900, 2017        | 5,7   |
+ * |                                 | RRRR    | -0043, 0000, 0001, 1900, 2017     | 5,7   |
+ * |                                 | RRRRR   | ...                               | 3,5,7 |
+ * | Extended year                   | u       | -43, 0, 1, 1900, 2017             | 5     |
+ * |                                 | uu      | -43, 01, 1900, 2017               | 5     |
+ * |                                 | uuu     | -043, 001, 1900, 2017             | 5     |
+ * |                                 | uuuu    | -0043, 0001, 1900, 2017           | 5     |
+ * |                                 | uuuuu   | ...                               | 3,5   |
+ * | Quarter (formatting)            | Q       | 1, 2, 3, 4                        |       |
+ * |                                 | Qo      | 1st, 2nd, 3rd, 4th                | 7     |
+ * |                                 | QQ      | 01, 02, 03, 04                    |       |
+ * |                                 | QQQ     | Q1, Q2, Q3, Q4                    |       |
+ * |                                 | QQQQ    | 1st quarter, 2nd quarter, ...     | 2     |
+ * |                                 | QQQQQ   | 1, 2, 3, 4                        | 4     |
+ * | Quarter (stand-alone)           | q       | 1, 2, 3, 4                        |       |
+ * |                                 | qo      | 1st, 2nd, 3rd, 4th                | 7     |
+ * |                                 | qq      | 01, 02, 03, 04                    |       |
+ * |                                 | qqq     | Q1, Q2, Q3, Q4                    |       |
+ * |                                 | qqqq    | 1st quarter, 2nd quarter, ...     | 2     |
+ * |                                 | qqqqq   | 1, 2, 3, 4                        | 4     |
+ * | Month (formatting)              | M       | 1, 2, ..., 12                     |       |
+ * |                                 | Mo      | 1st, 2nd, ..., 12th               | 7     |
+ * |                                 | MM      | 01, 02, ..., 12                   |       |
+ * |                                 | MMM     | Jan, Feb, ..., Dec                |       |
+ * |                                 | MMMM    | January, February, ..., December  | 2     |
+ * |                                 | MMMMM   | J, F, ..., D                      |       |
+ * | Month (stand-alone)             | L       | 1, 2, ..., 12                     |       |
+ * |                                 | Lo      | 1st, 2nd, ..., 12th               | 7     |
+ * |                                 | LL      | 01, 02, ..., 12                   |       |
+ * |                                 | LLL     | Jan, Feb, ..., Dec                |       |
+ * |                                 | LLLL    | January, February, ..., December  | 2     |
+ * |                                 | LLLLL   | J, F, ..., D                      |       |
+ * | Local week of year              | w       | 1, 2, ..., 53                     |       |
+ * |                                 | wo      | 1st, 2nd, ..., 53th               | 7     |
+ * |                                 | ww      | 01, 02, ..., 53                   |       |
+ * | ISO week of year                | I       | 1, 2, ..., 53                     | 7     |
+ * |                                 | Io      | 1st, 2nd, ..., 53th               | 7     |
+ * |                                 | II      | 01, 02, ..., 53                   | 7     |
+ * | Day of month                    | d       | 1, 2, ..., 31                     |       |
+ * |                                 | do      | 1st, 2nd, ..., 31st               | 7     |
+ * |                                 | dd      | 01, 02, ..., 31                   |       |
+ * | Day of year                     | D       | 1, 2, ..., 365, 366               | 9     |
+ * |                                 | Do      | 1st, 2nd, ..., 365th, 366th       | 7     |
+ * |                                 | DD      | 01, 02, ..., 365, 366             | 9     |
+ * |                                 | DDD     | 001, 002, ..., 365, 366           |       |
+ * |                                 | DDDD    | ...                               | 3     |
+ * | Day of week (formatting)        | E..EEE  | Mon, Tue, Wed, ..., Sun           |       |
+ * |                                 | EEEE    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | EEEEE   | M, T, W, T, F, S, S               |       |
+ * |                                 | EEEEEE  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | ISO day of week (formatting)    | i       | 1, 2, 3, ..., 7                   | 7     |
+ * |                                 | io      | 1st, 2nd, ..., 7th                | 7     |
+ * |                                 | ii      | 01, 02, ..., 07                   | 7     |
+ * |                                 | iii     | Mon, Tue, Wed, ..., Sun           | 7     |
+ * |                                 | iiii    | Monday, Tuesday, ..., Sunday      | 2,7   |
+ * |                                 | iiiii   | M, T, W, T, F, S, S               | 7     |
+ * |                                 | iiiiii  | Mo, Tu, We, Th, Fr, Su, Sa        | 7     |
+ * | Local day of week (formatting)  | e       | 2, 3, 4, ..., 1                   |       |
+ * |                                 | eo      | 2nd, 3rd, ..., 1st                | 7     |
+ * |                                 | ee      | 02, 03, ..., 01                   |       |
+ * |                                 | eee     | Mon, Tue, Wed, ..., Sun           |       |
+ * |                                 | eeee    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | eeeee   | M, T, W, T, F, S, S               |       |
+ * |                                 | eeeeee  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | Local day of week (stand-alone) | c       | 2, 3, 4, ..., 1                   |       |
+ * |                                 | co      | 2nd, 3rd, ..., 1st                | 7     |
+ * |                                 | cc      | 02, 03, ..., 01                   |       |
+ * |                                 | ccc     | Mon, Tue, Wed, ..., Sun           |       |
+ * |                                 | cccc    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | ccccc   | M, T, W, T, F, S, S               |       |
+ * |                                 | cccccc  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | AM, PM                          | a..aaa  | AM, PM                            |       |
+ * |                                 | aaaa    | a.m., p.m.                        | 2     |
+ * |                                 | aaaaa   | a, p                              |       |
+ * | AM, PM, noon, midnight          | b..bbb  | AM, PM, noon, midnight            |       |
+ * |                                 | bbbb    | a.m., p.m., noon, midnight        | 2     |
+ * |                                 | bbbbb   | a, p, n, mi                       |       |
+ * | Flexible day period             | B..BBB  | at night, in the morning, ...     |       |
+ * |                                 | BBBB    | at night, in the morning, ...     | 2     |
+ * |                                 | BBBBB   | at night, in the morning, ...     |       |
+ * | Hour [1-12]                     | h       | 1, 2, ..., 11, 12                 |       |
+ * |                                 | ho      | 1st, 2nd, ..., 11th, 12th         | 7     |
+ * |                                 | hh      | 01, 02, ..., 11, 12               |       |
+ * | Hour [0-23]                     | H       | 0, 1, 2, ..., 23                  |       |
+ * |                                 | Ho      | 0th, 1st, 2nd, ..., 23rd          | 7     |
+ * |                                 | HH      | 00, 01, 02, ..., 23               |       |
+ * | Hour [0-11]                     | K       | 1, 2, ..., 11, 0                  |       |
+ * |                                 | Ko      | 1st, 2nd, ..., 11th, 0th          | 7     |
+ * |                                 | KK      | 01, 02, ..., 11, 00               |       |
+ * | Hour [1-24]                     | k       | 24, 1, 2, ..., 23                 |       |
+ * |                                 | ko      | 24th, 1st, 2nd, ..., 23rd         | 7     |
+ * |                                 | kk      | 24, 01, 02, ..., 23               |       |
+ * | Minute                          | m       | 0, 1, ..., 59                     |       |
+ * |                                 | mo      | 0th, 1st, ..., 59th               | 7     |
+ * |                                 | mm      | 00, 01, ..., 59                   |       |
+ * | Second                          | s       | 0, 1, ..., 59                     |       |
+ * |                                 | so      | 0th, 1st, ..., 59th               | 7     |
+ * |                                 | ss      | 00, 01, ..., 59                   |       |
+ * | Fraction of second              | S       | 0, 1, ..., 9                      |       |
+ * |                                 | SS      | 00, 01, ..., 99                   |       |
+ * |                                 | SSS     | 000, 0001, ..., 999               |       |
+ * |                                 | SSSS    | ...                               | 3     |
+ * | Timezone (ISO-8601 w/ Z)        | X       | -08, +0530, Z                     |       |
+ * |                                 | XX      | -0800, +0530, Z                   |       |
+ * |                                 | XXX     | -08:00, +05:30, Z                 |       |
+ * |                                 | XXXX    | -0800, +0530, Z, +123456          | 2     |
+ * |                                 | XXXXX   | -08:00, +05:30, Z, +12:34:56      |       |
+ * | Timezone (ISO-8601 w/o Z)       | x       | -08, +0530, +00                   |       |
+ * |                                 | xx      | -0800, +0530, +0000               |       |
+ * |                                 | xxx     | -08:00, +05:30, +00:00            | 2     |
+ * |                                 | xxxx    | -0800, +0530, +0000, +123456      |       |
+ * |                                 | xxxxx   | -08:00, +05:30, +00:00, +12:34:56 |       |
+ * | Timezone (GMT)                  | O...OOO | GMT-8, GMT+5:30, GMT+0            |       |
+ * |                                 | OOOO    | GMT-08:00, GMT+05:30, GMT+00:00   | 2     |
+ * | Timezone (specific non-locat.)  | z...zzz | GMT-8, GMT+5:30, GMT+0            | 6     |
+ * |                                 | zzzz    | GMT-08:00, GMT+05:30, GMT+00:00   | 2,6   |
+ * | Seconds timestamp               | t       | 512969520                         | 7     |
+ * |                                 | tt      | ...                               | 3,7   |
+ * | Milliseconds timestamp          | T       | 512969520900                      | 7     |
+ * |                                 | TT      | ...                               | 3,7   |
+ * | Long localized date             | P       | 05/29/1453                        | 7     |
+ * |                                 | PP      | May 29, 1453                      | 7     |
+ * |                                 | PPP     | May 29th, 1453                    | 7     |
+ * |                                 | PPPP    | Sunday, May 29th, 1453            | 2,7   |
+ * | Long localized time             | p       | 12:00 AM                          | 7     |
+ * |                                 | pp      | 12:00:00 AM                       | 7     |
+ * |                                 | ppp     | 12:00:00 AM GMT+2                 | 7     |
+ * |                                 | pppp    | 12:00:00 AM GMT+02:00             | 2,7   |
+ * | Combination of date and time    | Pp      | 05/29/1453, 12:00 AM              | 7     |
+ * |                                 | PPpp    | May 29, 1453, 12:00:00 AM         | 7     |
+ * |                                 | PPPppp  | May 29th, 1453 at ...             | 7     |
+ * |                                 | PPPPpppp| Sunday, May 29th, 1453 at ...     | 2,7   |
+ * Notes:
+ * 1. "Formatting" units (e.g. formatting quarter) in the default en-US locale
+ *    are the same as "stand-alone" units, but are different in some languages.
+ *    "Formatting" units are declined according to the rules of the language
+ *    in the context of a date. "Stand-alone" units are always nominative singular:
+ *
+ *    `format(new Date(2017, 10, 6), 'do LLLL', {locale: cs}) //=> '6. listopad'`
+ *
+ *    `format(new Date(2017, 10, 6), 'do MMMM', {locale: cs}) //=> '6. listopadu'`
+ *
+ * 2. Any sequence of the identical letters is a pattern, unless it is escaped by
+ *    the single quote characters (see below).
+ *    If the sequence is longer than listed in table (e.g. `EEEEEEEEEEE`)
+ *    the output will be the same as default pattern for this unit, usually
+ *    the longest one (in case of ISO weekdays, `EEEE`). Default patterns for units
+ *    are marked with "2" in the last column of the table.
+ *
+ *    `format(new Date(2017, 10, 6), 'MMM') //=> 'Nov'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMM') //=> 'November'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMM') //=> 'N'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMMM') //=> 'November'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMMMM') //=> 'November'`
+ *
+ * 3. Some patterns could be unlimited length (such as `yyyyyyyy`).
+ *    The output will be padded with zeros to match the length of the pattern.
+ *
+ *    `format(new Date(2017, 10, 6), 'yyyyyyyy') //=> '00002017'`
+ *
+ * 4. `QQQQQ` and `qqqqq` could be not strictly numerical in some locales.
+ *    These tokens represent the shortest form of the quarter.
+ *
+ * 5. The main difference between `y` and `u` patterns are B.C. years:
+ *
+ *    | Year | `y` | `u` |
+ *    |------|-----|-----|
+ *    | AC 1 |   1 |   1 |
+ *    | BC 1 |   1 |   0 |
+ *    | BC 2 |   2 |  -1 |
+ *
+ *    Also `yy` always returns the last two digits of a year,
+ *    while `uu` pads single digit years to 2 characters and returns other years unchanged:
+ *
+ *    | Year | `yy` | `uu` |
+ *    |------|------|------|
+ *    | 1    |   01 |   01 |
+ *    | 14   |   14 |   14 |
+ *    | 376  |   76 |  376 |
+ *    | 1453 |   53 | 1453 |
+ *
+ *    The same difference is true for local and ISO week-numbering years (`Y` and `R`),
+ *    except local week-numbering years are dependent on `options.weekStartsOn`
+ *    and `options.firstWeekContainsDate` (compare [getISOWeekYear]{@link https://date-fns.org/docs/getISOWeekYear}
+ *    and [getWeekYear]{@link https://date-fns.org/docs/getWeekYear}).
+ *
+ * 6. Specific non-location timezones are currently unavailable in `date-fns`,
+ *    so right now these tokens fall back to GMT timezones.
+ *
+ * 7. These patterns are not in the Unicode Technical Standard #35:
+ *    - `i`: ISO day of week
+ *    - `I`: ISO week of year
+ *    - `R`: ISO week-numbering year
+ *    - `t`: seconds timestamp
+ *    - `T`: milliseconds timestamp
+ *    - `o`: ordinal number modifier
+ *    - `P`: long localized date
+ *    - `p`: long localized time
+ *
+ * 8. `YY` and `YYYY` tokens represent week-numbering years but they are often confused with years.
+ *    You should enable `options.useAdditionalWeekYearTokens` to use them. See: https://git.io/fxCyr
+ *
+ * 9. `D` and `DD` tokens represent days of the year but they are ofthen confused with days of the month.
+ *    You should enable `options.useAdditionalDayOfYearTokens` to use them. See: https://git.io/fxCyr
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * - The second argument is now required for the sake of explicitness.
+ *
+ *   ```javascript
+ *   // Before v2.0.0
+ *   format(new Date(2016, 0, 1))
+ *
+ *   // v2.0.0 onward
+ *   format(new Date(2016, 0, 1), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+ *   ```
+ *
+ * - New format string API for `format` function
+ *   which is based on [Unicode Technical Standard #35](https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table).
+ *   See [this post](https://blog.date-fns.org/post/unicode-tokens-in-date-fns-v2-sreatyki91jg) for more details.
+ *
+ * - Characters are now escaped using single quote symbols (`'`) instead of square brackets.
+ *
+ * @param {Date|Number} date - the original date
+ * @param {String} format - the string of tokens
+ * @param {Object} [options] - an object with options.
+ * @param {Locale} [options.locale=defaultLocale] - the locale object. See [Locale]{@link https://date-fns.org/docs/Locale}
+ * @param {0|1|2|3|4|5|6} [options.weekStartsOn=0] - the index of the first day of the week (0 - Sunday)
+ * @param {Number} [options.firstWeekContainsDate=1] - the day of January, which is
+ * @param {Boolean} [options.useAdditionalWeekYearTokens=false] - if true, allows usage of the week-numbering year tokens `YY` and `YYYY`;
+ *   see: https://git.io/fxCyr
+ * @param {Boolean} [options.useAdditionalDayOfYearTokens=false] - if true, allows usage of the day of year tokens `D` and `DD`;
+ *   see: https://git.io/fxCyr
+ * @returns {String} the formatted date string
+ * @throws {TypeError} 2 arguments required
+ * @throws {RangeError} `date` must not be Invalid Date
+ * @throws {RangeError} `options.locale` must contain `localize` property
+ * @throws {RangeError} `options.locale` must contain `formatLong` property
+ * @throws {RangeError} `options.weekStartsOn` must be between 0 and 6
+ * @throws {RangeError} `options.firstWeekContainsDate` must be between 1 and 7
+ * @throws {RangeError} use `yyyy` instead of `YYYY` for formatting years using [format provided] to the input [input provided]; see: https://git.io/fxCyr
+ * @throws {RangeError} use `yy` instead of `YY` for formatting years using [format provided] to the input [input provided]; see: https://git.io/fxCyr
+ * @throws {RangeError} use `d` instead of `D` for formatting days of the month using [format provided] to the input [input provided]; see: https://git.io/fxCyr
+ * @throws {RangeError} use `dd` instead of `DD` for formatting days of the month using [format provided] to the input [input provided]; see: https://git.io/fxCyr
+ * @throws {RangeError} format string contains an unescaped latin alphabet character
+ *
+ * @example
+ * // Represent 11 February 2014 in middle-endian format:
+ * var result = format(new Date(2014, 1, 11), 'MM/dd/yyyy')
+ * //=> '02/11/2014'
+ *
+ * @example
+ * // Represent 2 July 2014 in Esperanto:
+ * import { eoLocale } from 'date-fns/locale/eo'
+ * var result = format(new Date(2014, 6, 2), "do 'de' MMMM yyyy", {
+ *   locale: eoLocale
+ * })
+ * //=> '2-a de julio 2014'
+ *
+ * @example
+ * // Escape string by single quote characters:
+ * var result = format(new Date(2014, 6, 2, 15), "h 'o''clock'")
+ * //=> "3 o'clock"
+ */
+
+function format(dirtyDate, dirtyFormatStr, dirtyOptions) {
+  (0, _index10.default)(2, arguments);
+  var formatStr = String(dirtyFormatStr);
+  var options = dirtyOptions || {};
+  var locale = options.locale || _index2.default;
+  var localeFirstWeekContainsDate = locale.options && locale.options.firstWeekContainsDate;
+  var defaultFirstWeekContainsDate = localeFirstWeekContainsDate == null ? 1 : (0, _index9.default)(localeFirstWeekContainsDate);
+  var firstWeekContainsDate = options.firstWeekContainsDate == null ? defaultFirstWeekContainsDate : (0, _index9.default)(options.firstWeekContainsDate); // Test if weekStartsOn is between 1 and 7 _and_ is not NaN
+
+  if (!(firstWeekContainsDate >= 1 && firstWeekContainsDate <= 7)) {
+    throw new RangeError('firstWeekContainsDate must be between 1 and 7 inclusively');
+  }
+
+  var localeWeekStartsOn = locale.options && locale.options.weekStartsOn;
+  var defaultWeekStartsOn = localeWeekStartsOn == null ? 0 : (0, _index9.default)(localeWeekStartsOn);
+  var weekStartsOn = options.weekStartsOn == null ? defaultWeekStartsOn : (0, _index9.default)(options.weekStartsOn); // Test if weekStartsOn is between 0 and 6 _and_ is not NaN
+
+  if (!(weekStartsOn >= 0 && weekStartsOn <= 6)) {
+    throw new RangeError('weekStartsOn must be between 0 and 6 inclusively');
+  }
+
+  if (!locale.localize) {
+    throw new RangeError('locale must contain localize property');
+  }
+
+  if (!locale.formatLong) {
+    throw new RangeError('locale must contain formatLong property');
+  }
+
+  var originalDate = (0, _index4.default)(dirtyDate);
+
+  if (!(0, _index.default)(originalDate)) {
+    throw new RangeError('Invalid time value');
+  } // Convert the date in system timezone to the same date in UTC+00:00 timezone.
+  // This ensures that when UTC functions will be implemented, locales will be compatible with them.
+  // See an issue about UTC functions: https://github.com/date-fns/date-fns/issues/376
+
+
+  var timezoneOffset = (0, _index7.default)(originalDate);
+  var utcDate = (0, _index3.default)(originalDate, timezoneOffset);
+  var formatterOptions = {
+    firstWeekContainsDate: firstWeekContainsDate,
+    weekStartsOn: weekStartsOn,
+    locale: locale,
+    _originalDate: originalDate
+  };
+  var result = formatStr.match(longFormattingTokensRegExp).map(function (substring) {
+    var firstCharacter = substring[0];
+
+    if (firstCharacter === 'p' || firstCharacter === 'P') {
+      var longFormatter = _index6.default[firstCharacter];
+      return longFormatter(substring, locale.formatLong, formatterOptions);
+    }
+
+    return substring;
+  }).join('').match(formattingTokensRegExp).map(function (substring) {
+    // Replace two single quote characters with one single quote character
+    if (substring === "''") {
+      return "'";
+    }
+
+    var firstCharacter = substring[0];
+
+    if (firstCharacter === "'") {
+      return cleanEscapedString(substring);
+    }
+
+    var formatter = _index5.default[firstCharacter];
+
+    if (formatter) {
+      if (!options.useAdditionalWeekYearTokens && (0, _index8.isProtectedWeekYearToken)(substring)) {
+        (0, _index8.throwProtectedError)(substring, dirtyFormatStr, dirtyDate);
+      }
+
+      if (!options.useAdditionalDayOfYearTokens && (0, _index8.isProtectedDayOfYearToken)(substring)) {
+        (0, _index8.throwProtectedError)(substring, dirtyFormatStr, dirtyDate);
+      }
+
+      return formatter(utcDate, substring, locale.localize, formatterOptions);
+    }
+
+    if (firstCharacter.match(unescapedLatinCharacterRegExp)) {
+      throw new RangeError('Format string contains an unescaped latin alphabet character `' + firstCharacter + '`');
+    }
+
+    return substring;
+  }).join('');
+  return result;
+}
+
+function cleanEscapedString(input) {
+  return input.match(escapedStringRegExp)[1].replace(doubleQuoteRegExp, "'");
+}
+},{"../isValid/index.js":"../node_modules/date-fns/esm/isValid/index.js","../locale/en-US/index.js":"../node_modules/date-fns/esm/locale/en-US/index.js","../subMilliseconds/index.js":"../node_modules/date-fns/esm/subMilliseconds/index.js","../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/format/formatters/index.js":"../node_modules/date-fns/esm/_lib/format/formatters/index.js","../_lib/format/longFormatters/index.js":"../node_modules/date-fns/esm/_lib/format/longFormatters/index.js","../_lib/getTimezoneOffsetInMilliseconds/index.js":"../node_modules/date-fns/esm/_lib/getTimezoneOffsetInMilliseconds/index.js","../_lib/protectedTokens/index.js":"../node_modules/date-fns/esm/_lib/protectedTokens/index.js","../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns-tz/esm/_lib/tzIntlTimeZoneName/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = tzIntlTimeZoneName;
+
+/**
+ * Returns the formatted time zone name of the provided `timeZone` or the current
+ * system time zone if omitted, accounting for DST according to the UTC value of
+ * the date.
+ */
+function tzIntlTimeZoneName(length, date, options) {
+  var dtf = getDTF(length, options.timeZone, options.locale);
+  return dtf.formatToParts ? partsTimeZone(dtf, date) : hackyTimeZone(dtf, date);
+}
+
+function partsTimeZone(dtf, date) {
+  var formatted = dtf.formatToParts(date);
+  return formatted[formatted.length - 1].value;
+}
+
+function hackyTimeZone(dtf, date) {
+  var formatted = dtf.format(date).replace(/\u200E/g, '');
+  var tzNameMatch = / [\w-+ ]+$/.exec(formatted);
+  return tzNameMatch ? tzNameMatch[0].substr(1) : '';
+} // If a locale has been provided `en-US` is used as a fallback in case it is an
+// invalid locale, otherwise the locale is left undefined to use the system locale.
+
+
+function getDTF(length, timeZone, locale) {
+  if (locale && !locale.code) {
+    throw new Error("date-fns-tz error: Please set a language code on the locale object imported from date-fns, e.g. `locale.code = 'en-US'`");
+  }
+
+  return new Intl.DateTimeFormat(locale ? [locale.code, 'en-US'] : undefined, {
+    timeZone: timeZone,
+    timeZoneName: length
+  });
+}
+},{}],"../node_modules/date-fns-tz/esm/_lib/tzTokenizeDate/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = tzTokenizeDate;
+
+/**
+ * Returns the [year, month, day, hour, minute, seconds] tokens of the provided
+ * `date` as it will be rendered in the `timeZone`.
+ */
+function tzTokenizeDate(date, timeZone) {
+  var dtf = getDateTimeFormat(timeZone);
+  return dtf.formatToParts ? partsOffset(dtf, date) : hackyOffset(dtf, date);
+}
+
+var typeToPos = {
+  year: 0,
+  month: 1,
+  day: 2,
+  hour: 3,
+  minute: 4,
+  second: 5
+};
+
+function partsOffset(dtf, date) {
+  var formatted = dtf.formatToParts(date);
+  var filled = [];
+
+  for (var i = 0; i < formatted.length; i++) {
+    var pos = typeToPos[formatted[i].type];
+
+    if (pos >= 0) {
+      filled[pos] = parseInt(formatted[i].value, 10);
+    }
+  }
+
+  return filled;
+}
+
+function hackyOffset(dtf, date) {
+  var formatted = dtf.format(date).replace(/\u200E/g, '');
+  var parsed = /(\d+)\/(\d+)\/(\d+),? (\d+):(\d+):(\d+)/.exec(formatted); // var [, fMonth, fDay, fYear, fHour, fMinute, fSecond] = parsed
+  // return [fYear, fMonth, fDay, fHour, fMinute, fSecond]
+
+  return [parsed[3], parsed[1], parsed[2], parsed[4], parsed[5], parsed[6]];
+} // Get a cached Intl.DateTimeFormat instance for the IANA `timeZone`. This can be used
+// to get deterministic local date/time output according to the `en-US` locale which
+// can be used to extract local time parts as necessary.
+
+
+var dtfCache = {};
+
+function getDateTimeFormat(timeZone) {
+  if (!dtfCache[timeZone]) {
+    // New browsers use `hourCycle`, IE and Chrome <73 does not support it and uses `hour12`
+    var testDateFormatted = new Intl.DateTimeFormat('en-US', {
+      hour12: false,
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }).format(new Date('2014-06-25T04:00:00.123Z'));
+    var hourCycleSupported = testDateFormatted === '06/25/2014, 00:00:00' || testDateFormatted === '‎06‎/‎25‎/‎2014‎ ‎00‎:‎00‎:‎00';
+    dtfCache[timeZone] = hourCycleSupported ? new Intl.DateTimeFormat('en-US', {
+      hour12: false,
+      timeZone: timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    }) : new Intl.DateTimeFormat('en-US', {
+      hourCycle: 'h23',
+      timeZone: timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  return dtfCache[timeZone];
+}
+},{}],"../node_modules/date-fns-tz/esm/_lib/tzParseTimezone/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = tzParseTimezone;
+
+var _index = _interopRequireDefault(require("../tzTokenizeDate/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_HOUR = 3600000;
+var MILLISECONDS_IN_MINUTE = 60000;
+var patterns = {
+  timezone: /([Z+-].*)$/,
+  timezoneZ: /^(Z)$/,
+  timezoneHH: /^([+-])(\d{2})$/,
+  timezoneHHMM: /^([+-])(\d{2}):?(\d{2})$/,
+  timezoneIANA: /(UTC|(?:[a-zA-Z]+\/[a-zA-Z_]+(?:\/[a-zA-Z_]+)?))$/
+}; // Parse various time zone offset formats to an offset in milliseconds
+
+function tzParseTimezone(timezoneString, date) {
+  var token;
+  var absoluteOffset; // Z
+
+  token = patterns.timezoneZ.exec(timezoneString);
+
+  if (token) {
+    return 0;
+  }
+
+  var hours; // ±hh
+
+  token = patterns.timezoneHH.exec(timezoneString);
+
+  if (token) {
+    hours = parseInt(token[2], 10);
+
+    if (!validateTimezone(hours)) {
+      return NaN;
+    }
+
+    absoluteOffset = hours * MILLISECONDS_IN_HOUR;
+    return token[1] === '+' ? -absoluteOffset : absoluteOffset;
+  } // ±hh:mm or ±hhmm
+
+
+  token = patterns.timezoneHHMM.exec(timezoneString);
+
+  if (token) {
+    hours = parseInt(token[2], 10);
+    var minutes = parseInt(token[3], 10);
+
+    if (!validateTimezone(hours, minutes)) {
+      return NaN;
+    }
+
+    absoluteOffset = hours * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE;
+    return token[1] === '+' ? -absoluteOffset : absoluteOffset;
+  } // IANA time zone
+
+
+  token = patterns.timezoneIANA.exec(timezoneString);
+
+  if (token) {
+    // var [fYear, fMonth, fDay, fHour, fMinute, fSecond] = tzTokenizeDate(date, timezoneString)
+    var tokens = (0, _index.default)(date, timezoneString);
+    var asUTC = Date.UTC(tokens[0], tokens[1] - 1, tokens[2], tokens[3], tokens[4], tokens[5]);
+    var timestampWithMsZeroed = date.getTime() - date.getTime() % 1000;
+    return -(asUTC - timestampWithMsZeroed);
+  }
+
+  return 0;
+}
+
+function validateTimezone(hours, minutes) {
+  if (minutes != null && (minutes < 0 || minutes > 59)) {
+    return false;
+  }
+
+  return true;
+}
+},{"../tzTokenizeDate/index.js":"../node_modules/date-fns-tz/esm/_lib/tzTokenizeDate/index.js"}],"../node_modules/date-fns-tz/esm/format/formatters/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+
+var _tzIntlTimeZoneName = _interopRequireDefault(require("../../_lib/tzIntlTimeZoneName"));
+
+var _tzParseTimezone = _interopRequireDefault(require("../../_lib/tzParseTimezone"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_MINUTE = 60 * 1000;
+var formatters = {
+  // Timezone (ISO-8601. If offset is 0, output is always `'Z'`)
+  X: function (date, token, localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = options.timeZone ? (0, _tzParseTimezone.default)(options.timeZone, originalDate) / MILLISECONDS_IN_MINUTE : originalDate.getTimezoneOffset();
+
+    if (timezoneOffset === 0) {
+      return 'Z';
+    }
+
+    switch (token) {
+      // Hours and optional minutes
+      case 'X':
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimeter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XX`
+
+      case 'XXXX':
+      case 'XX':
+        // Hours and minutes without `:` delimeter
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimeter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `XXX`
+
+      case 'XXXXX':
+      case 'XXX': // Hours and minutes with `:` delimeter
+
+      default:
+        return formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (ISO-8601. If offset is 0, output is `'+00:00'` or equivalent)
+  x: function (date, token, localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = options.timeZone ? (0, _tzParseTimezone.default)(options.timeZone, originalDate) / MILLISECONDS_IN_MINUTE : originalDate.getTimezoneOffset();
+
+    switch (token) {
+      // Hours and optional minutes
+      case 'x':
+        return formatTimezoneWithOptionalMinutes(timezoneOffset);
+      // Hours, minutes and optional seconds without `:` delimeter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xx`
+
+      case 'xxxx':
+      case 'xx':
+        // Hours and minutes without `:` delimeter
+        return formatTimezone(timezoneOffset);
+      // Hours, minutes and optional seconds with `:` delimeter
+      // Note: neither ISO-8601 nor JavaScript supports seconds in timezone offsets
+      // so this token always has the same output as `xxx`
+
+      case 'xxxxx':
+      case 'xxx': // Hours and minutes with `:` delimeter
+
+      default:
+        return formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (GMT)
+  O: function (date, token, localize, options) {
+    var originalDate = options._originalDate || date;
+    var timezoneOffset = options.timeZone ? (0, _tzParseTimezone.default)(options.timeZone, originalDate) / MILLISECONDS_IN_MINUTE : originalDate.getTimezoneOffset();
+
+    switch (token) {
+      // Short
+      case 'O':
+      case 'OO':
+      case 'OOO':
+        return 'GMT' + formatTimezoneShort(timezoneOffset, ':');
+      // Long
+
+      case 'OOOO':
+      default:
+        return 'GMT' + formatTimezone(timezoneOffset, ':');
+    }
+  },
+  // Timezone (specific non-location)
+  z: function (date, token, localize, options) {
+    var originalDate = options._originalDate || date;
+
+    switch (token) {
+      // Short
+      case 'z':
+      case 'zz':
+      case 'zzz':
+        return (0, _tzIntlTimeZoneName.default)('short', originalDate, options);
+      // Long
+
+      case 'zzzz':
+      default:
+        return (0, _tzIntlTimeZoneName.default)('long', originalDate, options);
+    }
+  }
+};
+
+function addLeadingZeros(number, targetLength) {
+  var sign = number < 0 ? '-' : '';
+  var output = Math.abs(number).toString();
+
+  while (output.length < targetLength) {
+    output = '0' + output;
+  }
+
+  return sign + output;
+}
+
+function formatTimezone(offset, dirtyDelimeter) {
+  var delimeter = dirtyDelimeter || '';
+  var sign = offset > 0 ? '-' : '+';
+  var absOffset = Math.abs(offset);
+  var hours = addLeadingZeros(Math.floor(absOffset / 60), 2);
+  var minutes = addLeadingZeros(absOffset % 60, 2);
+  return sign + hours + delimeter + minutes;
+}
+
+function formatTimezoneWithOptionalMinutes(offset, dirtyDelimeter) {
+  if (offset % 60 === 0) {
+    var sign = offset > 0 ? '-' : '+';
+    return sign + addLeadingZeros(Math.abs(offset) / 60, 2);
+  }
+
+  return formatTimezone(offset, dirtyDelimeter);
+}
+
+function formatTimezoneShort(offset, dirtyDelimeter) {
+  var sign = offset > 0 ? '-' : '+';
+  var absOffset = Math.abs(offset);
+  var hours = Math.floor(absOffset / 60);
+  var minutes = absOffset % 60;
+
+  if (minutes === 0) {
+    return sign + String(hours);
+  }
+
+  var delimeter = dirtyDelimeter || '';
+  return sign + String(hours) + delimeter + addLeadingZeros(minutes, 2);
+}
+
+var _default = formatters;
+exports.default = _default;
+},{"../../_lib/tzIntlTimeZoneName":"../node_modules/date-fns-tz/esm/_lib/tzIntlTimeZoneName/index.js","../../_lib/tzParseTimezone":"../node_modules/date-fns-tz/esm/_lib/tzParseTimezone/index.js"}],"../node_modules/date-fns-tz/esm/toDate/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = toDate;
+
+var _index = _interopRequireDefault(require("date-fns/esm/_lib/toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("date-fns/esm/_lib/getTimezoneOffsetInMilliseconds/index.js"));
+
+var _tzParseTimezone = _interopRequireDefault(require("../_lib/tzParseTimezone"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var MILLISECONDS_IN_HOUR = 3600000;
+var MILLISECONDS_IN_MINUTE = 60000;
+var DEFAULT_ADDITIONAL_DIGITS = 2;
+var patterns = {
+  dateTimeDelimeter: /[T ]/,
+  plainTime: /:/,
+  timeZoneDelimeter: /[Z ]/i,
+  // year tokens
+  YY: /^(\d{2})$/,
+  YYY: [/^([+-]\d{2})$/, // 0 additional digits
+  /^([+-]\d{3})$/, // 1 additional digit
+  /^([+-]\d{4})$/ // 2 additional digits
+  ],
+  YYYY: /^(\d{4})/,
+  YYYYY: [/^([+-]\d{4})/, // 0 additional digits
+  /^([+-]\d{5})/, // 1 additional digit
+  /^([+-]\d{6})/ // 2 additional digits
+  ],
+  // date tokens
+  MM: /^-(\d{2})$/,
+  DDD: /^-?(\d{3})$/,
+  MMDD: /^-?(\d{2})-?(\d{2})$/,
+  Www: /^-?W(\d{2})$/,
+  WwwD: /^-?W(\d{2})-?(\d{1})$/,
+  HH: /^(\d{2}([.,]\d*)?)$/,
+  HHMM: /^(\d{2}):?(\d{2}([.,]\d*)?)$/,
+  HHMMSS: /^(\d{2}):?(\d{2}):?(\d{2}([.,]\d*)?)$/,
+  // timezone tokens (to identify the presence of a tz)
+  timezone: /([Z+-].*| UTC|(?:[a-zA-Z]+\/[a-zA-Z_]+(?:\/[a-zA-Z_]+)?))$/
+};
+/**
+ * @name toDate
+ * @category Common Helpers
+ * @summary Convert the given argument to an instance of Date.
+ *
+ * @description
+ * Convert the given argument to an instance of Date.
+ *
+ * If the argument is an instance of Date, the function returns its clone.
+ *
+ * If the argument is a number, it is treated as a timestamp.
+ *
+ * If an argument is a string, the function tries to parse it.
+ * Function accepts complete ISO 8601 formats as well as partial implementations.
+ * ISO 8601: http://en.wikipedia.org/wiki/ISO_8601
+ * If the function cannot parse the string or the values are invalid, it returns Invalid Date.
+ *
+ * If the argument is none of the above, the function returns Invalid Date.
+ *
+ * **Note**: *all* Date arguments passed to any *date-fns* function is processed by `toDate`.
+ * All *date-fns* functions will throw `RangeError` if `options.additionalDigits` is not 0, 1, 2 or undefined.
+ *
+ * @param {Date|String|Number} argument - the value to convert
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - the additional number of digits in the extended year format
+ * @param {String} [options.timeZone=''] - used to specify the IANA time zone offset of a date String.
+ * @returns {Date} the parsed date in the local time zone
+ * @throws {TypeError} 1 argument required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // Convert string '2014-02-11T11:30:30' to date:
+ * var result = toDate('2014-02-11T11:30:30')
+ * //=> Tue Feb 11 2014 11:30:30
+ *
+ * @example
+ * // Convert string '+02014101' to date,
+ * // if the additional number of digits in the extended year format is 1:
+ * var result = toDate('+02014101', {additionalDigits: 1})
+ * //=> Fri Apr 11 2014 00:00:00
+ */
+
+function toDate(argument, dirtyOptions) {
+  if (arguments.length < 1) {
+    throw new TypeError('1 argument required, but only ' + arguments.length + ' present');
+  }
+
+  if (argument === null) {
+    return new Date(NaN);
+  }
+
+  var options = dirtyOptions || {};
+  var additionalDigits = options.additionalDigits == null ? DEFAULT_ADDITIONAL_DIGITS : (0, _index.default)(options.additionalDigits);
+
+  if (additionalDigits !== 2 && additionalDigits !== 1 && additionalDigits !== 0) {
+    throw new RangeError('additionalDigits must be 0, 1 or 2');
+  } // Clone the date
+
+
+  if (argument instanceof Date || typeof argument === 'object' && Object.prototype.toString.call(argument) === '[object Date]') {
+    // Prevent the date to lose the milliseconds when passed to new Date() in IE10
+    return new Date(argument.getTime());
+  } else if (typeof argument === 'number' || Object.prototype.toString.call(argument) === '[object Number]') {
+    return new Date(argument);
+  } else if (!(typeof argument === 'string' || Object.prototype.toString.call(argument) === '[object String]')) {
+    return new Date(NaN);
+  }
+
+  var dateStrings = splitDateString(argument);
+  var parseYearResult = parseYear(dateStrings.date, additionalDigits);
+  var year = parseYearResult.year;
+  var restDateString = parseYearResult.restDateString;
+  var date = parseDate(restDateString, year);
+
+  if (isNaN(date)) {
+    return new Date(NaN);
+  }
+
+  if (date) {
+    var timestamp = date.getTime();
+    var time = 0;
+    var offset;
+
+    if (dateStrings.time) {
+      time = parseTime(dateStrings.time);
+
+      if (isNaN(time)) {
+        return new Date(NaN);
+      }
+    }
+
+    if (dateStrings.timezone || options.timeZone) {
+      offset = (0, _tzParseTimezone.default)(dateStrings.timezone || options.timeZone, new Date(timestamp + time));
+
+      if (isNaN(offset)) {
+        return new Date(NaN);
+      }
+
+      offset = (0, _tzParseTimezone.default)(dateStrings.timezone || options.timeZone, new Date(timestamp + time + offset));
+
+      if (isNaN(offset)) {
+        return new Date(NaN);
+      }
+    } else {
+      // get offset accurate to hour in timezones that change offset
+      offset = (0, _index2.default)(new Date(timestamp + time));
+      offset = (0, _index2.default)(new Date(timestamp + time + offset));
+    }
+
+    return new Date(timestamp + time + offset);
+  } else {
+    return new Date(NaN);
+  }
+}
+
+function splitDateString(dateString) {
+  var dateStrings = {};
+  var array = dateString.split(patterns.dateTimeDelimeter);
+  var timeString;
+
+  if (patterns.plainTime.test(array[0])) {
+    dateStrings.date = null;
+    timeString = array[0];
+  } else {
+    dateStrings.date = array[0];
+    timeString = array[1];
+    dateStrings.timezone = array[2];
+
+    if (patterns.timeZoneDelimeter.test(dateStrings.date)) {
+      dateStrings.date = dateString.split(patterns.timeZoneDelimeter)[0];
+      timeString = dateString.substr(dateStrings.date.length, dateString.length);
+    }
+  }
+
+  if (timeString) {
+    var token = patterns.timezone.exec(timeString);
+
+    if (token) {
+      dateStrings.time = timeString.replace(token[1], '');
+      dateStrings.timezone = token[1];
+    } else {
+      dateStrings.time = timeString;
+    }
+  }
+
+  return dateStrings;
+}
+
+function parseYear(dateString, additionalDigits) {
+  var patternYYY = patterns.YYY[additionalDigits];
+  var patternYYYYY = patterns.YYYYY[additionalDigits];
+  var token; // YYYY or ±YYYYY
+
+  token = patterns.YYYY.exec(dateString) || patternYYYYY.exec(dateString);
+
+  if (token) {
+    var yearString = token[1];
+    return {
+      year: parseInt(yearString, 10),
+      restDateString: dateString.slice(yearString.length)
+    };
+  } // YY or ±YYY
+
+
+  token = patterns.YY.exec(dateString) || patternYYY.exec(dateString);
+
+  if (token) {
+    var centuryString = token[1];
+    return {
+      year: parseInt(centuryString, 10) * 100,
+      restDateString: dateString.slice(centuryString.length)
+    };
+  } // Invalid ISO-formatted year
+
+
+  return {
+    year: null
+  };
+}
+
+function parseDate(dateString, year) {
+  // Invalid ISO-formatted year
+  if (year === null) {
+    return null;
+  }
+
+  var token;
+  var date;
+  var month;
+  var week; // YYYY
+
+  if (dateString.length === 0) {
+    date = new Date(0);
+    date.setUTCFullYear(year);
+    return date;
+  } // YYYY-MM
+
+
+  token = patterns.MM.exec(dateString);
+
+  if (token) {
+    date = new Date(0);
+    month = parseInt(token[1], 10) - 1;
+
+    if (!validateDate(year, month)) {
+      return new Date(NaN);
+    }
+
+    date.setUTCFullYear(year, month);
+    return date;
+  } // YYYY-DDD or YYYYDDD
+
+
+  token = patterns.DDD.exec(dateString);
+
+  if (token) {
+    date = new Date(0);
+    var dayOfYear = parseInt(token[1], 10);
+
+    if (!validateDayOfYearDate(year, dayOfYear)) {
+      return new Date(NaN);
+    }
+
+    date.setUTCFullYear(year, 0, dayOfYear);
+    return date;
+  } // yyyy-MM-dd or YYYYMMDD
+
+
+  token = patterns.MMDD.exec(dateString);
+
+  if (token) {
+    date = new Date(0);
+    month = parseInt(token[1], 10) - 1;
+    var day = parseInt(token[2], 10);
+
+    if (!validateDate(year, month, day)) {
+      return new Date(NaN);
+    }
+
+    date.setUTCFullYear(year, month, day);
+    return date;
+  } // YYYY-Www or YYYYWww
+
+
+  token = patterns.Www.exec(dateString);
+
+  if (token) {
+    week = parseInt(token[1], 10) - 1;
+
+    if (!validateWeekDate(year, week)) {
+      return new Date(NaN);
+    }
+
+    return dayOfISOWeekYear(year, week);
+  } // YYYY-Www-D or YYYYWwwD
+
+
+  token = patterns.WwwD.exec(dateString);
+
+  if (token) {
+    week = parseInt(token[1], 10) - 1;
+    var dayOfWeek = parseInt(token[2], 10) - 1;
+
+    if (!validateWeekDate(year, week, dayOfWeek)) {
+      return new Date(NaN);
+    }
+
+    return dayOfISOWeekYear(year, week, dayOfWeek);
+  } // Invalid ISO-formatted date
+
+
+  return null;
+}
+
+function parseTime(timeString) {
+  var token;
+  var hours;
+  var minutes; // hh
+
+  token = patterns.HH.exec(timeString);
+
+  if (token) {
+    hours = parseFloat(token[1].replace(',', '.'));
+
+    if (!validateTime(hours)) {
+      return NaN;
+    }
+
+    return hours % 24 * MILLISECONDS_IN_HOUR;
+  } // hh:mm or hhmm
+
+
+  token = patterns.HHMM.exec(timeString);
+
+  if (token) {
+    hours = parseInt(token[1], 10);
+    minutes = parseFloat(token[2].replace(',', '.'));
+
+    if (!validateTime(hours, minutes)) {
+      return NaN;
+    }
+
+    return hours % 24 * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE;
+  } // hh:mm:ss or hhmmss
+
+
+  token = patterns.HHMMSS.exec(timeString);
+
+  if (token) {
+    hours = parseInt(token[1], 10);
+    minutes = parseInt(token[2], 10);
+    var seconds = parseFloat(token[3].replace(',', '.'));
+
+    if (!validateTime(hours, minutes, seconds)) {
+      return NaN;
+    }
+
+    return hours % 24 * MILLISECONDS_IN_HOUR + minutes * MILLISECONDS_IN_MINUTE + seconds * 1000;
+  } // Invalid ISO-formatted time
+
+
+  return null;
+}
+
+function dayOfISOWeekYear(isoWeekYear, week, day) {
+  week = week || 0;
+  day = day || 0;
+  var date = new Date(0);
+  date.setUTCFullYear(isoWeekYear, 0, 4);
+  var fourthOfJanuaryDay = date.getUTCDay() || 7;
+  var diff = week * 7 + day + 1 - fourthOfJanuaryDay;
+  date.setUTCDate(date.getUTCDate() + diff);
+  return date;
+} // Validation functions
+
+
+var DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+var DAYS_IN_MONTH_LEAP_YEAR = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function isLeapYearIndex(year) {
+  return year % 400 === 0 || year % 4 === 0 && year % 100 !== 0;
+}
+
+function validateDate(year, month, date) {
+  if (month < 0 || month > 11) {
+    return false;
+  }
+
+  if (date != null) {
+    if (date < 1) {
+      return false;
+    }
+
+    var isLeapYear = isLeapYearIndex(year);
+
+    if (isLeapYear && date > DAYS_IN_MONTH_LEAP_YEAR[month]) {
+      return false;
+    }
+
+    if (!isLeapYear && date > DAYS_IN_MONTH[month]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function validateDayOfYearDate(year, dayOfYear) {
+  if (dayOfYear < 1) {
+    return false;
+  }
+
+  var isLeapYear = isLeapYearIndex(year);
+
+  if (isLeapYear && dayOfYear > 366) {
+    return false;
+  }
+
+  if (!isLeapYear && dayOfYear > 365) {
+    return false;
+  }
+
+  return true;
+}
+
+function validateWeekDate(year, week, day) {
+  if (week < 0 || week > 52) {
+    return false;
+  }
+
+  if (day != null && (day < 0 || day > 6)) {
+    return false;
+  }
+
+  return true;
+}
+
+function validateTime(hours, minutes, seconds) {
+  if (hours != null && (hours < 0 || hours >= 25)) {
+    return false;
+  }
+
+  if (minutes != null && (minutes < 0 || minutes >= 60)) {
+    return false;
+  }
+
+  if (seconds != null && (seconds < 0 || seconds >= 60)) {
+    return false;
+  }
+
+  return true;
+}
+},{"date-fns/esm/_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","date-fns/esm/_lib/getTimezoneOffsetInMilliseconds/index.js":"../node_modules/date-fns/esm/_lib/getTimezoneOffsetInMilliseconds/index.js","../_lib/tzParseTimezone":"../node_modules/date-fns-tz/esm/_lib/tzParseTimezone/index.js"}],"../node_modules/date-fns-tz/esm/format/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = format;
+
+var _format = _interopRequireDefault(require("date-fns/esm/format"));
+
+var _formatters = _interopRequireDefault(require("./formatters"));
+
+var _toDate = _interopRequireDefault(require("../toDate"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var tzFormattingTokensRegExp = /([xXOz]+)|''|'(''|[^'])+('|$)/g;
+/**
+ * @name format
+ * @category Common Helpers
+ * @summary Format the date.
+ *
+ * @description
+ * Return the formatted date string in the given format. The result may vary by locale.
+ *
+ * > ⚠️ Please note that the `format` tokens differ from Moment.js and other libraries.
+ * > See: https://git.io/fxCyr
+ *
+ * The characters wrapped between two single quotes characters (') are escaped.
+ * Two single quotes in a row, whether inside or outside a quoted sequence, represent a 'real' single quote.
+ * (see the last example)
+ *
+ * Format of the string is based on Unicode Technical Standard #35:
+ * https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table
+ * with a few additions (see note 7 below the table).
+ *
+ * Accepted patterns:
+ * | Unit                            | Pattern | Result examples                   | Notes |
+ * |---------------------------------|---------|-----------------------------------|-------|
+ * | Era                             | G..GGG  | AD, BC                            |       |
+ * |                                 | GGGG    | Anno Domini, Before Christ        | 2     |
+ * |                                 | GGGGG   | A, B                              |       |
+ * | Calendar year                   | y       | 44, 1, 1900, 2017                 | 5     |
+ * |                                 | yo      | 44th, 1st, 0th, 17th              | 5,7   |
+ * |                                 | yy      | 44, 01, 00, 17                    | 5     |
+ * |                                 | yyy     | 044, 001, 1900, 2017              | 5     |
+ * |                                 | yyyy    | 0044, 0001, 1900, 2017            | 5     |
+ * |                                 | yyyyy   | ...                               | 3,5   |
+ * | Local week-numbering year       | Y       | 44, 1, 1900, 2017                 | 5     |
+ * |                                 | Yo      | 44th, 1st, 1900th, 2017th         | 5,7   |
+ * |                                 | YY      | 44, 01, 00, 17                    | 5,8   |
+ * |                                 | YYY     | 044, 001, 1900, 2017              | 5     |
+ * |                                 | YYYY    | 0044, 0001, 1900, 2017            | 5,8   |
+ * |                                 | YYYYY   | ...                               | 3,5   |
+ * | ISO week-numbering year         | R       | -43, 0, 1, 1900, 2017             | 5,7   |
+ * |                                 | RR      | -43, 00, 01, 1900, 2017           | 5,7   |
+ * |                                 | RRR     | -043, 000, 001, 1900, 2017        | 5,7   |
+ * |                                 | RRRR    | -0043, 0000, 0001, 1900, 2017     | 5,7   |
+ * |                                 | RRRRR   | ...                               | 3,5,7 |
+ * | Extended year                   | u       | -43, 0, 1, 1900, 2017             | 5     |
+ * |                                 | uu      | -43, 01, 1900, 2017               | 5     |
+ * |                                 | uuu     | -043, 001, 1900, 2017             | 5     |
+ * |                                 | uuuu    | -0043, 0001, 1900, 2017           | 5     |
+ * |                                 | uuuuu   | ...                               | 3,5   |
+ * | Quarter (formatting)            | Q       | 1, 2, 3, 4                        |       |
+ * |                                 | Qo      | 1st, 2nd, 3rd, 4th                | 7     |
+ * |                                 | QQ      | 01, 02, 03, 04                    |       |
+ * |                                 | QQQ     | Q1, Q2, Q3, Q4                    |       |
+ * |                                 | QQQQ    | 1st quarter, 2nd quarter, ...     | 2     |
+ * |                                 | QQQQQ   | 1, 2, 3, 4                        | 4     |
+ * | Quarter (stand-alone)           | q       | 1, 2, 3, 4                        |       |
+ * |                                 | qo      | 1st, 2nd, 3rd, 4th                | 7     |
+ * |                                 | qq      | 01, 02, 03, 04                    |       |
+ * |                                 | qqq     | Q1, Q2, Q3, Q4                    |       |
+ * |                                 | qqqq    | 1st quarter, 2nd quarter, ...     | 2     |
+ * |                                 | qqqqq   | 1, 2, 3, 4                        | 4     |
+ * | Month (formatting)              | M       | 1, 2, ..., 12                     |       |
+ * |                                 | Mo      | 1st, 2nd, ..., 12th               | 7     |
+ * |                                 | MM      | 01, 02, ..., 12                   |       |
+ * |                                 | MMM     | Jan, Feb, ..., Dec                |       |
+ * |                                 | MMMM    | January, February, ..., December  | 2     |
+ * |                                 | MMMMM   | J, F, ..., D                      |       |
+ * | Month (stand-alone)             | L       | 1, 2, ..., 12                     |       |
+ * |                                 | Lo      | 1st, 2nd, ..., 12th               | 7     |
+ * |                                 | LL      | 01, 02, ..., 12                   |       |
+ * |                                 | LLL     | Jan, Feb, ..., Dec                |       |
+ * |                                 | LLLL    | January, February, ..., December  | 2     |
+ * |                                 | LLLLL   | J, F, ..., D                      |       |
+ * | Local week of year              | w       | 1, 2, ..., 53                     |       |
+ * |                                 | wo      | 1st, 2nd, ..., 53th               | 7     |
+ * |                                 | ww      | 01, 02, ..., 53                   |       |
+ * | ISO week of year                | I       | 1, 2, ..., 53                     | 7     |
+ * |                                 | Io      | 1st, 2nd, ..., 53th               | 7     |
+ * |                                 | II      | 01, 02, ..., 53                   | 7     |
+ * | Day of month                    | d       | 1, 2, ..., 31                     |       |
+ * |                                 | do      | 1st, 2nd, ..., 31st               | 7     |
+ * |                                 | dd      | 01, 02, ..., 31                   |       |
+ * | Day of year                     | D       | 1, 2, ..., 365, 366               | 8     |
+ * |                                 | Do      | 1st, 2nd, ..., 365th, 366th       | 7     |
+ * |                                 | DD      | 01, 02, ..., 365, 366             | 8     |
+ * |                                 | DDD     | 001, 002, ..., 365, 366           |       |
+ * |                                 | DDDD    | ...                               | 3     |
+ * | Day of week (formatting)        | E..EEE  | Mon, Tue, Wed, ..., Su            |       |
+ * |                                 | EEEE    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | EEEEE   | M, T, W, T, F, S, S               |       |
+ * |                                 | EEEEEE  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | ISO day of week (formatting)    | i       | 1, 2, 3, ..., 7                   | 7     |
+ * |                                 | io      | 1st, 2nd, ..., 7th                | 7     |
+ * |                                 | ii      | 01, 02, ..., 07                   | 7     |
+ * |                                 | iii     | Mon, Tue, Wed, ..., Su            | 7     |
+ * |                                 | iiii    | Monday, Tuesday, ..., Sunday      | 2,7   |
+ * |                                 | iiiii   | M, T, W, T, F, S, S               | 7     |
+ * |                                 | iiiiii  | Mo, Tu, We, Th, Fr, Su, Sa        | 7     |
+ * | Local day of week (formatting)  | e       | 2, 3, 4, ..., 1                   |       |
+ * |                                 | eo      | 2nd, 3rd, ..., 1st                | 7     |
+ * |                                 | ee      | 02, 03, ..., 01                   |       |
+ * |                                 | eee     | Mon, Tue, Wed, ..., Su            |       |
+ * |                                 | eeee    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | eeeee   | M, T, W, T, F, S, S               |       |
+ * |                                 | eeeeee  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | Local day of week (stand-alone) | c       | 2, 3, 4, ..., 1                   |       |
+ * |                                 | co      | 2nd, 3rd, ..., 1st                | 7     |
+ * |                                 | cc      | 02, 03, ..., 01                   |       |
+ * |                                 | ccc     | Mon, Tue, Wed, ..., Su            |       |
+ * |                                 | cccc    | Monday, Tuesday, ..., Sunday      | 2     |
+ * |                                 | ccccc   | M, T, W, T, F, S, S               |       |
+ * |                                 | cccccc  | Mo, Tu, We, Th, Fr, Su, Sa        |       |
+ * | AM, PM                          | a..aaa  | AM, PM                            |       |
+ * |                                 | aaaa    | a.m., p.m.                        | 2     |
+ * |                                 | aaaaa   | a, p                              |       |
+ * | AM, PM, noon, midnight          | b..bbb  | AM, PM, noon, midnight            |       |
+ * |                                 | bbbb    | a.m., p.m., noon, midnight        | 2     |
+ * |                                 | bbbbb   | a, p, n, mi                       |       |
+ * | Flexible day period             | B..BBB  | at night, in the morning, ...     |       |
+ * |                                 | BBBB    | at night, in the morning, ...     | 2     |
+ * |                                 | BBBBB   | at night, in the morning, ...     |       |
+ * | Hour [1-12]                     | h       | 1, 2, ..., 11, 12                 |       |
+ * |                                 | ho      | 1st, 2nd, ..., 11th, 12th         | 7     |
+ * |                                 | hh      | 01, 02, ..., 11, 12               |       |
+ * | Hour [0-23]                     | H       | 0, 1, 2, ..., 23                  |       |
+ * |                                 | Ho      | 0th, 1st, 2nd, ..., 23rd          | 7     |
+ * |                                 | HH      | 00, 01, 02, ..., 23               |       |
+ * | Hour [0-11]                     | K       | 1, 2, ..., 11, 0                  |       |
+ * |                                 | Ko      | 1st, 2nd, ..., 11th, 0th          | 7     |
+ * |                                 | KK      | 1, 2, ..., 11, 0                  |       |
+ * | Hour [1-24]                     | k       | 24, 1, 2, ..., 23                 |       |
+ * |                                 | ko      | 24th, 1st, 2nd, ..., 23rd         | 7     |
+ * |                                 | kk      | 24, 01, 02, ..., 23               |       |
+ * | Minute                          | m       | 0, 1, ..., 59                     |       |
+ * |                                 | mo      | 0th, 1st, ..., 59th               | 7     |
+ * |                                 | mm      | 00, 01, ..., 59                   |       |
+ * | Second                          | s       | 0, 1, ..., 59                     |       |
+ * |                                 | so      | 0th, 1st, ..., 59th               | 7     |
+ * |                                 | ss      | 00, 01, ..., 59                   |       |
+ * | Fraction of second              | S       | 0, 1, ..., 9                      |       |
+ * |                                 | SS      | 00, 01, ..., 99                   |       |
+ * |                                 | SSS     | 000, 0001, ..., 999               |       |
+ * |                                 | SSSS    | ...                               | 3     |
+ * | Timezone (ISO-8601 w/ Z)        | X       | -08, +0530, Z                     |       |
+ * |                                 | XX      | -0800, +0530, Z                   |       |
+ * |                                 | XXX     | -08:00, +05:30, Z                 |       |
+ * |                                 | XXXX    | -0800, +0530, Z, +123456          | 2     |
+ * |                                 | XXXXX   | -08:00, +05:30, Z, +12:34:56      |       |
+ * | Timezone (ISO-8601 w/o Z)       | x       | -08, +0530, +00                   |       |
+ * |                                 | xx      | -0800, +0530, +0000               |       |
+ * |                                 | xxx     | -08:00, +05:30, +00:00            | 2     |
+ * |                                 | xxxx    | -0800, +0530, +0000, +123456      |       |
+ * |                                 | xxxxx   | -08:00, +05:30, +00:00, +12:34:56 |       |
+ * | Timezone (GMT)                  | O...OOO | GMT-8, GMT+5:30, GMT+0            |       |
+ * |                                 | OOOO    | GMT-08:00, GMT+05:30, GMT+00:00   | 2     |
+ * | Timezone (specific non-locat.)  | z...zzz | PDT, EST, CEST                    | 6     |
+ * |                                 | zzzz    | Pacific Daylight Time             | 2,6   |
+ * | Seconds timestamp               | t       | 512969520                         | 7     |
+ * |                                 | tt      | ...                               | 3,7   |
+ * | Milliseconds timestamp          | T       | 512969520900                      | 7     |
+ * |                                 | TT      | ...                               | 3,7   |
+ * | Long localized date             | P       | 05/29/1453                        | 7     |
+ * |                                 | PP      | May 29, 1453                      | 7     |
+ * |                                 | PPP     | May 29th, 1453                    | 7     |
+ * |                                 | PPPP    | Sunday, May 29th, 1453            | 2,7   |
+ * | Long localized time             | p       | 12:00 AM                          | 7     |
+ * |                                 | pp      | 12:00:00 AM                       | 7     |
+ * |                                 | ppp     | 12:00:00 AM GMT+2                 | 7     |
+ * |                                 | pppp    | 12:00:00 AM GMT+02:00             | 2,7   |
+ * | Combination of date and time    | Pp      | 05/29/1453, 12:00 AM              | 7     |
+ * |                                 | PPpp    | May 29, 1453, 12:00:00 AM         | 7     |
+ * |                                 | PPPppp  | May 29th, 1453 at ...             | 7     |
+ * |                                 | PPPPpppp| Sunday, May 29th, 1453 at ...     | 2,7   |
+ * Notes:
+ * 1. "Formatting" units (e.g. formatting quarter) in the default en-US locale
+ *    are the same as "stand-alone" units, but are different in some languages.
+ *    "Formatting" units are declined according to the rules of the language
+ *    in the context of a date. "Stand-alone" units are always nominative singular:
+ *
+ *    `format(new Date(2017, 10, 6), 'do LLLL', {locale: cs}) //=> '6. listopad'`
+ *
+ *    `format(new Date(2017, 10, 6), 'do MMMM', {locale: cs}) //=> '6. listopadu'`
+ *
+ * 2. Any sequence of the identical letters is a pattern, unless it is escaped by
+ *    the single quote characters (see below).
+ *    If the sequence is longer than listed in table (e.g. `EEEEEEEEEEE`)
+ *    the output will be the same as default pattern for this unit, usually
+ *    the longest one (in case of ISO weekdays, `EEEE`). Default patterns for units
+ *    are marked with "2" in the last column of the table.
+ *
+ *    `format(new Date(2017, 10, 6), 'MMM') //=> 'Nov'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMM') //=> 'November'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMM') //=> 'N'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMMM') //=> 'November'`
+ *
+ *    `format(new Date(2017, 10, 6), 'MMMMMMM') //=> 'November'`
+ *
+ * 3. Some patterns could be unlimited length (such as `yyyyyyyy`).
+ *    The output will be padded with zeros to match the length of the pattern.
+ *
+ *    `format(new Date(2017, 10, 6), 'yyyyyyyy') //=> '00002017'`
+ *
+ * 4. `QQQQQ` and `qqqqq` could be not strictly numerical in some locales.
+ *    These tokens represent the shortest form of the quarter.
+ *
+ * 5. The main difference between `y` and `u` patterns are B.C. years:
+ *
+ *    | Year | `y` | `u` |
+ *    |------|-----|-----|
+ *    | AC 1 |   1 |   1 |
+ *    | BC 1 |   1 |   0 |
+ *    | BC 2 |   2 |  -1 |
+ *
+ *    Also `yy` always returns the last two digits of a year,
+ *    while `uu` pads single digit years to 2 characters and returns other years unchanged:
+ *
+ *    | Year | `yy` | `uu` |
+ *    |------|------|------|
+ *    | 1    |   01 |   01 |
+ *    | 14   |   14 |   14 |
+ *    | 376  |   76 |  376 |
+ *    | 1453 |   53 | 1453 |
+ *
+ *    The same difference is true for local and ISO week-numbering years (`Y` and `R`),
+ *    except local week-numbering years are dependent on `options.weekStartsOn`
+ *    and `options.firstWeekContainsDate` (compare [getISOWeekYear]{@link https://date-fns.org/docs/getISOWeekYear}
+ *    and [getWeekYear]{@link https://date-fns.org/docs/getWeekYear}).
+ *
+ * 6. Specific non-location timezones are created using the Intl browser API. The output is determined by the
+ *    preferred standard of the current locale (en-US by default) which may not always give the expected result.
+ *    For this reason it is recommended to supply a `locale` in the format options when formatting a time zone name.
+ *
+ * 7. These patterns are not in the Unicode Technical Standard #35:
+ *    - `i`: ISO day of week
+ *    - `I`: ISO week of year
+ *    - `R`: ISO week-numbering year
+ *    - `t`: seconds timestamp
+ *    - `T`: milliseconds timestamp
+ *    - `o`: ordinal number modifier
+ *    - `P`: long localized date
+ *    - `p`: long localized time
+ *
+ * 8. These tokens are often confused with others. See: https://git.io/fxCyr
+ *
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole
+ *   library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * - The second argument is now required for the sake of explicitness.
+ *
+ *   ```javascript
+ *   // Before v2.0.0
+ *   format(new Date(2016, 0, 1))
+ *
+ *   // v2.0.0 onward
+ *   format(new Date(2016, 0, 1), "yyyy-MM-dd'T'HH:mm:ss.SSSxxx")
+ *   ```
+ *
+ * - New format string API for `format` function
+ *   which is based on [Unicode Technical Standard
+ *   #35](https://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table). See [this
+ *   post](https://blog.date-fns.org/post/unicode-tokens-in-date-fns-v2-sreatyki91jg) for more details.
+ *
+ * - Characters are now escaped using single quote symbols (`'`) instead of square brackets.
+ *
+ * @param {Date|String|Number} date - the original date
+ * @param {String} format - the string of tokens
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - passed to `toDate`. See [toDate]{@link
+ *   https://date-fns.org/docs/toDate}
+ * @param {0|1|2|3|4|5|6} [options.weekStartsOn=0] - the index of the first day of the week (0 - Sunday)
+ * @param {Number} [options.firstWeekContainsDate=1] - the day of January, which is
+ * @param {Locale} [options.locale=defaultLocale] - the locale object. See
+ *   [Locale]{@link https://date-fns.org/docs/Locale}
+ * @param {Boolean} [options.awareOfUnicodeTokens=false] - if true, allows usage of Unicode tokens causes confusion:
+ *   - Some of the day of year tokens (`D`, `DD`) that are confused with the day of month tokens (`d`, `dd`).
+ *   - Some of the local week-numbering year tokens (`YY`, `YYYY`) that are confused with the calendar year tokens
+ *   (`yy`, `yyyy`). See: https://git.io/fxCyr
+ * @param {String} [options.timeZone=''] - used to specify the IANA time zone offset of a date String.
+ * @returns {String} the formatted date string
+ * @throws {TypeError} 2 arguments required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ * @throws {RangeError} `options.locale` must contain `localize` property
+ * @throws {RangeError} `options.locale` must contain `formatLong` property
+ * @throws {RangeError} `options.weekStartsOn` must be between 0 and 6
+ * @throws {RangeError} `options.firstWeekContainsDate` must be between 1 and 7
+ * @throws {RangeError} `options.awareOfUnicodeTokens` must be set to `true` to use `XX` token; see:
+ *   https://git.io/fxCyr
+ *
+ * @example
+ * // Represent 11 February 2014 in middle-endian format:
+ * var result = format(new Date(2014, 1, 11), 'MM/dd/yyyy')
+ * //=> '02/11/2014'
+ *
+ * @example
+ * // Represent 2 July 2014 in Esperanto:
+ * import { eoLocale } from 'date-fns/esm/locale/eo'
+ * var result = format(new Date(2014, 6, 2), "do 'de' MMMM yyyy", {
+ *   locale: eoLocale
+ * })
+ * //=> '2-a de julio 2014'
+ *
+ * @example
+ * // Escape string by single quote characters:
+ * var result = format(new Date(2014, 6, 2, 15), "h 'o''clock'")
+ * //=> "3 o'clock"
+ */
+
+function format(dirtyDate, dirtyFormatStr, dirtyOptions) {
+  var formatStr = String(dirtyFormatStr);
+  var options = dirtyOptions || {};
+  var matches = formatStr.match(tzFormattingTokensRegExp);
+
+  if (matches) {
+    var date = (0, _toDate.default)(dirtyDate, options);
+    formatStr = matches.reduce(function (result, token) {
+      return token[0] === "'" ? result : result.replace(token, "'" + _formatters.default[token[0]](date, token, null, options) + "'");
+    }, formatStr);
+  }
+
+  return (0, _format.default)(dirtyDate, formatStr, options);
+}
+},{"date-fns/esm/format":"../node_modules/date-fns/esm/format/index.js","./formatters":"../node_modules/date-fns-tz/esm/format/formatters/index.js","../toDate":"../node_modules/date-fns-tz/esm/toDate/index.js"}],"../node_modules/date-fns-tz/esm/utcToZonedTime/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = utcToZonedTime;
+
+var _tzParseTimezone = _interopRequireDefault(require("../_lib/tzParseTimezone"));
+
+var _subMilliseconds = _interopRequireDefault(require("date-fns/esm/subMilliseconds"));
+
+var _toDate = _interopRequireDefault(require("../toDate"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name utcToZonedTime
+ * @category Time Zone Helpers
+ * @summary Get a date/time representing local time in a given time zone from the UTC date
+ *
+ * @description
+ * Returns a date instance with values representing the local time in the time zone
+ * specified of the UTC time from the date provided. In other words, when the new date
+ * is formatted it will show the equivalent hours in the target time zone regardless
+ * of the current system time zone.
+ *
+ * @param {Date|String|Number} date - the date with the relevant UTC time
+ * @param {String} timeZone - the time zone to get local time for, can be an offset or IANA time zone
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - passed to `toDate`. See [toDate]{@link https://date-fns.org/docs/toDate}
+ * @returns {Date} the new date with the equivalent time in the time zone
+ * @throws {TypeError} 2 arguments required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // In June 10am UTC is 6am in New York (-04:00)
+ * const result = utcToZonedTime('2014-06-25T10:00:00.000Z', 'America/New_York')
+ * //=> Jun 25 2014 06:00:00
+ */
+function utcToZonedTime(dirtyDate, timeZone, options) {
+  var date = (0, _toDate.default)(dirtyDate, options); // This date has the UTC time values of the input date at the system time zone
+
+  var utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds(), date.getUTCMilliseconds()); // We just need to apply the offset indicated by the time zone to this localized date
+
+  var offsetMilliseconds = (0, _tzParseTimezone.default)(timeZone, utcDate);
+  return offsetMilliseconds ? (0, _subMilliseconds.default)(utcDate, offsetMilliseconds) : utcDate;
+}
+},{"../_lib/tzParseTimezone":"../node_modules/date-fns-tz/esm/_lib/tzParseTimezone/index.js","date-fns/esm/subMilliseconds":"../node_modules/date-fns/esm/subMilliseconds/index.js","../toDate":"../node_modules/date-fns-tz/esm/toDate/index.js"}],"../node_modules/date-fns/esm/_lib/assign/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = assign;
+
+function assign(target, dirtyObject) {
+  if (target == null) {
+    throw new TypeError('assign requires that input parameter not be null or undefined');
+  }
+
+  dirtyObject = dirtyObject || {};
+
+  for (var property in dirtyObject) {
+    if (dirtyObject.hasOwnProperty(property)) {
+      target[property] = dirtyObject[property];
+    }
+  }
+
+  return target;
+}
+},{}],"../node_modules/date-fns/esm/_lib/cloneObject/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = cloneObject;
+
+var _index = _interopRequireDefault(require("../assign/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function cloneObject(dirtyObject) {
+  return (0, _index.default)({}, dirtyObject);
+}
+},{"../assign/index.js":"../node_modules/date-fns/esm/_lib/assign/index.js"}],"../node_modules/date-fns-tz/esm/zonedTimeToUtc/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = zonedTimeToUtc;
+
+var _cloneObject = _interopRequireDefault(require("date-fns/esm/_lib/cloneObject"));
+
+var _format = _interopRequireDefault(require("date-fns/esm/format"));
+
+var _toDate = _interopRequireDefault(require("../toDate"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name zonedTimeToUtc
+ * @category Time Zone Helpers
+ * @summary Get the UTC date/time from a date representing local time in a given time zone
+ *
+ * @description
+ * Returns a date instance with the UTC time of the provided date of which the values
+ * represented the local time in the time zone specified. In other words, if the input
+ * date represented local time in time time zone, the timestamp of the output date will
+ * give the equivalent UTC of that local time regardless of the current system time zone.
+ *
+ * @param {Date|String|Number} date - the date with values representing the local time
+ * @param {String} timeZone - the time zone of this local time, can be an offset or IANA time zone
+ * @param {OptionsWithTZ} [options] - the object with options. See [Options]{@link https://date-fns.org/docs/Options}
+ * @param {0|1|2} [options.additionalDigits=2] - passed to `toDate`. See [toDate]{@link https://date-fns.org/docs/toDate}
+ * @returns {Date} the new date with the equivalent time in the time zone
+ * @throws {TypeError} 2 arguments required
+ * @throws {RangeError} `options.additionalDigits` must be 0, 1 or 2
+ *
+ * @example
+ * // In June 10am in Los Angeles is 5pm UTC
+ * const result = zonedTimeToUtc(new Date(2014, 5, 25, 10, 0, 0), 'America/Los_Angeles')
+ * //=> 2014-06-25T17:00:00.000Z
+ */
+function zonedTimeToUtc(date, timeZone, options) {
+  if (date instanceof Date) {
+    date = (0, _format.default)(date, "yyyy-MM-dd'T'HH:mm:ss.SSS");
+  }
+
+  var extendedOptions = (0, _cloneObject.default)(options);
+  extendedOptions.timeZone = timeZone;
+  return (0, _toDate.default)(date, extendedOptions);
+}
+},{"date-fns/esm/_lib/cloneObject":"../node_modules/date-fns/esm/_lib/cloneObject/index.js","date-fns/esm/format":"../node_modules/date-fns/esm/format/index.js","../toDate":"../node_modules/date-fns-tz/esm/toDate/index.js"}],"../node_modules/date-fns-tz/esm/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+Object.defineProperty(exports, "format", {
+  enumerable: true,
+  get: function () {
+    return _index.default;
+  }
+});
+Object.defineProperty(exports, "toDate", {
+  enumerable: true,
+  get: function () {
+    return _index2.default;
+  }
+});
+Object.defineProperty(exports, "utcToZonedTime", {
+  enumerable: true,
+  get: function () {
+    return _index3.default;
+  }
+});
+Object.defineProperty(exports, "zonedTimeToUtc", {
+  enumerable: true,
+  get: function () {
+    return _index4.default;
+  }
+});
+
+var _index = _interopRequireDefault(require("./format/index.js"));
+
+var _index2 = _interopRequireDefault(require("./toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("./utcToZonedTime/index.js"));
+
+var _index4 = _interopRequireDefault(require("./zonedTimeToUtc/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+},{"./format/index.js":"../node_modules/date-fns-tz/esm/format/index.js","./toDate/index.js":"../node_modules/date-fns-tz/esm/toDate/index.js","./utcToZonedTime/index.js":"../node_modules/date-fns-tz/esm/utcToZonedTime/index.js","./zonedTimeToUtc/index.js":"../node_modules/date-fns-tz/esm/zonedTimeToUtc/index.js"}],"../node_modules/date-fns/esm/addDays/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = addDays;
+
+var _index = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name addDays
+ * @category Day Helpers
+ * @summary Add the specified number of days to the given date.
+ *
+ * @description
+ * Add the specified number of days to the given date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Number} amount - the amount of days to be added. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ * @returns {Date} the new date with the days added
+ * @throws {TypeError} 2 arguments required
+ *
+ * @example
+ * // Add 10 days to 1 September 2014:
+ * var result = addDays(new Date(2014, 8, 1), 10)
+ * //=> Thu Sep 11 2014 00:00:00
+ */
+function addDays(dirtyDate, dirtyAmount) {
+  (0, _index3.default)(2, arguments);
+  var date = (0, _index2.default)(dirtyDate);
+  var amount = (0, _index.default)(dirtyAmount);
+
+  if (isNaN(amount)) {
+    return new Date(NaN);
+  }
+
+  if (!amount) {
+    // If 0 days, no-op to avoid changing times in the hour before end of DST
+    return date;
+  }
+
+  date.setDate(date.getDate() + amount);
+  return date;
+}
+},{"../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/addMonths/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = addMonths;
+
+var _index = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+var _index2 = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index3 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name addMonths
+ * @category Month Helpers
+ * @summary Add the specified number of months to the given date.
+ *
+ * @description
+ * Add the specified number of months to the given date.
+ *
+ * ### v2.0.0 breaking changes:
+ *
+ * - [Changes that are common for the whole library](https://github.com/date-fns/date-fns/blob/master/docs/upgradeGuide.md#Common-Changes).
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Number} amount - the amount of months to be added. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ * @returns {Date} the new date with the months added
+ * @throws {TypeError} 2 arguments required
+ *
+ * @example
+ * // Add 5 months to 1 September 2014:
+ * var result = addMonths(new Date(2014, 8, 1), 5)
+ * //=> Sun Feb 01 2015 00:00:00
+ */
+function addMonths(dirtyDate, dirtyAmount) {
+  (0, _index3.default)(2, arguments);
+  var date = (0, _index2.default)(dirtyDate);
+  var amount = (0, _index.default)(dirtyAmount);
+
+  if (isNaN(amount)) {
+    return new Date(NaN);
+  }
+
+  if (!amount) {
+    // If 0 months, no-op to avoid changing times in the hour before end of DST
+    return date;
+  }
+
+  var dayOfMonth = date.getDate(); // The JS Date object supports date math by accepting out-of-bounds values for
+  // month, day, etc. For example, new Date(2020, 1, 0) returns 31 Dec 2019 and
+  // new Date(2020, 13, 1) returns 1 Feb 2021.  This is *almost* the behavior we
+  // want except that dates will wrap around the end of a month, meaning that
+  // new Date(2020, 13, 31) will return 3 Mar 2021 not 28 Feb 2021 as desired. So
+  // we'll default to the end of the desired month by adding 1 to the desired
+  // month and using a date of 0 to back up one day to the end of the desired
+  // month.
+
+  var endOfDesiredMonth = new Date(date.getTime());
+  endOfDesiredMonth.setMonth(date.getMonth() + amount + 1, 0);
+  var daysInMonth = endOfDesiredMonth.getDate();
+
+  if (dayOfMonth >= daysInMonth) {
+    // If we're already at the end of the month, then this is the correct date
+    // and we're done.
+    return endOfDesiredMonth;
+  } else {
+    // Otherwise, we now know that setting the original day-of-month value won't
+    // cause an overflow, so set the desired day-of-month. Note that we can't
+    // just set the date of `endOfDesiredMonth` because that object may have had
+    // its time changed in the unusual case where where a DST transition was on
+    // the last day of the month and its local time was in the hour skipped or
+    // repeated next to a DST transition.  So we use `date` instead which is
+    // guaranteed to still have the original time.
+    date.setFullYear(endOfDesiredMonth.getFullYear(), endOfDesiredMonth.getMonth(), dayOfMonth);
+    return date;
+  }
+}
+},{"../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js","../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js"}],"../node_modules/date-fns/esm/add/index.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = add;
+
+var _index = _interopRequireDefault(require("../addDays/index.js"));
+
+var _index2 = _interopRequireDefault(require("../addMonths/index.js"));
+
+var _index3 = _interopRequireDefault(require("../toDate/index.js"));
+
+var _index4 = _interopRequireDefault(require("../_lib/requiredArgs/index.js"));
+
+var _index5 = _interopRequireDefault(require("../_lib/toInteger/index.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+/**
+ * @name add
+ * @category Common Helpers
+ * @summary Add the specified years, months, weeks, days, hours, minutes and seconds to the given date.
+ *
+ * @description
+ * Add the specified years, months, weeks, days, hours, minutes and seconds to the given date.
+ *
+ * @param {Date|Number} date - the date to be changed
+ * @param {Duration} duration - the object with years, months, weeks, days, hours, minutes and seconds to be added. Positive decimals will be rounded using `Math.floor`, decimals less than zero will be rounded using `Math.ceil`.
+ *
+ * | Key            | Description                        |
+ * |----------------|------------------------------------|
+ * | years          | Amount of years to be added        |
+ * | months         | Amount of months to be added       |
+ * | weeks          | Amount of weeks to be added       |
+ * | days           | Amount of days to be added         |
+ * | hours          | Amount of hours to be added        |
+ * | minutes        | Amount of minutes to be added      |
+ * | seconds        | Amount of seconds to be added      |
+ *
+ * All values default to 0
+ *
+ * @returns {Date} the new date with the seconds added
+ * @throws {TypeError} 2 arguments required
+ *
+ * @example
+ * // Add the following duration to 1 September 2014, 10:19:50
+ * var result = add(new Date(2014, 8, 1, 10, 19, 50), {
+ *   years: 2,
+ *   months: 9,
+ *   weeks: 1,
+ *   days: 7,
+ *   hours: 5,
+ *   minutes: 9,
+ *   seconds: 30,
+ * })
+ * //=> Thu Jun 15 2017 15:29:20
+ */
+function add(dirtyDate, duration) {
+  (0, _index4.default)(2, arguments);
+  if (!duration || typeof duration !== 'object') return new Date(NaN);
+  var years = 'years' in duration ? (0, _index5.default)(duration.years) : 0;
+  var months = 'months' in duration ? (0, _index5.default)(duration.months) : 0;
+  var weeks = 'weeks' in duration ? (0, _index5.default)(duration.weeks) : 0;
+  var days = 'days' in duration ? (0, _index5.default)(duration.days) : 0;
+  var hours = 'hours' in duration ? (0, _index5.default)(duration.hours) : 0;
+  var minutes = 'minutes' in duration ? (0, _index5.default)(duration.minutes) : 0;
+  var seconds = 'seconds' in duration ? (0, _index5.default)(duration.seconds) : 0; // Add years and months
+
+  var date = (0, _index3.default)(dirtyDate);
+  var dateWithMonths = months || years ? (0, _index2.default)(date, months + years * 12) : date; // Add weeks and days
+
+  var dateWithDays = days || weeks ? (0, _index.default)(dateWithMonths, days + weeks * 7) : dateWithMonths; // Add days, hours, minutes and seconds
+
+  var minutesToAdd = minutes + hours * 60;
+  var secondsToAdd = seconds + minutesToAdd * 60;
+  var msToAdd = secondsToAdd * 1000;
+  var finalDate = new Date(dateWithDays.getTime() + msToAdd);
+  return finalDate;
+}
+},{"../addDays/index.js":"../node_modules/date-fns/esm/addDays/index.js","../addMonths/index.js":"../node_modules/date-fns/esm/addMonths/index.js","../toDate/index.js":"../node_modules/date-fns/esm/toDate/index.js","../_lib/requiredArgs/index.js":"../node_modules/date-fns/esm/_lib/requiredArgs/index.js","../_lib/toInteger/index.js":"../node_modules/date-fns/esm/_lib/toInteger/index.js"}],"../node_modules/crypt/crypt.js":[function(require,module,exports) {
+(function() {
+  var base64map
+      = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+
+  crypt = {
+    // Bit-wise rotation left
+    rotl: function(n, b) {
+      return (n << b) | (n >>> (32 - b));
+    },
+
+    // Bit-wise rotation right
+    rotr: function(n, b) {
+      return (n << (32 - b)) | (n >>> b);
+    },
+
+    // Swap big-endian to little-endian and vice versa
+    endian: function(n) {
+      // If number given, swap endian
+      if (n.constructor == Number) {
+        return crypt.rotl(n, 8) & 0x00FF00FF | crypt.rotl(n, 24) & 0xFF00FF00;
+      }
+
+      // Else, assume array and swap all items
+      for (var i = 0; i < n.length; i++)
+        n[i] = crypt.endian(n[i]);
+      return n;
+    },
+
+    // Generate an array of any length of random bytes
+    randomBytes: function(n) {
+      for (var bytes = []; n > 0; n--)
+        bytes.push(Math.floor(Math.random() * 256));
+      return bytes;
+    },
+
+    // Convert a byte array to big-endian 32-bit words
+    bytesToWords: function(bytes) {
+      for (var words = [], i = 0, b = 0; i < bytes.length; i++, b += 8)
+        words[b >>> 5] |= bytes[i] << (24 - b % 32);
+      return words;
+    },
+
+    // Convert big-endian 32-bit words to a byte array
+    wordsToBytes: function(words) {
+      for (var bytes = [], b = 0; b < words.length * 32; b += 8)
+        bytes.push((words[b >>> 5] >>> (24 - b % 32)) & 0xFF);
+      return bytes;
+    },
+
+    // Convert a byte array to a hex string
+    bytesToHex: function(bytes) {
+      for (var hex = [], i = 0; i < bytes.length; i++) {
+        hex.push((bytes[i] >>> 4).toString(16));
+        hex.push((bytes[i] & 0xF).toString(16));
+      }
+      return hex.join('');
+    },
+
+    // Convert a hex string to a byte array
+    hexToBytes: function(hex) {
+      for (var bytes = [], c = 0; c < hex.length; c += 2)
+        bytes.push(parseInt(hex.substr(c, 2), 16));
+      return bytes;
+    },
+
+    // Convert a byte array to a base-64 string
+    bytesToBase64: function(bytes) {
+      for (var base64 = [], i = 0; i < bytes.length; i += 3) {
+        var triplet = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2];
+        for (var j = 0; j < 4; j++)
+          if (i * 8 + j * 6 <= bytes.length * 8)
+            base64.push(base64map.charAt((triplet >>> 6 * (3 - j)) & 0x3F));
+          else
+            base64.push('=');
+      }
+      return base64.join('');
+    },
+
+    // Convert a base-64 string to a byte array
+    base64ToBytes: function(base64) {
+      // Remove non-base-64 characters
+      base64 = base64.replace(/[^A-Z0-9+\/]/ig, '');
+
+      for (var bytes = [], i = 0, imod4 = 0; i < base64.length;
+          imod4 = ++i % 4) {
+        if (imod4 == 0) continue;
+        bytes.push(((base64map.indexOf(base64.charAt(i - 1))
+            & (Math.pow(2, -2 * imod4 + 8) - 1)) << (imod4 * 2))
+            | (base64map.indexOf(base64.charAt(i)) >>> (6 - imod4 * 2)));
+      }
+      return bytes;
+    }
+  };
+
+  module.exports = crypt;
+})();
+
+},{}],"../node_modules/charenc/charenc.js":[function(require,module,exports) {
+var charenc = {
+  // UTF-8 encoding
+  utf8: {
+    // Convert a string to a byte array
+    stringToBytes: function(str) {
+      return charenc.bin.stringToBytes(unescape(encodeURIComponent(str)));
+    },
+
+    // Convert a byte array to a string
+    bytesToString: function(bytes) {
+      return decodeURIComponent(escape(charenc.bin.bytesToString(bytes)));
+    }
+  },
+
+  // Binary encoding
+  bin: {
+    // Convert a string to a byte array
+    stringToBytes: function(str) {
+      for (var bytes = [], i = 0; i < str.length; i++)
+        bytes.push(str.charCodeAt(i) & 0xFF);
+      return bytes;
+    },
+
+    // Convert a byte array to a string
+    bytesToString: function(bytes) {
+      for (var str = [], i = 0; i < bytes.length; i++)
+        str.push(String.fromCharCode(bytes[i]));
+      return str.join('');
+    }
+  }
+};
+
+module.exports = charenc;
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/base64-js/index.js":[function(require,module,exports) {
+'use strict'
+
+exports.byteLength = byteLength
+exports.toByteArray = toByteArray
+exports.fromByteArray = fromByteArray
+
+var lookup = []
+var revLookup = []
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
+
+var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+for (var i = 0, len = code.length; i < len; ++i) {
+  lookup[i] = code[i]
+  revLookup[code.charCodeAt(i)] = i
+}
+
+// Support decoding URL-safe base64 strings, as Node.js does.
+// See: https://en.wikipedia.org/wiki/Base64#URL_applications
+revLookup['-'.charCodeAt(0)] = 62
+revLookup['_'.charCodeAt(0)] = 63
+
+function getLens (b64) {
+  var len = b64.length
+
+  if (len % 4 > 0) {
+    throw new Error('Invalid string. Length must be a multiple of 4')
+  }
+
+  // Trim off extra bytes after placeholder bytes are found
+  // See: https://github.com/beatgammit/base64-js/issues/42
+  var validLen = b64.indexOf('=')
+  if (validLen === -1) validLen = len
+
+  var placeHoldersLen = validLen === len
+    ? 0
+    : 4 - (validLen % 4)
+
+  return [validLen, placeHoldersLen]
+}
+
+// base64 is 4/3 + up to two characters of the original data
+function byteLength (b64) {
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function _byteLength (b64, validLen, placeHoldersLen) {
+  return ((validLen + placeHoldersLen) * 3 / 4) - placeHoldersLen
+}
+
+function toByteArray (b64) {
+  var tmp
+  var lens = getLens(b64)
+  var validLen = lens[0]
+  var placeHoldersLen = lens[1]
+
+  var arr = new Arr(_byteLength(b64, validLen, placeHoldersLen))
+
+  var curByte = 0
+
+  // if there are placeholders, only get up to the last complete 4 chars
+  var len = placeHoldersLen > 0
+    ? validLen - 4
+    : validLen
+
+  var i
+  for (i = 0; i < len; i += 4) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 18) |
+      (revLookup[b64.charCodeAt(i + 1)] << 12) |
+      (revLookup[b64.charCodeAt(i + 2)] << 6) |
+      revLookup[b64.charCodeAt(i + 3)]
+    arr[curByte++] = (tmp >> 16) & 0xFF
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 2) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 2) |
+      (revLookup[b64.charCodeAt(i + 1)] >> 4)
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  if (placeHoldersLen === 1) {
+    tmp =
+      (revLookup[b64.charCodeAt(i)] << 10) |
+      (revLookup[b64.charCodeAt(i + 1)] << 4) |
+      (revLookup[b64.charCodeAt(i + 2)] >> 2)
+    arr[curByte++] = (tmp >> 8) & 0xFF
+    arr[curByte++] = tmp & 0xFF
+  }
+
+  return arr
+}
+
+function tripletToBase64 (num) {
+  return lookup[num >> 18 & 0x3F] +
+    lookup[num >> 12 & 0x3F] +
+    lookup[num >> 6 & 0x3F] +
+    lookup[num & 0x3F]
+}
+
+function encodeChunk (uint8, start, end) {
+  var tmp
+  var output = []
+  for (var i = start; i < end; i += 3) {
+    tmp =
+      ((uint8[i] << 16) & 0xFF0000) +
+      ((uint8[i + 1] << 8) & 0xFF00) +
+      (uint8[i + 2] & 0xFF)
+    output.push(tripletToBase64(tmp))
+  }
+  return output.join('')
+}
+
+function fromByteArray (uint8) {
+  var tmp
+  var len = uint8.length
+  var extraBytes = len % 3 // if we have 1 byte left, pad 2 bytes
+  var parts = []
+  var maxChunkLength = 16383 // must be multiple of 3
+
+  // go through the array every three bytes, we'll deal with trailing stuff later
+  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
+    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
+  }
+
+  // pad the end with zeros, but make sure to not forget the extra bytes
+  if (extraBytes === 1) {
+    tmp = uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 2] +
+      lookup[(tmp << 4) & 0x3F] +
+      '=='
+    )
+  } else if (extraBytes === 2) {
+    tmp = (uint8[len - 2] << 8) + uint8[len - 1]
+    parts.push(
+      lookup[tmp >> 10] +
+      lookup[(tmp >> 4) & 0x3F] +
+      lookup[(tmp << 2) & 0x3F] +
+      '='
+    )
+  }
+
+  return parts.join('')
+}
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/ieee754/index.js":[function(require,module,exports) {
+/*! ieee754. BSD-3-Clause License. Feross Aboukhadijeh <https://feross.org/opensource> */
+exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+  var e, m
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var nBits = -7
+  var i = isLE ? (nBytes - 1) : 0
+  var d = isLE ? -1 : 1
+  var s = buffer[offset + i]
+
+  i += d
+
+  e = s & ((1 << (-nBits)) - 1)
+  s >>= (-nBits)
+  nBits += eLen
+  for (; nBits > 0; e = (e * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  m = e & ((1 << (-nBits)) - 1)
+  e >>= (-nBits)
+  nBits += mLen
+  for (; nBits > 0; m = (m * 256) + buffer[offset + i], i += d, nBits -= 8) {}
+
+  if (e === 0) {
+    e = 1 - eBias
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity)
+  } else {
+    m = m + Math.pow(2, mLen)
+    e = e - eBias
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
+}
+
+exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c
+  var eLen = (nBytes * 8) - mLen - 1
+  var eMax = (1 << eLen) - 1
+  var eBias = eMax >> 1
+  var rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0)
+  var i = isLE ? 0 : (nBytes - 1)
+  var d = isLE ? 1 : -1
+  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
+
+  value = Math.abs(value)
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0
+    e = eMax
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2)
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--
+      c *= 2
+    }
+    if (e + eBias >= 1) {
+      value += rt / c
+    } else {
+      value += rt * Math.pow(2, 1 - eBias)
+    }
+    if (value * c >= 2) {
+      e++
+      c /= 2
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0
+      e = eMax
+    } else if (e + eBias >= 1) {
+      m = ((value * c) - 1) * Math.pow(2, mLen)
+      e = e + eBias
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen)
+      e = 0
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
+
+  e = (e << mLen) | m
+  eLen += mLen
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
+
+  buffer[offset + i - d] |= s * 128
+}
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/isarray/index.js":[function(require,module,exports) {
+var toString = {}.toString;
+
+module.exports = Array.isArray || function (arr) {
+  return toString.call(arr) == '[object Array]';
+};
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js":[function(require,module,exports) {
+
+var global = arguments[3];
+/*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <http://feross.org>
+ * @license  MIT
+ */
+/* eslint-disable no-proto */
+
+'use strict'
+
+var base64 = require('base64-js')
+var ieee754 = require('ieee754')
+var isArray = require('isarray')
+
+exports.Buffer = Buffer
+exports.SlowBuffer = SlowBuffer
+exports.INSPECT_MAX_BYTES = 50
+
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
+Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
+  ? global.TYPED_ARRAY_SUPPORT
+  : typedArraySupport()
+
+/*
+ * Export kMaxLength after typed array support is determined.
+ */
+exports.kMaxLength = kMaxLength()
+
+function typedArraySupport () {
+  try {
+    var arr = new Uint8Array(1)
+    arr.__proto__ = {__proto__: Uint8Array.prototype, foo: function () { return 42 }}
+    return arr.foo() === 42 && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        arr.subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+  } catch (e) {
+    return false
+  }
+}
+
+function kMaxLength () {
+  return Buffer.TYPED_ARRAY_SUPPORT
+    ? 0x7fffffff
+    : 0x3fffffff
+}
+
+function createBuffer (that, length) {
+  if (kMaxLength() < length) {
+    throw new RangeError('Invalid typed array length')
+  }
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = new Uint8Array(length)
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    if (that === null) {
+      that = new Buffer(length)
+    }
+    that.length = length
+  }
+
+  return that
+}
+
+/**
+ * The Buffer constructor returns instances of `Uint8Array` that have their
+ * prototype changed to `Buffer.prototype`. Furthermore, `Buffer` is a subclass of
+ * `Uint8Array`, so the returned instances will have all the node `Buffer` methods
+ * and the `Uint8Array` methods. Square bracket notation works as expected -- it
+ * returns a single octet.
+ *
+ * The `Uint8Array` prototype remains unmodified.
+ */
+
+function Buffer (arg, encodingOrOffset, length) {
+  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
+    return new Buffer(arg, encodingOrOffset, length)
+  }
+
+  // Common case.
+  if (typeof arg === 'number') {
+    if (typeof encodingOrOffset === 'string') {
+      throw new Error(
+        'If encoding is specified then the first argument must be a string'
+      )
+    }
+    return allocUnsafe(this, arg)
+  }
+  return from(this, arg, encodingOrOffset, length)
+}
+
+Buffer.poolSize = 8192 // not used by this implementation
+
+// TODO: Legacy, not needed anymore. Remove in next major version.
+Buffer._augment = function (arr) {
+  arr.__proto__ = Buffer.prototype
+  return arr
+}
+
+function from (that, value, encodingOrOffset, length) {
+  if (typeof value === 'number') {
+    throw new TypeError('"value" argument must not be a number')
+  }
+
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+    return fromArrayBuffer(that, value, encodingOrOffset, length)
+  }
+
+  if (typeof value === 'string') {
+    return fromString(that, value, encodingOrOffset)
+  }
+
+  return fromObject(that, value)
+}
+
+/**
+ * Functionally equivalent to Buffer(arg, encoding) but throws a TypeError
+ * if value is a number.
+ * Buffer.from(str[, encoding])
+ * Buffer.from(array)
+ * Buffer.from(buffer)
+ * Buffer.from(arrayBuffer[, byteOffset[, length]])
+ **/
+Buffer.from = function (value, encodingOrOffset, length) {
+  return from(null, value, encodingOrOffset, length)
+}
+
+if (Buffer.TYPED_ARRAY_SUPPORT) {
+  Buffer.prototype.__proto__ = Uint8Array.prototype
+  Buffer.__proto__ = Uint8Array
+  if (typeof Symbol !== 'undefined' && Symbol.species &&
+      Buffer[Symbol.species] === Buffer) {
+    // Fix subarray() in ES2016. See: https://github.com/feross/buffer/pull/97
+    Object.defineProperty(Buffer, Symbol.species, {
+      value: null,
+      configurable: true
+    })
+  }
+}
+
+function assertSize (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('"size" argument must be a number')
+  } else if (size < 0) {
+    throw new RangeError('"size" argument must not be negative')
+  }
+}
+
+function alloc (that, size, fill, encoding) {
+  assertSize(size)
+  if (size <= 0) {
+    return createBuffer(that, size)
+  }
+  if (fill !== undefined) {
+    // Only pay attention to encoding if it's a string. This
+    // prevents accidentally sending in a number that would
+    // be interpretted as a start offset.
+    return typeof encoding === 'string'
+      ? createBuffer(that, size).fill(fill, encoding)
+      : createBuffer(that, size).fill(fill)
+  }
+  return createBuffer(that, size)
+}
+
+/**
+ * Creates a new filled Buffer instance.
+ * alloc(size[, fill[, encoding]])
+ **/
+Buffer.alloc = function (size, fill, encoding) {
+  return alloc(null, size, fill, encoding)
+}
+
+function allocUnsafe (that, size) {
+  assertSize(size)
+  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < size; ++i) {
+      that[i] = 0
+    }
+  }
+  return that
+}
+
+/**
+ * Equivalent to Buffer(num), by default creates a non-zero-filled Buffer instance.
+ * */
+Buffer.allocUnsafe = function (size) {
+  return allocUnsafe(null, size)
+}
+/**
+ * Equivalent to SlowBuffer(num), by default creates a non-zero-filled Buffer instance.
+ */
+Buffer.allocUnsafeSlow = function (size) {
+  return allocUnsafe(null, size)
+}
+
+function fromString (that, string, encoding) {
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8'
+  }
+
+  if (!Buffer.isEncoding(encoding)) {
+    throw new TypeError('"encoding" must be a valid string encoding')
+  }
+
+  var length = byteLength(string, encoding) | 0
+  that = createBuffer(that, length)
+
+  var actual = that.write(string, encoding)
+
+  if (actual !== length) {
+    // Writing a hex string, for example, that contains invalid characters will
+    // cause everything after the first invalid character to be ignored. (e.g.
+    // 'abxxcd' will be treated as 'ab')
+    that = that.slice(0, actual)
+  }
+
+  return that
+}
+
+function fromArrayLike (that, array) {
+  var length = array.length < 0 ? 0 : checked(array.length) | 0
+  that = createBuffer(that, length)
+  for (var i = 0; i < length; i += 1) {
+    that[i] = array[i] & 255
+  }
+  return that
+}
+
+function fromArrayBuffer (that, array, byteOffset, length) {
+  array.byteLength // this throws if `array` is not a valid ArrayBuffer
+
+  if (byteOffset < 0 || array.byteLength < byteOffset) {
+    throw new RangeError('\'offset\' is out of bounds')
+  }
+
+  if (array.byteLength < byteOffset + (length || 0)) {
+    throw new RangeError('\'length\' is out of bounds')
+  }
+
+  if (byteOffset === undefined && length === undefined) {
+    array = new Uint8Array(array)
+  } else if (length === undefined) {
+    array = new Uint8Array(array, byteOffset)
+  } else {
+    array = new Uint8Array(array, byteOffset, length)
+  }
+
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Return an augmented `Uint8Array` instance, for best performance
+    that = array
+    that.__proto__ = Buffer.prototype
+  } else {
+    // Fallback: Return an object instance of the Buffer class
+    that = fromArrayLike(that, array)
+  }
+  return that
+}
+
+function fromObject (that, obj) {
+  if (Buffer.isBuffer(obj)) {
+    var len = checked(obj.length) | 0
+    that = createBuffer(that, len)
+
+    if (that.length === 0) {
+      return that
+    }
+
+    obj.copy(that, 0, 0, len)
+    return that
+  }
+
+  if (obj) {
+    if ((typeof ArrayBuffer !== 'undefined' &&
+        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
+      if (typeof obj.length !== 'number' || isnan(obj.length)) {
+        return createBuffer(that, 0)
+      }
+      return fromArrayLike(that, obj)
+    }
+
+    if (obj.type === 'Buffer' && isArray(obj.data)) {
+      return fromArrayLike(that, obj.data)
+    }
+  }
+
+  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
+}
+
+function checked (length) {
+  // Note: cannot use `length < kMaxLength()` here because that fails when
+  // length is NaN (which is otherwise coerced to zero.)
+  if (length >= kMaxLength()) {
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+                         'size: 0x' + kMaxLength().toString(16) + ' bytes')
+  }
+  return length | 0
+}
+
+function SlowBuffer (length) {
+  if (+length != length) { // eslint-disable-line eqeqeq
+    length = 0
+  }
+  return Buffer.alloc(+length)
+}
+
+Buffer.isBuffer = function isBuffer (b) {
+  return !!(b != null && b._isBuffer)
+}
+
+Buffer.compare = function compare (a, b) {
+  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+    throw new TypeError('Arguments must be Buffers')
+  }
+
+  if (a === b) return 0
+
+  var x = a.length
+  var y = b.length
+
+  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
+    if (a[i] !== b[i]) {
+      x = a[i]
+      y = b[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+Buffer.isEncoding = function isEncoding (encoding) {
+  switch (String(encoding).toLowerCase()) {
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'latin1':
+    case 'binary':
+    case 'base64':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return true
+    default:
+      return false
+  }
+}
+
+Buffer.concat = function concat (list, length) {
+  if (!isArray(list)) {
+    throw new TypeError('"list" argument must be an Array of Buffers')
+  }
+
+  if (list.length === 0) {
+    return Buffer.alloc(0)
+  }
+
+  var i
+  if (length === undefined) {
+    length = 0
+    for (i = 0; i < list.length; ++i) {
+      length += list[i].length
+    }
+  }
+
+  var buffer = Buffer.allocUnsafe(length)
+  var pos = 0
+  for (i = 0; i < list.length; ++i) {
+    var buf = list[i]
+    if (!Buffer.isBuffer(buf)) {
+      throw new TypeError('"list" argument must be an Array of Buffers')
+    }
+    buf.copy(buffer, pos)
+    pos += buf.length
+  }
+  return buffer
+}
+
+function byteLength (string, encoding) {
+  if (Buffer.isBuffer(string)) {
+    return string.length
+  }
+  if (typeof ArrayBuffer !== 'undefined' && typeof ArrayBuffer.isView === 'function' &&
+      (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) {
+    return string.byteLength
+  }
+  if (typeof string !== 'string') {
+    string = '' + string
+  }
+
+  var len = string.length
+  if (len === 0) return 0
+
+  // Use a for loop to avoid recursion
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'ascii':
+      case 'latin1':
+      case 'binary':
+        return len
+      case 'utf8':
+      case 'utf-8':
+      case undefined:
+        return utf8ToBytes(string).length
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return len * 2
+      case 'hex':
+        return len >>> 1
+      case 'base64':
+        return base64ToBytes(string).length
+      default:
+        if (loweredCase) return utf8ToBytes(string).length // assume utf8
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+Buffer.byteLength = byteLength
+
+function slowToString (encoding, start, end) {
+  var loweredCase = false
+
+  // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+  // property of a typed array.
+
+  // This behaves neither like String nor Uint8Array in that we set start/end
+  // to their upper/lower bounds if the value passed is out of range.
+  // undefined is handled specially as per ECMA-262 6th Edition,
+  // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
+  if (start === undefined || start < 0) {
+    start = 0
+  }
+  // Return early if start > this.length. Done here to prevent potential uint32
+  // coercion fail below.
+  if (start > this.length) {
+    return ''
+  }
+
+  if (end === undefined || end > this.length) {
+    end = this.length
+  }
+
+  if (end <= 0) {
+    return ''
+  }
+
+  // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+  end >>>= 0
+  start >>>= 0
+
+  if (end <= start) {
+    return ''
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  while (true) {
+    switch (encoding) {
+      case 'hex':
+        return hexSlice(this, start, end)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Slice(this, start, end)
+
+      case 'ascii':
+        return asciiSlice(this, start, end)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Slice(this, start, end)
+
+      case 'base64':
+        return base64Slice(this, start, end)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return utf16leSlice(this, start, end)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = (encoding + '').toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+// Buffer instances.
+Buffer.prototype._isBuffer = true
+
+function swap (b, n, m) {
+  var i = b[n]
+  b[n] = b[m]
+  b[m] = i
+}
+
+Buffer.prototype.swap16 = function swap16 () {
+  var len = this.length
+  if (len % 2 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 16-bits')
+  }
+  for (var i = 0; i < len; i += 2) {
+    swap(this, i, i + 1)
+  }
+  return this
+}
+
+Buffer.prototype.swap32 = function swap32 () {
+  var len = this.length
+  if (len % 4 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 32-bits')
+  }
+  for (var i = 0; i < len; i += 4) {
+    swap(this, i, i + 3)
+    swap(this, i + 1, i + 2)
+  }
+  return this
+}
+
+Buffer.prototype.swap64 = function swap64 () {
+  var len = this.length
+  if (len % 8 !== 0) {
+    throw new RangeError('Buffer size must be a multiple of 64-bits')
+  }
+  for (var i = 0; i < len; i += 8) {
+    swap(this, i, i + 7)
+    swap(this, i + 1, i + 6)
+    swap(this, i + 2, i + 5)
+    swap(this, i + 3, i + 4)
+  }
+  return this
+}
+
+Buffer.prototype.toString = function toString () {
+  var length = this.length | 0
+  if (length === 0) return ''
+  if (arguments.length === 0) return utf8Slice(this, 0, length)
+  return slowToString.apply(this, arguments)
+}
+
+Buffer.prototype.equals = function equals (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return true
+  return Buffer.compare(this, b) === 0
+}
+
+Buffer.prototype.inspect = function inspect () {
+  var str = ''
+  var max = exports.INSPECT_MAX_BYTES
+  if (this.length > 0) {
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+    if (this.length > max) str += ' ... '
+  }
+  return '<Buffer ' + str + '>'
+}
+
+Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
+  if (!Buffer.isBuffer(target)) {
+    throw new TypeError('Argument must be a Buffer')
+  }
+
+  if (start === undefined) {
+    start = 0
+  }
+  if (end === undefined) {
+    end = target ? target.length : 0
+  }
+  if (thisStart === undefined) {
+    thisStart = 0
+  }
+  if (thisEnd === undefined) {
+    thisEnd = this.length
+  }
+
+  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
+    throw new RangeError('out of range index')
+  }
+
+  if (thisStart >= thisEnd && start >= end) {
+    return 0
+  }
+  if (thisStart >= thisEnd) {
+    return -1
+  }
+  if (start >= end) {
+    return 1
+  }
+
+  start >>>= 0
+  end >>>= 0
+  thisStart >>>= 0
+  thisEnd >>>= 0
+
+  if (this === target) return 0
+
+  var x = thisEnd - thisStart
+  var y = end - start
+  var len = Math.min(x, y)
+
+  var thisCopy = this.slice(thisStart, thisEnd)
+  var targetCopy = target.slice(start, end)
+
+  for (var i = 0; i < len; ++i) {
+    if (thisCopy[i] !== targetCopy[i]) {
+      x = thisCopy[i]
+      y = targetCopy[i]
+      break
+    }
+  }
+
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+// OR the last index of `val` in `buffer` at offset <= `byteOffset`.
+//
+// Arguments:
+// - buffer - a Buffer to search
+// - val - a string, Buffer, or number
+// - byteOffset - an index into `buffer`; will be clamped to an int32
+// - encoding - an optional encoding, relevant is val is a string
+// - dir - true for indexOf, false for lastIndexOf
+function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
+  // Empty buffer means no match
+  if (buffer.length === 0) return -1
+
+  // Normalize byteOffset
+  if (typeof byteOffset === 'string') {
+    encoding = byteOffset
+    byteOffset = 0
+  } else if (byteOffset > 0x7fffffff) {
+    byteOffset = 0x7fffffff
+  } else if (byteOffset < -0x80000000) {
+    byteOffset = -0x80000000
+  }
+  byteOffset = +byteOffset  // Coerce to Number.
+  if (isNaN(byteOffset)) {
+    // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
+    byteOffset = dir ? 0 : (buffer.length - 1)
+  }
+
+  // Normalize byteOffset: negative offsets start from the end of the buffer
+  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
+  if (byteOffset >= buffer.length) {
+    if (dir) return -1
+    else byteOffset = buffer.length - 1
+  } else if (byteOffset < 0) {
+    if (dir) byteOffset = 0
+    else return -1
+  }
+
+  // Normalize val
+  if (typeof val === 'string') {
+    val = Buffer.from(val, encoding)
+  }
+
+  // Finally, search either indexOf (if dir is true) or lastIndexOf
+  if (Buffer.isBuffer(val)) {
+    // Special case: looking for empty string/buffer always fails
+    if (val.length === 0) {
+      return -1
+    }
+    return arrayIndexOf(buffer, val, byteOffset, encoding, dir)
+  } else if (typeof val === 'number') {
+    val = val & 0xFF // Search for a byte value [0-255]
+    if (Buffer.TYPED_ARRAY_SUPPORT &&
+        typeof Uint8Array.prototype.indexOf === 'function') {
+      if (dir) {
+        return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset)
+      } else {
+        return Uint8Array.prototype.lastIndexOf.call(buffer, val, byteOffset)
+      }
+    }
+    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
+  }
+
+  throw new TypeError('val must be string, number or Buffer')
+}
+
+function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
+  var indexSize = 1
+  var arrLength = arr.length
+  var valLength = val.length
+
+  if (encoding !== undefined) {
+    encoding = String(encoding).toLowerCase()
+    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
+        encoding === 'utf16le' || encoding === 'utf-16le') {
+      if (arr.length < 2 || val.length < 2) {
+        return -1
+      }
+      indexSize = 2
+      arrLength /= 2
+      valLength /= 2
+      byteOffset /= 2
+    }
+  }
+
+  function read (buf, i) {
+    if (indexSize === 1) {
+      return buf[i]
+    } else {
+      return buf.readUInt16BE(i * indexSize)
+    }
+  }
+
+  var i
+  if (dir) {
+    var foundIndex = -1
+    for (i = byteOffset; i < arrLength; i++) {
+      if (read(arr, i) === read(val, foundIndex === -1 ? 0 : i - foundIndex)) {
+        if (foundIndex === -1) foundIndex = i
+        if (i - foundIndex + 1 === valLength) return foundIndex * indexSize
+      } else {
+        if (foundIndex !== -1) i -= i - foundIndex
+        foundIndex = -1
+      }
+    }
+  } else {
+    if (byteOffset + valLength > arrLength) byteOffset = arrLength - valLength
+    for (i = byteOffset; i >= 0; i--) {
+      var found = true
+      for (var j = 0; j < valLength; j++) {
+        if (read(arr, i + j) !== read(val, j)) {
+          found = false
+          break
+        }
+      }
+      if (found) return i
+    }
+  }
+
+  return -1
+}
+
+Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
+  return this.indexOf(val, byteOffset, encoding) !== -1
+}
+
+Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
+}
+
+Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
+  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
+}
+
+function hexWrite (buf, string, offset, length) {
+  offset = Number(offset) || 0
+  var remaining = buf.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length
+  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
+
+  if (length > strLen / 2) {
+    length = strLen / 2
+  }
+  for (var i = 0; i < length; ++i) {
+    var parsed = parseInt(string.substr(i * 2, 2), 16)
+    if (isNaN(parsed)) return i
+    buf[offset + i] = parsed
+  }
+  return i
+}
+
+function utf8Write (buf, string, offset, length) {
+  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+function asciiWrite (buf, string, offset, length) {
+  return blitBuffer(asciiToBytes(string), buf, offset, length)
+}
+
+function latin1Write (buf, string, offset, length) {
+  return asciiWrite(buf, string, offset, length)
+}
+
+function base64Write (buf, string, offset, length) {
+  return blitBuffer(base64ToBytes(string), buf, offset, length)
+}
+
+function ucs2Write (buf, string, offset, length) {
+  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
+}
+
+Buffer.prototype.write = function write (string, offset, length, encoding) {
+  // Buffer#write(string)
+  if (offset === undefined) {
+    encoding = 'utf8'
+    length = this.length
+    offset = 0
+  // Buffer#write(string, encoding)
+  } else if (length === undefined && typeof offset === 'string') {
+    encoding = offset
+    length = this.length
+    offset = 0
+  // Buffer#write(string, offset[, length][, encoding])
+  } else if (isFinite(offset)) {
+    offset = offset | 0
+    if (isFinite(length)) {
+      length = length | 0
+      if (encoding === undefined) encoding = 'utf8'
+    } else {
+      encoding = length
+      length = undefined
+    }
+  // legacy write(string, encoding, offset, length) - remove in v0.13
+  } else {
+    throw new Error(
+      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
+    )
+  }
+
+  var remaining = this.length - offset
+  if (length === undefined || length > remaining) length = remaining
+
+  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
+    throw new RangeError('Attempt to write outside buffer bounds')
+  }
+
+  if (!encoding) encoding = 'utf8'
+
+  var loweredCase = false
+  for (;;) {
+    switch (encoding) {
+      case 'hex':
+        return hexWrite(this, string, offset, length)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Write(this, string, offset, length)
+
+      case 'ascii':
+        return asciiWrite(this, string, offset, length)
+
+      case 'latin1':
+      case 'binary':
+        return latin1Write(this, string, offset, length)
+
+      case 'base64':
+        // Warning: maxLength not taken into account in base64Write
+        return base64Write(this, string, offset, length)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return ucs2Write(this, string, offset, length)
+
+      default:
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = ('' + encoding).toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+Buffer.prototype.toJSON = function toJSON () {
+  return {
+    type: 'Buffer',
+    data: Array.prototype.slice.call(this._arr || this, 0)
+  }
+}
+
+function base64Slice (buf, start, end) {
+  if (start === 0 && end === buf.length) {
+    return base64.fromByteArray(buf)
+  } else {
+    return base64.fromByteArray(buf.slice(start, end))
+  }
+}
+
+function utf8Slice (buf, start, end) {
+  end = Math.min(buf.length, end)
+  var res = []
+
+  var i = start
+  while (i < end) {
+    var firstByte = buf[i]
+    var codePoint = null
+    var bytesPerSequence = (firstByte > 0xEF) ? 4
+      : (firstByte > 0xDF) ? 3
+      : (firstByte > 0xBF) ? 2
+      : 1
+
+    if (i + bytesPerSequence <= end) {
+      var secondByte, thirdByte, fourthByte, tempCodePoint
+
+      switch (bytesPerSequence) {
+        case 1:
+          if (firstByte < 0x80) {
+            codePoint = firstByte
+          }
+          break
+        case 2:
+          secondByte = buf[i + 1]
+          if ((secondByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0x1F) << 0x6 | (secondByte & 0x3F)
+            if (tempCodePoint > 0x7F) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 3:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0xC | (secondByte & 0x3F) << 0x6 | (thirdByte & 0x3F)
+            if (tempCodePoint > 0x7FF && (tempCodePoint < 0xD800 || tempCodePoint > 0xDFFF)) {
+              codePoint = tempCodePoint
+            }
+          }
+          break
+        case 4:
+          secondByte = buf[i + 1]
+          thirdByte = buf[i + 2]
+          fourthByte = buf[i + 3]
+          if ((secondByte & 0xC0) === 0x80 && (thirdByte & 0xC0) === 0x80 && (fourthByte & 0xC0) === 0x80) {
+            tempCodePoint = (firstByte & 0xF) << 0x12 | (secondByte & 0x3F) << 0xC | (thirdByte & 0x3F) << 0x6 | (fourthByte & 0x3F)
+            if (tempCodePoint > 0xFFFF && tempCodePoint < 0x110000) {
+              codePoint = tempCodePoint
+            }
+          }
+      }
+    }
+
+    if (codePoint === null) {
+      // we did not generate a valid codePoint so insert a
+      // replacement char (U+FFFD) and advance only 1 byte
+      codePoint = 0xFFFD
+      bytesPerSequence = 1
+    } else if (codePoint > 0xFFFF) {
+      // encode to utf16 (surrogate pair dance)
+      codePoint -= 0x10000
+      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
+      codePoint = 0xDC00 | codePoint & 0x3FF
+    }
+
+    res.push(codePoint)
+    i += bytesPerSequence
+  }
+
+  return decodeCodePointsArray(res)
+}
+
+// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+// the lowest limit is Chrome, with 0x10000 args.
+// We go 1 magnitude less, for safety
+var MAX_ARGUMENTS_LENGTH = 0x1000
+
+function decodeCodePointsArray (codePoints) {
+  var len = codePoints.length
+  if (len <= MAX_ARGUMENTS_LENGTH) {
+    return String.fromCharCode.apply(String, codePoints) // avoid extra slice()
+  }
+
+  // Decode in chunks to avoid "call stack size exceeded".
+  var res = ''
+  var i = 0
+  while (i < len) {
+    res += String.fromCharCode.apply(
+      String,
+      codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH)
+    )
+  }
+  return res
+}
+
+function asciiSlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i] & 0x7F)
+  }
+  return ret
+}
+
+function latin1Slice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; ++i) {
+    ret += String.fromCharCode(buf[i])
+  }
+  return ret
+}
+
+function hexSlice (buf, start, end) {
+  var len = buf.length
+
+  if (!start || start < 0) start = 0
+  if (!end || end < 0 || end > len) end = len
+
+  var out = ''
+  for (var i = start; i < end; ++i) {
+    out += toHex(buf[i])
+  }
+  return out
+}
+
+function utf16leSlice (buf, start, end) {
+  var bytes = buf.slice(start, end)
+  var res = ''
+  for (var i = 0; i < bytes.length; i += 2) {
+    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+  }
+  return res
+}
+
+Buffer.prototype.slice = function slice (start, end) {
+  var len = this.length
+  start = ~~start
+  end = end === undefined ? len : ~~end
+
+  if (start < 0) {
+    start += len
+    if (start < 0) start = 0
+  } else if (start > len) {
+    start = len
+  }
+
+  if (end < 0) {
+    end += len
+    if (end < 0) end = 0
+  } else if (end > len) {
+    end = len
+  }
+
+  if (end < start) end = start
+
+  var newBuf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    newBuf = this.subarray(start, end)
+    newBuf.__proto__ = Buffer.prototype
+  } else {
+    var sliceLen = end - start
+    newBuf = new Buffer(sliceLen, undefined)
+    for (var i = 0; i < sliceLen; ++i) {
+      newBuf[i] = this[i + start]
+    }
+  }
+
+  return newBuf
+}
+
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+function checkOffset (offset, ext, length) {
+  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
+  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
+}
+
+Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    checkOffset(offset, byteLength, this.length)
+  }
+
+  var val = this[offset + --byteLength]
+  var mul = 1
+  while (byteLength > 0 && (mul *= 0x100)) {
+    val += this[offset + --byteLength] * mul
+  }
+
+  return val
+}
+
+Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  return this[offset]
+}
+
+Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return this[offset] | (this[offset + 1] << 8)
+}
+
+Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  return (this[offset] << 8) | this[offset + 1]
+}
+
+Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return ((this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16)) +
+      (this[offset + 3] * 0x1000000)
+}
+
+Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] * 0x1000000) +
+    ((this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    this[offset + 3])
+}
+
+Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100)) {
+    val += this[offset + i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) checkOffset(offset, byteLength, this.length)
+
+  var i = byteLength
+  var mul = 1
+  var val = this[offset + --i]
+  while (i > 0 && (mul *= 0x100)) {
+    val += this[offset + --i] * mul
+  }
+  mul *= 0x80
+
+  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 1, this.length)
+  if (!(this[offset] & 0x80)) return (this[offset])
+  return ((0xff - this[offset] + 1) * -1)
+}
+
+Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset] | (this[offset + 1] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 2, this.length)
+  var val = this[offset + 1] | (this[offset] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset]) |
+    (this[offset + 1] << 8) |
+    (this[offset + 2] << 16) |
+    (this[offset + 3] << 24)
+}
+
+Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+
+  return (this[offset] << 24) |
+    (this[offset + 1] << 16) |
+    (this[offset + 2] << 8) |
+    (this[offset + 3])
+}
+
+Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, true, 23, 4)
+}
+
+Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, false, 23, 4)
+}
+
+Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, true, 52, 8)
+}
+
+Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
+  if (!noAssert) checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, false, 52, 8)
+}
+
+function checkInt (buf, value, offset, ext, max, min) {
+  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
+  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+}
+
+Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var mul = 1
+  var i = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  byteLength = byteLength | 0
+  if (!noAssert) {
+    var maxBytes = Math.pow(2, 8 * byteLength) - 1
+    checkInt(this, value, offset, byteLength, maxBytes, 0)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    this[offset + i] = (value / mul) & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0xff, 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+function objectWriteUInt16 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
+    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+      (littleEndian ? i : 1 - i) * 8
+  }
+}
+
+Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+function objectWriteUInt32 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffffffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
+    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset + 3] = (value >>> 24)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 1] = (value >>> 8)
+    this[offset] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = 0
+  var mul = 1
+  var sub = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i - 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) {
+    var limit = Math.pow(2, 8 * byteLength - 1)
+
+    checkInt(this, value, offset, byteLength, limit - 1, -limit)
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  var sub = 0
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100)) {
+    if (value < 0 && sub === 0 && this[offset + i + 1] !== 0) {
+      sub = 1
+    }
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+  }
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 1, 0x7f, -0x80)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  if (value < 0) value = 0xff + value + 1
+  this[offset] = (value & 0xff)
+  return offset + 1
+}
+
+Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+  } else {
+    objectWriteUInt16(this, value, offset, true)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = (value & 0xff)
+  } else {
+    objectWriteUInt16(this, value, offset, false)
+  }
+  return offset + 2
+}
+
+Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value & 0xff)
+    this[offset + 1] = (value >>> 8)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 3] = (value >>> 24)
+  } else {
+    objectWriteUInt32(this, value, offset, true)
+  }
+  return offset + 4
+}
+
+Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
+  value = +value
+  offset = offset | 0
+  if (!noAssert) checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (value < 0) value = 0xffffffff + value + 1
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = (value & 0xff)
+  } else {
+    objectWriteUInt32(this, value, offset, false)
+  }
+  return offset + 4
+}
+
+function checkIEEE754 (buf, value, offset, ext, max, min) {
+  if (offset + ext > buf.length) throw new RangeError('Index out of range')
+  if (offset < 0) throw new RangeError('Index out of range')
+}
+
+function writeFloat (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+  return offset + 4
+}
+
+Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
+  return writeFloat(this, value, offset, false, noAssert)
+}
+
+function writeDouble (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert) {
+    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+  }
+  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+  return offset + 8
+}
+
+Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
+  return writeDouble(this, value, offset, false, noAssert)
+}
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function copy (target, targetStart, start, end) {
+  if (!start) start = 0
+  if (!end && end !== 0) end = this.length
+  if (targetStart >= target.length) targetStart = target.length
+  if (!targetStart) targetStart = 0
+  if (end > 0 && end < start) end = start
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0
+  if (target.length === 0 || this.length === 0) return 0
+
+  // Fatal error conditions
+  if (targetStart < 0) {
+    throw new RangeError('targetStart out of bounds')
+  }
+  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
+  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+  // Are we oob?
+  if (end > this.length) end = this.length
+  if (target.length - targetStart < end - start) {
+    end = target.length - targetStart + start
+  }
+
+  var len = end - start
+  var i
+
+  if (this === target && start < targetStart && targetStart < end) {
+    // descending copy from end
+    for (i = len - 1; i >= 0; --i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    // ascending copy from start
+    for (i = 0; i < len; ++i) {
+      target[i + targetStart] = this[i + start]
+    }
+  } else {
+    Uint8Array.prototype.set.call(
+      target,
+      this.subarray(start, start + len),
+      targetStart
+    )
+  }
+
+  return len
+}
+
+// Usage:
+//    buffer.fill(number[, offset[, end]])
+//    buffer.fill(buffer[, offset[, end]])
+//    buffer.fill(string[, offset[, end]][, encoding])
+Buffer.prototype.fill = function fill (val, start, end, encoding) {
+  // Handle string cases:
+  if (typeof val === 'string') {
+    if (typeof start === 'string') {
+      encoding = start
+      start = 0
+      end = this.length
+    } else if (typeof end === 'string') {
+      encoding = end
+      end = this.length
+    }
+    if (val.length === 1) {
+      var code = val.charCodeAt(0)
+      if (code < 256) {
+        val = code
+      }
+    }
+    if (encoding !== undefined && typeof encoding !== 'string') {
+      throw new TypeError('encoding must be a string')
+    }
+    if (typeof encoding === 'string' && !Buffer.isEncoding(encoding)) {
+      throw new TypeError('Unknown encoding: ' + encoding)
+    }
+  } else if (typeof val === 'number') {
+    val = val & 255
+  }
+
+  // Invalid ranges are not set to a default, so can range check early.
+  if (start < 0 || this.length < start || this.length < end) {
+    throw new RangeError('Out of range index')
+  }
+
+  if (end <= start) {
+    return this
+  }
+
+  start = start >>> 0
+  end = end === undefined ? this.length : end >>> 0
+
+  if (!val) val = 0
+
+  var i
+  if (typeof val === 'number') {
+    for (i = start; i < end; ++i) {
+      this[i] = val
+    }
+  } else {
+    var bytes = Buffer.isBuffer(val)
+      ? val
+      : utf8ToBytes(new Buffer(val, encoding).toString())
+    var len = bytes.length
+    for (i = 0; i < end - start; ++i) {
+      this[i + start] = bytes[i % len]
+    }
+  }
+
+  return this
+}
+
+// HELPER FUNCTIONS
+// ================
+
+var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
+
+function base64clean (str) {
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+  // Node converts strings with length < 2 to ''
+  if (str.length < 2) return ''
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+  while (str.length % 4 !== 0) {
+    str = str + '='
+  }
+  return str
+}
+
+function stringtrim (str) {
+  if (str.trim) return str.trim()
+  return str.replace(/^\s+|\s+$/g, '')
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+function utf8ToBytes (string, units) {
+  units = units || Infinity
+  var codePoint
+  var length = string.length
+  var leadSurrogate = null
+  var bytes = []
+
+  for (var i = 0; i < length; ++i) {
+    codePoint = string.charCodeAt(i)
+
+    // is surrogate component
+    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+      // last char was a lead
+      if (!leadSurrogate) {
+        // no lead yet
+        if (codePoint > 0xDBFF) {
+          // unexpected trail
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        } else if (i + 1 === length) {
+          // unpaired lead
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // valid lead
+        leadSurrogate = codePoint
+
+        continue
+      }
+
+      // 2 leads in a row
+      if (codePoint < 0xDC00) {
+        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+        leadSurrogate = codePoint
+        continue
+      }
+
+      // valid surrogate pair
+      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
+    } else if (leadSurrogate) {
+      // valid bmp char, but last char was a lead
+      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+    }
+
+    leadSurrogate = null
+
+    // encode utf8
+    if (codePoint < 0x80) {
+      if ((units -= 1) < 0) break
+      bytes.push(codePoint)
+    } else if (codePoint < 0x800) {
+      if ((units -= 2) < 0) break
+      bytes.push(
+        codePoint >> 0x6 | 0xC0,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x10000) {
+      if ((units -= 3) < 0) break
+      bytes.push(
+        codePoint >> 0xC | 0xE0,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else if (codePoint < 0x110000) {
+      if ((units -= 4) < 0) break
+      bytes.push(
+        codePoint >> 0x12 | 0xF0,
+        codePoint >> 0xC & 0x3F | 0x80,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      )
+    } else {
+      throw new Error('Invalid code point')
+    }
+  }
+
+  return bytes
+}
+
+function asciiToBytes (str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push(str.charCodeAt(i) & 0xFF)
+  }
+  return byteArray
+}
+
+function utf16leToBytes (str, units) {
+  var c, hi, lo
+  var byteArray = []
+  for (var i = 0; i < str.length; ++i) {
+    if ((units -= 2) < 0) break
+
+    c = str.charCodeAt(i)
+    hi = c >> 8
+    lo = c % 256
+    byteArray.push(lo)
+    byteArray.push(hi)
+  }
+
+  return byteArray
+}
+
+function base64ToBytes (str) {
+  return base64.toByteArray(base64clean(str))
+}
+
+function blitBuffer (src, dst, offset, length) {
+  for (var i = 0; i < length; ++i) {
+    if ((i + offset >= dst.length) || (i >= src.length)) break
+    dst[i + offset] = src[i]
+  }
+  return i
+}
+
+function isnan (val) {
+  return val !== val // eslint-disable-line no-self-compare
+}
+
+},{"base64-js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/base64-js/index.js","ieee754":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/ieee754/index.js","isarray":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/isarray/index.js","buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../node_modules/sha1/sha1.js":[function(require,module,exports) {
+var Buffer = require("buffer").Buffer;
+(function() {
+  var crypt = require('crypt'),
+      utf8 = require('charenc').utf8,
+      bin = require('charenc').bin,
+
+  // The core
+  sha1 = function (message) {
+    // Convert to byte array
+    if (message.constructor == String)
+      message = utf8.stringToBytes(message);
+    else if (typeof Buffer !== 'undefined' && typeof Buffer.isBuffer == 'function' && Buffer.isBuffer(message))
+      message = Array.prototype.slice.call(message, 0);
+    else if (!Array.isArray(message))
+      message = message.toString();
+
+    // otherwise assume byte array
+
+    var m  = crypt.bytesToWords(message),
+        l  = message.length * 8,
+        w  = [],
+        H0 =  1732584193,
+        H1 = -271733879,
+        H2 = -1732584194,
+        H3 =  271733878,
+        H4 = -1009589776;
+
+    // Padding
+    m[l >> 5] |= 0x80 << (24 - l % 32);
+    m[((l + 64 >>> 9) << 4) + 15] = l;
+
+    for (var i = 0; i < m.length; i += 16) {
+      var a = H0,
+          b = H1,
+          c = H2,
+          d = H3,
+          e = H4;
+
+      for (var j = 0; j < 80; j++) {
+
+        if (j < 16)
+          w[j] = m[i + j];
+        else {
+          var n = w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16];
+          w[j] = (n << 1) | (n >>> 31);
+        }
+
+        var t = ((H0 << 5) | (H0 >>> 27)) + H4 + (w[j] >>> 0) + (
+                j < 20 ? (H1 & H2 | ~H1 & H3) + 1518500249 :
+                j < 40 ? (H1 ^ H2 ^ H3) + 1859775393 :
+                j < 60 ? (H1 & H2 | H1 & H3 | H2 & H3) - 1894007588 :
+                         (H1 ^ H2 ^ H3) - 899497514);
+
+        H4 = H3;
+        H3 = H2;
+        H2 = (H1 << 30) | (H1 >>> 2);
+        H1 = H0;
+        H0 = t;
+      }
+
+      H0 += a;
+      H1 += b;
+      H2 += c;
+      H3 += d;
+      H4 += e;
+    }
+
+    return [H0, H1, H2, H3, H4];
+  },
+
+  // Public API
+  api = function (message, options) {
+    var digestbytes = crypt.wordsToBytes(sha1(message));
+    return options && options.asBytes ? digestbytes :
+        options && options.asString ? bin.bytesToString(digestbytes) :
+        crypt.bytesToHex(digestbytes);
+  };
+
+  api._blocksize = 16;
+  api._digestsize = 20;
+
+  module.exports = api;
+})();
+
+},{"crypt":"../node_modules/crypt/crypt.js","charenc":"../node_modules/charenc/charenc.js","buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/events/events.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+'use strict';
+
+var R = typeof Reflect === 'object' ? Reflect : null;
+var ReflectApply = R && typeof R.apply === 'function' ? R.apply : function ReflectApply(target, receiver, args) {
+  return Function.prototype.apply.call(target, receiver, args);
+};
+var ReflectOwnKeys;
+
+if (R && typeof R.ownKeys === 'function') {
+  ReflectOwnKeys = R.ownKeys;
+} else if (Object.getOwnPropertySymbols) {
+  ReflectOwnKeys = function ReflectOwnKeys(target) {
+    return Object.getOwnPropertyNames(target).concat(Object.getOwnPropertySymbols(target));
+  };
+} else {
+  ReflectOwnKeys = function ReflectOwnKeys(target) {
+    return Object.getOwnPropertyNames(target);
+  };
+}
+
+function ProcessEmitWarning(warning) {
+  if (console && console.warn) console.warn(warning);
+}
+
+var NumberIsNaN = Number.isNaN || function NumberIsNaN(value) {
+  return value !== value;
+};
+
+function EventEmitter() {
+  EventEmitter.init.call(this);
+}
+
+module.exports = EventEmitter;
+module.exports.once = once; // Backwards-compat with node 0.10.x
+
+EventEmitter.EventEmitter = EventEmitter;
+EventEmitter.prototype._events = undefined;
+EventEmitter.prototype._eventsCount = 0;
+EventEmitter.prototype._maxListeners = undefined; // By default EventEmitters will print a warning if more than 10 listeners are
+// added to it. This is a useful default which helps finding memory leaks.
+
+var defaultMaxListeners = 10;
+
+function checkListener(listener) {
+  if (typeof listener !== 'function') {
+    throw new TypeError('The "listener" argument must be of type Function. Received type ' + typeof listener);
+  }
+}
+
+Object.defineProperty(EventEmitter, 'defaultMaxListeners', {
+  enumerable: true,
+  get: function () {
+    return defaultMaxListeners;
+  },
+  set: function (arg) {
+    if (typeof arg !== 'number' || arg < 0 || NumberIsNaN(arg)) {
+      throw new RangeError('The value of "defaultMaxListeners" is out of range. It must be a non-negative number. Received ' + arg + '.');
+    }
+
+    defaultMaxListeners = arg;
+  }
+});
+
+EventEmitter.init = function () {
+  if (this._events === undefined || this._events === Object.getPrototypeOf(this)._events) {
+    this._events = Object.create(null);
+    this._eventsCount = 0;
+  }
+
+  this._maxListeners = this._maxListeners || undefined;
+}; // Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+
+
+EventEmitter.prototype.setMaxListeners = function setMaxListeners(n) {
+  if (typeof n !== 'number' || n < 0 || NumberIsNaN(n)) {
+    throw new RangeError('The value of "n" is out of range. It must be a non-negative number. Received ' + n + '.');
+  }
+
+  this._maxListeners = n;
+  return this;
+};
+
+function _getMaxListeners(that) {
+  if (that._maxListeners === undefined) return EventEmitter.defaultMaxListeners;
+  return that._maxListeners;
+}
+
+EventEmitter.prototype.getMaxListeners = function getMaxListeners() {
+  return _getMaxListeners(this);
+};
+
+EventEmitter.prototype.emit = function emit(type) {
+  var args = [];
+
+  for (var i = 1; i < arguments.length; i++) args.push(arguments[i]);
+
+  var doError = type === 'error';
+  var events = this._events;
+  if (events !== undefined) doError = doError && events.error === undefined;else if (!doError) return false; // If there is no 'error' event listener then throw.
+
+  if (doError) {
+    var er;
+    if (args.length > 0) er = args[0];
+
+    if (er instanceof Error) {
+      // Note: The comments on the `throw` lines are intentional, they show
+      // up in Node's output if this results in an unhandled exception.
+      throw er; // Unhandled 'error' event
+    } // At least give some kind of context to the user
+
+
+    var err = new Error('Unhandled error.' + (er ? ' (' + er.message + ')' : ''));
+    err.context = er;
+    throw err; // Unhandled 'error' event
+  }
+
+  var handler = events[type];
+  if (handler === undefined) return false;
+
+  if (typeof handler === 'function') {
+    ReflectApply(handler, this, args);
+  } else {
+    var len = handler.length;
+    var listeners = arrayClone(handler, len);
+
+    for (var i = 0; i < len; ++i) ReflectApply(listeners[i], this, args);
+  }
+
+  return true;
+};
+
+function _addListener(target, type, listener, prepend) {
+  var m;
+  var events;
+  var existing;
+  checkListener(listener);
+  events = target._events;
+
+  if (events === undefined) {
+    events = target._events = Object.create(null);
+    target._eventsCount = 0;
+  } else {
+    // To avoid recursion in the case that type === "newListener"! Before
+    // adding it to the listeners, first emit "newListener".
+    if (events.newListener !== undefined) {
+      target.emit('newListener', type, listener.listener ? listener.listener : listener); // Re-assign `events` because a newListener handler could have caused the
+      // this._events to be assigned to a new object
+
+      events = target._events;
+    }
+
+    existing = events[type];
+  }
+
+  if (existing === undefined) {
+    // Optimize the case of one listener. Don't need the extra array object.
+    existing = events[type] = listener;
+    ++target._eventsCount;
+  } else {
+    if (typeof existing === 'function') {
+      // Adding the second element, need to change to array.
+      existing = events[type] = prepend ? [listener, existing] : [existing, listener]; // If we've already got an array, just append.
+    } else if (prepend) {
+      existing.unshift(listener);
+    } else {
+      existing.push(listener);
+    } // Check for listener leak
+
+
+    m = _getMaxListeners(target);
+
+    if (m > 0 && existing.length > m && !existing.warned) {
+      existing.warned = true; // No error code for this since it is a Warning
+      // eslint-disable-next-line no-restricted-syntax
+
+      var w = new Error('Possible EventEmitter memory leak detected. ' + existing.length + ' ' + String(type) + ' listeners ' + 'added. Use emitter.setMaxListeners() to ' + 'increase limit');
+      w.name = 'MaxListenersExceededWarning';
+      w.emitter = target;
+      w.type = type;
+      w.count = existing.length;
+      ProcessEmitWarning(w);
+    }
+  }
+
+  return target;
+}
+
+EventEmitter.prototype.addListener = function addListener(type, listener) {
+  return _addListener(this, type, listener, false);
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.prependListener = function prependListener(type, listener) {
+  return _addListener(this, type, listener, true);
+};
+
+function onceWrapper() {
+  if (!this.fired) {
+    this.target.removeListener(this.type, this.wrapFn);
+    this.fired = true;
+    if (arguments.length === 0) return this.listener.call(this.target);
+    return this.listener.apply(this.target, arguments);
+  }
+}
+
+function _onceWrap(target, type, listener) {
+  var state = {
+    fired: false,
+    wrapFn: undefined,
+    target: target,
+    type: type,
+    listener: listener
+  };
+  var wrapped = onceWrapper.bind(state);
+  wrapped.listener = listener;
+  state.wrapFn = wrapped;
+  return wrapped;
+}
+
+EventEmitter.prototype.once = function once(type, listener) {
+  checkListener(listener);
+  this.on(type, _onceWrap(this, type, listener));
+  return this;
+};
+
+EventEmitter.prototype.prependOnceListener = function prependOnceListener(type, listener) {
+  checkListener(listener);
+  this.prependListener(type, _onceWrap(this, type, listener));
+  return this;
+}; // Emits a 'removeListener' event if and only if the listener was removed.
+
+
+EventEmitter.prototype.removeListener = function removeListener(type, listener) {
+  var list, events, position, i, originalListener;
+  checkListener(listener);
+  events = this._events;
+  if (events === undefined) return this;
+  list = events[type];
+  if (list === undefined) return this;
+
+  if (list === listener || list.listener === listener) {
+    if (--this._eventsCount === 0) this._events = Object.create(null);else {
+      delete events[type];
+      if (events.removeListener) this.emit('removeListener', type, list.listener || listener);
+    }
+  } else if (typeof list !== 'function') {
+    position = -1;
+
+    for (i = list.length - 1; i >= 0; i--) {
+      if (list[i] === listener || list[i].listener === listener) {
+        originalListener = list[i].listener;
+        position = i;
+        break;
+      }
+    }
+
+    if (position < 0) return this;
+    if (position === 0) list.shift();else {
+      spliceOne(list, position);
+    }
+    if (list.length === 1) events[type] = list[0];
+    if (events.removeListener !== undefined) this.emit('removeListener', type, originalListener || listener);
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.off = EventEmitter.prototype.removeListener;
+
+EventEmitter.prototype.removeAllListeners = function removeAllListeners(type) {
+  var listeners, events, i;
+  events = this._events;
+  if (events === undefined) return this; // not listening for removeListener, no need to emit
+
+  if (events.removeListener === undefined) {
+    if (arguments.length === 0) {
+      this._events = Object.create(null);
+      this._eventsCount = 0;
+    } else if (events[type] !== undefined) {
+      if (--this._eventsCount === 0) this._events = Object.create(null);else delete events[type];
+    }
+
+    return this;
+  } // emit removeListener for all listeners on all events
+
+
+  if (arguments.length === 0) {
+    var keys = Object.keys(events);
+    var key;
+
+    for (i = 0; i < keys.length; ++i) {
+      key = keys[i];
+      if (key === 'removeListener') continue;
+      this.removeAllListeners(key);
+    }
+
+    this.removeAllListeners('removeListener');
+    this._events = Object.create(null);
+    this._eventsCount = 0;
+    return this;
+  }
+
+  listeners = events[type];
+
+  if (typeof listeners === 'function') {
+    this.removeListener(type, listeners);
+  } else if (listeners !== undefined) {
+    // LIFO order
+    for (i = listeners.length - 1; i >= 0; i--) {
+      this.removeListener(type, listeners[i]);
+    }
+  }
+
+  return this;
+};
+
+function _listeners(target, type, unwrap) {
+  var events = target._events;
+  if (events === undefined) return [];
+  var evlistener = events[type];
+  if (evlistener === undefined) return [];
+  if (typeof evlistener === 'function') return unwrap ? [evlistener.listener || evlistener] : [evlistener];
+  return unwrap ? unwrapListeners(evlistener) : arrayClone(evlistener, evlistener.length);
+}
+
+EventEmitter.prototype.listeners = function listeners(type) {
+  return _listeners(this, type, true);
+};
+
+EventEmitter.prototype.rawListeners = function rawListeners(type) {
+  return _listeners(this, type, false);
+};
+
+EventEmitter.listenerCount = function (emitter, type) {
+  if (typeof emitter.listenerCount === 'function') {
+    return emitter.listenerCount(type);
+  } else {
+    return listenerCount.call(emitter, type);
+  }
+};
+
+EventEmitter.prototype.listenerCount = listenerCount;
+
+function listenerCount(type) {
+  var events = this._events;
+
+  if (events !== undefined) {
+    var evlistener = events[type];
+
+    if (typeof evlistener === 'function') {
+      return 1;
+    } else if (evlistener !== undefined) {
+      return evlistener.length;
+    }
+  }
+
+  return 0;
+}
+
+EventEmitter.prototype.eventNames = function eventNames() {
+  return this._eventsCount > 0 ? ReflectOwnKeys(this._events) : [];
+};
+
+function arrayClone(arr, n) {
+  var copy = new Array(n);
+
+  for (var i = 0; i < n; ++i) copy[i] = arr[i];
+
+  return copy;
+}
+
+function spliceOne(list, index) {
+  for (; index + 1 < list.length; index++) list[index] = list[index + 1];
+
+  list.pop();
+}
+
+function unwrapListeners(arr) {
+  var ret = new Array(arr.length);
+
+  for (var i = 0; i < ret.length; ++i) {
+    ret[i] = arr[i].listener || arr[i];
+  }
+
+  return ret;
+}
+
+function once(emitter, name) {
+  return new Promise(function (resolve, reject) {
+    function errorListener(err) {
+      emitter.removeListener(name, resolver);
+      reject(err);
+    }
+
+    function resolver() {
+      if (typeof emitter.removeListener === 'function') {
+        emitter.removeListener('error', errorListener);
+      }
+
+      resolve([].slice.call(arguments));
+    }
+
+    ;
+    eventTargetAgnosticAddListener(emitter, name, resolver, {
+      once: true
+    });
+
+    if (name !== 'error') {
+      addErrorHandlerIfEventEmitter(emitter, errorListener, {
+        once: true
+      });
+    }
+  });
+}
+
+function addErrorHandlerIfEventEmitter(emitter, handler, flags) {
+  if (typeof emitter.on === 'function') {
+    eventTargetAgnosticAddListener(emitter, 'error', handler, flags);
+  }
+}
+
+function eventTargetAgnosticAddListener(emitter, name, listener, flags) {
+  if (typeof emitter.on === 'function') {
+    if (flags.once) {
+      emitter.once(name, listener);
+    } else {
+      emitter.on(name, listener);
+    }
+  } else if (typeof emitter.addEventListener === 'function') {
+    // EventTarget does not have `error` event semantics like Node
+    // EventEmitters, we do not listen for `error` events here.
+    emitter.addEventListener(name, function wrapListener(arg) {
+      // IE does not have builtin `{ once: true }` support so we
+      // have to do it manually.
+      if (flags.once) {
+        emitter.removeEventListener(name, wrapListener);
+      }
+
+      listener(arg);
+    });
+  } else {
+    throw new TypeError('The "emitter" argument must be of type EventEmitter. Received type ' + typeof emitter);
+  }
+}
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js":[function(require,module,exports) {
+if (typeof Object.create === 'function') {
+  // implementation from standard node.js 'util' module
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      ctor.prototype = Object.create(superCtor.prototype, {
+        constructor: {
+          value: ctor,
+          enumerable: false,
+          writable: true,
+          configurable: true
+        }
+      })
+    }
+  };
+} else {
+  // old school shim for old browsers
+  module.exports = function inherits(ctor, superCtor) {
+    if (superCtor) {
+      ctor.super_ = superCtor
+      var TempCtor = function () {}
+      TempCtor.prototype = superCtor.prototype
+      ctor.prototype = new TempCtor()
+      ctor.prototype.constructor = ctor
+    }
+  }
+}
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process/browser.js":[function(require,module,exports) {
+
+// shim for using process in browser
+var process = module.exports = {}; // cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+  throw new Error('setTimeout has not been defined');
+}
+
+function defaultClearTimeout() {
+  throw new Error('clearTimeout has not been defined');
+}
+
+(function () {
+  try {
+    if (typeof setTimeout === 'function') {
+      cachedSetTimeout = setTimeout;
+    } else {
+      cachedSetTimeout = defaultSetTimout;
+    }
+  } catch (e) {
+    cachedSetTimeout = defaultSetTimout;
+  }
+
+  try {
+    if (typeof clearTimeout === 'function') {
+      cachedClearTimeout = clearTimeout;
+    } else {
+      cachedClearTimeout = defaultClearTimeout;
+    }
+  } catch (e) {
+    cachedClearTimeout = defaultClearTimeout;
+  }
+})();
+
+function runTimeout(fun) {
+  if (cachedSetTimeout === setTimeout) {
+    //normal enviroments in sane situations
+    return setTimeout(fun, 0);
+  } // if setTimeout wasn't available but was latter defined
+
+
+  if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+    cachedSetTimeout = setTimeout;
+    return setTimeout(fun, 0);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedSetTimeout(fun, 0);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+      return cachedSetTimeout.call(null, fun, 0);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+      return cachedSetTimeout.call(this, fun, 0);
+    }
+  }
+}
+
+function runClearTimeout(marker) {
+  if (cachedClearTimeout === clearTimeout) {
+    //normal enviroments in sane situations
+    return clearTimeout(marker);
+  } // if clearTimeout wasn't available but was latter defined
+
+
+  if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+    cachedClearTimeout = clearTimeout;
+    return clearTimeout(marker);
+  }
+
+  try {
+    // when when somebody has screwed with setTimeout but no I.E. maddness
+    return cachedClearTimeout(marker);
+  } catch (e) {
+    try {
+      // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+      return cachedClearTimeout.call(null, marker);
+    } catch (e) {
+      // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+      // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+      return cachedClearTimeout.call(this, marker);
+    }
+  }
+}
+
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+  if (!draining || !currentQueue) {
+    return;
+  }
+
+  draining = false;
+
+  if (currentQueue.length) {
+    queue = currentQueue.concat(queue);
+  } else {
+    queueIndex = -1;
+  }
+
+  if (queue.length) {
+    drainQueue();
+  }
+}
+
+function drainQueue() {
+  if (draining) {
+    return;
+  }
+
+  var timeout = runTimeout(cleanUpNextTick);
+  draining = true;
+  var len = queue.length;
+
+  while (len) {
+    currentQueue = queue;
+    queue = [];
+
+    while (++queueIndex < len) {
+      if (currentQueue) {
+        currentQueue[queueIndex].run();
+      }
+    }
+
+    queueIndex = -1;
+    len = queue.length;
+  }
+
+  currentQueue = null;
+  draining = false;
+  runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+  var args = new Array(arguments.length - 1);
+
+  if (arguments.length > 1) {
+    for (var i = 1; i < arguments.length; i++) {
+      args[i - 1] = arguments[i];
+    }
+  }
+
+  queue.push(new Item(fun, args));
+
+  if (queue.length === 1 && !draining) {
+    runTimeout(drainQueue);
+  }
+}; // v8 likes predictible objects
+
+
+function Item(fun, array) {
+  this.fun = fun;
+  this.array = array;
+}
+
+Item.prototype.run = function () {
+  this.fun.apply(null, this.array);
+};
+
+process.title = 'browser';
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+process.prependListener = noop;
+process.prependOnceListener = noop;
+
+process.listeners = function (name) {
+  return [];
+};
+
+process.binding = function (name) {
+  throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () {
+  return '/';
+};
+
+process.chdir = function (dir) {
+  throw new Error('process.chdir is not supported');
+};
+
+process.umask = function () {
+  return 0;
+};
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process-nextick-args/index.js":[function(require,module,exports) {
+var process = require("process");
+'use strict';
+
+if (typeof process === 'undefined' ||
+    !process.version ||
+    process.version.indexOf('v0.') === 0 ||
+    process.version.indexOf('v1.') === 0 && process.version.indexOf('v1.8.') !== 0) {
+  module.exports = { nextTick: nextTick };
+} else {
+  module.exports = process
+}
+
+function nextTick(fn, arg1, arg2, arg3) {
+  if (typeof fn !== 'function') {
+    throw new TypeError('"callback" argument must be a function');
+  }
+  var len = arguments.length;
+  var args, i;
+  switch (len) {
+  case 0:
+  case 1:
+    return process.nextTick(fn);
+  case 2:
+    return process.nextTick(function afterTickOne() {
+      fn.call(null, arg1);
+    });
+  case 3:
+    return process.nextTick(function afterTickTwo() {
+      fn.call(null, arg1, arg2);
+    });
+  case 4:
+    return process.nextTick(function afterTickThree() {
+      fn.call(null, arg1, arg2, arg3);
+    });
+  default:
+    args = new Array(len - 1);
+    i = 0;
+    while (i < args.length) {
+      args[i++] = arguments[i];
+    }
+    return process.nextTick(function afterTick() {
+      fn.apply(null, args);
+    });
+  }
+}
+
+
+},{"process":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process/browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/stream-browser.js":[function(require,module,exports) {
+module.exports = require('events').EventEmitter;
+
+},{"events":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/events/events.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/safe-buffer/index.js":[function(require,module,exports) {
+
+/* eslint-disable node/no-deprecated-api */
+var buffer = require('buffer')
+var Buffer = buffer.Buffer
+
+// alternative to using Object.keys for old browsers
+function copyProps (src, dst) {
+  for (var key in src) {
+    dst[key] = src[key]
+  }
+}
+if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+  module.exports = buffer
+} else {
+  // Copy properties from require('buffer')
+  copyProps(buffer, exports)
+  exports.Buffer = SafeBuffer
+}
+
+function SafeBuffer (arg, encodingOrOffset, length) {
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+// Copy static methods from Buffer
+copyProps(Buffer, SafeBuffer)
+
+SafeBuffer.from = function (arg, encodingOrOffset, length) {
+  if (typeof arg === 'number') {
+    throw new TypeError('Argument must not be a number')
+  }
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.alloc = function (size, fill, encoding) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  var buf = Buffer(size)
+  if (fill !== undefined) {
+    if (typeof encoding === 'string') {
+      buf.fill(fill, encoding)
+    } else {
+      buf.fill(fill)
+    }
+  } else {
+    buf.fill(0)
+  }
+  return buf
+}
+
+SafeBuffer.allocUnsafe = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return Buffer(size)
+}
+
+SafeBuffer.allocUnsafeSlow = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return buffer.SlowBuffer(size)
+}
+
+},{"buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// NOTE: These type checking functions intentionally don't use `instanceof`
+// because it is fragile and can be easily faked with `Object.create()`.
+
+function isArray(arg) {
+  if (Array.isArray) {
+    return Array.isArray(arg);
+  }
+  return objectToString(arg) === '[object Array]';
+}
+exports.isArray = isArray;
+
+function isBoolean(arg) {
+  return typeof arg === 'boolean';
+}
+exports.isBoolean = isBoolean;
+
+function isNull(arg) {
+  return arg === null;
+}
+exports.isNull = isNull;
+
+function isNullOrUndefined(arg) {
+  return arg == null;
+}
+exports.isNullOrUndefined = isNullOrUndefined;
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+exports.isNumber = isNumber;
+
+function isString(arg) {
+  return typeof arg === 'string';
+}
+exports.isString = isString;
+
+function isSymbol(arg) {
+  return typeof arg === 'symbol';
+}
+exports.isSymbol = isSymbol;
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+exports.isUndefined = isUndefined;
+
+function isRegExp(re) {
+  return objectToString(re) === '[object RegExp]';
+}
+exports.isRegExp = isRegExp;
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+exports.isObject = isObject;
+
+function isDate(d) {
+  return objectToString(d) === '[object Date]';
+}
+exports.isDate = isDate;
+
+function isError(e) {
+  return (objectToString(e) === '[object Error]' || e instanceof Error);
+}
+exports.isError = isError;
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+exports.isFunction = isFunction;
+
+function isPrimitive(arg) {
+  return arg === null ||
+         typeof arg === 'boolean' ||
+         typeof arg === 'number' ||
+         typeof arg === 'string' ||
+         typeof arg === 'symbol' ||  // ES6 symbol
+         typeof arg === 'undefined';
+}
+exports.isPrimitive = isPrimitive;
+
+exports.isBuffer = require('buffer').Buffer.isBuffer;
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
+
+},{"buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/BufferList.js":[function(require,module,exports) {
+
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var Buffer = require('safe-buffer').Buffer;
+var util = require('util');
+
+function copyBuffer(src, target, offset) {
+  src.copy(target, offset);
+}
+
+module.exports = function () {
+  function BufferList() {
+    _classCallCheck(this, BufferList);
+
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
+  }
+
+  BufferList.prototype.push = function push(v) {
+    var entry = { data: v, next: null };
+    if (this.length > 0) this.tail.next = entry;else this.head = entry;
+    this.tail = entry;
+    ++this.length;
+  };
+
+  BufferList.prototype.unshift = function unshift(v) {
+    var entry = { data: v, next: this.head };
+    if (this.length === 0) this.tail = entry;
+    this.head = entry;
+    ++this.length;
+  };
+
+  BufferList.prototype.shift = function shift() {
+    if (this.length === 0) return;
+    var ret = this.head.data;
+    if (this.length === 1) this.head = this.tail = null;else this.head = this.head.next;
+    --this.length;
+    return ret;
+  };
+
+  BufferList.prototype.clear = function clear() {
+    this.head = this.tail = null;
+    this.length = 0;
+  };
+
+  BufferList.prototype.join = function join(s) {
+    if (this.length === 0) return '';
+    var p = this.head;
+    var ret = '' + p.data;
+    while (p = p.next) {
+      ret += s + p.data;
+    }return ret;
+  };
+
+  BufferList.prototype.concat = function concat(n) {
+    if (this.length === 0) return Buffer.alloc(0);
+    if (this.length === 1) return this.head.data;
+    var ret = Buffer.allocUnsafe(n >>> 0);
+    var p = this.head;
+    var i = 0;
+    while (p) {
+      copyBuffer(p.data, ret, i);
+      i += p.data.length;
+      p = p.next;
+    }
+    return ret;
+  };
+
+  return BufferList;
+}();
+
+if (util && util.inspect && util.inspect.custom) {
+  module.exports.prototype[util.inspect.custom] = function () {
+    var obj = util.inspect({ length: this.length });
+    return this.constructor.name + ' ' + obj;
+  };
+}
+},{"safe-buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/safe-buffer/index.js","util":"../../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/_empty.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/destroy.js":[function(require,module,exports) {
+'use strict';
+
+/*<replacement>*/
+
+var pna = require('process-nextick-args');
+/*</replacement>*/
+
+// undocumented cb() API, needed for core, not for public API
+function destroy(err, cb) {
+  var _this = this;
+
+  var readableDestroyed = this._readableState && this._readableState.destroyed;
+  var writableDestroyed = this._writableState && this._writableState.destroyed;
+
+  if (readableDestroyed || writableDestroyed) {
+    if (cb) {
+      cb(err);
+    } else if (err && (!this._writableState || !this._writableState.errorEmitted)) {
+      pna.nextTick(emitErrorNT, this, err);
+    }
+    return this;
+  }
+
+  // we set destroyed to true before firing error callbacks in order
+  // to make it re-entrance safe in case destroy() is called within callbacks
+
+  if (this._readableState) {
+    this._readableState.destroyed = true;
+  }
+
+  // if this is a duplex stream mark the writable part as destroyed as well
+  if (this._writableState) {
+    this._writableState.destroyed = true;
+  }
+
+  this._destroy(err || null, function (err) {
+    if (!cb && err) {
+      pna.nextTick(emitErrorNT, _this, err);
+      if (_this._writableState) {
+        _this._writableState.errorEmitted = true;
+      }
+    } else if (cb) {
+      cb(err);
+    }
+  });
+
+  return this;
+}
+
+function undestroy() {
+  if (this._readableState) {
+    this._readableState.destroyed = false;
+    this._readableState.reading = false;
+    this._readableState.ended = false;
+    this._readableState.endEmitted = false;
+  }
+
+  if (this._writableState) {
+    this._writableState.destroyed = false;
+    this._writableState.ended = false;
+    this._writableState.ending = false;
+    this._writableState.finished = false;
+    this._writableState.errorEmitted = false;
+  }
+}
+
+function emitErrorNT(self, err) {
+  self.emit('error', err);
+}
+
+module.exports = {
+  destroy: destroy,
+  undestroy: undestroy
+};
+},{"process-nextick-args":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process-nextick-args/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/util-deprecate/browser.js":[function(require,module,exports) {
+var global = arguments[3];
+
+/**
+ * Module exports.
+ */
+
+module.exports = deprecate;
+
+/**
+ * Mark that a method should not be used.
+ * Returns a modified function which warns once by default.
+ *
+ * If `localStorage.noDeprecation = true` is set, then it is a no-op.
+ *
+ * If `localStorage.throwDeprecation = true` is set, then deprecated functions
+ * will throw an Error when invoked.
+ *
+ * If `localStorage.traceDeprecation = true` is set, then deprecated functions
+ * will invoke `console.trace()` instead of `console.error()`.
+ *
+ * @param {Function} fn - the function to deprecate
+ * @param {String} msg - the string to print to the console when `fn` is invoked
+ * @returns {Function} a new "deprecated" version of `fn`
+ * @api public
+ */
+
+function deprecate (fn, msg) {
+  if (config('noDeprecation')) {
+    return fn;
+  }
+
+  var warned = false;
+  function deprecated() {
+    if (!warned) {
+      if (config('throwDeprecation')) {
+        throw new Error(msg);
+      } else if (config('traceDeprecation')) {
+        console.trace(msg);
+      } else {
+        console.warn(msg);
+      }
+      warned = true;
+    }
+    return fn.apply(this, arguments);
+  }
+
+  return deprecated;
+}
+
+/**
+ * Checks `localStorage` for boolean values for the given `name`.
+ *
+ * @param {String} name
+ * @returns {Boolean}
+ * @api private
+ */
+
+function config (name) {
+  // accessing global.localStorage can trigger a DOMException in sandboxed iframes
+  try {
+    if (!global.localStorage) return false;
+  } catch (_) {
+    return false;
+  }
+  var val = global.localStorage[name];
+  if (null == val) return false;
+  return String(val).toLowerCase() === 'true';
+}
+
+},{}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_writable.js":[function(require,module,exports) {
+var process = require("process");
+
+var global = arguments[3];
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+// A bit simpler than readable streams.
+// Implement an async ._write(chunk, encoding, cb), and it'll handle all
+// the drain event emission and buffering.
+'use strict';
+/*<replacement>*/
+
+var pna = require('process-nextick-args');
+/*</replacement>*/
+
+
+module.exports = Writable;
+/* <replacement> */
+
+function WriteReq(chunk, encoding, cb) {
+  this.chunk = chunk;
+  this.encoding = encoding;
+  this.callback = cb;
+  this.next = null;
+} // It seems a linked list but it is not
+// there will be only 2 of these for each stream
+
+
+function CorkedRequest(state) {
+  var _this = this;
+
+  this.next = null;
+  this.entry = null;
+
+  this.finish = function () {
+    onCorkedFinish(_this, state);
+  };
+}
+/* </replacement> */
+
+/*<replacement>*/
+
+
+var asyncWrite = !true && ['v0.10', 'v0.9.'].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : pna.nextTick;
+/*</replacement>*/
+
+/*<replacement>*/
+
+var Duplex;
+/*</replacement>*/
+
+Writable.WritableState = WritableState;
+/*<replacement>*/
+
+var util = Object.create(require('core-util-is'));
+util.inherits = require('inherits');
+/*</replacement>*/
+
+/*<replacement>*/
+
+var internalUtil = {
+  deprecate: require('util-deprecate')
+};
+/*</replacement>*/
+
+/*<replacement>*/
+
+var Stream = require('./internal/streams/stream');
+/*</replacement>*/
+
+/*<replacement>*/
+
+
+var Buffer = require('safe-buffer').Buffer;
+
+var OurUint8Array = global.Uint8Array || function () {};
+
+function _uint8ArrayToBuffer(chunk) {
+  return Buffer.from(chunk);
+}
+
+function _isUint8Array(obj) {
+  return Buffer.isBuffer(obj) || obj instanceof OurUint8Array;
+}
+/*</replacement>*/
+
+
+var destroyImpl = require('./internal/streams/destroy');
+
+util.inherits(Writable, Stream);
+
+function nop() {}
+
+function WritableState(options, stream) {
+  Duplex = Duplex || require('./_stream_duplex');
+  options = options || {}; // Duplex streams are both readable and writable, but share
+  // the same options object.
+  // However, some cases require setting options to different
+  // values for the readable and the writable sides of the duplex stream.
+  // These options can be provided separately as readableXXX and writableXXX.
+
+  var isDuplex = stream instanceof Duplex; // object stream flag to indicate whether or not this stream
+  // contains buffers or objects.
+
+  this.objectMode = !!options.objectMode;
+  if (isDuplex) this.objectMode = this.objectMode || !!options.writableObjectMode; // the point at which write() starts returning false
+  // Note: 0 is a valid value, means that we always return false if
+  // the entire buffer is not flushed immediately on write()
+
+  var hwm = options.highWaterMark;
+  var writableHwm = options.writableHighWaterMark;
+  var defaultHwm = this.objectMode ? 16 : 16 * 1024;
+  if (hwm || hwm === 0) this.highWaterMark = hwm;else if (isDuplex && (writableHwm || writableHwm === 0)) this.highWaterMark = writableHwm;else this.highWaterMark = defaultHwm; // cast to ints.
+
+  this.highWaterMark = Math.floor(this.highWaterMark); // if _final has been called
+
+  this.finalCalled = false; // drain event flag.
+
+  this.needDrain = false; // at the start of calling end()
+
+  this.ending = false; // when end() has been called, and returned
+
+  this.ended = false; // when 'finish' is emitted
+
+  this.finished = false; // has it been destroyed
+
+  this.destroyed = false; // should we decode strings into buffers before passing to _write?
+  // this is here so that some node-core streams can optimize string
+  // handling at a lower level.
+
+  var noDecode = options.decodeStrings === false;
+  this.decodeStrings = !noDecode; // Crypto is kind of old and crusty.  Historically, its default string
+  // encoding is 'binary' so we have to make this configurable.
+  // Everything else in the universe uses 'utf8', though.
+
+  this.defaultEncoding = options.defaultEncoding || 'utf8'; // not an actual buffer we keep track of, but a measurement
+  // of how much we're waiting to get pushed to some underlying
+  // socket or file.
+
+  this.length = 0; // a flag to see when we're in the middle of a write.
+
+  this.writing = false; // when true all writes will be buffered until .uncork() call
+
+  this.corked = 0; // a flag to be able to tell if the onwrite cb is called immediately,
+  // or on a later tick.  We set this to true at first, because any
+  // actions that shouldn't happen until "later" should generally also
+  // not happen before the first write call.
+
+  this.sync = true; // a flag to know if we're processing previously buffered items, which
+  // may call the _write() callback in the same tick, so that we don't
+  // end up in an overlapped onwrite situation.
+
+  this.bufferProcessing = false; // the callback that's passed to _write(chunk,cb)
+
+  this.onwrite = function (er) {
+    onwrite(stream, er);
+  }; // the callback that the user supplies to write(chunk,encoding,cb)
+
+
+  this.writecb = null; // the amount that is being written when _write is called.
+
+  this.writelen = 0;
+  this.bufferedRequest = null;
+  this.lastBufferedRequest = null; // number of pending user-supplied write callbacks
+  // this must be 0 before 'finish' can be emitted
+
+  this.pendingcb = 0; // emit prefinish if the only thing we're waiting for is _write cbs
+  // This is relevant for synchronous Transform streams
+
+  this.prefinished = false; // True if the error was already emitted and should not be thrown again
+
+  this.errorEmitted = false; // count buffered requests
+
+  this.bufferedRequestCount = 0; // allocate the first CorkedRequest, there is always
+  // one allocated and free to use, and we maintain at most two
+
+  this.corkedRequestsFree = new CorkedRequest(this);
+}
+
+WritableState.prototype.getBuffer = function getBuffer() {
+  var current = this.bufferedRequest;
+  var out = [];
+
+  while (current) {
+    out.push(current);
+    current = current.next;
+  }
+
+  return out;
+};
+
+(function () {
+  try {
+    Object.defineProperty(WritableState.prototype, 'buffer', {
+      get: internalUtil.deprecate(function () {
+        return this.getBuffer();
+      }, '_writableState.buffer is deprecated. Use _writableState.getBuffer ' + 'instead.', 'DEP0003')
+    });
+  } catch (_) {}
+})(); // Test _writableState for inheritance to account for Duplex streams,
+// whose prototype chain only points to Readable.
+
+
+var realHasInstance;
+
+if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
+  realHasInstance = Function.prototype[Symbol.hasInstance];
+  Object.defineProperty(Writable, Symbol.hasInstance, {
+    value: function (object) {
+      if (realHasInstance.call(this, object)) return true;
+      if (this !== Writable) return false;
+      return object && object._writableState instanceof WritableState;
+    }
+  });
+} else {
+  realHasInstance = function (object) {
+    return object instanceof this;
+  };
+}
+
+function Writable(options) {
+  Duplex = Duplex || require('./_stream_duplex'); // Writable ctor is applied to Duplexes, too.
+  // `realHasInstance` is necessary because using plain `instanceof`
+  // would return false, as no `_writableState` property is attached.
+  // Trying to use the custom `instanceof` for Writable here will also break the
+  // Node.js LazyTransform implementation, which has a non-trivial getter for
+  // `_writableState` that would lead to infinite recursion.
+
+  if (!realHasInstance.call(Writable, this) && !(this instanceof Duplex)) {
+    return new Writable(options);
+  }
+
+  this._writableState = new WritableState(options, this); // legacy.
+
+  this.writable = true;
+
+  if (options) {
+    if (typeof options.write === 'function') this._write = options.write;
+    if (typeof options.writev === 'function') this._writev = options.writev;
+    if (typeof options.destroy === 'function') this._destroy = options.destroy;
+    if (typeof options.final === 'function') this._final = options.final;
+  }
+
+  Stream.call(this);
+} // Otherwise people can pipe Writable streams, which is just wrong.
+
+
+Writable.prototype.pipe = function () {
+  this.emit('error', new Error('Cannot pipe, not readable'));
+};
+
+function writeAfterEnd(stream, cb) {
+  var er = new Error('write after end'); // TODO: defer error events consistently everywhere, not just the cb
+
+  stream.emit('error', er);
+  pna.nextTick(cb, er);
+} // Checks that a user-supplied chunk is valid, especially for the particular
+// mode the stream is in. Currently this means that `null` is never accepted
+// and undefined/non-string values are only allowed in object mode.
+
+
+function validChunk(stream, state, chunk, cb) {
+  var valid = true;
+  var er = false;
+
+  if (chunk === null) {
+    er = new TypeError('May not write null values to stream');
+  } else if (typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
+    er = new TypeError('Invalid non-string/buffer chunk');
+  }
+
+  if (er) {
+    stream.emit('error', er);
+    pna.nextTick(cb, er);
+    valid = false;
+  }
+
+  return valid;
+}
+
+Writable.prototype.write = function (chunk, encoding, cb) {
+  var state = this._writableState;
+  var ret = false;
+
+  var isBuf = !state.objectMode && _isUint8Array(chunk);
+
+  if (isBuf && !Buffer.isBuffer(chunk)) {
+    chunk = _uint8ArrayToBuffer(chunk);
+  }
+
+  if (typeof encoding === 'function') {
+    cb = encoding;
+    encoding = null;
+  }
+
+  if (isBuf) encoding = 'buffer';else if (!encoding) encoding = state.defaultEncoding;
+  if (typeof cb !== 'function') cb = nop;
+  if (state.ended) writeAfterEnd(this, cb);else if (isBuf || validChunk(this, state, chunk, cb)) {
+    state.pendingcb++;
+    ret = writeOrBuffer(this, state, isBuf, chunk, encoding, cb);
+  }
+  return ret;
+};
+
+Writable.prototype.cork = function () {
+  var state = this._writableState;
+  state.corked++;
+};
+
+Writable.prototype.uncork = function () {
+  var state = this._writableState;
+
+  if (state.corked) {
+    state.corked--;
+    if (!state.writing && !state.corked && !state.finished && !state.bufferProcessing && state.bufferedRequest) clearBuffer(this, state);
+  }
+};
+
+Writable.prototype.setDefaultEncoding = function setDefaultEncoding(encoding) {
+  // node::ParseEncoding() requires lower case.
+  if (typeof encoding === 'string') encoding = encoding.toLowerCase();
+  if (!(['hex', 'utf8', 'utf-8', 'ascii', 'binary', 'base64', 'ucs2', 'ucs-2', 'utf16le', 'utf-16le', 'raw'].indexOf((encoding + '').toLowerCase()) > -1)) throw new TypeError('Unknown encoding: ' + encoding);
+  this._writableState.defaultEncoding = encoding;
+  return this;
+};
+
+function decodeChunk(state, chunk, encoding) {
+  if (!state.objectMode && state.decodeStrings !== false && typeof chunk === 'string') {
+    chunk = Buffer.from(chunk, encoding);
+  }
+
+  return chunk;
+}
+
+Object.defineProperty(Writable.prototype, 'writableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function () {
+    return this._writableState.highWaterMark;
+  }
+}); // if we're already writing something, then just put this
+// in the queue, and wait our turn.  Otherwise, call _write
+// If we return false, then we need a drain event, so set that flag.
+
+function writeOrBuffer(stream, state, isBuf, chunk, encoding, cb) {
+  if (!isBuf) {
+    var newChunk = decodeChunk(state, chunk, encoding);
+
+    if (chunk !== newChunk) {
+      isBuf = true;
+      encoding = 'buffer';
+      chunk = newChunk;
+    }
+  }
+
+  var len = state.objectMode ? 1 : chunk.length;
+  state.length += len;
+  var ret = state.length < state.highWaterMark; // we must ensure that previous needDrain will not be reset to false.
+
+  if (!ret) state.needDrain = true;
+
+  if (state.writing || state.corked) {
+    var last = state.lastBufferedRequest;
+    state.lastBufferedRequest = {
+      chunk: chunk,
+      encoding: encoding,
+      isBuf: isBuf,
+      callback: cb,
+      next: null
+    };
+
+    if (last) {
+      last.next = state.lastBufferedRequest;
+    } else {
+      state.bufferedRequest = state.lastBufferedRequest;
+    }
+
+    state.bufferedRequestCount += 1;
+  } else {
+    doWrite(stream, state, false, len, chunk, encoding, cb);
+  }
+
+  return ret;
+}
+
+function doWrite(stream, state, writev, len, chunk, encoding, cb) {
+  state.writelen = len;
+  state.writecb = cb;
+  state.writing = true;
+  state.sync = true;
+  if (writev) stream._writev(chunk, state.onwrite);else stream._write(chunk, encoding, state.onwrite);
+  state.sync = false;
+}
+
+function onwriteError(stream, state, sync, er, cb) {
+  --state.pendingcb;
+
+  if (sync) {
+    // defer the callback if we are being called synchronously
+    // to avoid piling up things on the stack
+    pna.nextTick(cb, er); // this can emit finish, and it will always happen
+    // after error
+
+    pna.nextTick(finishMaybe, stream, state);
+    stream._writableState.errorEmitted = true;
+    stream.emit('error', er);
+  } else {
+    // the caller expect this to happen before if
+    // it is async
+    cb(er);
+    stream._writableState.errorEmitted = true;
+    stream.emit('error', er); // this can emit finish, but finish must
+    // always follow error
+
+    finishMaybe(stream, state);
+  }
+}
+
+function onwriteStateUpdate(state) {
+  state.writing = false;
+  state.writecb = null;
+  state.length -= state.writelen;
+  state.writelen = 0;
+}
+
+function onwrite(stream, er) {
+  var state = stream._writableState;
+  var sync = state.sync;
+  var cb = state.writecb;
+  onwriteStateUpdate(state);
+  if (er) onwriteError(stream, state, sync, er, cb);else {
+    // Check if we're actually ready to finish, but don't emit yet
+    var finished = needFinish(state);
+
+    if (!finished && !state.corked && !state.bufferProcessing && state.bufferedRequest) {
+      clearBuffer(stream, state);
+    }
+
+    if (sync) {
+      /*<replacement>*/
+      asyncWrite(afterWrite, stream, state, finished, cb);
+      /*</replacement>*/
+    } else {
+      afterWrite(stream, state, finished, cb);
+    }
+  }
+}
+
+function afterWrite(stream, state, finished, cb) {
+  if (!finished) onwriteDrain(stream, state);
+  state.pendingcb--;
+  cb();
+  finishMaybe(stream, state);
+} // Must force callback to be called on nextTick, so that we don't
+// emit 'drain' before the write() consumer gets the 'false' return
+// value, and has a chance to attach a 'drain' listener.
+
+
+function onwriteDrain(stream, state) {
+  if (state.length === 0 && state.needDrain) {
+    state.needDrain = false;
+    stream.emit('drain');
+  }
+} // if there's something in the buffer waiting, then process it
+
+
+function clearBuffer(stream, state) {
+  state.bufferProcessing = true;
+  var entry = state.bufferedRequest;
+
+  if (stream._writev && entry && entry.next) {
+    // Fast case, write everything using _writev()
+    var l = state.bufferedRequestCount;
+    var buffer = new Array(l);
+    var holder = state.corkedRequestsFree;
+    holder.entry = entry;
+    var count = 0;
+    var allBuffers = true;
+
+    while (entry) {
+      buffer[count] = entry;
+      if (!entry.isBuf) allBuffers = false;
+      entry = entry.next;
+      count += 1;
+    }
+
+    buffer.allBuffers = allBuffers;
+    doWrite(stream, state, true, state.length, buffer, '', holder.finish); // doWrite is almost always async, defer these to save a bit of time
+    // as the hot path ends with doWrite
+
+    state.pendingcb++;
+    state.lastBufferedRequest = null;
+
+    if (holder.next) {
+      state.corkedRequestsFree = holder.next;
+      holder.next = null;
+    } else {
+      state.corkedRequestsFree = new CorkedRequest(state);
+    }
+
+    state.bufferedRequestCount = 0;
+  } else {
+    // Slow case, write chunks one-by-one
+    while (entry) {
+      var chunk = entry.chunk;
+      var encoding = entry.encoding;
+      var cb = entry.callback;
+      var len = state.objectMode ? 1 : chunk.length;
+      doWrite(stream, state, false, len, chunk, encoding, cb);
+      entry = entry.next;
+      state.bufferedRequestCount--; // if we didn't call the onwrite immediately, then
+      // it means that we need to wait until it does.
+      // also, that means that the chunk and cb are currently
+      // being processed, so move the buffer counter past them.
+
+      if (state.writing) {
+        break;
+      }
+    }
+
+    if (entry === null) state.lastBufferedRequest = null;
+  }
+
+  state.bufferedRequest = entry;
+  state.bufferProcessing = false;
+}
+
+Writable.prototype._write = function (chunk, encoding, cb) {
+  cb(new Error('_write() is not implemented'));
+};
+
+Writable.prototype._writev = null;
+
+Writable.prototype.end = function (chunk, encoding, cb) {
+  var state = this._writableState;
+
+  if (typeof chunk === 'function') {
+    cb = chunk;
+    chunk = null;
+    encoding = null;
+  } else if (typeof encoding === 'function') {
+    cb = encoding;
+    encoding = null;
+  }
+
+  if (chunk !== null && chunk !== undefined) this.write(chunk, encoding); // .end() fully uncorks
+
+  if (state.corked) {
+    state.corked = 1;
+    this.uncork();
+  } // ignore unnecessary end() calls.
+
+
+  if (!state.ending && !state.finished) endWritable(this, state, cb);
+};
+
+function needFinish(state) {
+  return state.ending && state.length === 0 && state.bufferedRequest === null && !state.finished && !state.writing;
+}
+
+function callFinal(stream, state) {
+  stream._final(function (err) {
+    state.pendingcb--;
+
+    if (err) {
+      stream.emit('error', err);
+    }
+
+    state.prefinished = true;
+    stream.emit('prefinish');
+    finishMaybe(stream, state);
+  });
+}
+
+function prefinish(stream, state) {
+  if (!state.prefinished && !state.finalCalled) {
+    if (typeof stream._final === 'function') {
+      state.pendingcb++;
+      state.finalCalled = true;
+      pna.nextTick(callFinal, stream, state);
+    } else {
+      state.prefinished = true;
+      stream.emit('prefinish');
+    }
+  }
+}
+
+function finishMaybe(stream, state) {
+  var need = needFinish(state);
+
+  if (need) {
+    prefinish(stream, state);
+
+    if (state.pendingcb === 0) {
+      state.finished = true;
+      stream.emit('finish');
+    }
+  }
+
+  return need;
+}
+
+function endWritable(stream, state, cb) {
+  state.ending = true;
+  finishMaybe(stream, state);
+
+  if (cb) {
+    if (state.finished) pna.nextTick(cb);else stream.once('finish', cb);
+  }
+
+  state.ended = true;
+  stream.writable = false;
+}
+
+function onCorkedFinish(corkReq, state, err) {
+  var entry = corkReq.entry;
+  corkReq.entry = null;
+
+  while (entry) {
+    var cb = entry.callback;
+    state.pendingcb--;
+    cb(err);
+    entry = entry.next;
+  }
+
+  if (state.corkedRequestsFree) {
+    state.corkedRequestsFree.next = corkReq;
+  } else {
+    state.corkedRequestsFree = corkReq;
+  }
+}
+
+Object.defineProperty(Writable.prototype, 'destroyed', {
+  get: function () {
+    if (this._writableState === undefined) {
+      return false;
+    }
+
+    return this._writableState.destroyed;
+  },
+  set: function (value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (!this._writableState) {
+      return;
+    } // backward compatibility, the user is explicitly
+    // managing destroyed
+
+
+    this._writableState.destroyed = value;
+  }
+});
+Writable.prototype.destroy = destroyImpl.destroy;
+Writable.prototype._undestroy = destroyImpl.undestroy;
+
+Writable.prototype._destroy = function (err, cb) {
+  this.end();
+  cb(err);
+};
+},{"process-nextick-args":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process-nextick-args/index.js","core-util-is":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js","util-deprecate":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/util-deprecate/browser.js","./internal/streams/stream":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/stream-browser.js","safe-buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/safe-buffer/index.js","./internal/streams/destroy":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/destroy.js","./_stream_duplex":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js","process":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process/browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// a duplex stream is just a stream that is both readable and writable.
+// Since JS doesn't have multiple prototypal inheritance, this class
+// prototypally inherits from Readable, and then parasitically from
+// Writable.
+
+'use strict';
+
+/*<replacement>*/
+
+var pna = require('process-nextick-args');
+/*</replacement>*/
+
+/*<replacement>*/
+var objectKeys = Object.keys || function (obj) {
+  var keys = [];
+  for (var key in obj) {
+    keys.push(key);
+  }return keys;
+};
+/*</replacement>*/
+
+module.exports = Duplex;
+
+/*<replacement>*/
+var util = Object.create(require('core-util-is'));
+util.inherits = require('inherits');
+/*</replacement>*/
+
+var Readable = require('./_stream_readable');
+var Writable = require('./_stream_writable');
+
+util.inherits(Duplex, Readable);
+
+{
+  // avoid scope creep, the keys array can then be collected
+  var keys = objectKeys(Writable.prototype);
+  for (var v = 0; v < keys.length; v++) {
+    var method = keys[v];
+    if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
+  }
+}
+
+function Duplex(options) {
+  if (!(this instanceof Duplex)) return new Duplex(options);
+
+  Readable.call(this, options);
+  Writable.call(this, options);
+
+  if (options && options.readable === false) this.readable = false;
+
+  if (options && options.writable === false) this.writable = false;
+
+  this.allowHalfOpen = true;
+  if (options && options.allowHalfOpen === false) this.allowHalfOpen = false;
+
+  this.once('end', onend);
+}
+
+Object.defineProperty(Duplex.prototype, 'writableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function () {
+    return this._writableState.highWaterMark;
+  }
+});
+
+// the no-half-open enforcer
+function onend() {
+  // if we allow half-open state, or if the writable side ended,
+  // then we're ok.
+  if (this.allowHalfOpen || this._writableState.ended) return;
+
+  // no more data can be written.
+  // But allow more writes to happen in this tick.
+  pna.nextTick(onEndNT, this);
+}
+
+function onEndNT(self) {
+  self.end();
+}
+
+Object.defineProperty(Duplex.prototype, 'destroyed', {
+  get: function () {
+    if (this._readableState === undefined || this._writableState === undefined) {
+      return false;
+    }
+    return this._readableState.destroyed && this._writableState.destroyed;
+  },
+  set: function (value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (this._readableState === undefined || this._writableState === undefined) {
+      return;
+    }
+
+    // backward compatibility, the user is explicitly
+    // managing destroyed
+    this._readableState.destroyed = value;
+    this._writableState.destroyed = value;
+  }
+});
+
+Duplex.prototype._destroy = function (err, cb) {
+  this.push(null);
+  this.end();
+
+  pna.nextTick(cb, err);
+};
+},{"process-nextick-args":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process-nextick-args/index.js","core-util-is":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js","./_stream_readable":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_readable.js","./_stream_writable":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_writable.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/node_modules/string_decoder/lib/string_decoder.js":[function(require,module,exports) {
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+/*<replacement>*/
+
+var Buffer = require('safe-buffer').Buffer;
+/*</replacement>*/
+
+var isEncoding = Buffer.isEncoding || function (encoding) {
+  encoding = '' + encoding;
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
+
+function _normalizeEncoding(enc) {
+  if (!enc) return 'utf8';
+  var retried;
+  while (true) {
+    switch (enc) {
+      case 'utf8':
+      case 'utf-8':
+        return 'utf8';
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return 'utf16le';
+      case 'latin1':
+      case 'binary':
+        return 'latin1';
+      case 'base64':
+      case 'ascii':
+      case 'hex':
+        return enc;
+      default:
+        if (retried) return; // undefined
+        enc = ('' + enc).toLowerCase();
+        retried = true;
+    }
+  }
+};
+
+// Do not cache `Buffer.isEncoding` when checking encoding names as some
+// modules monkey-patch it to support additional encodings
+function normalizeEncoding(enc) {
+  var nenc = _normalizeEncoding(enc);
+  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+  return nenc || enc;
+}
+
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters.
+exports.StringDecoder = StringDecoder;
+function StringDecoder(encoding) {
+  this.encoding = normalizeEncoding(encoding);
+  var nb;
+  switch (this.encoding) {
+    case 'utf16le':
+      this.text = utf16Text;
+      this.end = utf16End;
+      nb = 4;
+      break;
+    case 'utf8':
+      this.fillLast = utf8FillLast;
+      nb = 4;
+      break;
+    case 'base64':
+      this.text = base64Text;
+      this.end = base64End;
+      nb = 3;
+      break;
+    default:
+      this.write = simpleWrite;
+      this.end = simpleEnd;
+      return;
+  }
+  this.lastNeed = 0;
+  this.lastTotal = 0;
+  this.lastChar = Buffer.allocUnsafe(nb);
+}
+
+StringDecoder.prototype.write = function (buf) {
+  if (buf.length === 0) return '';
+  var r;
+  var i;
+  if (this.lastNeed) {
+    r = this.fillLast(buf);
+    if (r === undefined) return '';
+    i = this.lastNeed;
+    this.lastNeed = 0;
+  } else {
+    i = 0;
+  }
+  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+  return r || '';
+};
+
+StringDecoder.prototype.end = utf8End;
+
+// Returns only complete characters in a Buffer
+StringDecoder.prototype.text = utf8Text;
+
+// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+StringDecoder.prototype.fillLast = function (buf) {
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+  this.lastNeed -= buf.length;
+};
+
+// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+// continuation byte. If an invalid byte is detected, -2 is returned.
+function utf8CheckByte(byte) {
+  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+  return byte >> 6 === 0x02 ? -1 : -2;
+}
+
+// Checks at most 3 bytes at the end of a Buffer in order to detect an
+// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+// needed to complete the UTF-8 character (if applicable) are returned.
+function utf8CheckIncomplete(self, buf, i) {
+  var j = buf.length - 1;
+  if (j < i) return 0;
+  var nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 1;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 2;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) {
+      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+    }
+    return nb;
+  }
+  return 0;
+}
+
+// Validates as many continuation bytes for a multi-byte UTF-8 character as
+// needed or are available. If we see a non-continuation byte where we expect
+// one, we "replace" the validated continuation bytes we've seen so far with
+// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
+// behavior. The continuation byte check is included three times in the case
+// where all of the continuation bytes for a character exist in the same buffer.
+// It is also done this way as a slight performance increase instead of using a
+// loop.
+function utf8CheckExtraBytes(self, buf, p) {
+  if ((buf[0] & 0xC0) !== 0x80) {
+    self.lastNeed = 0;
+    return '\ufffd';
+  }
+  if (self.lastNeed > 1 && buf.length > 1) {
+    if ((buf[1] & 0xC0) !== 0x80) {
+      self.lastNeed = 1;
+      return '\ufffd';
+    }
+    if (self.lastNeed > 2 && buf.length > 2) {
+      if ((buf[2] & 0xC0) !== 0x80) {
+        self.lastNeed = 2;
+        return '\ufffd';
+      }
+    }
+  }
+}
+
+// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+function utf8FillLast(buf) {
+  var p = this.lastTotal - this.lastNeed;
+  var r = utf8CheckExtraBytes(this, buf, p);
+  if (r !== undefined) return r;
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, p, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, p, 0, buf.length);
+  this.lastNeed -= buf.length;
+}
+
+// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+// partial character, the character's bytes are buffered until the required
+// number of bytes are available.
+function utf8Text(buf, i) {
+  var total = utf8CheckIncomplete(this, buf, i);
+  if (!this.lastNeed) return buf.toString('utf8', i);
+  this.lastTotal = total;
+  var end = buf.length - (total - this.lastNeed);
+  buf.copy(this.lastChar, 0, end);
+  return buf.toString('utf8', i, end);
+}
+
+// For UTF-8, a replacement character is added when ending on a partial
+// character.
+function utf8End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + '\ufffd';
+  return r;
+}
+
+// UTF-16LE typically needs two bytes per character, but even if we have an even
+// number of bytes available, we need to check if we end on a leading/high
+// surrogate. In that case, we need to wait for the next two bytes in order to
+// decode the last character properly.
+function utf16Text(buf, i) {
+  if ((buf.length - i) % 2 === 0) {
+    var r = buf.toString('utf16le', i);
+    if (r) {
+      var c = r.charCodeAt(r.length - 1);
+      if (c >= 0xD800 && c <= 0xDBFF) {
+        this.lastNeed = 2;
+        this.lastTotal = 4;
+        this.lastChar[0] = buf[buf.length - 2];
+        this.lastChar[1] = buf[buf.length - 1];
+        return r.slice(0, -1);
+      }
+    }
+    return r;
+  }
+  this.lastNeed = 1;
+  this.lastTotal = 2;
+  this.lastChar[0] = buf[buf.length - 1];
+  return buf.toString('utf16le', i, buf.length - 1);
+}
+
+// For UTF-16LE we do not explicitly append special replacement characters if we
+// end on a partial character, we simply let v8 handle that.
+function utf16End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) {
+    var end = this.lastTotal - this.lastNeed;
+    return r + this.lastChar.toString('utf16le', 0, end);
+  }
+  return r;
+}
+
+function base64Text(buf, i) {
+  var n = (buf.length - i) % 3;
+  if (n === 0) return buf.toString('base64', i);
+  this.lastNeed = 3 - n;
+  this.lastTotal = 3;
+  if (n === 1) {
+    this.lastChar[0] = buf[buf.length - 1];
+  } else {
+    this.lastChar[0] = buf[buf.length - 2];
+    this.lastChar[1] = buf[buf.length - 1];
+  }
+  return buf.toString('base64', i, buf.length - n);
+}
+
+function base64End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+  return r;
+}
+
+// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+function simpleWrite(buf) {
+  return buf.toString(this.encoding);
+}
+
+function simpleEnd(buf) {
+  return buf && buf.length ? this.write(buf) : '';
+}
+},{"safe-buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/safe-buffer/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_readable.js":[function(require,module,exports) {
+
+var global = arguments[3];
+var process = require("process");
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+/*<replacement>*/
+
+var pna = require('process-nextick-args');
+/*</replacement>*/
+
+module.exports = Readable;
+
+/*<replacement>*/
+var isArray = require('isarray');
+/*</replacement>*/
+
+/*<replacement>*/
+var Duplex;
+/*</replacement>*/
+
+Readable.ReadableState = ReadableState;
+
+/*<replacement>*/
+var EE = require('events').EventEmitter;
+
+var EElistenerCount = function (emitter, type) {
+  return emitter.listeners(type).length;
+};
+/*</replacement>*/
+
+/*<replacement>*/
+var Stream = require('./internal/streams/stream');
+/*</replacement>*/
+
+/*<replacement>*/
+
+var Buffer = require('safe-buffer').Buffer;
+var OurUint8Array = global.Uint8Array || function () {};
+function _uint8ArrayToBuffer(chunk) {
+  return Buffer.from(chunk);
+}
+function _isUint8Array(obj) {
+  return Buffer.isBuffer(obj) || obj instanceof OurUint8Array;
+}
+
+/*</replacement>*/
+
+/*<replacement>*/
+var util = Object.create(require('core-util-is'));
+util.inherits = require('inherits');
+/*</replacement>*/
+
+/*<replacement>*/
+var debugUtil = require('util');
+var debug = void 0;
+if (debugUtil && debugUtil.debuglog) {
+  debug = debugUtil.debuglog('stream');
+} else {
+  debug = function () {};
+}
+/*</replacement>*/
+
+var BufferList = require('./internal/streams/BufferList');
+var destroyImpl = require('./internal/streams/destroy');
+var StringDecoder;
+
+util.inherits(Readable, Stream);
+
+var kProxyEvents = ['error', 'close', 'destroy', 'pause', 'resume'];
+
+function prependListener(emitter, event, fn) {
+  // Sadly this is not cacheable as some libraries bundle their own
+  // event emitter implementation with them.
+  if (typeof emitter.prependListener === 'function') return emitter.prependListener(event, fn);
+
+  // This is a hack to make sure that our error handler is attached before any
+  // userland ones.  NEVER DO THIS. This is here only because this code needs
+  // to continue to work with older versions of Node.js that do not include
+  // the prependListener() method. The goal is to eventually remove this hack.
+  if (!emitter._events || !emitter._events[event]) emitter.on(event, fn);else if (isArray(emitter._events[event])) emitter._events[event].unshift(fn);else emitter._events[event] = [fn, emitter._events[event]];
+}
+
+function ReadableState(options, stream) {
+  Duplex = Duplex || require('./_stream_duplex');
+
+  options = options || {};
+
+  // Duplex streams are both readable and writable, but share
+  // the same options object.
+  // However, some cases require setting options to different
+  // values for the readable and the writable sides of the duplex stream.
+  // These options can be provided separately as readableXXX and writableXXX.
+  var isDuplex = stream instanceof Duplex;
+
+  // object stream flag. Used to make read(n) ignore n and to
+  // make all the buffer merging and length checks go away
+  this.objectMode = !!options.objectMode;
+
+  if (isDuplex) this.objectMode = this.objectMode || !!options.readableObjectMode;
+
+  // the point at which it stops calling _read() to fill the buffer
+  // Note: 0 is a valid value, means "don't call _read preemptively ever"
+  var hwm = options.highWaterMark;
+  var readableHwm = options.readableHighWaterMark;
+  var defaultHwm = this.objectMode ? 16 : 16 * 1024;
+
+  if (hwm || hwm === 0) this.highWaterMark = hwm;else if (isDuplex && (readableHwm || readableHwm === 0)) this.highWaterMark = readableHwm;else this.highWaterMark = defaultHwm;
+
+  // cast to ints.
+  this.highWaterMark = Math.floor(this.highWaterMark);
+
+  // A linked list is used to store data chunks instead of an array because the
+  // linked list can remove elements from the beginning faster than
+  // array.shift()
+  this.buffer = new BufferList();
+  this.length = 0;
+  this.pipes = null;
+  this.pipesCount = 0;
+  this.flowing = null;
+  this.ended = false;
+  this.endEmitted = false;
+  this.reading = false;
+
+  // a flag to be able to tell if the event 'readable'/'data' is emitted
+  // immediately, or on a later tick.  We set this to true at first, because
+  // any actions that shouldn't happen until "later" should generally also
+  // not happen before the first read call.
+  this.sync = true;
+
+  // whenever we return null, then we set a flag to say
+  // that we're awaiting a 'readable' event emission.
+  this.needReadable = false;
+  this.emittedReadable = false;
+  this.readableListening = false;
+  this.resumeScheduled = false;
+
+  // has it been destroyed
+  this.destroyed = false;
+
+  // Crypto is kind of old and crusty.  Historically, its default string
+  // encoding is 'binary' so we have to make this configurable.
+  // Everything else in the universe uses 'utf8', though.
+  this.defaultEncoding = options.defaultEncoding || 'utf8';
+
+  // the number of writers that are awaiting a drain event in .pipe()s
+  this.awaitDrain = 0;
+
+  // if true, a maybeReadMore has been scheduled
+  this.readingMore = false;
+
+  this.decoder = null;
+  this.encoding = null;
+  if (options.encoding) {
+    if (!StringDecoder) StringDecoder = require('string_decoder/').StringDecoder;
+    this.decoder = new StringDecoder(options.encoding);
+    this.encoding = options.encoding;
+  }
+}
+
+function Readable(options) {
+  Duplex = Duplex || require('./_stream_duplex');
+
+  if (!(this instanceof Readable)) return new Readable(options);
+
+  this._readableState = new ReadableState(options, this);
+
+  // legacy
+  this.readable = true;
+
+  if (options) {
+    if (typeof options.read === 'function') this._read = options.read;
+
+    if (typeof options.destroy === 'function') this._destroy = options.destroy;
+  }
+
+  Stream.call(this);
+}
+
+Object.defineProperty(Readable.prototype, 'destroyed', {
+  get: function () {
+    if (this._readableState === undefined) {
+      return false;
+    }
+    return this._readableState.destroyed;
+  },
+  set: function (value) {
+    // we ignore the value if the stream
+    // has not been initialized yet
+    if (!this._readableState) {
+      return;
+    }
+
+    // backward compatibility, the user is explicitly
+    // managing destroyed
+    this._readableState.destroyed = value;
+  }
+});
+
+Readable.prototype.destroy = destroyImpl.destroy;
+Readable.prototype._undestroy = destroyImpl.undestroy;
+Readable.prototype._destroy = function (err, cb) {
+  this.push(null);
+  cb(err);
+};
+
+// Manually shove something into the read() buffer.
+// This returns true if the highWaterMark has not been hit yet,
+// similar to how Writable.write() returns true if you should
+// write() some more.
+Readable.prototype.push = function (chunk, encoding) {
+  var state = this._readableState;
+  var skipChunkCheck;
+
+  if (!state.objectMode) {
+    if (typeof chunk === 'string') {
+      encoding = encoding || state.defaultEncoding;
+      if (encoding !== state.encoding) {
+        chunk = Buffer.from(chunk, encoding);
+        encoding = '';
+      }
+      skipChunkCheck = true;
+    }
+  } else {
+    skipChunkCheck = true;
+  }
+
+  return readableAddChunk(this, chunk, encoding, false, skipChunkCheck);
+};
+
+// Unshift should *always* be something directly out of read()
+Readable.prototype.unshift = function (chunk) {
+  return readableAddChunk(this, chunk, null, true, false);
+};
+
+function readableAddChunk(stream, chunk, encoding, addToFront, skipChunkCheck) {
+  var state = stream._readableState;
+  if (chunk === null) {
+    state.reading = false;
+    onEofChunk(stream, state);
+  } else {
+    var er;
+    if (!skipChunkCheck) er = chunkInvalid(state, chunk);
+    if (er) {
+      stream.emit('error', er);
+    } else if (state.objectMode || chunk && chunk.length > 0) {
+      if (typeof chunk !== 'string' && !state.objectMode && Object.getPrototypeOf(chunk) !== Buffer.prototype) {
+        chunk = _uint8ArrayToBuffer(chunk);
+      }
+
+      if (addToFront) {
+        if (state.endEmitted) stream.emit('error', new Error('stream.unshift() after end event'));else addChunk(stream, state, chunk, true);
+      } else if (state.ended) {
+        stream.emit('error', new Error('stream.push() after EOF'));
+      } else {
+        state.reading = false;
+        if (state.decoder && !encoding) {
+          chunk = state.decoder.write(chunk);
+          if (state.objectMode || chunk.length !== 0) addChunk(stream, state, chunk, false);else maybeReadMore(stream, state);
+        } else {
+          addChunk(stream, state, chunk, false);
+        }
+      }
+    } else if (!addToFront) {
+      state.reading = false;
+    }
+  }
+
+  return needMoreData(state);
+}
+
+function addChunk(stream, state, chunk, addToFront) {
+  if (state.flowing && state.length === 0 && !state.sync) {
+    stream.emit('data', chunk);
+    stream.read(0);
+  } else {
+    // update the buffer info.
+    state.length += state.objectMode ? 1 : chunk.length;
+    if (addToFront) state.buffer.unshift(chunk);else state.buffer.push(chunk);
+
+    if (state.needReadable) emitReadable(stream);
+  }
+  maybeReadMore(stream, state);
+}
+
+function chunkInvalid(state, chunk) {
+  var er;
+  if (!_isUint8Array(chunk) && typeof chunk !== 'string' && chunk !== undefined && !state.objectMode) {
+    er = new TypeError('Invalid non-string/buffer chunk');
+  }
+  return er;
+}
+
+// if it's past the high water mark, we can push in some more.
+// Also, if we have no data yet, we can stand some
+// more bytes.  This is to work around cases where hwm=0,
+// such as the repl.  Also, if the push() triggered a
+// readable event, and the user called read(largeNumber) such that
+// needReadable was set, then we ought to push more, so that another
+// 'readable' event will be triggered.
+function needMoreData(state) {
+  return !state.ended && (state.needReadable || state.length < state.highWaterMark || state.length === 0);
+}
+
+Readable.prototype.isPaused = function () {
+  return this._readableState.flowing === false;
+};
+
+// backwards compatibility.
+Readable.prototype.setEncoding = function (enc) {
+  if (!StringDecoder) StringDecoder = require('string_decoder/').StringDecoder;
+  this._readableState.decoder = new StringDecoder(enc);
+  this._readableState.encoding = enc;
+  return this;
+};
+
+// Don't raise the hwm > 8MB
+var MAX_HWM = 0x800000;
+function computeNewHighWaterMark(n) {
+  if (n >= MAX_HWM) {
+    n = MAX_HWM;
+  } else {
+    // Get the next highest power of 2 to prevent increasing hwm excessively in
+    // tiny amounts
+    n--;
+    n |= n >>> 1;
+    n |= n >>> 2;
+    n |= n >>> 4;
+    n |= n >>> 8;
+    n |= n >>> 16;
+    n++;
+  }
+  return n;
+}
+
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function howMuchToRead(n, state) {
+  if (n <= 0 || state.length === 0 && state.ended) return 0;
+  if (state.objectMode) return 1;
+  if (n !== n) {
+    // Only flow one buffer at a time
+    if (state.flowing && state.length) return state.buffer.head.data.length;else return state.length;
+  }
+  // If we're asking for more than the current hwm, then raise the hwm.
+  if (n > state.highWaterMark) state.highWaterMark = computeNewHighWaterMark(n);
+  if (n <= state.length) return n;
+  // Don't have enough
+  if (!state.ended) {
+    state.needReadable = true;
+    return 0;
+  }
+  return state.length;
+}
+
+// you can override either this method, or the async _read(n) below.
+Readable.prototype.read = function (n) {
+  debug('read', n);
+  n = parseInt(n, 10);
+  var state = this._readableState;
+  var nOrig = n;
+
+  if (n !== 0) state.emittedReadable = false;
+
+  // if we're doing read(0) to trigger a readable event, but we
+  // already have a bunch of data in the buffer, then just trigger
+  // the 'readable' event and move on.
+  if (n === 0 && state.needReadable && (state.length >= state.highWaterMark || state.ended)) {
+    debug('read: emitReadable', state.length, state.ended);
+    if (state.length === 0 && state.ended) endReadable(this);else emitReadable(this);
+    return null;
+  }
+
+  n = howMuchToRead(n, state);
+
+  // if we've ended, and we're now clear, then finish it up.
+  if (n === 0 && state.ended) {
+    if (state.length === 0) endReadable(this);
+    return null;
+  }
+
+  // All the actual chunk generation logic needs to be
+  // *below* the call to _read.  The reason is that in certain
+  // synthetic stream cases, such as passthrough streams, _read
+  // may be a completely synchronous operation which may change
+  // the state of the read buffer, providing enough data when
+  // before there was *not* enough.
+  //
+  // So, the steps are:
+  // 1. Figure out what the state of things will be after we do
+  // a read from the buffer.
+  //
+  // 2. If that resulting state will trigger a _read, then call _read.
+  // Note that this may be asynchronous, or synchronous.  Yes, it is
+  // deeply ugly to write APIs this way, but that still doesn't mean
+  // that the Readable class should behave improperly, as streams are
+  // designed to be sync/async agnostic.
+  // Take note if the _read call is sync or async (ie, if the read call
+  // has returned yet), so that we know whether or not it's safe to emit
+  // 'readable' etc.
+  //
+  // 3. Actually pull the requested chunks out of the buffer and return.
+
+  // if we need a readable event, then we need to do some reading.
+  var doRead = state.needReadable;
+  debug('need readable', doRead);
+
+  // if we currently have less than the highWaterMark, then also read some
+  if (state.length === 0 || state.length - n < state.highWaterMark) {
+    doRead = true;
+    debug('length less than watermark', doRead);
+  }
+
+  // however, if we've ended, then there's no point, and if we're already
+  // reading, then it's unnecessary.
+  if (state.ended || state.reading) {
+    doRead = false;
+    debug('reading or ended', doRead);
+  } else if (doRead) {
+    debug('do read');
+    state.reading = true;
+    state.sync = true;
+    // if the length is currently zero, then we *need* a readable event.
+    if (state.length === 0) state.needReadable = true;
+    // call internal read method
+    this._read(state.highWaterMark);
+    state.sync = false;
+    // If _read pushed data synchronously, then `reading` will be false,
+    // and we need to re-evaluate how much data we can return to the user.
+    if (!state.reading) n = howMuchToRead(nOrig, state);
+  }
+
+  var ret;
+  if (n > 0) ret = fromList(n, state);else ret = null;
+
+  if (ret === null) {
+    state.needReadable = true;
+    n = 0;
+  } else {
+    state.length -= n;
+  }
+
+  if (state.length === 0) {
+    // If we have nothing in the buffer, then we want to know
+    // as soon as we *do* get something into the buffer.
+    if (!state.ended) state.needReadable = true;
+
+    // If we tried to read() past the EOF, then emit end on the next tick.
+    if (nOrig !== n && state.ended) endReadable(this);
+  }
+
+  if (ret !== null) this.emit('data', ret);
+
+  return ret;
+};
+
+function onEofChunk(stream, state) {
+  if (state.ended) return;
+  if (state.decoder) {
+    var chunk = state.decoder.end();
+    if (chunk && chunk.length) {
+      state.buffer.push(chunk);
+      state.length += state.objectMode ? 1 : chunk.length;
+    }
+  }
+  state.ended = true;
+
+  // emit 'readable' now to make sure it gets picked up.
+  emitReadable(stream);
+}
+
+// Don't emit readable right away in sync mode, because this can trigger
+// another read() call => stack overflow.  This way, it might trigger
+// a nextTick recursion warning, but that's not so bad.
+function emitReadable(stream) {
+  var state = stream._readableState;
+  state.needReadable = false;
+  if (!state.emittedReadable) {
+    debug('emitReadable', state.flowing);
+    state.emittedReadable = true;
+    if (state.sync) pna.nextTick(emitReadable_, stream);else emitReadable_(stream);
+  }
+}
+
+function emitReadable_(stream) {
+  debug('emit readable');
+  stream.emit('readable');
+  flow(stream);
+}
+
+// at this point, the user has presumably seen the 'readable' event,
+// and called read() to consume some data.  that may have triggered
+// in turn another _read(n) call, in which case reading = true if
+// it's in progress.
+// However, if we're not ended, or reading, and the length < hwm,
+// then go ahead and try to read some more preemptively.
+function maybeReadMore(stream, state) {
+  if (!state.readingMore) {
+    state.readingMore = true;
+    pna.nextTick(maybeReadMore_, stream, state);
+  }
+}
+
+function maybeReadMore_(stream, state) {
+  var len = state.length;
+  while (!state.reading && !state.flowing && !state.ended && state.length < state.highWaterMark) {
+    debug('maybeReadMore read 0');
+    stream.read(0);
+    if (len === state.length)
+      // didn't get any data, stop spinning.
+      break;else len = state.length;
+  }
+  state.readingMore = false;
+}
+
+// abstract method.  to be overridden in specific implementation classes.
+// call cb(er, data) where data is <= n in length.
+// for virtual (non-string, non-buffer) streams, "length" is somewhat
+// arbitrary, and perhaps not very meaningful.
+Readable.prototype._read = function (n) {
+  this.emit('error', new Error('_read() is not implemented'));
+};
+
+Readable.prototype.pipe = function (dest, pipeOpts) {
+  var src = this;
+  var state = this._readableState;
+
+  switch (state.pipesCount) {
+    case 0:
+      state.pipes = dest;
+      break;
+    case 1:
+      state.pipes = [state.pipes, dest];
+      break;
+    default:
+      state.pipes.push(dest);
+      break;
+  }
+  state.pipesCount += 1;
+  debug('pipe count=%d opts=%j', state.pipesCount, pipeOpts);
+
+  var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== process.stdout && dest !== process.stderr;
+
+  var endFn = doEnd ? onend : unpipe;
+  if (state.endEmitted) pna.nextTick(endFn);else src.once('end', endFn);
+
+  dest.on('unpipe', onunpipe);
+  function onunpipe(readable, unpipeInfo) {
+    debug('onunpipe');
+    if (readable === src) {
+      if (unpipeInfo && unpipeInfo.hasUnpiped === false) {
+        unpipeInfo.hasUnpiped = true;
+        cleanup();
+      }
+    }
+  }
+
+  function onend() {
+    debug('onend');
+    dest.end();
+  }
+
+  // when the dest drains, it reduces the awaitDrain counter
+  // on the source.  This would be more elegant with a .once()
+  // handler in flow(), but adding and removing repeatedly is
+  // too slow.
+  var ondrain = pipeOnDrain(src);
+  dest.on('drain', ondrain);
+
+  var cleanedUp = false;
+  function cleanup() {
+    debug('cleanup');
+    // cleanup event handlers once the pipe is broken
+    dest.removeListener('close', onclose);
+    dest.removeListener('finish', onfinish);
+    dest.removeListener('drain', ondrain);
+    dest.removeListener('error', onerror);
+    dest.removeListener('unpipe', onunpipe);
+    src.removeListener('end', onend);
+    src.removeListener('end', unpipe);
+    src.removeListener('data', ondata);
+
+    cleanedUp = true;
+
+    // if the reader is waiting for a drain event from this
+    // specific writer, then it would cause it to never start
+    // flowing again.
+    // So, if this is awaiting a drain, then we just call it now.
+    // If we don't know, then assume that we are waiting for one.
+    if (state.awaitDrain && (!dest._writableState || dest._writableState.needDrain)) ondrain();
+  }
+
+  // If the user pushes more data while we're writing to dest then we'll end up
+  // in ondata again. However, we only want to increase awaitDrain once because
+  // dest will only emit one 'drain' event for the multiple writes.
+  // => Introduce a guard on increasing awaitDrain.
+  var increasedAwaitDrain = false;
+  src.on('data', ondata);
+  function ondata(chunk) {
+    debug('ondata');
+    increasedAwaitDrain = false;
+    var ret = dest.write(chunk);
+    if (false === ret && !increasedAwaitDrain) {
+      // If the user unpiped during `dest.write()`, it is possible
+      // to get stuck in a permanently paused state if that write
+      // also returned false.
+      // => Check whether `dest` is still a piping destination.
+      if ((state.pipesCount === 1 && state.pipes === dest || state.pipesCount > 1 && indexOf(state.pipes, dest) !== -1) && !cleanedUp) {
+        debug('false write response, pause', src._readableState.awaitDrain);
+        src._readableState.awaitDrain++;
+        increasedAwaitDrain = true;
+      }
+      src.pause();
+    }
+  }
+
+  // if the dest has an error, then stop piping into it.
+  // however, don't suppress the throwing behavior for this.
+  function onerror(er) {
+    debug('onerror', er);
+    unpipe();
+    dest.removeListener('error', onerror);
+    if (EElistenerCount(dest, 'error') === 0) dest.emit('error', er);
+  }
+
+  // Make sure our error handler is attached before userland ones.
+  prependListener(dest, 'error', onerror);
+
+  // Both close and finish should trigger unpipe, but only once.
+  function onclose() {
+    dest.removeListener('finish', onfinish);
+    unpipe();
+  }
+  dest.once('close', onclose);
+  function onfinish() {
+    debug('onfinish');
+    dest.removeListener('close', onclose);
+    unpipe();
+  }
+  dest.once('finish', onfinish);
+
+  function unpipe() {
+    debug('unpipe');
+    src.unpipe(dest);
+  }
+
+  // tell the dest that it's being piped to
+  dest.emit('pipe', src);
+
+  // start the flow if it hasn't been started already.
+  if (!state.flowing) {
+    debug('pipe resume');
+    src.resume();
+  }
+
+  return dest;
+};
+
+function pipeOnDrain(src) {
+  return function () {
+    var state = src._readableState;
+    debug('pipeOnDrain', state.awaitDrain);
+    if (state.awaitDrain) state.awaitDrain--;
+    if (state.awaitDrain === 0 && EElistenerCount(src, 'data')) {
+      state.flowing = true;
+      flow(src);
+    }
+  };
+}
+
+Readable.prototype.unpipe = function (dest) {
+  var state = this._readableState;
+  var unpipeInfo = { hasUnpiped: false };
+
+  // if we're not piping anywhere, then do nothing.
+  if (state.pipesCount === 0) return this;
+
+  // just one destination.  most common case.
+  if (state.pipesCount === 1) {
+    // passed in one, but it's not the right one.
+    if (dest && dest !== state.pipes) return this;
+
+    if (!dest) dest = state.pipes;
+
+    // got a match.
+    state.pipes = null;
+    state.pipesCount = 0;
+    state.flowing = false;
+    if (dest) dest.emit('unpipe', this, unpipeInfo);
+    return this;
+  }
+
+  // slow case. multiple pipe destinations.
+
+  if (!dest) {
+    // remove all.
+    var dests = state.pipes;
+    var len = state.pipesCount;
+    state.pipes = null;
+    state.pipesCount = 0;
+    state.flowing = false;
+
+    for (var i = 0; i < len; i++) {
+      dests[i].emit('unpipe', this, unpipeInfo);
+    }return this;
+  }
+
+  // try to find the right one.
+  var index = indexOf(state.pipes, dest);
+  if (index === -1) return this;
+
+  state.pipes.splice(index, 1);
+  state.pipesCount -= 1;
+  if (state.pipesCount === 1) state.pipes = state.pipes[0];
+
+  dest.emit('unpipe', this, unpipeInfo);
+
+  return this;
+};
+
+// set up data events if they are asked for
+// Ensure readable listeners eventually get something
+Readable.prototype.on = function (ev, fn) {
+  var res = Stream.prototype.on.call(this, ev, fn);
+
+  if (ev === 'data') {
+    // Start flowing on next tick if stream isn't explicitly paused
+    if (this._readableState.flowing !== false) this.resume();
+  } else if (ev === 'readable') {
+    var state = this._readableState;
+    if (!state.endEmitted && !state.readableListening) {
+      state.readableListening = state.needReadable = true;
+      state.emittedReadable = false;
+      if (!state.reading) {
+        pna.nextTick(nReadingNextTick, this);
+      } else if (state.length) {
+        emitReadable(this);
+      }
+    }
+  }
+
+  return res;
+};
+Readable.prototype.addListener = Readable.prototype.on;
+
+function nReadingNextTick(self) {
+  debug('readable nexttick read 0');
+  self.read(0);
+}
+
+// pause() and resume() are remnants of the legacy readable stream API
+// If the user uses them, then switch into old mode.
+Readable.prototype.resume = function () {
+  var state = this._readableState;
+  if (!state.flowing) {
+    debug('resume');
+    state.flowing = true;
+    resume(this, state);
+  }
+  return this;
+};
+
+function resume(stream, state) {
+  if (!state.resumeScheduled) {
+    state.resumeScheduled = true;
+    pna.nextTick(resume_, stream, state);
+  }
+}
+
+function resume_(stream, state) {
+  if (!state.reading) {
+    debug('resume read 0');
+    stream.read(0);
+  }
+
+  state.resumeScheduled = false;
+  state.awaitDrain = 0;
+  stream.emit('resume');
+  flow(stream);
+  if (state.flowing && !state.reading) stream.read(0);
+}
+
+Readable.prototype.pause = function () {
+  debug('call pause flowing=%j', this._readableState.flowing);
+  if (false !== this._readableState.flowing) {
+    debug('pause');
+    this._readableState.flowing = false;
+    this.emit('pause');
+  }
+  return this;
+};
+
+function flow(stream) {
+  var state = stream._readableState;
+  debug('flow', state.flowing);
+  while (state.flowing && stream.read() !== null) {}
+}
+
+// wrap an old-style stream as the async data source.
+// This is *not* part of the readable stream interface.
+// It is an ugly unfortunate mess of history.
+Readable.prototype.wrap = function (stream) {
+  var _this = this;
+
+  var state = this._readableState;
+  var paused = false;
+
+  stream.on('end', function () {
+    debug('wrapped end');
+    if (state.decoder && !state.ended) {
+      var chunk = state.decoder.end();
+      if (chunk && chunk.length) _this.push(chunk);
+    }
+
+    _this.push(null);
+  });
+
+  stream.on('data', function (chunk) {
+    debug('wrapped data');
+    if (state.decoder) chunk = state.decoder.write(chunk);
+
+    // don't skip over falsy values in objectMode
+    if (state.objectMode && (chunk === null || chunk === undefined)) return;else if (!state.objectMode && (!chunk || !chunk.length)) return;
+
+    var ret = _this.push(chunk);
+    if (!ret) {
+      paused = true;
+      stream.pause();
+    }
+  });
+
+  // proxy all the other methods.
+  // important when wrapping filters and duplexes.
+  for (var i in stream) {
+    if (this[i] === undefined && typeof stream[i] === 'function') {
+      this[i] = function (method) {
+        return function () {
+          return stream[method].apply(stream, arguments);
+        };
+      }(i);
+    }
+  }
+
+  // proxy certain important events.
+  for (var n = 0; n < kProxyEvents.length; n++) {
+    stream.on(kProxyEvents[n], this.emit.bind(this, kProxyEvents[n]));
+  }
+
+  // when we try to consume some more bytes, simply unpause the
+  // underlying stream.
+  this._read = function (n) {
+    debug('wrapped _read', n);
+    if (paused) {
+      paused = false;
+      stream.resume();
+    }
+  };
+
+  return this;
+};
+
+Object.defineProperty(Readable.prototype, 'readableHighWaterMark', {
+  // making it explicit this property is not enumerable
+  // because otherwise some prototype manipulation in
+  // userland will fail
+  enumerable: false,
+  get: function () {
+    return this._readableState.highWaterMark;
+  }
+});
+
+// exposed for testing purposes only.
+Readable._fromList = fromList;
+
+// Pluck off n bytes from an array of buffers.
+// Length is the combined lengths of all the buffers in the list.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function fromList(n, state) {
+  // nothing buffered
+  if (state.length === 0) return null;
+
+  var ret;
+  if (state.objectMode) ret = state.buffer.shift();else if (!n || n >= state.length) {
+    // read it all, truncate the list
+    if (state.decoder) ret = state.buffer.join('');else if (state.buffer.length === 1) ret = state.buffer.head.data;else ret = state.buffer.concat(state.length);
+    state.buffer.clear();
+  } else {
+    // read part of list
+    ret = fromListPartial(n, state.buffer, state.decoder);
+  }
+
+  return ret;
+}
+
+// Extracts only enough buffered data to satisfy the amount requested.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function fromListPartial(n, list, hasStrings) {
+  var ret;
+  if (n < list.head.data.length) {
+    // slice is the same for buffers and strings
+    ret = list.head.data.slice(0, n);
+    list.head.data = list.head.data.slice(n);
+  } else if (n === list.head.data.length) {
+    // first chunk is a perfect match
+    ret = list.shift();
+  } else {
+    // result spans more than one buffer
+    ret = hasStrings ? copyFromBufferString(n, list) : copyFromBuffer(n, list);
+  }
+  return ret;
+}
+
+// Copies a specified amount of characters from the list of buffered data
+// chunks.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function copyFromBufferString(n, list) {
+  var p = list.head;
+  var c = 1;
+  var ret = p.data;
+  n -= ret.length;
+  while (p = p.next) {
+    var str = p.data;
+    var nb = n > str.length ? str.length : n;
+    if (nb === str.length) ret += str;else ret += str.slice(0, n);
+    n -= nb;
+    if (n === 0) {
+      if (nb === str.length) {
+        ++c;
+        if (p.next) list.head = p.next;else list.head = list.tail = null;
+      } else {
+        list.head = p;
+        p.data = str.slice(nb);
+      }
+      break;
+    }
+    ++c;
+  }
+  list.length -= c;
+  return ret;
+}
+
+// Copies a specified amount of bytes from the list of buffered data chunks.
+// This function is designed to be inlinable, so please take care when making
+// changes to the function body.
+function copyFromBuffer(n, list) {
+  var ret = Buffer.allocUnsafe(n);
+  var p = list.head;
+  var c = 1;
+  p.data.copy(ret);
+  n -= p.data.length;
+  while (p = p.next) {
+    var buf = p.data;
+    var nb = n > buf.length ? buf.length : n;
+    buf.copy(ret, ret.length - n, 0, nb);
+    n -= nb;
+    if (n === 0) {
+      if (nb === buf.length) {
+        ++c;
+        if (p.next) list.head = p.next;else list.head = list.tail = null;
+      } else {
+        list.head = p;
+        p.data = buf.slice(nb);
+      }
+      break;
+    }
+    ++c;
+  }
+  list.length -= c;
+  return ret;
+}
+
+function endReadable(stream) {
+  var state = stream._readableState;
+
+  // If we get here before consuming all the bytes, then that is a
+  // bug in node.  Should never happen.
+  if (state.length > 0) throw new Error('"endReadable()" called on non-empty stream');
+
+  if (!state.endEmitted) {
+    state.ended = true;
+    pna.nextTick(endReadableNT, state, stream);
+  }
+}
+
+function endReadableNT(state, stream) {
+  // Check that we didn't get one last unshift.
+  if (!state.endEmitted && state.length === 0) {
+    state.endEmitted = true;
+    stream.readable = false;
+    stream.emit('end');
+  }
+}
+
+function indexOf(xs, x) {
+  for (var i = 0, l = xs.length; i < l; i++) {
+    if (xs[i] === x) return i;
+  }
+  return -1;
+}
+},{"process-nextick-args":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process-nextick-args/index.js","isarray":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/isarray/index.js","events":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/events/events.js","./internal/streams/stream":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/stream-browser.js","safe-buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/safe-buffer/index.js","core-util-is":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js","util":"../../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/_empty.js","./internal/streams/BufferList":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/BufferList.js","./internal/streams/destroy":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/internal/streams/destroy.js","./_stream_duplex":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js","string_decoder/":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/node_modules/string_decoder/lib/string_decoder.js","process":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/process/browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_transform.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// a transform stream is a readable/writable stream where you do
+// something with the data.  Sometimes it's called a "filter",
+// but that's not a great name for it, since that implies a thing where
+// some bits pass through, and others are simply ignored.  (That would
+// be a valid example of a transform, of course.)
+//
+// While the output is causally related to the input, it's not a
+// necessarily symmetric or synchronous transformation.  For example,
+// a zlib stream might take multiple plain-text writes(), and then
+// emit a single compressed chunk some time in the future.
+//
+// Here's how this works:
+//
+// The Transform stream has all the aspects of the readable and writable
+// stream classes.  When you write(chunk), that calls _write(chunk,cb)
+// internally, and returns false if there's a lot of pending writes
+// buffered up.  When you call read(), that calls _read(n) until
+// there's enough pending readable data buffered up.
+//
+// In a transform stream, the written data is placed in a buffer.  When
+// _read(n) is called, it transforms the queued up data, calling the
+// buffered _write cb's as it consumes chunks.  If consuming a single
+// written chunk would result in multiple output chunks, then the first
+// outputted bit calls the readcb, and subsequent chunks just go into
+// the read buffer, and will cause it to emit 'readable' if necessary.
+//
+// This way, back-pressure is actually determined by the reading side,
+// since _read has to be called to start processing a new chunk.  However,
+// a pathological inflate type of transform can cause excessive buffering
+// here.  For example, imagine a stream where every byte of input is
+// interpreted as an integer from 0-255, and then results in that many
+// bytes of output.  Writing the 4 bytes {ff,ff,ff,ff} would result in
+// 1kb of data being output.  In this case, you could write a very small
+// amount of input, and end up with a very large amount of output.  In
+// such a pathological inflating mechanism, there'd be no way to tell
+// the system to stop doing the transform.  A single 4MB write could
+// cause the system to run out of memory.
+//
+// However, even in such a pathological case, only a single written chunk
+// would be consumed, and then the rest would wait (un-transformed) until
+// the results of the previous transformed chunk were consumed.
+
+'use strict';
+
+module.exports = Transform;
+
+var Duplex = require('./_stream_duplex');
+
+/*<replacement>*/
+var util = Object.create(require('core-util-is'));
+util.inherits = require('inherits');
+/*</replacement>*/
+
+util.inherits(Transform, Duplex);
+
+function afterTransform(er, data) {
+  var ts = this._transformState;
+  ts.transforming = false;
+
+  var cb = ts.writecb;
+
+  if (!cb) {
+    return this.emit('error', new Error('write callback called multiple times'));
+  }
+
+  ts.writechunk = null;
+  ts.writecb = null;
+
+  if (data != null) // single equals check for both `null` and `undefined`
+    this.push(data);
+
+  cb(er);
+
+  var rs = this._readableState;
+  rs.reading = false;
+  if (rs.needReadable || rs.length < rs.highWaterMark) {
+    this._read(rs.highWaterMark);
+  }
+}
+
+function Transform(options) {
+  if (!(this instanceof Transform)) return new Transform(options);
+
+  Duplex.call(this, options);
+
+  this._transformState = {
+    afterTransform: afterTransform.bind(this),
+    needTransform: false,
+    transforming: false,
+    writecb: null,
+    writechunk: null,
+    writeencoding: null
+  };
+
+  // start out asking for a readable event once data is transformed.
+  this._readableState.needReadable = true;
+
+  // we have implemented the _read method, and done the other things
+  // that Readable wants before the first _read call, so unset the
+  // sync guard flag.
+  this._readableState.sync = false;
+
+  if (options) {
+    if (typeof options.transform === 'function') this._transform = options.transform;
+
+    if (typeof options.flush === 'function') this._flush = options.flush;
+  }
+
+  // When the writable side finishes, then flush out anything remaining.
+  this.on('prefinish', prefinish);
+}
+
+function prefinish() {
+  var _this = this;
+
+  if (typeof this._flush === 'function') {
+    this._flush(function (er, data) {
+      done(_this, er, data);
+    });
+  } else {
+    done(this, null, null);
+  }
+}
+
+Transform.prototype.push = function (chunk, encoding) {
+  this._transformState.needTransform = false;
+  return Duplex.prototype.push.call(this, chunk, encoding);
+};
+
+// This is the part where you do stuff!
+// override this function in implementation classes.
+// 'chunk' is an input chunk.
+//
+// Call `push(newChunk)` to pass along transformed output
+// to the readable side.  You may call 'push' zero or more times.
+//
+// Call `cb(err)` when you are done with this chunk.  If you pass
+// an error, then that'll put the hurt on the whole operation.  If you
+// never call cb(), then you'll never get another chunk.
+Transform.prototype._transform = function (chunk, encoding, cb) {
+  throw new Error('_transform() is not implemented');
+};
+
+Transform.prototype._write = function (chunk, encoding, cb) {
+  var ts = this._transformState;
+  ts.writecb = cb;
+  ts.writechunk = chunk;
+  ts.writeencoding = encoding;
+  if (!ts.transforming) {
+    var rs = this._readableState;
+    if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
+  }
+};
+
+// Doesn't matter what the args are here.
+// _transform does all the work.
+// That we got here means that the readable side wants more data.
+Transform.prototype._read = function (n) {
+  var ts = this._transformState;
+
+  if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
+    ts.transforming = true;
+    this._transform(ts.writechunk, ts.writeencoding, ts.afterTransform);
+  } else {
+    // mark that we need a transform, so that any data that comes in
+    // will get processed, now that we've asked for it.
+    ts.needTransform = true;
+  }
+};
+
+Transform.prototype._destroy = function (err, cb) {
+  var _this2 = this;
+
+  Duplex.prototype._destroy.call(this, err, function (err2) {
+    cb(err2);
+    _this2.emit('close');
+  });
+};
+
+function done(stream, er, data) {
+  if (er) return stream.emit('error', er);
+
+  if (data != null) // single equals check for both `null` and `undefined`
+    stream.push(data);
+
+  // if there's nothing in the write buffer, then that means
+  // that nothing more will ever be provided
+  if (stream._writableState.length) throw new Error('Calling transform done when ws.length != 0');
+
+  if (stream._transformState.transforming) throw new Error('Calling transform done when still transforming');
+
+  return stream.push(null);
+}
+},{"./_stream_duplex":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js","core-util-is":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_passthrough.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// a passthrough stream.
+// basically just the most minimal sort of Transform stream.
+// Every written chunk gets output as-is.
+
+'use strict';
+
+module.exports = PassThrough;
+
+var Transform = require('./_stream_transform');
+
+/*<replacement>*/
+var util = Object.create(require('core-util-is'));
+util.inherits = require('inherits');
+/*</replacement>*/
+
+util.inherits(PassThrough, Transform);
+
+function PassThrough(options) {
+  if (!(this instanceof PassThrough)) return new PassThrough(options);
+
+  Transform.call(this, options);
+}
+
+PassThrough.prototype._transform = function (chunk, encoding, cb) {
+  cb(null, chunk);
+};
+},{"./_stream_transform":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_transform.js","core-util-is":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/core-util-is/lib/util.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/readable-browser.js":[function(require,module,exports) {
+exports = module.exports = require('./lib/_stream_readable.js');
+exports.Stream = exports;
+exports.Readable = exports;
+exports.Writable = require('./lib/_stream_writable.js');
+exports.Duplex = require('./lib/_stream_duplex.js');
+exports.Transform = require('./lib/_stream_transform.js');
+exports.PassThrough = require('./lib/_stream_passthrough.js');
+
+},{"./lib/_stream_readable.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_readable.js","./lib/_stream_writable.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_writable.js","./lib/_stream_duplex.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js","./lib/_stream_transform.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_transform.js","./lib/_stream_passthrough.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_passthrough.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/writable-browser.js":[function(require,module,exports) {
+module.exports = require('./lib/_stream_writable.js');
+
+},{"./lib/_stream_writable.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_writable.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/duplex-browser.js":[function(require,module,exports) {
+module.exports = require('./lib/_stream_duplex.js');
+
+},{"./lib/_stream_duplex.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/lib/_stream_duplex.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/transform.js":[function(require,module,exports) {
+module.exports = require('./readable').Transform
+
+},{"./readable":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/readable-browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/passthrough.js":[function(require,module,exports) {
+module.exports = require('./readable').PassThrough
+
+},{"./readable":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/readable-browser.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/stream-browserify/index.js":[function(require,module,exports) {
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+module.exports = Stream;
+
+var EE = require('events').EventEmitter;
+var inherits = require('inherits');
+
+inherits(Stream, EE);
+Stream.Readable = require('readable-stream/readable.js');
+Stream.Writable = require('readable-stream/writable.js');
+Stream.Duplex = require('readable-stream/duplex.js');
+Stream.Transform = require('readable-stream/transform.js');
+Stream.PassThrough = require('readable-stream/passthrough.js');
+
+// Backwards-compat with node 0.4.x
+Stream.Stream = Stream;
+
+
+
+// old-style streams.  Note that the pipe method (the only relevant
+// part of this class) is overridden in the Readable class.
+
+function Stream() {
+  EE.call(this);
+}
+
+Stream.prototype.pipe = function(dest, options) {
+  var source = this;
+
+  function ondata(chunk) {
+    if (dest.writable) {
+      if (false === dest.write(chunk) && source.pause) {
+        source.pause();
+      }
+    }
+  }
+
+  source.on('data', ondata);
+
+  function ondrain() {
+    if (source.readable && source.resume) {
+      source.resume();
+    }
+  }
+
+  dest.on('drain', ondrain);
+
+  // If the 'end' option is not supplied, dest.end() will be called when
+  // source gets the 'end' or 'close' events.  Only dest.end() once.
+  if (!dest._isStdio && (!options || options.end !== false)) {
+    source.on('end', onend);
+    source.on('close', onclose);
+  }
+
+  var didOnEnd = false;
+  function onend() {
+    if (didOnEnd) return;
+    didOnEnd = true;
+
+    dest.end();
+  }
+
+
+  function onclose() {
+    if (didOnEnd) return;
+    didOnEnd = true;
+
+    if (typeof dest.destroy === 'function') dest.destroy();
+  }
+
+  // don't leave dangling pipes when there are errors.
+  function onerror(er) {
+    cleanup();
+    if (EE.listenerCount(this, 'error') === 0) {
+      throw er; // Unhandled stream error in pipe.
+    }
+  }
+
+  source.on('error', onerror);
+  dest.on('error', onerror);
+
+  // remove all the event listeners that were added.
+  function cleanup() {
+    source.removeListener('data', ondata);
+    dest.removeListener('drain', ondrain);
+
+    source.removeListener('end', onend);
+    source.removeListener('close', onclose);
+
+    source.removeListener('error', onerror);
+    dest.removeListener('error', onerror);
+
+    source.removeListener('end', cleanup);
+    source.removeListener('close', cleanup);
+
+    dest.removeListener('close', cleanup);
+  }
+
+  source.on('end', cleanup);
+  source.on('close', cleanup);
+
+  dest.on('close', cleanup);
+
+  dest.emit('pipe', source);
+
+  // Allow for unix-like usage: A.pipe(B).pipe(C)
+  return dest;
+};
+
+},{"events":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/events/events.js","inherits":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/inherits/inherits_browser.js","readable-stream/readable.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/readable-browser.js","readable-stream/writable.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/writable-browser.js","readable-stream/duplex.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/duplex-browser.js","readable-stream/transform.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/transform.js","readable-stream/passthrough.js":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/readable-stream/passthrough.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/string_decoder/node_modules/safe-buffer/index.js":[function(require,module,exports) {
+
+/*! safe-buffer. MIT License. Feross Aboukhadijeh <https://feross.org/opensource> */
+/* eslint-disable node/no-deprecated-api */
+var buffer = require('buffer')
+var Buffer = buffer.Buffer
+
+// alternative to using Object.keys for old browsers
+function copyProps (src, dst) {
+  for (var key in src) {
+    dst[key] = src[key]
+  }
+}
+if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+  module.exports = buffer
+} else {
+  // Copy properties from require('buffer')
+  copyProps(buffer, exports)
+  exports.Buffer = SafeBuffer
+}
+
+function SafeBuffer (arg, encodingOrOffset, length) {
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.prototype = Object.create(Buffer.prototype)
+
+// Copy static methods from Buffer
+copyProps(Buffer, SafeBuffer)
+
+SafeBuffer.from = function (arg, encodingOrOffset, length) {
+  if (typeof arg === 'number') {
+    throw new TypeError('Argument must not be a number')
+  }
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.alloc = function (size, fill, encoding) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  var buf = Buffer(size)
+  if (fill !== undefined) {
+    if (typeof encoding === 'string') {
+      buf.fill(fill, encoding)
+    } else {
+      buf.fill(fill)
+    }
+  } else {
+    buf.fill(0)
+  }
+  return buf
+}
+
+SafeBuffer.allocUnsafe = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return Buffer(size)
+}
+
+SafeBuffer.allocUnsafeSlow = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return buffer.SlowBuffer(size)
+}
+
+},{"buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/string_decoder/lib/string_decoder.js":[function(require,module,exports) {
+
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+/*<replacement>*/
+
+var Buffer = require('safe-buffer').Buffer;
+/*</replacement>*/
+
+var isEncoding = Buffer.isEncoding || function (encoding) {
+  encoding = '' + encoding;
+  switch (encoding && encoding.toLowerCase()) {
+    case 'hex':case 'utf8':case 'utf-8':case 'ascii':case 'binary':case 'base64':case 'ucs2':case 'ucs-2':case 'utf16le':case 'utf-16le':case 'raw':
+      return true;
+    default:
+      return false;
+  }
+};
+
+function _normalizeEncoding(enc) {
+  if (!enc) return 'utf8';
+  var retried;
+  while (true) {
+    switch (enc) {
+      case 'utf8':
+      case 'utf-8':
+        return 'utf8';
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return 'utf16le';
+      case 'latin1':
+      case 'binary':
+        return 'latin1';
+      case 'base64':
+      case 'ascii':
+      case 'hex':
+        return enc;
+      default:
+        if (retried) return; // undefined
+        enc = ('' + enc).toLowerCase();
+        retried = true;
+    }
+  }
+};
+
+// Do not cache `Buffer.isEncoding` when checking encoding names as some
+// modules monkey-patch it to support additional encodings
+function normalizeEncoding(enc) {
+  var nenc = _normalizeEncoding(enc);
+  if (typeof nenc !== 'string' && (Buffer.isEncoding === isEncoding || !isEncoding(enc))) throw new Error('Unknown encoding: ' + enc);
+  return nenc || enc;
+}
+
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters.
+exports.StringDecoder = StringDecoder;
+function StringDecoder(encoding) {
+  this.encoding = normalizeEncoding(encoding);
+  var nb;
+  switch (this.encoding) {
+    case 'utf16le':
+      this.text = utf16Text;
+      this.end = utf16End;
+      nb = 4;
+      break;
+    case 'utf8':
+      this.fillLast = utf8FillLast;
+      nb = 4;
+      break;
+    case 'base64':
+      this.text = base64Text;
+      this.end = base64End;
+      nb = 3;
+      break;
+    default:
+      this.write = simpleWrite;
+      this.end = simpleEnd;
+      return;
+  }
+  this.lastNeed = 0;
+  this.lastTotal = 0;
+  this.lastChar = Buffer.allocUnsafe(nb);
+}
+
+StringDecoder.prototype.write = function (buf) {
+  if (buf.length === 0) return '';
+  var r;
+  var i;
+  if (this.lastNeed) {
+    r = this.fillLast(buf);
+    if (r === undefined) return '';
+    i = this.lastNeed;
+    this.lastNeed = 0;
+  } else {
+    i = 0;
+  }
+  if (i < buf.length) return r ? r + this.text(buf, i) : this.text(buf, i);
+  return r || '';
+};
+
+StringDecoder.prototype.end = utf8End;
+
+// Returns only complete characters in a Buffer
+StringDecoder.prototype.text = utf8Text;
+
+// Attempts to complete a partial non-UTF-8 character using bytes from a Buffer
+StringDecoder.prototype.fillLast = function (buf) {
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, this.lastTotal - this.lastNeed, 0, buf.length);
+  this.lastNeed -= buf.length;
+};
+
+// Checks the type of a UTF-8 byte, whether it's ASCII, a leading byte, or a
+// continuation byte. If an invalid byte is detected, -2 is returned.
+function utf8CheckByte(byte) {
+  if (byte <= 0x7F) return 0;else if (byte >> 5 === 0x06) return 2;else if (byte >> 4 === 0x0E) return 3;else if (byte >> 3 === 0x1E) return 4;
+  return byte >> 6 === 0x02 ? -1 : -2;
+}
+
+// Checks at most 3 bytes at the end of a Buffer in order to detect an
+// incomplete multi-byte UTF-8 character. The total number of bytes (2, 3, or 4)
+// needed to complete the UTF-8 character (if applicable) are returned.
+function utf8CheckIncomplete(self, buf, i) {
+  var j = buf.length - 1;
+  if (j < i) return 0;
+  var nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 1;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) self.lastNeed = nb - 2;
+    return nb;
+  }
+  if (--j < i || nb === -2) return 0;
+  nb = utf8CheckByte(buf[j]);
+  if (nb >= 0) {
+    if (nb > 0) {
+      if (nb === 2) nb = 0;else self.lastNeed = nb - 3;
+    }
+    return nb;
+  }
+  return 0;
+}
+
+// Validates as many continuation bytes for a multi-byte UTF-8 character as
+// needed or are available. If we see a non-continuation byte where we expect
+// one, we "replace" the validated continuation bytes we've seen so far with
+// a single UTF-8 replacement character ('\ufffd'), to match v8's UTF-8 decoding
+// behavior. The continuation byte check is included three times in the case
+// where all of the continuation bytes for a character exist in the same buffer.
+// It is also done this way as a slight performance increase instead of using a
+// loop.
+function utf8CheckExtraBytes(self, buf, p) {
+  if ((buf[0] & 0xC0) !== 0x80) {
+    self.lastNeed = 0;
+    return '\ufffd';
+  }
+  if (self.lastNeed > 1 && buf.length > 1) {
+    if ((buf[1] & 0xC0) !== 0x80) {
+      self.lastNeed = 1;
+      return '\ufffd';
+    }
+    if (self.lastNeed > 2 && buf.length > 2) {
+      if ((buf[2] & 0xC0) !== 0x80) {
+        self.lastNeed = 2;
+        return '\ufffd';
+      }
+    }
+  }
+}
+
+// Attempts to complete a multi-byte UTF-8 character using bytes from a Buffer.
+function utf8FillLast(buf) {
+  var p = this.lastTotal - this.lastNeed;
+  var r = utf8CheckExtraBytes(this, buf, p);
+  if (r !== undefined) return r;
+  if (this.lastNeed <= buf.length) {
+    buf.copy(this.lastChar, p, 0, this.lastNeed);
+    return this.lastChar.toString(this.encoding, 0, this.lastTotal);
+  }
+  buf.copy(this.lastChar, p, 0, buf.length);
+  this.lastNeed -= buf.length;
+}
+
+// Returns all complete UTF-8 characters in a Buffer. If the Buffer ended on a
+// partial character, the character's bytes are buffered until the required
+// number of bytes are available.
+function utf8Text(buf, i) {
+  var total = utf8CheckIncomplete(this, buf, i);
+  if (!this.lastNeed) return buf.toString('utf8', i);
+  this.lastTotal = total;
+  var end = buf.length - (total - this.lastNeed);
+  buf.copy(this.lastChar, 0, end);
+  return buf.toString('utf8', i, end);
+}
+
+// For UTF-8, a replacement character is added when ending on a partial
+// character.
+function utf8End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + '\ufffd';
+  return r;
+}
+
+// UTF-16LE typically needs two bytes per character, but even if we have an even
+// number of bytes available, we need to check if we end on a leading/high
+// surrogate. In that case, we need to wait for the next two bytes in order to
+// decode the last character properly.
+function utf16Text(buf, i) {
+  if ((buf.length - i) % 2 === 0) {
+    var r = buf.toString('utf16le', i);
+    if (r) {
+      var c = r.charCodeAt(r.length - 1);
+      if (c >= 0xD800 && c <= 0xDBFF) {
+        this.lastNeed = 2;
+        this.lastTotal = 4;
+        this.lastChar[0] = buf[buf.length - 2];
+        this.lastChar[1] = buf[buf.length - 1];
+        return r.slice(0, -1);
+      }
+    }
+    return r;
+  }
+  this.lastNeed = 1;
+  this.lastTotal = 2;
+  this.lastChar[0] = buf[buf.length - 1];
+  return buf.toString('utf16le', i, buf.length - 1);
+}
+
+// For UTF-16LE we do not explicitly append special replacement characters if we
+// end on a partial character, we simply let v8 handle that.
+function utf16End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) {
+    var end = this.lastTotal - this.lastNeed;
+    return r + this.lastChar.toString('utf16le', 0, end);
+  }
+  return r;
+}
+
+function base64Text(buf, i) {
+  var n = (buf.length - i) % 3;
+  if (n === 0) return buf.toString('base64', i);
+  this.lastNeed = 3 - n;
+  this.lastTotal = 3;
+  if (n === 1) {
+    this.lastChar[0] = buf[buf.length - 1];
+  } else {
+    this.lastChar[0] = buf[buf.length - 2];
+    this.lastChar[1] = buf[buf.length - 1];
+  }
+  return buf.toString('base64', i, buf.length - n);
+}
+
+function base64End(buf) {
+  var r = buf && buf.length ? this.write(buf) : '';
+  if (this.lastNeed) return r + this.lastChar.toString('base64', 0, 3 - this.lastNeed);
+  return r;
+}
+
+// Pass bytes on through for single-byte encodings (e.g. ascii, latin1, hex)
+function simpleWrite(buf) {
+  return buf.toString(this.encoding);
+}
+
+function simpleEnd(buf) {
+  return buf && buf.length ? this.write(buf) : '';
+}
+},{"safe-buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/string_decoder/node_modules/safe-buffer/index.js"}],"../node_modules/sax/lib/sax.js":[function(require,module,exports) {
+var Buffer = require("buffer").Buffer;
+;(function (sax) { // wrapper for non-node envs
+  sax.parser = function (strict, opt) { return new SAXParser(strict, opt) }
+  sax.SAXParser = SAXParser
+  sax.SAXStream = SAXStream
+  sax.createStream = createStream
+
+  // When we pass the MAX_BUFFER_LENGTH position, start checking for buffer overruns.
+  // When we check, schedule the next check for MAX_BUFFER_LENGTH - (max(buffer lengths)),
+  // since that's the earliest that a buffer overrun could occur.  This way, checks are
+  // as rare as required, but as often as necessary to ensure never crossing this bound.
+  // Furthermore, buffers are only tested at most once per write(), so passing a very
+  // large string into write() might have undesirable effects, but this is manageable by
+  // the caller, so it is assumed to be safe.  Thus, a call to write() may, in the extreme
+  // edge case, result in creating at most one complete copy of the string passed in.
+  // Set to Infinity to have unlimited buffers.
+  sax.MAX_BUFFER_LENGTH = 64 * 1024
+
+  var buffers = [
+    'comment', 'sgmlDecl', 'textNode', 'tagName', 'doctype',
+    'procInstName', 'procInstBody', 'entity', 'attribName',
+    'attribValue', 'cdata', 'script'
+  ]
+
+  sax.EVENTS = [
+    'text',
+    'processinginstruction',
+    'sgmldeclaration',
+    'doctype',
+    'comment',
+    'opentagstart',
+    'attribute',
+    'opentag',
+    'closetag',
+    'opencdata',
+    'cdata',
+    'closecdata',
+    'error',
+    'end',
+    'ready',
+    'script',
+    'opennamespace',
+    'closenamespace'
+  ]
+
+  function SAXParser (strict, opt) {
+    if (!(this instanceof SAXParser)) {
+      return new SAXParser(strict, opt)
+    }
+
+    var parser = this
+    clearBuffers(parser)
+    parser.q = parser.c = ''
+    parser.bufferCheckPosition = sax.MAX_BUFFER_LENGTH
+    parser.opt = opt || {}
+    parser.opt.lowercase = parser.opt.lowercase || parser.opt.lowercasetags
+    parser.looseCase = parser.opt.lowercase ? 'toLowerCase' : 'toUpperCase'
+    parser.tags = []
+    parser.closed = parser.closedRoot = parser.sawRoot = false
+    parser.tag = parser.error = null
+    parser.strict = !!strict
+    parser.noscript = !!(strict || parser.opt.noscript)
+    parser.state = S.BEGIN
+    parser.strictEntities = parser.opt.strictEntities
+    parser.ENTITIES = parser.strictEntities ? Object.create(sax.XML_ENTITIES) : Object.create(sax.ENTITIES)
+    parser.attribList = []
+
+    // namespaces form a prototype chain.
+    // it always points at the current tag,
+    // which protos to its parent tag.
+    if (parser.opt.xmlns) {
+      parser.ns = Object.create(rootNS)
+    }
+
+    // mostly just for error reporting
+    parser.trackPosition = parser.opt.position !== false
+    if (parser.trackPosition) {
+      parser.position = parser.line = parser.column = 0
+    }
+    emit(parser, 'onready')
+  }
+
+  if (!Object.create) {
+    Object.create = function (o) {
+      function F () {}
+      F.prototype = o
+      var newf = new F()
+      return newf
+    }
+  }
+
+  if (!Object.keys) {
+    Object.keys = function (o) {
+      var a = []
+      for (var i in o) if (o.hasOwnProperty(i)) a.push(i)
+      return a
+    }
+  }
+
+  function checkBufferLength (parser) {
+    var maxAllowed = Math.max(sax.MAX_BUFFER_LENGTH, 10)
+    var maxActual = 0
+    for (var i = 0, l = buffers.length; i < l; i++) {
+      var len = parser[buffers[i]].length
+      if (len > maxAllowed) {
+        // Text/cdata nodes can get big, and since they're buffered,
+        // we can get here under normal conditions.
+        // Avoid issues by emitting the text node now,
+        // so at least it won't get any bigger.
+        switch (buffers[i]) {
+          case 'textNode':
+            closeText(parser)
+            break
+
+          case 'cdata':
+            emitNode(parser, 'oncdata', parser.cdata)
+            parser.cdata = ''
+            break
+
+          case 'script':
+            emitNode(parser, 'onscript', parser.script)
+            parser.script = ''
+            break
+
+          default:
+            error(parser, 'Max buffer length exceeded: ' + buffers[i])
+        }
+      }
+      maxActual = Math.max(maxActual, len)
+    }
+    // schedule the next check for the earliest possible buffer overrun.
+    var m = sax.MAX_BUFFER_LENGTH - maxActual
+    parser.bufferCheckPosition = m + parser.position
+  }
+
+  function clearBuffers (parser) {
+    for (var i = 0, l = buffers.length; i < l; i++) {
+      parser[buffers[i]] = ''
+    }
+  }
+
+  function flushBuffers (parser) {
+    closeText(parser)
+    if (parser.cdata !== '') {
+      emitNode(parser, 'oncdata', parser.cdata)
+      parser.cdata = ''
+    }
+    if (parser.script !== '') {
+      emitNode(parser, 'onscript', parser.script)
+      parser.script = ''
+    }
+  }
+
+  SAXParser.prototype = {
+    end: function () { end(this) },
+    write: write,
+    resume: function () { this.error = null; return this },
+    close: function () { return this.write(null) },
+    flush: function () { flushBuffers(this) }
+  }
+
+  var Stream
+  try {
+    Stream = require('stream').Stream
+  } catch (ex) {
+    Stream = function () {}
+  }
+
+  var streamWraps = sax.EVENTS.filter(function (ev) {
+    return ev !== 'error' && ev !== 'end'
+  })
+
+  function createStream (strict, opt) {
+    return new SAXStream(strict, opt)
+  }
+
+  function SAXStream (strict, opt) {
+    if (!(this instanceof SAXStream)) {
+      return new SAXStream(strict, opt)
+    }
+
+    Stream.apply(this)
+
+    this._parser = new SAXParser(strict, opt)
+    this.writable = true
+    this.readable = true
+
+    var me = this
+
+    this._parser.onend = function () {
+      me.emit('end')
+    }
+
+    this._parser.onerror = function (er) {
+      me.emit('error', er)
+
+      // if didn't throw, then means error was handled.
+      // go ahead and clear error, so we can write again.
+      me._parser.error = null
+    }
+
+    this._decoder = null
+
+    streamWraps.forEach(function (ev) {
+      Object.defineProperty(me, 'on' + ev, {
+        get: function () {
+          return me._parser['on' + ev]
+        },
+        set: function (h) {
+          if (!h) {
+            me.removeAllListeners(ev)
+            me._parser['on' + ev] = h
+            return h
+          }
+          me.on(ev, h)
+        },
+        enumerable: true,
+        configurable: false
+      })
+    })
+  }
+
+  SAXStream.prototype = Object.create(Stream.prototype, {
+    constructor: {
+      value: SAXStream
+    }
+  })
+
+  SAXStream.prototype.write = function (data) {
+    if (typeof Buffer === 'function' &&
+      typeof Buffer.isBuffer === 'function' &&
+      Buffer.isBuffer(data)) {
+      if (!this._decoder) {
+        var SD = require('string_decoder').StringDecoder
+        this._decoder = new SD('utf8')
+      }
+      data = this._decoder.write(data)
+    }
+
+    this._parser.write(data.toString())
+    this.emit('data', data)
+    return true
+  }
+
+  SAXStream.prototype.end = function (chunk) {
+    if (chunk && chunk.length) {
+      this.write(chunk)
+    }
+    this._parser.end()
+    return true
+  }
+
+  SAXStream.prototype.on = function (ev, handler) {
+    var me = this
+    if (!me._parser['on' + ev] && streamWraps.indexOf(ev) !== -1) {
+      me._parser['on' + ev] = function () {
+        var args = arguments.length === 1 ? [arguments[0]] : Array.apply(null, arguments)
+        args.splice(0, 0, ev)
+        me.emit.apply(me, args)
+      }
+    }
+
+    return Stream.prototype.on.call(me, ev, handler)
+  }
+
+  // this really needs to be replaced with character classes.
+  // XML allows all manner of ridiculous numbers and digits.
+  var CDATA = '[CDATA['
+  var DOCTYPE = 'DOCTYPE'
+  var XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
+  var XMLNS_NAMESPACE = 'http://www.w3.org/2000/xmlns/'
+  var rootNS = { xml: XML_NAMESPACE, xmlns: XMLNS_NAMESPACE }
+
+  // http://www.w3.org/TR/REC-xml/#NT-NameStartChar
+  // This implementation works on strings, a single character at a time
+  // as such, it cannot ever support astral-plane characters (10000-EFFFF)
+  // without a significant breaking change to either this  parser, or the
+  // JavaScript language.  Implementation of an emoji-capable xml parser
+  // is left as an exercise for the reader.
+  var nameStart = /[:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/
+
+  var nameBody = /[:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040.\d-]/
+
+  var entityStart = /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD]/
+  var entityBody = /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040.\d-]/
+
+  function isWhitespace (c) {
+    return c === ' ' || c === '\n' || c === '\r' || c === '\t'
+  }
+
+  function isQuote (c) {
+    return c === '"' || c === '\''
+  }
+
+  function isAttribEnd (c) {
+    return c === '>' || isWhitespace(c)
+  }
+
+  function isMatch (regex, c) {
+    return regex.test(c)
+  }
+
+  function notMatch (regex, c) {
+    return !isMatch(regex, c)
+  }
+
+  var S = 0
+  sax.STATE = {
+    BEGIN: S++, // leading byte order mark or whitespace
+    BEGIN_WHITESPACE: S++, // leading whitespace
+    TEXT: S++, // general stuff
+    TEXT_ENTITY: S++, // &amp and such.
+    OPEN_WAKA: S++, // <
+    SGML_DECL: S++, // <!BLARG
+    SGML_DECL_QUOTED: S++, // <!BLARG foo "bar
+    DOCTYPE: S++, // <!DOCTYPE
+    DOCTYPE_QUOTED: S++, // <!DOCTYPE "//blah
+    DOCTYPE_DTD: S++, // <!DOCTYPE "//blah" [ ...
+    DOCTYPE_DTD_QUOTED: S++, // <!DOCTYPE "//blah" [ "foo
+    COMMENT_STARTING: S++, // <!-
+    COMMENT: S++, // <!--
+    COMMENT_ENDING: S++, // <!-- blah -
+    COMMENT_ENDED: S++, // <!-- blah --
+    CDATA: S++, // <![CDATA[ something
+    CDATA_ENDING: S++, // ]
+    CDATA_ENDING_2: S++, // ]]
+    PROC_INST: S++, // <?hi
+    PROC_INST_BODY: S++, // <?hi there
+    PROC_INST_ENDING: S++, // <?hi "there" ?
+    OPEN_TAG: S++, // <strong
+    OPEN_TAG_SLASH: S++, // <strong /
+    ATTRIB: S++, // <a
+    ATTRIB_NAME: S++, // <a foo
+    ATTRIB_NAME_SAW_WHITE: S++, // <a foo _
+    ATTRIB_VALUE: S++, // <a foo=
+    ATTRIB_VALUE_QUOTED: S++, // <a foo="bar
+    ATTRIB_VALUE_CLOSED: S++, // <a foo="bar"
+    ATTRIB_VALUE_UNQUOTED: S++, // <a foo=bar
+    ATTRIB_VALUE_ENTITY_Q: S++, // <foo bar="&quot;"
+    ATTRIB_VALUE_ENTITY_U: S++, // <foo bar=&quot
+    CLOSE_TAG: S++, // </a
+    CLOSE_TAG_SAW_WHITE: S++, // </a   >
+    SCRIPT: S++, // <script> ...
+    SCRIPT_ENDING: S++ // <script> ... <
+  }
+
+  sax.XML_ENTITIES = {
+    'amp': '&',
+    'gt': '>',
+    'lt': '<',
+    'quot': '"',
+    'apos': "'"
+  }
+
+  sax.ENTITIES = {
+    'amp': '&',
+    'gt': '>',
+    'lt': '<',
+    'quot': '"',
+    'apos': "'",
+    'AElig': 198,
+    'Aacute': 193,
+    'Acirc': 194,
+    'Agrave': 192,
+    'Aring': 197,
+    'Atilde': 195,
+    'Auml': 196,
+    'Ccedil': 199,
+    'ETH': 208,
+    'Eacute': 201,
+    'Ecirc': 202,
+    'Egrave': 200,
+    'Euml': 203,
+    'Iacute': 205,
+    'Icirc': 206,
+    'Igrave': 204,
+    'Iuml': 207,
+    'Ntilde': 209,
+    'Oacute': 211,
+    'Ocirc': 212,
+    'Ograve': 210,
+    'Oslash': 216,
+    'Otilde': 213,
+    'Ouml': 214,
+    'THORN': 222,
+    'Uacute': 218,
+    'Ucirc': 219,
+    'Ugrave': 217,
+    'Uuml': 220,
+    'Yacute': 221,
+    'aacute': 225,
+    'acirc': 226,
+    'aelig': 230,
+    'agrave': 224,
+    'aring': 229,
+    'atilde': 227,
+    'auml': 228,
+    'ccedil': 231,
+    'eacute': 233,
+    'ecirc': 234,
+    'egrave': 232,
+    'eth': 240,
+    'euml': 235,
+    'iacute': 237,
+    'icirc': 238,
+    'igrave': 236,
+    'iuml': 239,
+    'ntilde': 241,
+    'oacute': 243,
+    'ocirc': 244,
+    'ograve': 242,
+    'oslash': 248,
+    'otilde': 245,
+    'ouml': 246,
+    'szlig': 223,
+    'thorn': 254,
+    'uacute': 250,
+    'ucirc': 251,
+    'ugrave': 249,
+    'uuml': 252,
+    'yacute': 253,
+    'yuml': 255,
+    'copy': 169,
+    'reg': 174,
+    'nbsp': 160,
+    'iexcl': 161,
+    'cent': 162,
+    'pound': 163,
+    'curren': 164,
+    'yen': 165,
+    'brvbar': 166,
+    'sect': 167,
+    'uml': 168,
+    'ordf': 170,
+    'laquo': 171,
+    'not': 172,
+    'shy': 173,
+    'macr': 175,
+    'deg': 176,
+    'plusmn': 177,
+    'sup1': 185,
+    'sup2': 178,
+    'sup3': 179,
+    'acute': 180,
+    'micro': 181,
+    'para': 182,
+    'middot': 183,
+    'cedil': 184,
+    'ordm': 186,
+    'raquo': 187,
+    'frac14': 188,
+    'frac12': 189,
+    'frac34': 190,
+    'iquest': 191,
+    'times': 215,
+    'divide': 247,
+    'OElig': 338,
+    'oelig': 339,
+    'Scaron': 352,
+    'scaron': 353,
+    'Yuml': 376,
+    'fnof': 402,
+    'circ': 710,
+    'tilde': 732,
+    'Alpha': 913,
+    'Beta': 914,
+    'Gamma': 915,
+    'Delta': 916,
+    'Epsilon': 917,
+    'Zeta': 918,
+    'Eta': 919,
+    'Theta': 920,
+    'Iota': 921,
+    'Kappa': 922,
+    'Lambda': 923,
+    'Mu': 924,
+    'Nu': 925,
+    'Xi': 926,
+    'Omicron': 927,
+    'Pi': 928,
+    'Rho': 929,
+    'Sigma': 931,
+    'Tau': 932,
+    'Upsilon': 933,
+    'Phi': 934,
+    'Chi': 935,
+    'Psi': 936,
+    'Omega': 937,
+    'alpha': 945,
+    'beta': 946,
+    'gamma': 947,
+    'delta': 948,
+    'epsilon': 949,
+    'zeta': 950,
+    'eta': 951,
+    'theta': 952,
+    'iota': 953,
+    'kappa': 954,
+    'lambda': 955,
+    'mu': 956,
+    'nu': 957,
+    'xi': 958,
+    'omicron': 959,
+    'pi': 960,
+    'rho': 961,
+    'sigmaf': 962,
+    'sigma': 963,
+    'tau': 964,
+    'upsilon': 965,
+    'phi': 966,
+    'chi': 967,
+    'psi': 968,
+    'omega': 969,
+    'thetasym': 977,
+    'upsih': 978,
+    'piv': 982,
+    'ensp': 8194,
+    'emsp': 8195,
+    'thinsp': 8201,
+    'zwnj': 8204,
+    'zwj': 8205,
+    'lrm': 8206,
+    'rlm': 8207,
+    'ndash': 8211,
+    'mdash': 8212,
+    'lsquo': 8216,
+    'rsquo': 8217,
+    'sbquo': 8218,
+    'ldquo': 8220,
+    'rdquo': 8221,
+    'bdquo': 8222,
+    'dagger': 8224,
+    'Dagger': 8225,
+    'bull': 8226,
+    'hellip': 8230,
+    'permil': 8240,
+    'prime': 8242,
+    'Prime': 8243,
+    'lsaquo': 8249,
+    'rsaquo': 8250,
+    'oline': 8254,
+    'frasl': 8260,
+    'euro': 8364,
+    'image': 8465,
+    'weierp': 8472,
+    'real': 8476,
+    'trade': 8482,
+    'alefsym': 8501,
+    'larr': 8592,
+    'uarr': 8593,
+    'rarr': 8594,
+    'darr': 8595,
+    'harr': 8596,
+    'crarr': 8629,
+    'lArr': 8656,
+    'uArr': 8657,
+    'rArr': 8658,
+    'dArr': 8659,
+    'hArr': 8660,
+    'forall': 8704,
+    'part': 8706,
+    'exist': 8707,
+    'empty': 8709,
+    'nabla': 8711,
+    'isin': 8712,
+    'notin': 8713,
+    'ni': 8715,
+    'prod': 8719,
+    'sum': 8721,
+    'minus': 8722,
+    'lowast': 8727,
+    'radic': 8730,
+    'prop': 8733,
+    'infin': 8734,
+    'ang': 8736,
+    'and': 8743,
+    'or': 8744,
+    'cap': 8745,
+    'cup': 8746,
+    'int': 8747,
+    'there4': 8756,
+    'sim': 8764,
+    'cong': 8773,
+    'asymp': 8776,
+    'ne': 8800,
+    'equiv': 8801,
+    'le': 8804,
+    'ge': 8805,
+    'sub': 8834,
+    'sup': 8835,
+    'nsub': 8836,
+    'sube': 8838,
+    'supe': 8839,
+    'oplus': 8853,
+    'otimes': 8855,
+    'perp': 8869,
+    'sdot': 8901,
+    'lceil': 8968,
+    'rceil': 8969,
+    'lfloor': 8970,
+    'rfloor': 8971,
+    'lang': 9001,
+    'rang': 9002,
+    'loz': 9674,
+    'spades': 9824,
+    'clubs': 9827,
+    'hearts': 9829,
+    'diams': 9830
+  }
+
+  Object.keys(sax.ENTITIES).forEach(function (key) {
+    var e = sax.ENTITIES[key]
+    var s = typeof e === 'number' ? String.fromCharCode(e) : e
+    sax.ENTITIES[key] = s
+  })
+
+  for (var s in sax.STATE) {
+    sax.STATE[sax.STATE[s]] = s
+  }
+
+  // shorthand
+  S = sax.STATE
+
+  function emit (parser, event, data) {
+    parser[event] && parser[event](data)
+  }
+
+  function emitNode (parser, nodeType, data) {
+    if (parser.textNode) closeText(parser)
+    emit(parser, nodeType, data)
+  }
+
+  function closeText (parser) {
+    parser.textNode = textopts(parser.opt, parser.textNode)
+    if (parser.textNode) emit(parser, 'ontext', parser.textNode)
+    parser.textNode = ''
+  }
+
+  function textopts (opt, text) {
+    if (opt.trim) text = text.trim()
+    if (opt.normalize) text = text.replace(/\s+/g, ' ')
+    return text
+  }
+
+  function error (parser, er) {
+    closeText(parser)
+    if (parser.trackPosition) {
+      er += '\nLine: ' + parser.line +
+        '\nColumn: ' + parser.column +
+        '\nChar: ' + parser.c
+    }
+    er = new Error(er)
+    parser.error = er
+    emit(parser, 'onerror', er)
+    return parser
+  }
+
+  function end (parser) {
+    if (parser.sawRoot && !parser.closedRoot) strictFail(parser, 'Unclosed root tag')
+    if ((parser.state !== S.BEGIN) &&
+      (parser.state !== S.BEGIN_WHITESPACE) &&
+      (parser.state !== S.TEXT)) {
+      error(parser, 'Unexpected end')
+    }
+    closeText(parser)
+    parser.c = ''
+    parser.closed = true
+    emit(parser, 'onend')
+    SAXParser.call(parser, parser.strict, parser.opt)
+    return parser
+  }
+
+  function strictFail (parser, message) {
+    if (typeof parser !== 'object' || !(parser instanceof SAXParser)) {
+      throw new Error('bad call to strictFail')
+    }
+    if (parser.strict) {
+      error(parser, message)
+    }
+  }
+
+  function newTag (parser) {
+    if (!parser.strict) parser.tagName = parser.tagName[parser.looseCase]()
+    var parent = parser.tags[parser.tags.length - 1] || parser
+    var tag = parser.tag = { name: parser.tagName, attributes: {} }
+
+    // will be overridden if tag contails an xmlns="foo" or xmlns:foo="bar"
+    if (parser.opt.xmlns) {
+      tag.ns = parent.ns
+    }
+    parser.attribList.length = 0
+    emitNode(parser, 'onopentagstart', tag)
+  }
+
+  function qname (name, attribute) {
+    var i = name.indexOf(':')
+    var qualName = i < 0 ? [ '', name ] : name.split(':')
+    var prefix = qualName[0]
+    var local = qualName[1]
+
+    // <x "xmlns"="http://foo">
+    if (attribute && name === 'xmlns') {
+      prefix = 'xmlns'
+      local = ''
+    }
+
+    return { prefix: prefix, local: local }
+  }
+
+  function attrib (parser) {
+    if (!parser.strict) {
+      parser.attribName = parser.attribName[parser.looseCase]()
+    }
+
+    if (parser.attribList.indexOf(parser.attribName) !== -1 ||
+      parser.tag.attributes.hasOwnProperty(parser.attribName)) {
+      parser.attribName = parser.attribValue = ''
+      return
+    }
+
+    if (parser.opt.xmlns) {
+      var qn = qname(parser.attribName, true)
+      var prefix = qn.prefix
+      var local = qn.local
+
+      if (prefix === 'xmlns') {
+        // namespace binding attribute. push the binding into scope
+        if (local === 'xml' && parser.attribValue !== XML_NAMESPACE) {
+          strictFail(parser,
+            'xml: prefix must be bound to ' + XML_NAMESPACE + '\n' +
+            'Actual: ' + parser.attribValue)
+        } else if (local === 'xmlns' && parser.attribValue !== XMLNS_NAMESPACE) {
+          strictFail(parser,
+            'xmlns: prefix must be bound to ' + XMLNS_NAMESPACE + '\n' +
+            'Actual: ' + parser.attribValue)
+        } else {
+          var tag = parser.tag
+          var parent = parser.tags[parser.tags.length - 1] || parser
+          if (tag.ns === parent.ns) {
+            tag.ns = Object.create(parent.ns)
+          }
+          tag.ns[local] = parser.attribValue
+        }
+      }
+
+      // defer onattribute events until all attributes have been seen
+      // so any new bindings can take effect. preserve attribute order
+      // so deferred events can be emitted in document order
+      parser.attribList.push([parser.attribName, parser.attribValue])
+    } else {
+      // in non-xmlns mode, we can emit the event right away
+      parser.tag.attributes[parser.attribName] = parser.attribValue
+      emitNode(parser, 'onattribute', {
+        name: parser.attribName,
+        value: parser.attribValue
+      })
+    }
+
+    parser.attribName = parser.attribValue = ''
+  }
+
+  function openTag (parser, selfClosing) {
+    if (parser.opt.xmlns) {
+      // emit namespace binding events
+      var tag = parser.tag
+
+      // add namespace info to tag
+      var qn = qname(parser.tagName)
+      tag.prefix = qn.prefix
+      tag.local = qn.local
+      tag.uri = tag.ns[qn.prefix] || ''
+
+      if (tag.prefix && !tag.uri) {
+        strictFail(parser, 'Unbound namespace prefix: ' +
+          JSON.stringify(parser.tagName))
+        tag.uri = qn.prefix
+      }
+
+      var parent = parser.tags[parser.tags.length - 1] || parser
+      if (tag.ns && parent.ns !== tag.ns) {
+        Object.keys(tag.ns).forEach(function (p) {
+          emitNode(parser, 'onopennamespace', {
+            prefix: p,
+            uri: tag.ns[p]
+          })
+        })
+      }
+
+      // handle deferred onattribute events
+      // Note: do not apply default ns to attributes:
+      //   http://www.w3.org/TR/REC-xml-names/#defaulting
+      for (var i = 0, l = parser.attribList.length; i < l; i++) {
+        var nv = parser.attribList[i]
+        var name = nv[0]
+        var value = nv[1]
+        var qualName = qname(name, true)
+        var prefix = qualName.prefix
+        var local = qualName.local
+        var uri = prefix === '' ? '' : (tag.ns[prefix] || '')
+        var a = {
+          name: name,
+          value: value,
+          prefix: prefix,
+          local: local,
+          uri: uri
+        }
+
+        // if there's any attributes with an undefined namespace,
+        // then fail on them now.
+        if (prefix && prefix !== 'xmlns' && !uri) {
+          strictFail(parser, 'Unbound namespace prefix: ' +
+            JSON.stringify(prefix))
+          a.uri = prefix
+        }
+        parser.tag.attributes[name] = a
+        emitNode(parser, 'onattribute', a)
+      }
+      parser.attribList.length = 0
+    }
+
+    parser.tag.isSelfClosing = !!selfClosing
+
+    // process the tag
+    parser.sawRoot = true
+    parser.tags.push(parser.tag)
+    emitNode(parser, 'onopentag', parser.tag)
+    if (!selfClosing) {
+      // special case for <script> in non-strict mode.
+      if (!parser.noscript && parser.tagName.toLowerCase() === 'script') {
+        parser.state = S.SCRIPT
+      } else {
+        parser.state = S.TEXT
+      }
+      parser.tag = null
+      parser.tagName = ''
+    }
+    parser.attribName = parser.attribValue = ''
+    parser.attribList.length = 0
+  }
+
+  function closeTag (parser) {
+    if (!parser.tagName) {
+      strictFail(parser, 'Weird empty close tag.')
+      parser.textNode += '</>'
+      parser.state = S.TEXT
+      return
+    }
+
+    if (parser.script) {
+      if (parser.tagName !== 'script') {
+        parser.script += '</' + parser.tagName + '>'
+        parser.tagName = ''
+        parser.state = S.SCRIPT
+        return
+      }
+      emitNode(parser, 'onscript', parser.script)
+      parser.script = ''
+    }
+
+    // first make sure that the closing tag actually exists.
+    // <a><b></c></b></a> will close everything, otherwise.
+    var t = parser.tags.length
+    var tagName = parser.tagName
+    if (!parser.strict) {
+      tagName = tagName[parser.looseCase]()
+    }
+    var closeTo = tagName
+    while (t--) {
+      var close = parser.tags[t]
+      if (close.name !== closeTo) {
+        // fail the first time in strict mode
+        strictFail(parser, 'Unexpected close tag')
+      } else {
+        break
+      }
+    }
+
+    // didn't find it.  we already failed for strict, so just abort.
+    if (t < 0) {
+      strictFail(parser, 'Unmatched closing tag: ' + parser.tagName)
+      parser.textNode += '</' + parser.tagName + '>'
+      parser.state = S.TEXT
+      return
+    }
+    parser.tagName = tagName
+    var s = parser.tags.length
+    while (s-- > t) {
+      var tag = parser.tag = parser.tags.pop()
+      parser.tagName = parser.tag.name
+      emitNode(parser, 'onclosetag', parser.tagName)
+
+      var x = {}
+      for (var i in tag.ns) {
+        x[i] = tag.ns[i]
+      }
+
+      var parent = parser.tags[parser.tags.length - 1] || parser
+      if (parser.opt.xmlns && tag.ns !== parent.ns) {
+        // remove namespace bindings introduced by tag
+        Object.keys(tag.ns).forEach(function (p) {
+          var n = tag.ns[p]
+          emitNode(parser, 'onclosenamespace', { prefix: p, uri: n })
+        })
+      }
+    }
+    if (t === 0) parser.closedRoot = true
+    parser.tagName = parser.attribValue = parser.attribName = ''
+    parser.attribList.length = 0
+    parser.state = S.TEXT
+  }
+
+  function parseEntity (parser) {
+    var entity = parser.entity
+    var entityLC = entity.toLowerCase()
+    var num
+    var numStr = ''
+
+    if (parser.ENTITIES[entity]) {
+      return parser.ENTITIES[entity]
+    }
+    if (parser.ENTITIES[entityLC]) {
+      return parser.ENTITIES[entityLC]
+    }
+    entity = entityLC
+    if (entity.charAt(0) === '#') {
+      if (entity.charAt(1) === 'x') {
+        entity = entity.slice(2)
+        num = parseInt(entity, 16)
+        numStr = num.toString(16)
+      } else {
+        entity = entity.slice(1)
+        num = parseInt(entity, 10)
+        numStr = num.toString(10)
+      }
+    }
+    entity = entity.replace(/^0+/, '')
+    if (isNaN(num) || numStr.toLowerCase() !== entity) {
+      strictFail(parser, 'Invalid character entity')
+      return '&' + parser.entity + ';'
+    }
+
+    return String.fromCodePoint(num)
+  }
+
+  function beginWhiteSpace (parser, c) {
+    if (c === '<') {
+      parser.state = S.OPEN_WAKA
+      parser.startTagPosition = parser.position
+    } else if (!isWhitespace(c)) {
+      // have to process this as a text node.
+      // weird, but happens.
+      strictFail(parser, 'Non-whitespace before first tag.')
+      parser.textNode = c
+      parser.state = S.TEXT
+    }
+  }
+
+  function charAt (chunk, i) {
+    var result = ''
+    if (i < chunk.length) {
+      result = chunk.charAt(i)
+    }
+    return result
+  }
+
+  function write (chunk) {
+    var parser = this
+    if (this.error) {
+      throw this.error
+    }
+    if (parser.closed) {
+      return error(parser,
+        'Cannot write after close. Assign an onready handler.')
+    }
+    if (chunk === null) {
+      return end(parser)
+    }
+    if (typeof chunk === 'object') {
+      chunk = chunk.toString()
+    }
+    var i = 0
+    var c = ''
+    while (true) {
+      c = charAt(chunk, i++)
+      parser.c = c
+
+      if (!c) {
+        break
+      }
+
+      if (parser.trackPosition) {
+        parser.position++
+        if (c === '\n') {
+          parser.line++
+          parser.column = 0
+        } else {
+          parser.column++
+        }
+      }
+
+      switch (parser.state) {
+        case S.BEGIN:
+          parser.state = S.BEGIN_WHITESPACE
+          if (c === '\uFEFF') {
+            continue
+          }
+          beginWhiteSpace(parser, c)
+          continue
+
+        case S.BEGIN_WHITESPACE:
+          beginWhiteSpace(parser, c)
+          continue
+
+        case S.TEXT:
+          if (parser.sawRoot && !parser.closedRoot) {
+            var starti = i - 1
+            while (c && c !== '<' && c !== '&') {
+              c = charAt(chunk, i++)
+              if (c && parser.trackPosition) {
+                parser.position++
+                if (c === '\n') {
+                  parser.line++
+                  parser.column = 0
+                } else {
+                  parser.column++
+                }
+              }
+            }
+            parser.textNode += chunk.substring(starti, i - 1)
+          }
+          if (c === '<' && !(parser.sawRoot && parser.closedRoot && !parser.strict)) {
+            parser.state = S.OPEN_WAKA
+            parser.startTagPosition = parser.position
+          } else {
+            if (!isWhitespace(c) && (!parser.sawRoot || parser.closedRoot)) {
+              strictFail(parser, 'Text data outside of root node.')
+            }
+            if (c === '&') {
+              parser.state = S.TEXT_ENTITY
+            } else {
+              parser.textNode += c
+            }
+          }
+          continue
+
+        case S.SCRIPT:
+          // only non-strict
+          if (c === '<') {
+            parser.state = S.SCRIPT_ENDING
+          } else {
+            parser.script += c
+          }
+          continue
+
+        case S.SCRIPT_ENDING:
+          if (c === '/') {
+            parser.state = S.CLOSE_TAG
+          } else {
+            parser.script += '<' + c
+            parser.state = S.SCRIPT
+          }
+          continue
+
+        case S.OPEN_WAKA:
+          // either a /, ?, !, or text is coming next.
+          if (c === '!') {
+            parser.state = S.SGML_DECL
+            parser.sgmlDecl = ''
+          } else if (isWhitespace(c)) {
+            // wait for it...
+          } else if (isMatch(nameStart, c)) {
+            parser.state = S.OPEN_TAG
+            parser.tagName = c
+          } else if (c === '/') {
+            parser.state = S.CLOSE_TAG
+            parser.tagName = ''
+          } else if (c === '?') {
+            parser.state = S.PROC_INST
+            parser.procInstName = parser.procInstBody = ''
+          } else {
+            strictFail(parser, 'Unencoded <')
+            // if there was some whitespace, then add that in.
+            if (parser.startTagPosition + 1 < parser.position) {
+              var pad = parser.position - parser.startTagPosition
+              c = new Array(pad).join(' ') + c
+            }
+            parser.textNode += '<' + c
+            parser.state = S.TEXT
+          }
+          continue
+
+        case S.SGML_DECL:
+          if ((parser.sgmlDecl + c).toUpperCase() === CDATA) {
+            emitNode(parser, 'onopencdata')
+            parser.state = S.CDATA
+            parser.sgmlDecl = ''
+            parser.cdata = ''
+          } else if (parser.sgmlDecl + c === '--') {
+            parser.state = S.COMMENT
+            parser.comment = ''
+            parser.sgmlDecl = ''
+          } else if ((parser.sgmlDecl + c).toUpperCase() === DOCTYPE) {
+            parser.state = S.DOCTYPE
+            if (parser.doctype || parser.sawRoot) {
+              strictFail(parser,
+                'Inappropriately located doctype declaration')
+            }
+            parser.doctype = ''
+            parser.sgmlDecl = ''
+          } else if (c === '>') {
+            emitNode(parser, 'onsgmldeclaration', parser.sgmlDecl)
+            parser.sgmlDecl = ''
+            parser.state = S.TEXT
+          } else if (isQuote(c)) {
+            parser.state = S.SGML_DECL_QUOTED
+            parser.sgmlDecl += c
+          } else {
+            parser.sgmlDecl += c
+          }
+          continue
+
+        case S.SGML_DECL_QUOTED:
+          if (c === parser.q) {
+            parser.state = S.SGML_DECL
+            parser.q = ''
+          }
+          parser.sgmlDecl += c
+          continue
+
+        case S.DOCTYPE:
+          if (c === '>') {
+            parser.state = S.TEXT
+            emitNode(parser, 'ondoctype', parser.doctype)
+            parser.doctype = true // just remember that we saw it.
+          } else {
+            parser.doctype += c
+            if (c === '[') {
+              parser.state = S.DOCTYPE_DTD
+            } else if (isQuote(c)) {
+              parser.state = S.DOCTYPE_QUOTED
+              parser.q = c
+            }
+          }
+          continue
+
+        case S.DOCTYPE_QUOTED:
+          parser.doctype += c
+          if (c === parser.q) {
+            parser.q = ''
+            parser.state = S.DOCTYPE
+          }
+          continue
+
+        case S.DOCTYPE_DTD:
+          parser.doctype += c
+          if (c === ']') {
+            parser.state = S.DOCTYPE
+          } else if (isQuote(c)) {
+            parser.state = S.DOCTYPE_DTD_QUOTED
+            parser.q = c
+          }
+          continue
+
+        case S.DOCTYPE_DTD_QUOTED:
+          parser.doctype += c
+          if (c === parser.q) {
+            parser.state = S.DOCTYPE_DTD
+            parser.q = ''
+          }
+          continue
+
+        case S.COMMENT:
+          if (c === '-') {
+            parser.state = S.COMMENT_ENDING
+          } else {
+            parser.comment += c
+          }
+          continue
+
+        case S.COMMENT_ENDING:
+          if (c === '-') {
+            parser.state = S.COMMENT_ENDED
+            parser.comment = textopts(parser.opt, parser.comment)
+            if (parser.comment) {
+              emitNode(parser, 'oncomment', parser.comment)
+            }
+            parser.comment = ''
+          } else {
+            parser.comment += '-' + c
+            parser.state = S.COMMENT
+          }
+          continue
+
+        case S.COMMENT_ENDED:
+          if (c !== '>') {
+            strictFail(parser, 'Malformed comment')
+            // allow <!-- blah -- bloo --> in non-strict mode,
+            // which is a comment of " blah -- bloo "
+            parser.comment += '--' + c
+            parser.state = S.COMMENT
+          } else {
+            parser.state = S.TEXT
+          }
+          continue
+
+        case S.CDATA:
+          if (c === ']') {
+            parser.state = S.CDATA_ENDING
+          } else {
+            parser.cdata += c
+          }
+          continue
+
+        case S.CDATA_ENDING:
+          if (c === ']') {
+            parser.state = S.CDATA_ENDING_2
+          } else {
+            parser.cdata += ']' + c
+            parser.state = S.CDATA
+          }
+          continue
+
+        case S.CDATA_ENDING_2:
+          if (c === '>') {
+            if (parser.cdata) {
+              emitNode(parser, 'oncdata', parser.cdata)
+            }
+            emitNode(parser, 'onclosecdata')
+            parser.cdata = ''
+            parser.state = S.TEXT
+          } else if (c === ']') {
+            parser.cdata += ']'
+          } else {
+            parser.cdata += ']]' + c
+            parser.state = S.CDATA
+          }
+          continue
+
+        case S.PROC_INST:
+          if (c === '?') {
+            parser.state = S.PROC_INST_ENDING
+          } else if (isWhitespace(c)) {
+            parser.state = S.PROC_INST_BODY
+          } else {
+            parser.procInstName += c
+          }
+          continue
+
+        case S.PROC_INST_BODY:
+          if (!parser.procInstBody && isWhitespace(c)) {
+            continue
+          } else if (c === '?') {
+            parser.state = S.PROC_INST_ENDING
+          } else {
+            parser.procInstBody += c
+          }
+          continue
+
+        case S.PROC_INST_ENDING:
+          if (c === '>') {
+            emitNode(parser, 'onprocessinginstruction', {
+              name: parser.procInstName,
+              body: parser.procInstBody
+            })
+            parser.procInstName = parser.procInstBody = ''
+            parser.state = S.TEXT
+          } else {
+            parser.procInstBody += '?' + c
+            parser.state = S.PROC_INST_BODY
+          }
+          continue
+
+        case S.OPEN_TAG:
+          if (isMatch(nameBody, c)) {
+            parser.tagName += c
+          } else {
+            newTag(parser)
+            if (c === '>') {
+              openTag(parser)
+            } else if (c === '/') {
+              parser.state = S.OPEN_TAG_SLASH
+            } else {
+              if (!isWhitespace(c)) {
+                strictFail(parser, 'Invalid character in tag name')
+              }
+              parser.state = S.ATTRIB
+            }
+          }
+          continue
+
+        case S.OPEN_TAG_SLASH:
+          if (c === '>') {
+            openTag(parser, true)
+            closeTag(parser)
+          } else {
+            strictFail(parser, 'Forward-slash in opening tag not followed by >')
+            parser.state = S.ATTRIB
+          }
+          continue
+
+        case S.ATTRIB:
+          // haven't read the attribute name yet.
+          if (isWhitespace(c)) {
+            continue
+          } else if (c === '>') {
+            openTag(parser)
+          } else if (c === '/') {
+            parser.state = S.OPEN_TAG_SLASH
+          } else if (isMatch(nameStart, c)) {
+            parser.attribName = c
+            parser.attribValue = ''
+            parser.state = S.ATTRIB_NAME
+          } else {
+            strictFail(parser, 'Invalid attribute name')
+          }
+          continue
+
+        case S.ATTRIB_NAME:
+          if (c === '=') {
+            parser.state = S.ATTRIB_VALUE
+          } else if (c === '>') {
+            strictFail(parser, 'Attribute without value')
+            parser.attribValue = parser.attribName
+            attrib(parser)
+            openTag(parser)
+          } else if (isWhitespace(c)) {
+            parser.state = S.ATTRIB_NAME_SAW_WHITE
+          } else if (isMatch(nameBody, c)) {
+            parser.attribName += c
+          } else {
+            strictFail(parser, 'Invalid attribute name')
+          }
+          continue
+
+        case S.ATTRIB_NAME_SAW_WHITE:
+          if (c === '=') {
+            parser.state = S.ATTRIB_VALUE
+          } else if (isWhitespace(c)) {
+            continue
+          } else {
+            strictFail(parser, 'Attribute without value')
+            parser.tag.attributes[parser.attribName] = ''
+            parser.attribValue = ''
+            emitNode(parser, 'onattribute', {
+              name: parser.attribName,
+              value: ''
+            })
+            parser.attribName = ''
+            if (c === '>') {
+              openTag(parser)
+            } else if (isMatch(nameStart, c)) {
+              parser.attribName = c
+              parser.state = S.ATTRIB_NAME
+            } else {
+              strictFail(parser, 'Invalid attribute name')
+              parser.state = S.ATTRIB
+            }
+          }
+          continue
+
+        case S.ATTRIB_VALUE:
+          if (isWhitespace(c)) {
+            continue
+          } else if (isQuote(c)) {
+            parser.q = c
+            parser.state = S.ATTRIB_VALUE_QUOTED
+          } else {
+            strictFail(parser, 'Unquoted attribute value')
+            parser.state = S.ATTRIB_VALUE_UNQUOTED
+            parser.attribValue = c
+          }
+          continue
+
+        case S.ATTRIB_VALUE_QUOTED:
+          if (c !== parser.q) {
+            if (c === '&') {
+              parser.state = S.ATTRIB_VALUE_ENTITY_Q
+            } else {
+              parser.attribValue += c
+            }
+            continue
+          }
+          attrib(parser)
+          parser.q = ''
+          parser.state = S.ATTRIB_VALUE_CLOSED
+          continue
+
+        case S.ATTRIB_VALUE_CLOSED:
+          if (isWhitespace(c)) {
+            parser.state = S.ATTRIB
+          } else if (c === '>') {
+            openTag(parser)
+          } else if (c === '/') {
+            parser.state = S.OPEN_TAG_SLASH
+          } else if (isMatch(nameStart, c)) {
+            strictFail(parser, 'No whitespace between attributes')
+            parser.attribName = c
+            parser.attribValue = ''
+            parser.state = S.ATTRIB_NAME
+          } else {
+            strictFail(parser, 'Invalid attribute name')
+          }
+          continue
+
+        case S.ATTRIB_VALUE_UNQUOTED:
+          if (!isAttribEnd(c)) {
+            if (c === '&') {
+              parser.state = S.ATTRIB_VALUE_ENTITY_U
+            } else {
+              parser.attribValue += c
+            }
+            continue
+          }
+          attrib(parser)
+          if (c === '>') {
+            openTag(parser)
+          } else {
+            parser.state = S.ATTRIB
+          }
+          continue
+
+        case S.CLOSE_TAG:
+          if (!parser.tagName) {
+            if (isWhitespace(c)) {
+              continue
+            } else if (notMatch(nameStart, c)) {
+              if (parser.script) {
+                parser.script += '</' + c
+                parser.state = S.SCRIPT
+              } else {
+                strictFail(parser, 'Invalid tagname in closing tag.')
+              }
+            } else {
+              parser.tagName = c
+            }
+          } else if (c === '>') {
+            closeTag(parser)
+          } else if (isMatch(nameBody, c)) {
+            parser.tagName += c
+          } else if (parser.script) {
+            parser.script += '</' + parser.tagName
+            parser.tagName = ''
+            parser.state = S.SCRIPT
+          } else {
+            if (!isWhitespace(c)) {
+              strictFail(parser, 'Invalid tagname in closing tag')
+            }
+            parser.state = S.CLOSE_TAG_SAW_WHITE
+          }
+          continue
+
+        case S.CLOSE_TAG_SAW_WHITE:
+          if (isWhitespace(c)) {
+            continue
+          }
+          if (c === '>') {
+            closeTag(parser)
+          } else {
+            strictFail(parser, 'Invalid characters in closing tag')
+          }
+          continue
+
+        case S.TEXT_ENTITY:
+        case S.ATTRIB_VALUE_ENTITY_Q:
+        case S.ATTRIB_VALUE_ENTITY_U:
+          var returnState
+          var buffer
+          switch (parser.state) {
+            case S.TEXT_ENTITY:
+              returnState = S.TEXT
+              buffer = 'textNode'
+              break
+
+            case S.ATTRIB_VALUE_ENTITY_Q:
+              returnState = S.ATTRIB_VALUE_QUOTED
+              buffer = 'attribValue'
+              break
+
+            case S.ATTRIB_VALUE_ENTITY_U:
+              returnState = S.ATTRIB_VALUE_UNQUOTED
+              buffer = 'attribValue'
+              break
+          }
+
+          if (c === ';') {
+            parser[buffer] += parseEntity(parser)
+            parser.entity = ''
+            parser.state = returnState
+          } else if (isMatch(parser.entity.length ? entityBody : entityStart, c)) {
+            parser.entity += c
+          } else {
+            strictFail(parser, 'Invalid character in entity name')
+            parser[buffer] += '&' + parser.entity + c
+            parser.entity = ''
+            parser.state = returnState
+          }
+
+          continue
+
+        default:
+          throw new Error(parser, 'Unknown state: ' + parser.state)
+      }
+    } // while
+
+    if (parser.position >= parser.bufferCheckPosition) {
+      checkBufferLength(parser)
+    }
+    return parser
+  }
+
+  /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */
+  /* istanbul ignore next */
+  if (!String.fromCodePoint) {
+    (function () {
+      var stringFromCharCode = String.fromCharCode
+      var floor = Math.floor
+      var fromCodePoint = function () {
+        var MAX_SIZE = 0x4000
+        var codeUnits = []
+        var highSurrogate
+        var lowSurrogate
+        var index = -1
+        var length = arguments.length
+        if (!length) {
+          return ''
+        }
+        var result = ''
+        while (++index < length) {
+          var codePoint = Number(arguments[index])
+          if (
+            !isFinite(codePoint) || // `NaN`, `+Infinity`, or `-Infinity`
+            codePoint < 0 || // not a valid Unicode code point
+            codePoint > 0x10FFFF || // not a valid Unicode code point
+            floor(codePoint) !== codePoint // not an integer
+          ) {
+            throw RangeError('Invalid code point: ' + codePoint)
+          }
+          if (codePoint <= 0xFFFF) { // BMP code point
+            codeUnits.push(codePoint)
+          } else { // Astral code point; split in surrogate halves
+            // http://mathiasbynens.be/notes/javascript-encoding#surrogate-formulae
+            codePoint -= 0x10000
+            highSurrogate = (codePoint >> 10) + 0xD800
+            lowSurrogate = (codePoint % 0x400) + 0xDC00
+            codeUnits.push(highSurrogate, lowSurrogate)
+          }
+          if (index + 1 === length || codeUnits.length > MAX_SIZE) {
+            result += stringFromCharCode.apply(null, codeUnits)
+            codeUnits.length = 0
+          }
+        }
+        return result
+      }
+      /* istanbul ignore next */
+      if (Object.defineProperty) {
+        Object.defineProperty(String, 'fromCodePoint', {
+          value: fromCodePoint,
+          configurable: true,
+          writable: true
+        })
+      } else {
+        String.fromCodePoint = fromCodePoint
+      }
+    }())
+  }
+})(typeof exports === 'undefined' ? this.sax = {} : exports)
+
+},{"stream":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/stream-browserify/index.js","string_decoder":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/string_decoder/lib/string_decoder.js","buffer":"../../../../../../usr/local/lib/node_modules/parcel-bundler/node_modules/buffer/index.js"}],"../node_modules/xmldoc/lib/xmldoc.js":[function(require,module,exports) {
+var global = arguments[3];
+(function () {
+
+var sax;
+
+if (typeof module !== 'undefined' && module.exports && !global.xmldocAssumeBrowser) {
+  // We're being used in a Node-like environment
+  sax = require('sax');
+}
+else {
+  // assume it's attached to the Window object in a browser
+  sax = this.sax;
+
+  if (!sax) // no sax for you!
+    throw new Error("Expected sax to be defined. Make sure you're including sax.js before this file.");
+}
+
+/*
+XmlElement is our basic building block. Everything is an XmlElement; even XmlDocument
+behaves like an XmlElement by inheriting its attributes and functions.
+*/
+
+function XmlElement(tag) {
+  // Capture the parser object off of the XmlDocument delegate
+  var parser = delegates[delegates.length - 1].parser;
+
+  this.name = tag.name;
+  this.attr = tag.attributes;
+  this.val = "";
+  this.children = [];
+  this.firstChild = null;
+  this.lastChild = null;
+
+  // Assign parse information
+  this.line = parser.line;
+  this.column = parser.column;
+  this.position = parser.position;
+  this.startTagPosition = parser.startTagPosition;
+}
+
+// Private methods
+
+XmlElement.prototype._addChild = function(child) {
+  // add to our children array
+  this.children.push(child);
+
+  // update first/last pointers
+  if (!this.firstChild) this.firstChild = child;
+  this.lastChild = child;
+};
+
+// SaxParser handlers
+
+XmlElement.prototype._opentag = function(tag) {
+
+  var child = new XmlElement(tag);
+
+  this._addChild(child);
+
+  delegates.unshift(child);
+};
+
+XmlElement.prototype._closetag = function() {
+  delegates.shift();
+};
+
+XmlElement.prototype._text = function(text) {
+  if (typeof this.children === 'undefined')
+    return
+
+  this.val += text;
+
+  this._addChild(new XmlTextNode(text));
+};
+
+XmlElement.prototype._cdata = function(cdata) {
+  this.val += cdata;
+
+  this._addChild(new XmlCDataNode(cdata));
+};
+
+XmlElement.prototype._comment = function(comment) {
+  if (typeof this.children === 'undefined')
+    return
+
+  this._addChild(new XmlCommentNode(comment));
+};
+
+XmlElement.prototype._error = function(err) {
+  throw err;
+};
+
+// Useful functions
+
+XmlElement.prototype.eachChild = function(iterator, context) {
+  for (var i=0, l=this.children.length; i<l; i++)
+    if (this.children[i].type === "element")
+      if (iterator.call(context, this.children[i], i, this.children) === false) return;
+};
+
+XmlElement.prototype.childNamed = function(name) {
+  for (var i=0, l=this.children.length; i<l; i++) {
+    var child = this.children[i];
+    if (child.name === name) return child;
+  }
+  return undefined;
+};
+
+XmlElement.prototype.childrenNamed = function(name) {
+  var matches = [];
+
+  for (var i=0, l=this.children.length; i<l; i++)
+    if (this.children[i].name === name)
+      matches.push(this.children[i]);
+
+  return matches;
+};
+
+XmlElement.prototype.childWithAttribute = function(name,value) {
+  for (var i=0, l=this.children.length; i<l; i++) {
+    var child = this.children[i];
+    if (child.type === "element" && ((value && child.attr[name] === value) || (!value && child.attr[name])))
+      return child;
+  }
+  return undefined;
+};
+
+XmlElement.prototype.descendantWithPath = function(path) {
+  var descendant = this;
+  var components = path.split('.');
+
+  for (var i=0, l=components.length; i<l; i++)
+    if (descendant && descendant.type === "element")
+      descendant = descendant.childNamed(components[i]);
+    else
+      return undefined;
+
+  return descendant;
+};
+
+XmlElement.prototype.valueWithPath = function(path) {
+  var components = path.split('@');
+  var descendant = this.descendantWithPath(components[0]);
+  if (descendant)
+    return components.length > 1 ? descendant.attr[components[1]] : descendant.val;
+  else
+    return undefined;
+};
+
+// String formatting (for debugging)
+
+XmlElement.prototype.toString = function(options) {
+  return this.toStringWithIndent("", options);
+};
+
+XmlElement.prototype.toStringWithIndent = function(indent, options) {
+  var s = indent + "<" + this.name;
+  var linebreak = options && options.compressed ? "" : "\n";
+  var preserveWhitespace = options && options.preserveWhitespace;
+
+  for (var name in this.attr)
+    if (Object.prototype.hasOwnProperty.call(this.attr, name))
+        s += " " + name + '="' + escapeXML(this.attr[name]) + '"';
+
+  if (this.children.length === 1 && this.children[0].type !== "element") {
+    s += ">" + this.children[0].toString(options) + "</" + this.name + ">";
+  }
+  else if (this.children.length) {
+    s += ">" + linebreak;
+
+    var childIndent = indent + (options && options.compressed ? "" : "  ");
+
+    for (var i=0, l=this.children.length; i<l; i++) {
+      s += this.children[i].toStringWithIndent(childIndent, options) + linebreak;
+    }
+
+    s += indent + "</" + this.name + ">";
+  }
+  else if (options && options.html) {
+    var whiteList = [
+      "area", "base", "br", "col", "embed", "frame", "hr", "img", "input",
+      "keygen", "link", "menuitem", "meta", "param", "source", "track", "wbr"
+    ];
+    if (whiteList.indexOf(this.name) !== -1) s += "/>";
+    else s += "></" + this.name + ">";
+  }
+  else {
+    s += "/>";
+  }
+
+  return s;
+};
+
+// Alternative XML nodes
+
+function XmlTextNode (text) {
+  this.text = text;
+}
+
+XmlTextNode.prototype.toString = function(options) {
+  return formatText(escapeXML(this.text), options);
+};
+
+XmlTextNode.prototype.toStringWithIndent = function(indent, options) {
+  return indent+this.toString(options);
+};
+
+function XmlCDataNode (cdata) {
+  this.cdata = cdata;
+}
+
+XmlCDataNode.prototype.toString = function(options) {
+  return "<![CDATA["+formatText(this.cdata, options)+"]]>";
+};
+
+XmlCDataNode.prototype.toStringWithIndent = function(indent, options) {
+  return indent+this.toString(options);
+};
+
+function XmlCommentNode (comment) {
+  this.comment = comment;
+}
+
+XmlCommentNode.prototype.toString = function(options) {
+  return "<!--"+formatText(escapeXML(this.comment), options)+"-->";
+};
+
+XmlCommentNode.prototype.toStringWithIndent = function(indent, options) {
+  return indent+this.toString(options);
+};
+
+// Node type tag
+
+XmlElement.prototype.type = "element";
+XmlTextNode.prototype.type = "text";
+XmlCDataNode.prototype.type = "cdata";
+XmlCommentNode.prototype.type = "comment";
+
+/*
+XmlDocument is the class we expose to the user; it uses the sax parser to create a hierarchy
+of XmlElements.
+*/
+
+function XmlDocument(xml) {
+  xml && (xml = xml.toString().trim());
+
+  if (!xml)
+    throw new Error("No XML to parse!");
+
+  // Stores doctype (if defined)
+  this.doctype = "";
+
+  // Expose the parser to the other delegates while the parser is running
+  this.parser = sax.parser(true); // strict
+  addParserEvents(this.parser);
+
+  // We'll use the file-scoped "delegates" var to remember what elements we're currently
+  // parsing; they will push and pop off the stack as we get deeper into the XML hierarchy.
+  // It's safe to use a global because JS is single-threaded.
+  delegates = [this];
+
+  this.parser.write(xml);
+
+  // Remove the parser as it is no longer needed and should not be exposed to clients
+  delete this.parser;
+}
+
+// make XmlDocument inherit XmlElement's methods
+extend(XmlDocument.prototype, XmlElement.prototype);
+
+XmlDocument.prototype._opentag = function(tag) {
+  if (typeof this.children === 'undefined')
+    // the first tag we encounter should be the root - we'll "become" the root XmlElement
+    XmlElement.call(this,tag);
+  else
+    // all other tags will be the root element's children
+    XmlElement.prototype._opentag.apply(this,arguments);
+};
+
+XmlDocument.prototype._doctype = function(doctype) {
+  this.doctype += doctype;
+}
+
+// file-scoped global stack of delegates
+var delegates = null;
+
+/*
+Helper functions
+*/
+
+function addParserEvents(parser) {
+  parser.onopentag = parser_opentag;
+  parser.onclosetag = parser_closetag;
+  parser.ontext = parser_text;
+  parser.oncdata = parser_cdata;
+  parser.oncomment = parser_comment;
+  parser.ondoctype = parser_doctype;
+  parser.onerror = parser_error;
+}
+
+// create these closures and cache them by keeping them file-scoped
+function parser_opentag() { delegates[0] && delegates[0]._opentag.apply(delegates[0],arguments) }
+function parser_closetag() { delegates[0] && delegates[0]._closetag.apply(delegates[0],arguments) }
+function parser_text() { delegates[0] && delegates[0]._text.apply(delegates[0],arguments) }
+function parser_cdata() { delegates[0] && delegates[0]._cdata.apply(delegates[0],arguments) }
+function parser_comment() { delegates[0] && delegates[0]._comment.apply(delegates[0],arguments) }
+function parser_doctype() { delegates[0] && delegates[0]._doctype.apply(delegates[0],arguments) }
+function parser_error() { delegates[0] && delegates[0]._error.apply(delegates[0],arguments) }
+
+// a relatively standard extend method
+function extend(destination, source) {
+  for (var prop in source)
+    if (source.hasOwnProperty(prop))
+      destination[prop] = source[prop];
+}
+
+// escapes XML entities like "<", "&", etc.
+function escapeXML(value){
+  return value.toString().replace(/&/g, '&amp;').replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+}
+
+// formats some text for debugging given a few options
+function formatText(text, options) {
+  var finalText = text;
+
+  if (options && options.trimmed && text.length > 25)
+    finalText = finalText.substring(0,25).trim() + "…";
+  if (!(options && options.preserveWhitespace))
+    finalText = finalText.trim();
+
+  return finalText;
+}
+
+// Are we being used in a Node-like environment?
+if (typeof module !== 'undefined' && module.exports && !global.xmldocAssumeBrowser)
+    module.exports.XmlDocument = XmlDocument;
+else
+    this.XmlDocument = XmlDocument;
+
+})();
+
+},{"sax":"../node_modules/sax/lib/sax.js"}],"../node_modules/xmldoc/index.js":[function(require,module,exports) {
+// This file is just added for convenience so this repository can be
+// directly checked out into a project's deps folder
+module.exports = require('./lib/xmldoc');
+
+},{"./lib/xmldoc":"../node_modules/xmldoc/lib/xmldoc.js"}],"../node_modules/simple-caldav/src/index.js":[function(require,module,exports) {
+// @format
+const { Component, Event, Duration, Time, parse } = require("ical.js");
+const fetch = require("cross-fetch");
+const { v4: uuidv4 } = require("uuid");
+const { format, utcToZonedTime } = require("date-fns-tz");
+const add = require("date-fns/add");
+// NOTE: We decided on using sha1 for generating etags, as there's no mutual
+// crypto API for simple-caldav's targets, which are nodejs and browser
+// environments.
+const sha1 = require("sha1");
+const xmldoc = require("xmldoc");
+
+const prodid = "-//TimDaub//simple-caldav//EN";
+// NOTE: https://tools.ietf.org/html/rfc5545#section-3.8.1.11
+const allowedVEVENTStatus = ["TENTATIVE", "CONFIRMED", "CANCELED"];
+
+class ServerError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ServerError);
+    }
+
+    this.name = "ServerError";
+  }
+}
+
+class ParserError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ParserError);
+    }
+
+    this.name = "ParserError";
+  }
+}
+
+class InputError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, InputError);
+    }
+
+    this.name = "InputError";
+  }
+}
+
+class SimpleCalDAV {
+  constructor(uri, options) {
+    this.uri = uri;
+    this.options = options;
+  }
+
+  async createEvent(
+    start,
+    end,
+    summary,
+    alarms,
+    _status,
+    organizer,
+    _location
+  ) {
+    return this.handleEvent(
+      start,
+      end,
+      summary,
+      alarms,
+      _status,
+      organizer,
+      _location,
+      "create"
+    );
+  }
+
+  // TODO: Do we want to make this method more convenient by allowing partial
+  // updates?
+  async updateEvent(
+    uid,
+    start,
+    end,
+    summary,
+    alarms,
+    _status,
+    organizer,
+    _location
+  ) {
+    return this.handleEvent(
+      start,
+      end,
+      summary,
+      alarms,
+      _status,
+      organizer,
+      _location,
+      "update",
+      uid
+    );
+  }
+
+  static extractUid(href) {
+    const [_, uid] = href.match(new RegExp("([^\\/]+)\\.ics"));
+    return uid;
+  }
+
+  static applyDuration(date, duration) {
+    if (
+      date instanceof Date &&
+      duration &&
+      typeof duration === "object" &&
+      "isNegative" in duration &&
+      (duration.weeks ||
+        duration.days ||
+        duration.hours ||
+        duration.minutes ||
+        duration.seconds)
+    ) {
+      const durObj = new Duration(duration);
+      return add(date, { seconds: durObj.toSeconds() });
+    } else {
+      throw new InputError(
+        "Incorrect parameters submitted to applyDuration (date or duration), check implementation for more details."
+      );
+    }
+  }
+
+  static toTrigger(val) {
+    let trigger;
+    if (val instanceof Date) {
+      return `TRIGGER;VALUE=DATE-TIME:${SimpleCalDAV.formatDateTime(val)}\n`;
+    } else if (
+      (typeof val === "object" && "weeks" in val) ||
+      "days" in val ||
+      "hours" in val ||
+      "minutes" in val ||
+      "seconds" in val
+    ) {
+      const dur = new Duration(val);
+      return `TRIGGER:${dur.toString()}\n`;
+    } else {
+      throw new InputError(
+        "Input needs to be of type Date or a object with a specific shape (check implementation)"
+      );
+    }
+  }
+
+  static toVALARM(alarm) {
+    let attendee;
+    if (alarm && alarm.attendee && alarm.action.toUpperCase() === "EMAIL") {
+      attendee = `mailto:${alarm.attendee}`;
+    } else if (
+      alarm &&
+      alarm.attendee &&
+      alarm.action.toUpperCase() === "SMS"
+    ) {
+      attendee = `sms:${alarm.attendee}`;
+    } else {
+      throw new Error(
+        `Action can only be of type EMAIL or SMS: ${alarm.action}`
+      );
+    }
+
+    let valarm = "BEGIN:VALARM\n";
+    valarm += `ACTION:${alarm.action.toUpperCase()}\n`;
+    if (alarm && alarm.summary) {
+      valarm += `SUMMARY:${alarm.summary}\n`;
+    }
+    valarm += `ATTENDEE:${attendee}\n`;
+    valarm += `DESCRIPTION:${alarm.description}\n`;
+    valarm += SimpleCalDAV.toTrigger(alarm.trigger);
+    valarm += `END:VALARM\n`;
+
+    return valarm;
+  }
+
+  static toVEVENT(evt, alarms) {
+    if ("uid" in evt && "start" in evt && "end" in evt && "summary" in evt) {
+      let vevent = "BEGIN:VCALENDAR\n";
+      vevent += `VERSION:2.0\n`;
+      vevent += `PRODID:${prodid}\n`;
+      vevent += "BEGIN:VEVENT\n";
+      vevent += `UID:${evt.uid}\n`;
+      vevent += `DTSTAMP:${SimpleCalDAV.formatDateTime(new Date())}\n`;
+      vevent += `DTSTART:${SimpleCalDAV.formatDateTime(evt.start)}\n`;
+      vevent += `DTEND:${SimpleCalDAV.formatDateTime(evt.end)}\n`;
+      vevent += `SUMMARY:${evt.summary}\n`;
+      if (alarms) {
+        vevent += alarms;
+      }
+      if (evt._status) {
+        if (allowedVEVENTStatus.includes(evt._status)) {
+          vevent += `STATUS:${evt._status}\n`;
+        } else {
+          throw new ParserError(
+            `Your status "${evt._status}" is not an allowed status for a VEVENT`
+          );
+        }
+      }
+      if (evt.organizer && evt.organizer.email) {
+        if (evt.organizer.commonName) {
+          vevent += `ORGANIZER;CN=${evt.organizer.commonName}:mailto:${
+            evt.organizer.email
+          }\n`;
+        } else {
+          vevent += `ORGANIZER:mailto:${evt.organizer.email}\n`;
+        }
+      }
+      if (evt._location) {
+        vevent += `LOCATION:${evt._location}\n`;
+      }
+      vevent += "END:VEVENT\n";
+      vevent += "END:VCALENDAR";
+      return vevent;
+    } else {
+      throw new ParserError("Mandatory keys in event missing");
+    }
+  }
+
+  async handleEvent(
+    start,
+    end,
+    summary,
+    alarms,
+    _status,
+    organizer,
+    _location,
+    method,
+    uid = ""
+  ) {
+    if (!uid) {
+      // NOTE: It's recommended to add a `@host.com` postfix to the uid. Since,
+      // however, this lib will be used by a multitude of clients and since other
+      // implementations neither add a postfix (e.g. Thunderbird's caldav plugin),
+      // we've taken the freedom to leave it out too.
+      uid = uuidv4();
+    }
+    if (alarms) {
+      alarms = alarms.map(SimpleCalDAV.toVALARM).join("");
+    }
+
+    const body = SimpleCalDAV.toVEVENT(
+      { start, end, summary, uid, _status, organizer, _location },
+      alarms
+    );
+
+    let headers = {
+      "Content-Type": "text/calendar; charset=utf-8"
+    };
+
+    if (method === "create") {
+      headers = { ...headers, ...{ "If-None-Match": "*" } };
+    } else if (method === "update") {
+      // TODO: Does it make sense to use Etags here?
+      // noop
+    } else {
+      throw new InternalError(`method "${method}" not implemented`);
+    }
+
+    return await fetch(`${this.uri}/${uid}.ics`, {
+      method: "PUT",
+      headers,
+      ...this.options,
+      body
+    });
+  }
+
+  async getEvent(uid, transform = SimpleCalDAV.simplifyEvent) {
+    const href = `${this.uri}/${uid}.ics`;
+    const res = await fetch(href, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8"
+      },
+      ...this.options
+    });
+    let evt = await res.text();
+    evt = SimpleCalDAV.parseICS(evt);
+    return transform(evt, href);
+  }
+
+  async listEvents(transform = SimpleCalDAV.simplifyEvent) {
+    const res = await fetch(this.uri, {
+      method: "REPORT",
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8"
+      },
+      ...this.options,
+      body: `
+        <c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+           <d:prop>
+            <d:getetag />
+            <c:calendar-data />
+          </d:prop>
+          <c:filter>
+            <c:comp-filter name="VCALENDAR" />
+          </c:filter>
+        </c:calendar-query>`
+    });
+
+    const text = await res.text();
+    const doc = new xmldoc.XmlDocument(text);
+
+    const responses = doc.childrenNamed("response");
+    let events = responses.map(node => {
+      const href = this.uri + node.valueWithPath("href");
+      let evt = node.valueWithPath("propstat.prop.C:calendar-data");
+      evt = SimpleCalDAV.parseICS(evt);
+      return transform(evt, href);
+    });
+
+    return events;
+  }
+
+  static parseICS(evt) {
+    let parsedCal;
+    try {
+      parsedCal = parse(evt);
+    } catch (err) {
+      if (err && err.name === "ParserError") {
+        throw new ParserError(err.message);
+        return;
+      } else {
+        console.warn(err);
+        throw err;
+      }
+    }
+
+    const comp = new Component(parsedCal);
+    const vevent = comp.getFirstSubcomponent("vevent");
+    return vevent;
+  }
+
+  static genETag(s) {
+    return sha1(s);
+  }
+
+  static parseTrigger(trigger) {
+    if (trigger instanceof Time) {
+      return trigger.toJSDate();
+    } else if (trigger instanceof Duration) {
+      return {
+        weeks: trigger.weeks,
+        days: trigger.days,
+        hours: trigger.hours,
+        minutes: trigger.minutes,
+        seconds: trigger.seconds,
+        isNegative: trigger.isNegative
+      };
+    } else {
+      throw new InputError(
+        "`trigger` argument wasn't of instance Duration or Time"
+      );
+    }
+  }
+
+  static simplifyEvent(evt, href) {
+    let palarms = [];
+    let finalEvent = { href };
+
+    let valarms = evt.getAllSubcomponents("valarm");
+    valarms = valarms
+      .map(alarm => {
+        const trigger = SimpleCalDAV.parseTrigger(
+          alarm.getFirstPropertyValue("trigger")
+        );
+
+        const action = alarm.getFirstPropertyValue("action");
+        const attendee = alarm.getFirstPropertyValue("attendee");
+        let res = {
+          action,
+          trigger,
+          description: alarm.getFirstPropertyValue("description"),
+          subject: alarm.getFirstPropertyValue("subject")
+        };
+
+        const mailtoExpr = new RegExp(".*mailto:(.+)$", "i");
+        const smsExpr = new RegExp(".*sms:(.+)$", "i");
+        if (action === "EMAIL" && mailtoExpr.test(attendee)) {
+          const [_, email] = attendee.match(mailtoExpr);
+          res.attendee = email;
+        } else if (action === "SMS" && smsExpr.test(attendee)) {
+          const [_, phone] = attendee.match(smsExpr);
+          res.attendee = phone;
+        }
+
+        return res;
+      })
+      .filter(alarm => !!alarm);
+    finalEvent.alarms = valarms;
+
+    const pevent = new Event(evt);
+    finalEvent.summary = pevent.summary;
+    finalEvent.location = pevent._firstProp("location");
+    finalEvent.start = pevent.startDate.toJSDate();
+    finalEvent.end = pevent.endDate.toJSDate();
+
+    const orgProp = evt.getFirstProperty("organizer");
+    let email, commonName;
+    if (orgProp) {
+      const orgMail = orgProp.getFirstValue("organizer");
+      email = orgMail.match(new RegExp("mailto:(.*)", "i"))[1];
+      commonName = orgProp.getParameter("cn");
+    }
+
+    if (email) {
+      finalEvent.organizer = { email };
+    }
+    if (email && commonName) {
+      finalEvent.organizer = { email, commonName };
+    }
+    // NOTE: https://github.com/mozilla-comm/ical.js/issues/452
+    finalEvent._status = pevent._firstProp("status");
+    return finalEvent;
+  }
+
+  // NOTE: Formatting to ical's special datetime means losing milli-second
+  // precision!
+  static formatDateTime(dateTime) {
+    // NOTE: See https://tools.ietf.org/html/rfc5545 under:
+    // "FORM #2: DATE WITH UTC TIME"
+    // For explaination of the time zone shift below, visit:
+    // https://stackoverflow.com/a/63227335/1263876
+    const timeZone = "UTC";
+    return format(utcToZonedTime(dateTime, timeZone), "yyyyMMdd'T'HHmmss'Z'", {
+      timeZone
+    });
+  }
+
+  async getSyncToken() {
+    const res = await fetch(this.uri, {
+      method: "PROPFIND",
+      headers: {
+        Depth: 0,
+        "Content-Type": "application/xml; charset=utf-8"
+      },
+      ...this.options,
+      body: `
+        <d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/">
+          <d:prop>
+            <d:displayname />
+            <cs:getctag />
+            <d:sync-token />
+          </d:prop>
+        </d:propfind>
+      `
+    });
+    const text = await res.text();
+    const doc = new xmldoc.XmlDocument(text);
+    const syncToken = doc.valueWithPath("response.propstat.prop.sync-token");
+    const displayName = doc.valueWithPath("response.propstat.prop.displayname");
+    // NOTE: For radicale, each calendar has its own resource URI. This means
+    // requesting the sync token will never yield more than one display name or
+    // syncToken.
+    return {
+      syncToken,
+      displayName
+    };
+  }
+
+  async syncCollection(syncToken) {
+    let body;
+    if (syncToken) {
+      body = `<?xml version="1.0" encoding="utf-8" ?>
+<d:sync-collection xmlns:d="DAV:">
+  <d:sync-token>${syncToken}</d:sync-token>
+  <d:sync-level>1</d:sync-level>
+  <d:prop>
+    <d:getetag/>
+  </d:prop>
+</d:sync-collection>`;
+    } else {
+      body = `<?xml version="1.0" encoding="utf-8" ?>
+<d:sync-collection xmlns:d="DAV:">
+  <d:sync-token/>
+  <d:sync-level>1</d:sync-level>
+  <d:prop>
+    <d:getetag/>
+  </d:prop>
+</d:sync-collection>
+      `;
+    }
+    const res = await fetch(this.uri, {
+      method: "REPORT",
+      headers: {
+        "Content-Type": "application/xml; charset=utf-8"
+      },
+      ...this.options,
+      body
+    });
+
+    const text = await res.text();
+    const doc = new xmldoc.XmlDocument(text);
+    const docSyncToken = doc.valueWithPath("sync-token");
+    const responses = doc.childrenNamed("response");
+
+    const values = {
+      href: [],
+      etag: [],
+      status: []
+    };
+    const collection = responses.map(node => {
+      const status = node.valueWithPath("propstat.status");
+      let [_, statusCode] = status.match(new RegExp("HTTP\\/1\\.1 (\\d{3})"));
+      statusCode = parseInt(statusCode);
+
+      return {
+        href: node.valueWithPath("href"),
+        etag: node.valueWithPath("propstat.prop.getetag"),
+        statusCode
+      };
+    });
+
+    return {
+      syncToken: docSyncToken,
+      collection
+    };
+  }
+}
+
+module.exports = {
+  SimpleCalDAV,
+  errors: {
+    ParserError,
+    ServerError,
+    InputError
+  }
+};
+
+},{"ical.js":"../node_modules/simple-caldav/node_modules/ical.js/build/ical.js","cross-fetch":"../node_modules/cross-fetch/dist/browser-ponyfill.js","uuid":"../node_modules/uuid/dist/esm-browser/index.js","date-fns-tz":"../node_modules/date-fns-tz/esm/index.js","date-fns/add":"../node_modules/date-fns/esm/add/index.js","sha1":"../node_modules/sha1/sha1.js","xmldoc":"../node_modules/xmldoc/index.js"}],"app.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -27897,10 +51746,18 @@ var _eximport = require("/assets/js/eximport.js");
 
 var _scan = require("/assets/js/scan.js");
 
+var _simpleCaldav = _interopRequireDefault(require("simple-caldav"));
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
+var URI = "https://example.com/cal/";
+var dav = new _simpleCaldav.default(URI, {
+  credentials: "include",
+  mode: "cors"
+});
+var evt = dav.getEvent("abc").then(console.log).catch(console.log);
 var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 var weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 var today = new Date();
@@ -27994,8 +51851,8 @@ var event_check = function event_check(date) {
       feedback.event = false;
       feedback.subscription = false;
       feedback.multidayevent = false;
-      feedback.rrule = false;
-      feedback.date = date;
+      feedback.rrule = false; //feedback.date = date;
+
       var a = new Date(events[_t].dateStart).getTime();
       var b = new Date(events[_t].dateEnd).getTime();
       var c = new Date(date).getTime(); // multi day event
@@ -28010,6 +51867,11 @@ var event_check = function event_check(date) {
 
           if (events[_t].multidayevent === true) {
             feedback.multidayevent = true;
+          }
+
+          if (events[_t].time_end == "00:00:00" && events[_t].dateEnd == date) {
+            feedback.subscription = false;
+            feedback.event = false;
           }
 
           _t = events.length;
@@ -28116,6 +51978,13 @@ var event_check_day = function event_check_day(date) {
 
     if (_d === "none" || _d === "") {
       if (a === c || b === c || a < c && b > c) {
+        //if multiday event
+        //the end date is next day
+        //time is 00:00:00
+        if (item[i].getAttribute("data-time-end") == "00:00:00" && item[i].getAttribute("data-date-end") == date) {
+          return false;
+        }
+
         slider.push(item[i]);
         slider[0].style.display = "block";
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -28287,7 +52156,7 @@ var showCalendar = function showCalendar(month, year) {
 
 
         if (events.length > 0) {
-          if (event_check(p).event) {
+          if (event_check(p).event == true) {
             _cell.classList.add("event");
           }
 
@@ -29449,7 +53318,7 @@ function handleKeyUp(evt) {
 document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
-},{"localforage":"../node_modules/localforage/dist/localforage.js","mustache":"../node_modules/mustache/mustache.js","/assets/js/helper.js":"assets/js/helper.js","/assets/js/getMoonPhase.js":"assets/js/getMoonPhase.js","/assets/js/eximport.js":"assets/js/eximport.js","/assets/js/scan.js":"assets/js/scan.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"localforage":"../node_modules/localforage/dist/localforage.js","mustache":"../node_modules/mustache/mustache.js","/assets/js/helper.js":"assets/js/helper.js","/assets/js/getMoonPhase.js":"assets/js/getMoonPhase.js","/assets/js/eximport.js":"assets/js/eximport.js","/assets/js/scan.js":"assets/js/scan.js","simple-caldav":"../node_modules/simple-caldav/src/index.js"}],"../../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -29477,7 +53346,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36095" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45019" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
@@ -29654,4 +53523,3 @@ function hmrAcceptRun(bundle, id) {
   }
 }
 },{}]},{},["../../../../../../usr/local/lib/node_modules/parcel-bundler/src/builtins/hmr-runtime.js","app.js"], null)
-//# sourceMappingURL=/app.c328ef1a.js.map

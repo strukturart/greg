@@ -151,11 +151,9 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
 
         //multiday event
         let multidayevent = false;
-        console.log(ev);
+
         if (ev.end && ev.start) {
           if (new Date(ev.end) > new Date(ev.start)) {
-            console.log(ev.summary + " / " + ev.start + " / " + ev.end);
-
             multidayevent = true;
           }
           //all day events have the time 00:00:00 but the start end date consecutive
@@ -173,7 +171,7 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
           if (ev.rrule != null || ev.rrule != undefined) {
             let a = ev.rrule;
             feedback = a.freq;
-            console.log(ev.rrule);
+            //console.log(ev.rrule);
           }
 
           return feedback;
@@ -208,7 +206,6 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
         };
 
         events.push(imp);
-
 
         last_uid = imp.UID;
         last_date = imp.DTSTART;
