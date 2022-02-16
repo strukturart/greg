@@ -17552,6 +17552,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
 
 
         var multidayevent = false;
+        console.log(ev);
 
         if (ev.end && ev.start) {
           if (new Date(ev.end) > new Date(ev.start)) {
@@ -17571,6 +17572,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           if (ev.rrule != null || ev.rrule != undefined) {
             var a = ev.rrule;
             feedback = a.freq;
+            console.log(ev.rrule);
           }
 
           return feedback;
@@ -17583,7 +17585,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           LOCATION: ev.location,
           DESCRIPTION: ev.description,
           ATTACH: ev.attach,
-          RRULE: "",
+          RRULE: ev.rrule,
           "LAST-MODIFIED": ev.lastmodified,
           CLASS: ev.class,
           DTSTAMP: ev.dtstamp,
@@ -27810,8 +27812,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.stop_scan = exports.start_scan = void 0;
 
-var _helper = require("/assets/js/helper.js");
-
 var _jsqr = _interopRequireDefault(require("jsqr"));
 
 var _app = require("../../app.js");
@@ -27822,17 +27822,10 @@ var video;
 var intv;
 
 var stop_scan = function stop_scan() {
-  // status.views = "subscription";
   document.getElementById("qr-screen").style.display = "none";
-  /*
-  const stream = video.srcObject;
-  const tracks = stream.getTracks();
-   tracks.forEach(function (track) {
-    track.stop();
-    document.getElementById("qr-screen").style.display = "none";
-  });
-   video.srcObject = null;
-  */
+  document.getElementById("cal-subs-url").focus();
+  _app.status.view = "subscription";
+  console.log("yeah");
 };
 
 exports.stop_scan = stop_scan;
@@ -27884,13 +27877,13 @@ var start_scan = function start_scan(callback) {
 };
 
 exports.start_scan = start_scan;
-},{"/assets/js/helper.js":"IWa2","jsqr":"IuN4","../../app.js":"A2T1"}],"A2T1":[function(require,module,exports) {
+},{"jsqr":"IuN4","../../app.js":"A2T1"}],"A2T1":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.events = void 0;
+exports.status = exports.events = void 0;
 
 var _localforage = _interopRequireDefault(require("localforage"));
 
@@ -27922,6 +27915,7 @@ var status = {
   visible: false,
   update_event_id: ""
 };
+exports.status = status;
 var settings = {};
 var blob = "";
 var events = []; //ads || ads free
@@ -28356,8 +28350,8 @@ function renderHello(arr) {
   //format date
 
   document.querySelectorAll("article").forEach(function (index) {
-    var w = new Date(index.getAttribute("data-time-start"));
-    var s = new Date(index.getAttribute("data-time-end"));
+    var w = index.getAttribute("data-time-start");
+    var s = index.getAttribute("data-time-end");
 
     if (w == "00:00:00" && s == "00:00:00") {
       index.querySelector("div.time").innerHTML = "All day";
@@ -29392,8 +29386,15 @@ function shortpress_action(param) {
       }
 
       if (status.view == "scan") {
+        evt.preventDefault;
         status.views = "subscription";
         (0, _scan.stop_scan)();
+        router();
+      }
+
+      if (status.view == "subscription") {
+        evt.preventDefault;
+        status.views = "options";
         router();
       }
 

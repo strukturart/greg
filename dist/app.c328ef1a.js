@@ -29376,6 +29376,7 @@ function shortpress_action(param) {
 
     case "Backspace":
       if (status.view == "add-edit-event" && document.activeElement.tagName != "INPUT") {
+        param.preventDefault;
         status.view = "month";
         router();
       }
@@ -29386,8 +29387,15 @@ function shortpress_action(param) {
       }
 
       if (status.view == "scan") {
-        status.views = "subscription";
+        param.preventDefault;
+        status.view = "subscription";
         (0, _scan.stop_scan)();
+        router();
+      }
+
+      if (status.view == "subscription") {
+        param.preventDefault;
+        status.view = "options";
         router();
       }
 
@@ -29469,7 +29477,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45505" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "36095" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

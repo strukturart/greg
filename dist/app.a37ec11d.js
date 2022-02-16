@@ -17505,6 +17505,7 @@ var list_ics = function list_ics() {
     var fn = result.split("/");
     fn = fn[fn.length - 1];
     if (fn == "greg.ics") return false;
+    document.querySelector("div#options div#import-text").style.display = "block";
     document.querySelector("div#options div#import-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="import" data-filename="' + result + '">' + fn + "</button>");
   };
 
@@ -17528,16 +17529,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
       var ev = datas[k];
 
       if (datas[k].type == "VEVENT") {
-        //multiday event
-        var multidayevent = false;
-
-        if (ev.end && ev.start) {
-          if (new Date(ev.end) > new Date(ev.start)) {
-            multidayevent = true;
-          }
-        } //date start
-
-
+        //date start
         var dateStart = void 0,
             timeStart = void 0;
 
@@ -17556,6 +17548,22 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
 
           dateEnd = _DTstart.getFullYear() + "-" + "0".concat(_DTstart.getMonth() + 1).slice(-2) + "-" + "0".concat(_DTstart.getDate()).slice(-2);
           timeEnd = "0".concat(_DTstart.getHours()).slice(-2) + ":" + "0".concat(_DTstart.getMinutes()).slice(-2) + ":" + "0".concat(_DTstart.getSeconds()).slice(-2);
+        } //multiday event
+
+
+        var multidayevent = false;
+        console.log(ev);
+
+        if (ev.end && ev.start) {
+          if (new Date(ev.end) > new Date(ev.start)) {
+            console.log(ev.summary + " / " + ev.start + " / " + ev.end);
+            multidayevent = true;
+          } //all day events have the time 00:00:00 but the start end date consecutive
+
+
+          if (new Date(ev.end) > new Date(ev.start) && timeStart == "00:00:00" && timeEnd == "00:00:00") {
+            multidayevent = false;
+          }
         }
 
         var parse_rrule = function parse_rrule() {
@@ -17564,6 +17572,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           if (ev.rrule != null || ev.rrule != undefined) {
             var a = ev.rrule;
             feedback = a.freq;
+            console.log(ev.rrule);
           }
 
           return feedback;
@@ -17576,7 +17585,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           LOCATION: ev.location,
           DESCRIPTION: ev.description,
           ATTACH: ev.attach,
-          RRULE: "",
+          RRULE: ev.rrule,
           "LAST-MODIFIED": ev.lastmodified,
           CLASS: ev.class,
           DTSTAMP: ev.dtstamp,
@@ -17681,6 +17690,7 @@ function loadICS(filename, callback) {
 
     reader.onloadend = function (event) {
       parse_ics(event.target.result, callback, true, false);
+      document.getElementById("import-text").style.display = "block";
     };
 
     reader.readAsText(file);
@@ -27802,8 +27812,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.stop_scan = exports.start_scan = void 0;
 
-var _helper = require("/assets/js/helper.js");
-
 var _jsqr = _interopRequireDefault(require("jsqr"));
 
 var _app = require("../../app.js");
@@ -27814,17 +27822,10 @@ var video;
 var intv;
 
 var stop_scan = function stop_scan() {
-  // status.views = "subscription";
   document.getElementById("qr-screen").style.display = "none";
-  /*
-  const stream = video.srcObject;
-  const tracks = stream.getTracks();
-   tracks.forEach(function (track) {
-    track.stop();
-    document.getElementById("qr-screen").style.display = "none";
-  });
-   video.srcObject = null;
-  */
+  document.getElementById("cal-subs-url").focus();
+  _app.status.view = "subscription";
+  console.log("yeah");
 };
 
 exports.stop_scan = stop_scan;
@@ -27876,13 +27877,13 @@ var start_scan = function start_scan(callback) {
 };
 
 exports.start_scan = start_scan;
-},{"/assets/js/helper.js":"IWa2","jsqr":"IuN4","../../app.js":"A2T1"}],"A2T1":[function(require,module,exports) {
+},{"jsqr":"IuN4","../../app.js":"A2T1"}],"A2T1":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.events = void 0;
+exports.status = exports.events = void 0;
 
 var _localforage = _interopRequireDefault(require("localforage"));
 
@@ -27914,6 +27915,7 @@ var status = {
   visible: false,
   update_event_id: ""
 };
+exports.status = status;
 var settings = {};
 var blob = "";
 var events = []; //ads || ads free
@@ -28348,6 +28350,13 @@ function renderHello(arr) {
   //format date
 
   document.querySelectorAll("article").forEach(function (index) {
+    var w = index.getAttribute("data-time-start");
+    var s = index.getAttribute("data-time-end");
+
+    if (w == "00:00:00" && s == "00:00:00") {
+      index.querySelector("div.time").innerHTML = "All day";
+    }
+
     var t = new Date(index.getAttribute("data-date"));
     var n = new Date(index.getAttribute("data-date-end"));
     var d = weekday[t.getDay()] + ", " + t.getFullYear() + " " + months[t.getMonth()] + " " + t.getDate();
@@ -28418,7 +28427,7 @@ var router = function router(view) {
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
     document.getElementById("event-date").value = status.selected_day;
     add_edit_event.style.display = "block";
-    Array.from(document.querySelectorAll("div#add-edit-event .item")).forEach(function (i, p) {
+    document.querySelectorAll("div#add-edit-event .item").forEach(function (i, p) {
       i.setAttribute("tabindex", p);
     });
     add_edit_event.querySelectorAll(".item")[0].focus();

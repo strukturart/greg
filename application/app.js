@@ -1663,7 +1663,6 @@ function shortpress_action(param) {
         router();
 
         // when new event
-
         // set time
         set_datetime_form();
 
@@ -1760,6 +1759,7 @@ function shortpress_action(param) {
         status.view == "add-edit-event" &&
         document.activeElement.tagName != "INPUT"
       ) {
+        param.preventDefault;
         status.view = "month";
         router();
       }
@@ -1770,8 +1770,17 @@ function shortpress_action(param) {
       }
 
       if (status.view == "scan") {
-        status.views = "subscription";
+        param.preventDefault;
+
+        status.view = "subscription";
         stop_scan();
+        router();
+      }
+
+      if (status.view == "subscription") {
+        param.preventDefault;
+
+        status.view = "options";
         router();
       }
 
