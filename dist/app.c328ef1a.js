@@ -17552,6 +17552,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
 
 
         var multidayevent = false;
+        console.log(ev);
 
         if (ev.end && ev.start) {
           if (new Date(ev.end) > new Date(ev.start)) {
@@ -17571,6 +17572,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           if (ev.rrule != null || ev.rrule != undefined) {
             var a = ev.rrule;
             feedback = a.freq;
+            console.log(ev.rrule);
           }
 
           return feedback;
@@ -17583,7 +17585,7 @@ var parse_ics = function parse_ics(data, callback, saveOnDevice, subscription) {
           LOCATION: ev.location,
           DESCRIPTION: ev.description,
           ATTACH: ev.attach,
-          RRULE: "",
+          RRULE: ev.rrule,
           "LAST-MODIFIED": ev.lastmodified,
           CLASS: ev.class,
           DTSTAMP: ev.dtstamp,
@@ -27810,8 +27812,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.stop_scan = exports.start_scan = void 0;
 
-var _helper = require("/assets/js/helper.js");
-
 var _jsqr = _interopRequireDefault(require("jsqr"));
 
 var _app = require("../../app.js");
@@ -27822,17 +27822,10 @@ var video;
 var intv;
 
 var stop_scan = function stop_scan() {
-  // status.views = "subscription";
   document.getElementById("qr-screen").style.display = "none";
-  /*
-  const stream = video.srcObject;
-  const tracks = stream.getTracks();
-   tracks.forEach(function (track) {
-    track.stop();
-    document.getElementById("qr-screen").style.display = "none";
-  });
-   video.srcObject = null;
-  */
+  document.getElementById("cal-subs-url").focus();
+  _app.status.view = "subscription";
+  console.log("yeah");
 };
 
 exports.stop_scan = stop_scan;
@@ -27884,13 +27877,13 @@ var start_scan = function start_scan(callback) {
 };
 
 exports.start_scan = start_scan;
-},{"/assets/js/helper.js":"assets/js/helper.js","jsqr":"../node_modules/jsqr/dist/jsQR.js","../../app.js":"app.js"}],"app.js":[function(require,module,exports) {
+},{"jsqr":"../node_modules/jsqr/dist/jsQR.js","../../app.js":"app.js"}],"app.js":[function(require,module,exports) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.events = void 0;
+exports.status = exports.events = void 0;
 
 var _localforage = _interopRequireDefault(require("localforage"));
 
@@ -27922,6 +27915,7 @@ var status = {
   visible: false,
   update_event_id: ""
 };
+exports.status = status;
 var settings = {};
 var blob = "";
 var events = []; //ads || ads free
@@ -29475,7 +29469,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "42279" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "45505" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

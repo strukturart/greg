@@ -41,7 +41,7 @@ let monthAndYear = document.getElementById("monthAndYear");
 
 let once = false;
 
-let status = {
+export let status = {
   view: "month",
   selected_day: "",
   visible: false,

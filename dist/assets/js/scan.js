@@ -1,4 +1,3 @@
-import { bottom_bar } from "/assets/js/helper.js";
 import jsQR from "jsqr";
 import { status } from "../../app.js";
 
@@ -6,20 +5,11 @@ let video;
 let intv;
 
 export let stop_scan = function () {
-  // status.views = "subscription";
-
   document.getElementById("qr-screen").style.display = "none";
-  /*
-  const stream = video.srcObject;
-  const tracks = stream.getTracks();
 
-  tracks.forEach(function (track) {
-    track.stop();
-    document.getElementById("qr-screen").style.display = "none";
-  });
-
-  video.srcObject = null;
-  */
+  document.getElementById("cal-subs-url").focus();
+  status.view = "subscription";
+  console.log("yeah");
 };
 
 export let start_scan = function (callback) {
