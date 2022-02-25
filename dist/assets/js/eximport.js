@@ -1,6 +1,6 @@
-import { list_files } from "/assets/js/helper.js";
-import { toaster } from "/assets/js/helper.js";
-import { side_toaster } from "/assets/js/helper.js";
+import { list_files } from "./helper.js";
+import { toaster } from "./helper.js";
+import { side_toaster } from "./helper.js";
 import { events } from "../../app.js";
 
 export let export_ical = function (filename, event_data) {
@@ -231,25 +231,30 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
   }
 };
 
-// ///////////
-// /FETCH ICS
-// /////////
+/////////////
+///FETCH ICS
+///////////
 
 export let fetch_ics = function (url, cb) {
   let xhttp = new XMLHttpRequest({ mozSystem: true });
 
   xhttp.open("GET", url + "?time=" + new Date().getTime(), true);
-  xhttp.timeout = 25000;
+  xhttp.timeout = 2000;
+
+  xhttp.onprogress = function () {
+    side_toaster("loading subscriptions", 2000);
+  };
+
   xhttp.onload = function () {
     if (xhttp.readyState === xhttp.DONE && xhttp.status === 200) {
       let data = xhttp.response;
       parse_ics(data, cb, false, true);
-      toaster("subscriptions loaded", 2000);
+      side_toaster("subscriptions loaded", 2000);
     }
   };
 
   xhttp.onerror = function () {
-    toaster("subscription could not be loaded", 2000);
+    side_toaster("subscription could not be loaded", 2000);
   };
 
   xhttp.send(null);
@@ -267,7 +272,6 @@ function share(url, name) {
   });
 
   activity.onsuccess = function () {};
-
   activity.onerror = function () {};
 }
 

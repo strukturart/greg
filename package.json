@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/strukturart/greg#readme",
   "devDependencies": {
+    "buffer": "^6.0.3",
     "cssnano": "^5.0.17",
     "parcel-plugin-static-files-copy": "^2.6.0",
     "postcss": "^8.4.6"
@@ -31,8 +32,7 @@
     "ical.js": "^1.5.0",
     "jsqr": "^1.4.0",
     "localforage": "^1.10.0",
-    "mustache": "^4.2.0",
-    "simple-caldav": "^0.7.1"
+    "mustache": "^4.2.0"
   },
   "staticFiles": {
     "staticPath": [

@@ -3,10 +3,10 @@
  */
 
 export function getMoonPhase(year, month, day) {
+  let b;
+  let jd;
+  let e;
   let c = (e = jd = b = 0);
-  let b
-  let jd
-  let e
 
   if (month < 3) {
     year--;
