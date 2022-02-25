@@ -2,25 +2,19 @@
 
 import localforage from "localforage";
 import Mustache from "mustache";
-import { sort_array } from "/assets/js/helper.js";
-import { toaster } from "/assets/js/helper.js";
-import { validate } from "/assets/js/helper.js";
-import { uid } from "/assets/js/helper.js";
-import { pick_image } from "/assets/js/helper.js";
-import { bottom_bar } from "/assets/js/helper.js";
-import { getMoonPhase } from "/assets/js/getMoonPhase.js";
-import { list_ics } from "/assets/js/eximport.js";
-import { fetch_ics } from "/assets/js/eximport.js";
-import { export_ical } from "/assets/js/eximport.js";
-import { loadICS } from "/assets/js/eximport.js";
-import { start_scan } from "/assets/js/scan.js";
-import { stop_scan } from "/assets/js/scan.js";
-
-import SimpleCalDAV from "simple-caldav";
-
-const URI = "https://example.com/cal/";
-const dav = new SimpleCalDAV(URI, { credentials: "include", mode: "cors" });
-const evt = dav.getEvent("abc").then(console.log).catch(console.log);
+import { sort_array } from "./assets/js/helper.js";
+import { toaster } from "./assets/js/helper.js";
+import { validate } from "./assets/js/helper.js";
+import { uid } from "./assets/js/helper.js";
+import { pick_image } from "./assets/js/helper.js";
+import { bottom_bar } from "./assets/js/helper.js";
+import { getMoonPhase } from "./assets/js/getMoonPhase.js";
+import { list_ics } from "./assets/js/eximport.js";
+import { fetch_ics } from "./assets/js/eximport.js";
+import { export_ical } from "./assets/js/eximport.js";
+import { loadICS } from "./assets/js/eximport.js";
+import { start_scan } from "./assets/js/scan.js";
+import { stop_scan } from "./assets/js/scan.js";
 
 let months = [
   "Jan",
