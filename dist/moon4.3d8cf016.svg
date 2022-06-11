@@ -7,9 +7,9 @@
   </sodipodi:namedview>
   <defs id="defs2"></defs>
   <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(-64.327415,-83.17527)">
-    <circle style="fill:#000000;fill-opacity:1;stroke-width:0" id="path846" cx="80.893661" cy="100.39587" r="15"></circle>
-    <ellipse style="fill:#fcfcfc;fill-opacity:1;stroke-width:0" id="path846-8" cx="91.567673" cy="99.512436" ry="15" rx="16.5"></ellipse>
-    <rect style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" id="rect1444" width="53.750053" height="46.918285" x="-20.634134" y="77.11161" ry="0.63945031"></rect>
-    <circle style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:3;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" id="path846-4" cx="80.827415" cy="99.67527" r="15" sodipodi:insensitive="true"></circle>
+    <circle style="fill: #000; fill-opacity: 1; stroke-width: 0" id="path846" cx="80.893661" cy="100.39587" r="15"></circle>
+    <ellipse style="fill: #fcfcfc; fill-opacity: 1; stroke-width: 0" id="path846-8" cx="91.567673" cy="99.512436" ry="15" rx="16.5"></ellipse>
+    <rect style="fill: #fff; fill-opacity: 1; stroke: none; stroke-width: 3px; stroke-miterlimit: 4; stroke-dasharray: none; stroke-opacity: 1" id="rect1444" width="53.750053" height="46.918285" x="-20.634134" y="77.11161" ry="0.63945031"></rect>
+    <circle style="fill: none; fill-opacity: 1; stroke: #000; stroke-width: 3px; stroke-miterlimit: 4; stroke-dasharray: none; stroke-opacity: 1" id="path846-4" cx="80.827415" cy="99.67527" r="15" sodipodi:insensitive="true"></circle>
   </g>
 </svg>

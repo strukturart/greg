@@ -142,7 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"il488":[function(require,module,exports) {
+})({"k1xWN":[function(require,module,exports) {
 "use strict";
 var HMR_HOST = null;
 var HMR_PORT = null;
@@ -538,6 +538,8 @@ var _helperJs = require("./assets/js/helper.js");
 var _getMoonPhaseJs = require("./assets/js/getMoonPhase.js");
 var _eximportJs = require("./assets/js/eximport.js");
 var _scanJs = require("./assets/js/scan.js");
+var _mithril = require("mithril");
+var _mithrilDefault = parcelHelpers.interopDefault(_mithril);
 "use strict";
 let months = [
     "Jan",
@@ -566,10 +568,8 @@ let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
-let monthAndYear = document.getElementById("monthAndYear");
 let once = false;
 let status = {
-    view: "month",
     selected_day: "",
     visible: false,
     update_event_id: ""
@@ -605,6 +605,7 @@ getManifest(manifest);
 let find_closest_date = function(search_term) {
     let t2 = 0;
     let search = new Date(search_term).getTime();
+    console.log(search);
     for(let i = 0; i < events.length; i++){
         let item = new Date(events[i].dateStart).getTime();
         if (search < item) {
@@ -618,7 +619,8 @@ let find_closest_date = function(search_term) {
             i = events.length;
         }
     }
-    document.querySelectorAll("div#list-view article[data-date='" + t2 + "']")[0].focus();
+    console.log(document.querySelectorAll("article[data-date='" + t2 + "']"));
+    document.querySelectorAll("article[data-date='" + t2 + "']")[0].focus();
     return t2;
 };
 // check if has event
@@ -831,15 +833,15 @@ Date.prototype.getWeek = function() {
     // Adjust to Thursday in week 1 and count number of weeks from date to week1.
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 };
-let showCalendar = function(month1, year) {
+let showCalendar = function(month, year) {
     _helperJs.bottom_bar("add", "events", "options");
-    let firstDay = new Date(year, month1).getDay();
-    let daysInMonth = 32 - new Date(year, month1, 32).getDate();
+    let firstDay = new Date(year, month).getDay();
+    let daysInMonth = 32 - new Date(year, month, 32).getDate();
     let tbl = document.getElementById("calendar-body");
     // clearing all previous cells
     tbl.innerHTML = "";
     // filing data about month and in the page via DOM.
-    monthAndYear.innerHTML = months[month1] + " " + year;
+    document.getElementById("monthAndYear").innerHTML = months[month] + " " + year;
     // creating all cells
     let date = 1;
     for(let i = 0; i < 6; i++){
@@ -868,10 +870,10 @@ let showCalendar = function(month1, year) {
                 // store date with leading 0
                 // because input type date
                 // accept only day month with leading zero
-                let mmonth = `0${month1 + 1}`.slice(-2);
+                let mmonth = `0${month + 1}`.slice(-2);
                 let day = `0${date}`.slice(-2);
                 let p = year + "-" + mmonth + "-" + day;
-                moon.classList.add("moon-phase-" + _getMoonPhaseJs.getMoonPhase(year, month1, date));
+                moon.classList.add("moon-phase-" + _getMoonPhaseJs.getMoonPhase(year, month, date));
                 cell.appendChild(moon);
                 cell.setAttribute("data-date", p);
                 cell.setAttribute("data-index", new Date(p).toISOString());
@@ -890,7 +892,7 @@ let showCalendar = function(month1, year) {
         // add weeknumbers
         let week = document.createElement("span");
         week.classList.add("weeknumber");
-        let weekText = document.createTextNode(new Date(year, month1, date).getWeek());
+        let weekText = document.createTextNode(new Date(year, month, date).getWeek());
         week.appendChild(weekText);
         row.appendChild(week);
         //add row
@@ -899,15 +901,10 @@ let showCalendar = function(month1, year) {
     document.querySelectorAll(".item")[0].focus();
     status.selected_day = document.activeElement.getAttribute("data-date");
     // highlight current day
-    if (today.getMonth() == month1 && today.getFullYear() == year) {
+    if (today.getMonth() == month && today.getFullYear() == year) {
         document.querySelectorAll(".item")[currentDay - 1].focus();
         document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
     }
-};
-let set_tabindex = function() {
-    document.querySelectorAll("div#list-view article").forEach(function(i, p) {
-        i.setAttribute("tabindex", p);
-    });
 };
 //RENDER
 function renderHello(arr) {
@@ -920,7 +917,6 @@ function renderHello(arr) {
     document.getElementById("list-view").innerHTML = rendered;
     document.getElementById("event-slider").innerHTML = rendered;
     document.getElementById("event-slider").style.opacity = 100;
-    set_tabindex();
     //event_check_day(document.activeElement.getAttribute("data-date"));
     //format date
     document.querySelectorAll("article").forEach(function(index) {
@@ -951,130 +947,493 @@ let clear_form = function() {
 // ///////////////
 // ///////////////
 // //////////////
-*/ const month = document.getElementById("calendar");
+
+
+*/ var root = document.getElementById("app");
+var page_calendar = {
+    view: function() {
+        return _mithrilDefault.default("div", {
+            class: "width-100 height-100",
+            id: "calendar"
+        }, [
+            _mithrilDefault.default("h3", {
+                class: "card-header",
+                id: "monthAndYear"
+            }),
+            _mithrilDefault.default("div", {
+                class: "calendar-head flex"
+            }, [
+                _mithrilDefault.default("div", "Sun"),
+                _mithrilDefault.default("div", "Mon"),
+                _mithrilDefault.default("div", "Tue"),
+                _mithrilDefault.default("div", "Wed"),
+                _mithrilDefault.default("div", "Thu"),
+                _mithrilDefault.default("div", "Fri"),
+                _mithrilDefault.default("div", "Sat"), 
+            ]),
+            _mithrilDefault.default("div", {
+                id: "calendar-body"
+            }),
+            _mithrilDefault.default("div", {
+                id: "event-slider"
+            }),
+            _mithrilDefault.default("div", {
+                id: "event-slider-indicator",
+                class: "flex width-100 justify-content-spacearound"
+            }, [
+                _mithrilDefault.default("div", {
+                    class: "flex"
+                })
+            ]), 
+        ]);
+    },
+    oncreate: ({ dom  })=>setTimeout(function() {
+            dom.focus();
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            console.log(document.activeElement.getAttribute("data-date"));
+            _helperJs.bottom_bar("add", "events", "options");
+            let t6 = new Date(status.selected_day);
+            currentMonth = t6.getMonth();
+            currentYear = t6.getFullYear();
+            let k = status.selected_day;
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) item.focus();
+            });
+            showCalendar(currentMonth, currentYear);
+        }, 500)
+};
+/*
+
+        {{#data}}
+            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} data-time-start={{time_start}} data-time-end={{time_end}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} data-multidayevent={{multidayevent}} class="item {{#isSubscription}}subscription{{/isSubscription}} ">
+               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
+                <div class="date"></div>
+                <div class="time">
+                    {{time_start}}
+                    {{#time_end.length}} - {{time_end}}{{/time_end.length}}
+                </div>
+                <h2>{{SUMMARY}}</h2>
+                <div>{{LOCATION}}</div>
+                <div class="description">{{DESCRIPTION}}</div>
+            </article>
+            {{/data}}
+            */ var page_events = {
+    view: function(vnode) {
+        return events.map(function(item, index) {
+            _helperJs.bottom_bar("edit", "month", "options");
+            return _mithrilDefault.default("article", {
+                class: "item",
+                tabindex: index,
+                "data-id": item.UID,
+                "data-date": item.dateStart,
+                "data-time-start": item.time_start,
+                "data-time-end": item.time_end,
+                "data-date-end": item.dateEnd,
+                "data-rrule": item.rrule_,
+                "data-multidayevent": item.multidayevent
+            }, [
+                _mithrilDefault.default("div", {
+                    class: "icons-bar flex"
+                }, [
+                    _mithrilDefault.default("div", {
+                        class: "date"
+                    }),
+                    _mithrilDefault.default("div", {
+                        class: "time"
+                    }, item.time_start),
+                    _mithrilDefault.default("h2", {
+                        class: "time"
+                    }, item.SUMMARY),
+                    _mithrilDefault.default("div", item.LOCATION),
+                    _mithrilDefault.default("div", {
+                        class: "description"
+                    }, item.DESCRIPTION), 
+                ]), 
+            ]);
+        });
+    },
+    oncreate: ({ dom  })=>setTimeout(function() {
+            dom.focus();
+            find_closest_date(status.selected_day);
+        }, 1500)
+};
+var page_options = {
+    view: function() {
+        return _mithrilDefault.default("div", {
+            class: "width-100 height-100",
+            id: "intro"
+        }, [
+            _mithrilDefault.default("div", {
+                class: "width-100",
+                id: "version"
+            }), 
+        ]);
+    }
+};
+var page_settings = {
+    view: function() {
+        return _mithrilDefault.default("div", {
+            id: "settings"
+        });
+    }
+};
+var page_add_edit_event = {
+    view: function() {
+        return _mithrilDefault.default("div", {
+            id: "add-edit-event"
+        }, [
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-title"
+                }, "title"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-title"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-location"
+                }, "Location"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-location"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-date"
+                }, "Start Date"),
+                _mithrilDefault.default("input", {
+                    placeholder: "YYYY-MM-DD",
+                    type: "date",
+                    id: "event-date"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-date-end"
+                }, "End Date"),
+                _mithrilDefault.default("input", {
+                    placeholder: "YYYY-MM-DD",
+                    type: "date",
+                    id: "event-date-end"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-time-start"
+                }, "Start Time"),
+                _mithrilDefault.default("input", {
+                    placeholder: "hh:mm:ss",
+                    type: "time",
+                    id: "event-time-start"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-time-end"
+                }, "End Time"),
+                _mithrilDefault.default("input", {
+                    placeholder: "hh:mm:ss",
+                    type: "time",
+                    id: "event-time-end"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-description"
+                }, "Description"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-description"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                id: "event-notification-time-wrapper",
+                tabindex: "7"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "notification"
+                }, "End Time"),
+                _mithrilDefault.default("select", {
+                    id: "event-notification-time"
+                }, [
+                    _mithrilDefault.default("option", {
+                        value: "none",
+                        selected
+                    }, "none"),
+                    _mithrilDefault.default("option", {
+                        value: "5"
+                    }, "5 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "10"
+                    }, "10 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "30"
+                    }, "30 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "1440"
+                    }, "1 Day"), 
+                ])
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                id: "event-recur-wrapper",
+                tabindex: "8"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "notification"
+                }, "Recur"),
+                _mithrilDefault.default("select", {
+                    id: "event-recur"
+                }, [
+                    _mithrilDefault.default("option", {
+                        value: "none",
+                        selected
+                    }, "none"),
+                    _mithrilDefault.default("option", {
+                        value: "DAILY"
+                    }, "Daily"),
+                    _mithrilDefault.default("option", {
+                        value: "WEEKLY"
+                    }, "Weekly"),
+                    _mithrilDefault.default("option", {
+                        value: "MONTHLY"
+                    }, "Monthly"),
+                    _mithrilDefault.default("option", {
+                        value: "YEARLY"
+                    }, "Yearly"), 
+                ])
+            ]),
+            _mithrilDefault.default("button", {
+                class: "item",
+                tabindex: "",
+                id: "select-image"
+            }, "add image"),
+            _mithrilDefault.default("div", {
+                id: "form-image-wrapper"
+            }, [
+                _mithrilDefault.default("img", {
+                    id: "form-image",
+                    "data-blob": ""
+                })
+            ]),
+            _mithrilDefault.default("button", {
+                tabindex: "10",
+                id: "save-event",
+                class: "item"
+            }, "save"),
+            _mithrilDefault.default("button", {
+                tabindex: "11",
+                id: "delete-event",
+                class: "item"
+            }, "delete"),
+            _mithrilDefault.default("button", {
+                tabindex: "12",
+                id: "export-event",
+                class: "item"
+            }, "export event"), 
+        ]);
+    }
+};
+_mithrilDefault.default.route(root, "/page_calendar", {
+    "/page_calendar": page_calendar,
+    "/page_events": page_events,
+    "/page_options": page_options,
+    "/page_settings": page_settings,
+    "/page_add_edit_event": page_add_edit_event
+});
+_mithrilDefault.default.route.prefix = "#";
+/*
+const month = document.getElementById("calendar");
 const add_edit_event = document.getElementById("add-edit-event");
 const list_view = document.getElementById("list-view");
 const options = document.getElementById("options");
-let option_button_bar = function() {
-    setTimeout(function() {
-        if (status.view == "options") {
-            if (document.activeElement.getAttribute("data-function") == "subscription") {
-                _helperJs.bottom_bar("delete", "select", "");
-                return true;
-            } else {
-                _helperJs.bottom_bar("", "select", "");
-                return true;
-            }
-        }
-    }, 500);
-};
-const pages = document.querySelectorAll(".page");
-let router = function(view) {
-    pages.forEach(function(index) {
-        index.style.display = "none";
-    });
-    if (view == "view") {
-        if (status.view == "month") status.view = "list-view";
-        else status.view = "month";
-    }
-    // add event view
-    if (status.view == "add-edit-event") {
-        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-        document.getElementById("event-date").value = status.selected_day;
-        add_edit_event.style.display = "block";
-        document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
-            i.setAttribute("tabindex", p);
-        });
-        add_edit_event.querySelectorAll(".item")[0].focus();
-        _helperJs.bottom_bar("", "edit", "");
-        if (document.getElementById("event-date-end").value == "") document.getElementById("event-date-end").value = document.getElementById("event-date").value;
-        if (status.edit_event) document.getElementById("save-event").innerText = "update";
-        console.log(status.edit_event);
-        if (!status.edit_event) {
-            document.getElementById("save-event").innerText = "save";
-            document.getElementById("event-notification-time").value = settings.default_notification;
-        }
-        return true;
-    }
-    // month view
-    if (status.view == "month") {
-        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-        options.style.display = "none";
-        month.style.display = "block";
-        _helperJs.bottom_bar("add", "events", "options");
-        status.edit_event = false;
-        let t6 = new Date(status.selected_day);
-        currentMonth = t6.getMonth();
-        currentYear = t6.getFullYear();
-        let k = status.selected_day;
-        showCalendar(currentMonth, currentYear);
-        document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-            if (item.getAttribute("data-date") == k) {
-                item.focus();
-                event_check_day(k);
-            }
-        });
-        clear_form();
-    }
-    // list view
-    if (status.view == "list-view") {
-        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-        options.style.display = "none";
-        status.edit_event = false;
-        clear_form();
-        _helperJs.bottom_bar("edit", "month", "options");
-        list_view.style.display = "block";
-        setTimeout(function() {
-            let articles = document.querySelectorAll("div#list-view article");
-            let success = false;
-            for(var k = 0; k < articles.length; k++)if (articles[k].getAttribute("data-date") == status.selected_day) {
-                articles[k].focus();
-                k = articles.length;
-                success = true;
-            }
-            for(var k = 0; k < articles.length; k++){
-                console.log(articles[k].getAttribute("data-alarm"));
-                if (articles[k].getAttribute("data-alarm") == "none") articles[k].querySelector("img.bell").style.display = "none";
-            }
-            if (!success) {
-                document.querySelectorAll("div#list-view article")[0].focus();
-                find_closest_date(status.selected_day);
-            }
-            const rect = document.activeElement.getBoundingClientRect();
-            const elY = rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
-            document.activeElement.parentNode.scrollBy({
-                left: 0,
-                top: elY - window.innerHeight / 2,
-                behavior: "smooth"
-            });
-        }, 1000);
-    }
+
+let option_button_bar = function () {
+  setTimeout(function () {
     if (status.view == "options") {
-        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-        if (!once) {
-            _eximportJs.list_ics();
-            list_subscriptions();
-            once = true;
-        }
-        document.getElementById("options").style.display = "block";
-        document.querySelectorAll("div#options .item")[0].focus();
-        document.getElementById("options").style.opacity = "1";
-        document.getElementById("subscription-form").style.display = "none";
-        setTimeout(function() {
-            Array.from(document.querySelectorAll("div#options .item")).forEach(function(i, p) {
-                i.setAttribute("tabindex", p);
-            });
-        }, 2000);
-        option_button_bar();
+      if (
+        document.activeElement.getAttribute("data-function") == "subscription"
+      ) {
+        bottom_bar("delete", "select", "");
+        return true;
+      } else {
+        bottom_bar("", "select", "");
+        return true;
+      }
     }
-    if (status.view == "subscription") {
-        document.getElementById("options").style.opacity = "0.3";
-        document.getElementById("subscription-form").style.display = "block";
-        document.querySelectorAll("div#subscription-form div.item input")[0].focus();
-        _helperJs.bottom_bar("QR", "", "save");
-    }
+  }, 500);
 };
-let list_subscriptions = function() {
+
+
+
+
+  // add event view
+  if (status.view == "add-edit-event") {
+    if (document.activeElement.hasAttribute("data-date"))
+      status.selected_day = document.activeElement.getAttribute("data-date");
+
+    document.getElementById("event-date").value = status.selected_day;
+
+    add_edit_event.style.display = "block";
+    document
+      .querySelectorAll("div#add-edit-event .item")
+      .forEach(function (i, p) {
+        i.setAttribute("tabindex", p);
+      });
+    add_edit_event.querySelectorAll(".item")[0].focus();
+    bottom_bar("", "edit", "");
+
+    if (document.getElementById("event-date-end").value == "") {
+      document.getElementById("event-date-end").value =
+        document.getElementById("event-date").value;
+    }
+
+    if (status.edit_event) {
+      document.getElementById("save-event").innerText = "update";
+    }
+    console.log(status.edit_event);
+
+    if (!status.edit_event) {
+      document.getElementById("save-event").innerText = "save";
+
+      document.getElementById("event-notification-time").value =
+        settings.default_notification;
+    }
+    return true;
+  }
+
+  // month view
+  if (status.view == "month") {
+    if (document.activeElement.hasAttribute("data-date"))
+      status.selected_day = document.activeElement.getAttribute("data-date");
+
+    options.style.display = "none";
+    month.style.display = "block";
+    bottom_bar("add", "events", "options");
+    status.edit_event = false;
+
+    let t = new Date(status.selected_day);
+    currentMonth = t.getMonth();
+    currentYear = t.getFullYear();
+
+    let k = status.selected_day;
+    showCalendar(currentMonth, currentYear);
+
+    document
+      .querySelectorAll("div#calendar-body div.item")
+      .forEach(function (item) {
+        if (item.getAttribute("data-date") == k) {
+          item.focus();
+          event_check_day(k);
+        }
+      });
+
+    clear_form();
+  }
+
+  // list view
+  if (status.view == "list-view") {
+    if (document.activeElement.hasAttribute("data-date"))
+      status.selected_day = document.activeElement.getAttribute("data-date");
+
+    options.style.display = "none";
+    status.edit_event = false;
+    clear_form();
+
+    bottom_bar("edit", "month", "options");
+
+    list_view.style.display = "block";
+    setTimeout(function () {
+      let articles = document.querySelectorAll("div#list-view article");
+
+      let success = false;
+      for (var k = 0; k < articles.length; k++) {
+        if (articles[k].getAttribute("data-date") == status.selected_day) {
+          articles[k].focus();
+          k = articles.length;
+          success = true;
+        }
+      }
+
+      for (var k = 0; k < articles.length; k++) {
+        console.log(articles[k].getAttribute("data-alarm"));
+        if (articles[k].getAttribute("data-alarm") == "none") {
+          articles[k].querySelector("img.bell").style.display = "none";
+        }
+      }
+      if (!success) {
+        document.querySelectorAll("div#list-view article")[0].focus();
+        find_closest_date(status.selected_day);
+      }
+      const rect = document.activeElement.getBoundingClientRect();
+      const elY =
+        rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+
+      document.activeElement.parentNode.scrollBy({
+        left: 0,
+        top: elY - window.innerHeight / 2,
+        behavior: "smooth",
+      });
+    }, 1000);
+  }
+  if (status.view == "options") {
+    if (document.activeElement.hasAttribute("data-date"))
+      status.selected_day = document.activeElement.getAttribute("data-date");
+
+    if (!once) {
+      list_ics();
+      list_subscriptions();
+      once = true;
+    }
+
+    document.getElementById("options").style.display = "block";
+    document.querySelectorAll("div#options .item")[0].focus();
+    document.getElementById("options").style.opacity = "1";
+    document.getElementById("subscription-form").style.display = "none";
+    setTimeout(function () {
+      Array.from(document.querySelectorAll("div#options .item")).forEach(
+        function (i, p) {
+          i.setAttribute("tabindex", p);
+        }
+      );
+    }, 2000);
+
+    option_button_bar();
+  }
+
+  if (status.view == "subscription") {
+    document.getElementById("options").style.opacity = "0.3";
+    document.getElementById("subscription-form").style.display = "block";
+
+    document
+      .querySelectorAll("div#subscription-form div.item input")[0]
+      .focus();
+
+    bottom_bar("QR", "", "save");
+  }
+};
+*/ let list_subscriptions = function() {
     if (subscriptions == null) return false;
     subscriptions.forEach(function(item) {
         document.querySelector("div#options div#subscription-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="subscription">' + item.name + "</button>");
@@ -1091,13 +1450,11 @@ let load_subscriptions = function() {
         lp++;
     }
     jump_to_today();
-    renderHello(events);
     event_check_day(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
 };
 let callback_scan = function(url) {
     _helperJs.bottom_bar("QR", "", "save");
-    status.view = "subscription";
     document.querySelector("div#subscription-form input#cal-subs-url").value = url;
 };
 let subscriptions = new Array();
@@ -1113,8 +1470,6 @@ let store_subscription = function() {
         _localforageDefault.default.setItem("subscriptions", subscriptions).then(function(value) {
             document.getElementById("subscription-form").style.display = "none";
             _helperJs.toaster("subscription stored", 2000);
-            status.view = "options";
-            router();
         }).catch(function(err) {
             // This code runs if there were any errors
             console.log(err);
@@ -1130,8 +1485,6 @@ let delete_subscription = function() {
         //Do other things once the value has been saved.
         console.log("saved: " + value);
         _helperJs.toaster("subscription deleted", 2000);
-        status.view = "month";
-        router();
     }).catch(function(err) {
         // This code runs if there were any errors
         _helperJs.toaster(err, 2000);
@@ -1140,10 +1493,10 @@ let delete_subscription = function() {
 };
 _localforageDefault.default.getItem("events").then(function(value) {
     if (value != null) events = value;
-    renderHello(events);
-    jump_to_today();
+//renderHello(events);
+// jump_to_today();
 }).catch(function(err) {
-    jump_to_today();
+//jump_to_today();
 });
 _localforageDefault.default.getItem("subscriptions").then(function(value) {
     subscriptions = value;
@@ -1179,16 +1532,17 @@ let nav = function(move) {
     const currentIndex = document.activeElement.tabIndex;
     let next1 = currentIndex + move;
     let items = 0;
-    if (status.view == "month") {
+    if (_mithrilDefault.default.route.get() == "/page_calendar") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
     }
-    if (status.view == "list-view") {
+    if (_mithrilDefault.default.route.get() == "/page_events") {
         let b = document.activeElement.parentNode;
-        items = b.querySelectorAll("div#list-view article");
+        items = b.querySelectorAll("article");
+        console.log(items);
     }
-    if (status.view == "subscription") items = document.querySelectorAll("div#subscription-form > div.item");
-    if (status.view == "add-edit-event" || status.view == "options") {
+    if (_mithrilDefault.default.route.get() == "page_subscription") items = document.querySelectorAll("div#subscription-form > div.item");
+    if (_mithrilDefault.default.route.get() == "/page_add-edit-event" || _mithrilDefault.default.route.get() == "/page_options") {
         let b = document.activeElement.parentNode;
         items = b.querySelectorAll(".item");
         if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -1212,7 +1566,8 @@ let nav = function(move) {
         top: elY - window.innerHeight / 2,
         behavior: "smooth"
     });
-    if (status.view == "month" || status.view == "list-view") {
+    if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") {
+        console.log(targetElement);
         if (targetElement.hasAttribute("data-date")) {
             status.selected_day = targetElement.getAttribute("data-date");
             status.selected_day_id = targetElement.getAttribute("data-id");
@@ -1224,104 +1579,136 @@ let nav = function(move) {
         _helperJs.bottom_bar("", "remove image", "");
         return true;
     }
-    if (document.activeElement.id != "form-image-wrapper" && status.view == "add-edit-event") {
+    if (document.activeElement.id != "form-image-wrapper" && _mithrilDefault.default.route.get() == "/page_add_edit_events") {
         _helperJs.bottom_bar("", "edit", "");
         return true;
     }
 };
-// foram actions
+// form actions
 // after selection
-document.getElementById("event-notification-time").addEventListener("change", (event)=>{
-    setTimeout(function() {
-        document.getElementById("event-notification-time").parentElement.focus();
+/*
+document
+  .getElementById("event-notification-time")
+  .addEventListener("change", (event) => {
+    setTimeout(function () {
+      document.getElementById("event-notification-time").parentElement.focus();
     }, 500);
-});
+  });
+
 //default when is not set
 settings.default_notification = "none";
-document.getElementById("default-notification-time").addEventListener("change", (event)=>{
+
+document
+  .getElementById("default-notification-time")
+  .addEventListener("change", (event) => {
     let l = document.getElementById("default-notification-time").value;
     settings.default_notification = l;
-    _localforageDefault.default.setItem("settings", settings).then(function(value) {}).catch(function(err) {
+
+    localforage
+      .setItem("settings", settings)
+      .then(function (value) {})
+      .catch(function (err) {
         console.log(err);
-    });
-    setTimeout(function() {
-        document.getElementById("default-notification-time").parentElement.focus();
+      });
+
+    setTimeout(function () {
+      document
+        .getElementById("default-notification-time")
+        .parentElement.focus();
     }, 500);
+  });
+
+document.querySelectorAll('input[type="time"]').forEach(function (item) {
+  item.addEventListener("change", (event) => {
+    setTimeout(function () {
+      item.parentElement.focus();
+    }, 500);
+  });
 });
-document.querySelectorAll('input[type="time"]').forEach(function(item) {
-    item.addEventListener("change", (event)=>{
-        setTimeout(function() {
-            item.parentElement.focus();
-        }, 500);
-    });
+
+document.querySelectorAll('input[type="date"]').forEach(function (item) {
+  item.addEventListener("change", (event) => {
+    setTimeout(function () {
+      item.parentElement.focus();
+    }, 500);
+  });
 });
-document.querySelectorAll('input[type="date"]').forEach(function(item) {
-    item.addEventListener("change", (event)=>{
-        setTimeout(function() {
-            item.parentElement.focus();
-        }, 500);
-    });
-});
-let add_alarm = function(date, message_text, id) {
-    // KaiOs  2.xx
-    if (navigator.mozAlarms) {
-        // This is arbitrary data pass to the alarm
-        var data = {
-            foo: message_text,
-            event_id: id
-        };
-        // The "honorTimezone" string is what make the alarm honoring it
-        var request = navigator.mozAlarms.add(date, "honorTimezone", data);
-        request.onsuccess = function() {
-        // console.log(this.result);
-        };
-        request.onerror = function() {
-            console.log("An error occurred: " + this.error.name);
-        };
-    }
+
+let add_alarm = function (date, message_text, id) {
+  // KaiOs  2.xx
+  if (navigator.mozAlarms) {
+    // This is arbitrary data pass to the alarm
+    var data = {
+      foo: message_text,
+      event_id: id,
+    };
+
+    // The "honorTimezone" string is what make the alarm honoring it
+
+    var request = navigator.mozAlarms.add(date, "honorTimezone", data);
+
+    request.onsuccess = function () {
+      // console.log(this.result);
+    };
+
+    request.onerror = function () {
+      console.log("An error occurred: " + this.error.name);
+    };
+  }
 };
+
 // may better to compare all alarms
 // with all events
 // to clean
-let remove_alarm = function(id) {
-    // KaiOs  2.xx
-    if (navigator.mozAlarms) {
-        let request = navigator.mozAlarms.getAll();
-        request.onsuccess = function() {
-            this.result.forEach(function(alarm) {
-                if (alarm.data.event_id == id) {
-                    let req = navigator.mozAlarms.remove(alarm.id);
-                    req.onsuccess = function() {
-                        console.log("removed");
-                    };
-                    req.onerror = function() {
-                        console.log("An error occurred: " + this.error.name);
-                    };
-                } else console.log("no alarm founded");
-            });
-        };
-        request.onerror = function() {
-            console.log("An error occurred:", this.error.name);
-        };
-    }
+let remove_alarm = function (id) {
+  // KaiOs  2.xx
+
+  if (navigator.mozAlarms) {
+    let request = navigator.mozAlarms.getAll();
+
+    request.onsuccess = function () {
+      this.result.forEach(function (alarm) {
+        if (alarm.data.event_id == id) {
+          let req = navigator.mozAlarms.remove(alarm.id);
+
+          req.onsuccess = function () {
+            console.log("removed");
+          };
+
+          req.onerror = function () {
+            console.log("An error occurred: " + this.error.name);
+          };
+        } else {
+          console.log("no alarm founded");
+        }
+      });
+    };
+
+    request.onerror = function () {
+      console.log("An error occurred:", this.error.name);
+    };
+  }
 };
-let test_alarm = function() {
-    if (navigator.mozAlarms) {
-        var request = navigator.mozAlarms.getAll();
-        request.onsuccess = function() {
-            this.result.forEach(function(alarm) {
-                console.log("Id:", alarm.id);
-                console.log("date:", alarm.date);
-                console.log("respectTimezone:", alarm.respectTimezone);
-                console.log("data:", JSON.stringify(alarm.data));
-            });
-        };
-        request.onerror = function() {
-            console.log("An error occurred:", this.error.name);
-        };
-    }
+
+let test_alarm = function () {
+  if (navigator.mozAlarms) {
+    var request = navigator.mozAlarms.getAll();
+
+    request.onsuccess = function () {
+      this.result.forEach(function (alarm) {
+        console.log("Id:", alarm.id);
+        console.log("date:", alarm.date);
+        console.log("respectTimezone:", alarm.respectTimezone);
+        console.log("data:", JSON.stringify(alarm.data));
+      });
+    };
+
+    request.onerror = function () {
+      console.log("An error occurred:", this.error.name);
+    };
+  }
 };
-// //////////////////
+*/ // //////////////////
 // //BUILD EVENT-LIST
 // /////////////////
 // /////////////
@@ -1402,8 +1789,6 @@ let store_event = function() {
     }).catch(function(err) {
         console.log(err);
     });
-    status.view = "month";
-    router();
 };
 // ////////////
 // UPDATE EVENT
@@ -1467,8 +1852,6 @@ let update_event = function() {
         // clean form
         renderHello(events);
         _eximportJs.export_ical("greg.ics", value);
-        status.view = "month";
-        router();
         clear_form();
     }).catch(function(err) {});
 };
@@ -1520,7 +1903,7 @@ let t = new Date();
 let m = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear();
-event_check_day(y + "-" + m + "-" + d);
+//event_check_day(y + "-" + m + "-" + d);
 // callback import event
 let import_event = function(id, date) {
     _helperJs.toaster("done", 2000);
@@ -1578,7 +1961,6 @@ function longpress_action(param) {
             window.close();
             break;
         case "ArrowLeft":
-            status.view;
             break;
     }
 }
@@ -1591,19 +1973,19 @@ function shortpress_action(param) {
             jump_to_today();
             break;
         case "ArrowUp":
-            if (status.view == "month") nav(-7);
-            if (status.view == "add-edit-event" || status.view == "list-view" || status.view == "options" || status.view == "subscription") nav(-1);
+            if (_mithrilDefault.default.route.get() == "/page_calendar") nav(-7);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event") nav(-1);
             break;
         case "ArrowDown":
-            if (status.view == "month") nav(7);
-            if (status.view == "add-edit-event" || status.view == "list-view" || status.view == "options" || status.view == "subscription") nav(1);
+            if (_mithrilDefault.default.route.get() == "/page_calendar") nav(7);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event") nav(1);
             break;
         case "ArrowRight":
-            if (status.view != "month") return true;
+            if (_mithrilDefault.default.route.get() != "/page_calendar") return true;
             nav(1);
             break;
         case "ArrowLeft":
-            if (status.view != "month") return true;
+            if (_mithrilDefault.default.route.get() != "/page_calendar") return true;
             nav(-1);
             break;
         case "1":
@@ -1638,7 +2020,7 @@ function shortpress_action(param) {
             break;
         case "SoftLeft":
         case "Control":
-            if (status.view == "list-view") {
+            if (_mithrilDefault.default.route.get() == "/page_events") {
                 if (document.activeElement.classList.contains("subscription")) {
                     _helperJs.toaster("a subscription cannot be edited", 2000);
                     return false;
@@ -1646,24 +2028,22 @@ function shortpress_action(param) {
                 status.selected_day_id = document.activeElement.getAttribute("data-id");
                 status.edit_event = true;
                 edit_event();
-                status.view = "add-edit-event";
-                router();
+                _mithrilDefault.default.route.set();
             }
-            if (status.view == "subscription") {
+            if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
                 _scanJs.start_scan(callback_scan);
                 status.view = "scan";
                 return true;
             }
-            if (status.view == "options") {
+            if (_mithrilDefault.default.route.get() == "/page_options") {
                 delete_subscription();
                 return true;
             }
-            if (status.view == "month") {
-                status.view = "add-edit-event";
-                router();
+            if (_mithrilDefault.default.route.get() == "/page_calendar") {
+                _mithrilDefault.default.route.set();
                 // when new event
                 // set time
-                set_datetime_form();
+                // set_datetime_form();
                 return true;
             }
             break;
@@ -1691,8 +2071,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.getAttribute("data-function") == "add-subscription") {
-                status.view = "subscription";
-                router();
+                _mithrilDefault.default.route.get() = "/page_subscription";
                 return true;
             }
             // same button with different text and action
@@ -1702,13 +2081,10 @@ function shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.id == "delete-event") {
-                if (delete_event()) {
-                    status.view = "month";
-                    router();
-                }
+                if (delete_event()) _mithrilDefault.default.route.get() = "/page_calendar";
                 return true;
             }
-            if (status.view == "options") {
+            if (_mithrilDefault.default.route.get() == "/page_options") {
                 if (document.activeElement.getAttribute("data-function") == "export") _localforageDefault.default.getItem("events").then(function(value) {
                     _eximportJs.export_ical("greg.ics", value);
                 }).catch(function(err) {
@@ -1717,28 +2093,23 @@ function shortpress_action(param) {
                 if (document.activeElement.getAttribute("data-function") == "import") _eximportJs.loadICS(document.activeElement.getAttribute("data-filename"), import_event);
                 return true;
             }
-            if (status.view == "month" || status.view == "list-view") router("view");
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            _mithrilDefault.default.route.get() == "/page_calendar" ? _mithrilDefault.default.route.set("/page_events") : _mithrilDefault.default.route.set("/page_calendar");
             break;
         case "Backspace":
-            if (status.view == "add-edit-event" && document.activeElement.tagName != "INPUT") {
+            if (_mithrilDefault.default.route.get() == "add-edit-event" && document.activeElement.tagName != "INPUT") {
                 param.preventDefault;
-                status.view = "month";
-                router();
+                _mithrilDefault.default.route.get();
             }
-            if (status.view == "options") {
-                status.view = "month";
-                router();
-            }
+            if (status.view == "options") _mithrilDefault.default.route.get();
             if (status.view == "scan") {
                 param.preventDefault;
-                status.view = "subscription";
+                _mithrilDefault.default.route.set() = "/page_subscriptions";
                 _scanJs.stop_scan();
-                router();
             }
             if (status.view == "subscription") {
                 param.preventDefault;
-                status.view = "options";
-                router();
+                _mithrilDefault.default.route.set() = "/page_options";
             }
             break;
     }
@@ -1747,7 +2118,7 @@ function shortpress_action(param) {
 // //shortpress / longpress logic
 // //////////////////////////////
 function handleKeyDown(evt) {
-    option_button_bar();
+    //option_button_bar();
     if (evt.key === "Backspace") {
         if (status.view == "options" || status.view == "add-edit-event" || status.view == "scan") evt.preventDefault();
     }
@@ -1777,7 +2148,7 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
-},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"8ZRFG":[function(require,module,exports) {
+},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"8ZRFG":[function(require,module,exports) {
 var global = arguments[3];
 /*!
     localForage -- Offline Storage, Improved
@@ -4319,7 +4690,7 @@ function write_file(data, filename) {
     };
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"cj2YQ":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"4z6iA":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -4385,7 +4756,7 @@ function getMoonPhase(year, month, day) {
     return b;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"4kH1V":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"4kH1V":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "export_ical", ()=>export_ical
@@ -4590,7 +4961,7 @@ function loadICS(filename, callback) {
     };
 }
 
-},{"./helper.js":"db1Xp","../../app.js":"20BJq","ical":"3FyRN","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"3FyRN":[function(require,module,exports) {
+},{"./helper.js":"db1Xp","../../app.js":"20BJq","ical":"3FyRN","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"3FyRN":[function(require,module,exports) {
 module.exports = require('./ical');
 var node = require('./node-ical');
 // Copy node functions across to exports
@@ -4937,7 +5308,7 @@ ical.objectHandlers['END'] = function(val, params, curr, stack) {
     return originalEnd.call(this, val, params, curr, stack);
 };
 
-},{"./ical":"he2bB","fs":"jgbrw","rrule":"idCmx"}],"jgbrw":[function(require,module,exports) {
+},{"./ical":"he2bB","fs":"6DQzB","rrule":"idCmx"}],"6DQzB":[function(require,module,exports) {
 "use strict";
 
 },{}],"idCmx":[function(require,module,exports) {
@@ -4985,7 +5356,7 @@ var rrulestr = function() {
 };
 exports.default = _rruleDefault.default;
 
-},{"./rrule":"fQtN4","./rruleset":"1v7S8","./rrulestr":"ai34i","./types":"9biul","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"fQtN4":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./rruleset":"1v7S8","./rrulestr":"ai34i","./types":"9biul","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"fQtN4":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Days", ()=>Days
@@ -5350,7 +5721,7 @@ function isFiltered(bymonth, ii, currentDay, byweekno, byweekday, byeaster, bymo
     return _helpers.notEmpty(bymonth) && !_helpers.includes(bymonth, ii.mmask[currentDay]) || _helpers.notEmpty(byweekno) && !ii.wnomask[currentDay] || _helpers.notEmpty(byweekday) && !_helpers.includes(byweekday, ii.wdaymask[currentDay]) || _helpers.notEmpty(ii.nwdaymask) && !ii.nwdaymask[currentDay] || byeaster !== null && !_helpers.includes(ii.eastermask, currentDay) || (_helpers.notEmpty(bymonthday) || _helpers.notEmpty(bynmonthday)) && !_helpers.includes(bymonthday, ii.mdaymask[currentDay]) && !_helpers.includes(bynmonthday, ii.nmdaymask[currentDay]) || _helpers.notEmpty(byyearday) && (currentDay < ii.yearlen && !_helpers.includes(byyearday, currentDay + 1) && !_helpers.includes(byyearday, -ii.yearlen + currentDay) || currentDay >= ii.yearlen && !_helpers.includes(byyearday, currentDay + 1 - ii.yearlen) && !_helpers.includes(byyearday, -ii.nextyearlen + currentDay - ii.yearlen));
 }
 
-},{"./dateutil":"gS1CZ","./iterinfo":"bSntn","./helpers":"9UCZ2","./iterresult":"iQsEc","./callbackiterresult":"llph6","./types":"9biul","./parseoptions":"hWO1x","./parsestring":"l6q9L","./optionstostring":"3Gs9h","./cache":"9fAk1","./weekday":"2Q77D","luxon":"kmRFS","./nlp":"jkQ8q","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"gS1CZ":[function(require,module,exports) {
+},{"./dateutil":"gS1CZ","./iterinfo":"bSntn","./helpers":"9UCZ2","./iterresult":"iQsEc","./callbackiterresult":"llph6","./types":"9biul","./parseoptions":"hWO1x","./parsestring":"l6q9L","./optionstostring":"3Gs9h","./cache":"9fAk1","./weekday":"2Q77D","luxon":"kmRFS","./nlp":"jkQ8q","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"gS1CZ":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "dateutil", ()=>dateutil
@@ -5651,7 +6022,7 @@ var dateutil;
 })(dateutil || (dateutil = {}));
 exports.default = dateutil;
 
-},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9UCZ2":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9UCZ2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "isPresent", ()=>isPresent
@@ -5751,7 +6122,7 @@ var includes = function(arr, val) {
     return notEmpty(arr) && arr.indexOf(val) !== -1;
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"bSntn":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"bSntn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _masks = require("./masks");
@@ -6013,7 +6384,7 @@ var Iterinfo = /** @class */ function() {
 }();
 exports.default = Iterinfo;
 
-},{"./masks":"2cuda","./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"2cuda":[function(require,module,exports) {
+},{"./masks":"2cuda","./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"2cuda":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "WDAYMASK", ()=>WDAYMASK
@@ -6089,7 +6460,7 @@ var WDAYMASK = function() {
     return wdaymask;
 }();
 
-},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"iQsEc":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"iQsEc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -6161,7 +6532,7 @@ parcelHelpers.defineInteropFlag(exports);
 }();
 exports.default = IterResult;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"llph6":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"llph6":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _iterresult = require("./iterresult");
@@ -6206,7 +6577,7 @@ var __extends = undefined && undefined.__extends || function() {
 }(_iterresultDefault.default);
 exports.default = CallbackIterResult;
 
-},{"./iterresult":"iQsEc","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9biul":[function(require,module,exports) {
+},{"./iterresult":"iQsEc","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9biul":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Frequency", ()=>Frequency
@@ -6222,7 +6593,7 @@ var Frequency;
     Frequency1[Frequency1["SECONDLY"] = 6] = "SECONDLY";
 })(Frequency || (Frequency = {}));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"hWO1x":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"hWO1x":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "initializeOptions", ()=>initializeOptions
@@ -6408,7 +6779,7 @@ function parseOptions(options) {
     };
 }
 
-},{"./helpers":"9UCZ2","./rrule":"fQtN4","./dateutil":"gS1CZ","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"2Q77D":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","./rrule":"fQtN4","./dateutil":"gS1CZ","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"2Q77D":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Weekday", ()=>Weekday
@@ -6452,7 +6823,7 @@ var Weekday = /** @class */ function() {
     return Weekday1;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"l6q9L":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"l6q9L":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "parseString", ()=>parseString
@@ -6546,7 +6917,7 @@ function parseString(rfcString) {
     return options;
 }
 
-},{"./types":"9biul","./weekday":"2Q77D","./dateutil":"gS1CZ","./rrule":"fQtN4","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"3Gs9h":[function(require,module,exports) {
+},{"./types":"9biul","./weekday":"2Q77D","./dateutil":"gS1CZ","./rrule":"fQtN4","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"3Gs9h":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "optionsToString", ()=>optionsToString
@@ -6621,7 +6992,7 @@ function optionsToString(options) {
     return strings.join(';');
 }
 
-},{"./rrule":"fQtN4","./helpers":"9UCZ2","./weekday":"2Q77D","./dateutil":"gS1CZ","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9fAk1":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./helpers":"9UCZ2","./weekday":"2Q77D","./dateutil":"gS1CZ","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9fAk1":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Cache", ()=>Cache
@@ -6691,7 +7062,7 @@ var Cache = /** @class */ function() {
     return Cache1;
 }();
 
-},{"./iterresult":"iQsEc","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"kmRFS":[function(require,module,exports) {
+},{"./iterresult":"iQsEc","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"kmRFS":[function(require,module,exports) {
 'use strict';
 Object.defineProperty(exports, '__esModule', {
     value: true
@@ -13010,7 +13381,7 @@ var toText = function(rrule, gettext, language) {
 };
 var isFullyConvertible = _totextDefault.default.isFullyConvertible;
 
-},{"./totext":"fchUC","./parsetext":"908Jq","../index":"idCmx","./i18n":"cRPwz","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"fchUC":[function(require,module,exports) {
+},{"./totext":"fchUC","./parsetext":"908Jq","../index":"idCmx","./i18n":"cRPwz","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"fchUC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _i18N = require("./i18n");
@@ -13290,7 +13661,7 @@ var defaultGetText = function(id) {
 }();
 exports.default = ToText;
 
-},{"./i18n":"cRPwz","../index":"idCmx","../helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"cRPwz":[function(require,module,exports) {
+},{"./i18n":"cRPwz","../index":"idCmx","../helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"cRPwz":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // =============================================================================
@@ -13367,7 +13738,7 @@ var ENGLISH = {
 };
 exports.default = ENGLISH;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"908Jq":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"908Jq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _i18N = require("./i18n");
@@ -13763,7 +14134,7 @@ function parseText(text, language) {
 }
 exports.default = parseText;
 
-},{"./i18n":"cRPwz","../index":"idCmx","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"1v7S8":[function(require,module,exports) {
+},{"./i18n":"cRPwz","../index":"idCmx","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"1v7S8":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _rrule = require("./rrule");
@@ -13937,7 +14308,7 @@ var __extends = undefined && undefined.__extends || function() {
 }(_rruleDefault.default);
 exports.default = RRuleSet;
 
-},{"./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"ai34i":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"ai34i":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _rrule = require("./rrule");
@@ -14237,7 +14608,7 @@ var _helpers = require("./helpers");
 }();
 exports.default = RRuleStr;
 
-},{"./rrule":"fQtN4","./rruleset":"1v7S8","./dateutil":"gS1CZ","./weekday":"2Q77D","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"6auJa":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./rruleset":"1v7S8","./dateutil":"gS1CZ","./weekday":"2Q77D","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"6auJa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "stop_scan", ()=>stop_scan
@@ -14294,7 +14665,7 @@ let start_scan = function(callback) {
     else console.log("getUserMedia not supported");
 };
 
-},{"jsqr":"04jWG","../../app.js":"20BJq","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"04jWG":[function(require,module,exports) {
+},{"jsqr":"04jWG","../../app.js":"20BJq","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"04jWG":[function(require,module,exports) {
 (function webpackUniversalModuleDefinition(root, factory) {
     module.exports = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
@@ -25666,5 +26037,1780 @@ let start_scan = function(callback) {
     ])["default"];
 });
 
-},{}]},["il488","20BJq"], "20BJq", "parcelRequire8806")
+},{}],"05eVJ":[function(require,module,exports) {
+"use strict";
+var hyperscript = require("./hyperscript");
+var request = require("./request");
+var mountRedraw = require("./mount-redraw");
+var m = function m() {
+    return hyperscript.apply(this, arguments);
+};
+m.m = hyperscript;
+m.trust = hyperscript.trust;
+m.fragment = hyperscript.fragment;
+m.Fragment = "[";
+m.mount = mountRedraw.mount;
+m.route = require("./route");
+m.render = require("./render");
+m.redraw = mountRedraw.redraw;
+m.request = request.request;
+m.parseQueryString = require("./querystring/parse");
+m.buildQueryString = require("./querystring/build");
+m.parsePathname = require("./pathname/parse");
+m.buildPathname = require("./pathname/build");
+m.vnode = require("./render/vnode");
+m.censor = require("./util/censor");
+module.exports = m;
+
+},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
+"use strict";
+var hyperscript = require("./render/hyperscript");
+hyperscript.trust = require("./render/trust");
+hyperscript.fragment = require("./render/fragment");
+module.exports = hyperscript;
+
+},{"./render/hyperscript":"5oIm8","./render/trust":"7nvWj","./render/fragment":"5IQLU"}],"5oIm8":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+var hyperscriptVnode = require("./hyperscriptVnode");
+var hasOwn = require("../util/hasOwn");
+var selectorParser = /(?:(^|#|\.)([^#\.\[\]]+))|(\[(.+?)(?:\s*=\s*("|'|)((?:\\["'\]]|.)*?)\5)?\])/g;
+var selectorCache = {};
+function isEmpty(object) {
+    for(var key in object)if (hasOwn.call(object, key)) return false;
+    return true;
+}
+function compileSelector(selector) {
+    var match, tag = "div", classes = [], attrs = {};
+    while(match = selectorParser.exec(selector)){
+        var type = match[1], value = match[2];
+        if (type === "" && value !== "") tag = value;
+        else if (type === "#") attrs.id = value;
+        else if (type === ".") classes.push(value);
+        else if (match[3][0] === "[") {
+            var attrValue = match[6];
+            if (attrValue) attrValue = attrValue.replace(/\\(["'])/g, "$1").replace(/\\\\/g, "\\");
+            if (match[4] === "class") classes.push(attrValue);
+            else attrs[match[4]] = attrValue === "" ? attrValue : attrValue || true;
+        }
+    }
+    if (classes.length > 0) attrs.className = classes.join(" ");
+    return selectorCache[selector] = {
+        tag: tag,
+        attrs: attrs
+    };
+}
+function execSelector(state, vnode) {
+    var attrs = vnode.attrs;
+    var hasClass = hasOwn.call(attrs, "class");
+    var className = hasClass ? attrs.class : attrs.className;
+    vnode.tag = state.tag;
+    vnode.attrs = {};
+    if (!isEmpty(state.attrs) && !isEmpty(attrs)) {
+        var newAttrs = {};
+        for(var key in attrs)if (hasOwn.call(attrs, key)) newAttrs[key] = attrs[key];
+        attrs = newAttrs;
+    }
+    for(var key in state.attrs)if (hasOwn.call(state.attrs, key) && key !== "className" && !hasOwn.call(attrs, key)) attrs[key] = state.attrs[key];
+    if (className != null || state.attrs.className != null) attrs.className = className != null ? state.attrs.className != null ? String(state.attrs.className) + " " + String(className) : className : state.attrs.className != null ? state.attrs.className : null;
+    if (hasClass) attrs.class = null;
+    for(var key in attrs)if (hasOwn.call(attrs, key) && key !== "key") {
+        vnode.attrs = attrs;
+        break;
+    }
+    return vnode;
+}
+function hyperscript(selector) {
+    if (selector == null || typeof selector !== "string" && typeof selector !== "function" && typeof selector.view !== "function") throw Error("The selector must be either a string or a component.");
+    var vnode = hyperscriptVnode.apply(1, arguments);
+    if (typeof selector === "string") {
+        vnode.children = Vnode.normalizeChildren(vnode.children);
+        if (selector !== "[") return execSelector(selectorCache[selector] || compileSelector(selector), vnode);
+    }
+    vnode.tag = selector;
+    return vnode;
+}
+module.exports = hyperscript;
+
+},{"../render/vnode":"egGtB","./hyperscriptVnode":"iRFFB","../util/hasOwn":"94qwS"}],"egGtB":[function(require,module,exports) {
+"use strict";
+function Vnode(tag, key, attrs, children, text, dom) {
+    return {
+        tag: tag,
+        key: key,
+        attrs: attrs,
+        children: children,
+        text: text,
+        dom: dom,
+        domSize: undefined,
+        state: undefined,
+        events: undefined,
+        instance: undefined
+    };
+}
+Vnode.normalize = function(node) {
+    if (Array.isArray(node)) return Vnode("[", undefined, undefined, Vnode.normalizeChildren(node), undefined, undefined);
+    if (node == null || typeof node === "boolean") return null;
+    if (typeof node === "object") return node;
+    return Vnode("#", undefined, undefined, String(node), undefined, undefined);
+};
+Vnode.normalizeChildren = function(input) {
+    var children = [];
+    if (input.length) {
+        var isKeyed = input[0] != null && input[0].key != null;
+        // Note: this is a *very* perf-sensitive check.
+        // Fun fact: merging the loop like this is somehow faster than splitting
+        // it, noticeably so.
+        for(var i = 1; i < input.length; i++){
+            if ((input[i] != null && input[i].key != null) !== isKeyed) throw new TypeError(isKeyed && (input[i] != null || typeof input[i] === "boolean") ? "In fragments, vnodes must either all have keys or none have keys. You may wish to consider using an explicit keyed empty fragment, m.fragment({key: ...}), instead of a hole." : "In fragments, vnodes must either all have keys or none have keys.");
+        }
+        for(var i = 0; i < input.length; i++)children[i] = Vnode.normalize(input[i]);
+    }
+    return children;
+};
+module.exports = Vnode;
+
+},{}],"iRFFB":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+// Call via `hyperscriptVnode.apply(startOffset, arguments)`
+//
+// The reason I do it this way, forwarding the arguments and passing the start
+// offset in `this`, is so I don't have to create a temporary array in a
+// performance-critical path.
+//
+// In native ES6, I'd instead add a final `...args` parameter to the
+// `hyperscript` and `fragment` factories and define this as
+// `hyperscriptVnode(...args)`, since modern engines do optimize that away. But
+// ES5 (what Mithril.js requires thanks to IE support) doesn't give me that luxury,
+// and engines aren't nearly intelligent enough to do either of these:
+//
+// 1. Elide the allocation for `[].slice.call(arguments, 1)` when it's passed to
+//    another function only to be indexed.
+// 2. Elide an `arguments` allocation when it's passed to any function other
+//    than `Function.prototype.apply` or `Reflect.apply`.
+//
+// In ES6, it'd probably look closer to this (I'd need to profile it, though):
+// module.exports = function(attrs, ...children) {
+//     if (attrs == null || typeof attrs === "object" && attrs.tag == null && !Array.isArray(attrs)) {
+//         if (children.length === 1 && Array.isArray(children[0])) children = children[0]
+//     } else {
+//         children = children.length === 0 && Array.isArray(attrs) ? attrs : [attrs, ...children]
+//         attrs = undefined
+//     }
+//
+//     if (attrs == null) attrs = {}
+//     return Vnode("", attrs.key, attrs, children)
+// }
+module.exports = function() {
+    var attrs = arguments[this], start = this + 1, children;
+    if (attrs == null) attrs = {};
+    else if (typeof attrs !== "object" || attrs.tag != null || Array.isArray(attrs)) {
+        attrs = {};
+        start = this;
+    }
+    if (arguments.length === start + 1) {
+        children = arguments[start];
+        if (!Array.isArray(children)) children = [
+            children
+        ];
+    } else {
+        children = [];
+        while(start < arguments.length)children.push(arguments[start++]);
+    }
+    return Vnode("", attrs.key, attrs, children);
+};
+
+},{"../render/vnode":"egGtB"}],"94qwS":[function(require,module,exports) {
+// This exists so I'm only saving it once.
+"use strict";
+module.exports = ({}).hasOwnProperty;
+
+},{}],"7nvWj":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+module.exports = function(html) {
+    if (html == null) html = "";
+    return Vnode("<", undefined, undefined, html, undefined, undefined);
+};
+
+},{"../render/vnode":"egGtB"}],"5IQLU":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+var hyperscriptVnode = require("./hyperscriptVnode");
+module.exports = function() {
+    var vnode = hyperscriptVnode.apply(0, arguments);
+    vnode.tag = "[";
+    vnode.children = Vnode.normalizeChildren(vnode.children);
+    return vnode;
+};
+
+},{"../render/vnode":"egGtB","./hyperscriptVnode":"iRFFB"}],"ljSDe":[function(require,module,exports) {
+"use strict";
+var mountRedraw = require("./mount-redraw");
+module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, mountRedraw.redraw);
+
+},{"./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"dvp1x":[function(require,module,exports) {
+"use strict";
+var render = require("./render");
+module.exports = require("./api/mount-redraw")(render, typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : null, typeof console !== "undefined" ? console : null);
+
+},{"./render":"88EoG","./api/mount-redraw":"hNjwY"}],"88EoG":[function(require,module,exports) {
+"use strict";
+module.exports = require("./render/render")(typeof window !== "undefined" ? window : null);
+
+},{"./render/render":"7G4HF"}],"7G4HF":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+module.exports = function($window) {
+    var $doc = $window && $window.document;
+    var currentRedraw;
+    var nameSpace = {
+        svg: "http://www.w3.org/2000/svg",
+        math: "http://www.w3.org/1998/Math/MathML"
+    };
+    function getNameSpace(vnode) {
+        return vnode.attrs && vnode.attrs.xmlns || nameSpace[vnode.tag];
+    }
+    //sanity check to discourage people from doing `vnode.state = ...`
+    function checkState(vnode, original) {
+        if (vnode.state !== original) throw new Error("'vnode.state' must not be modified.");
+    }
+    //Note: the hook is passed as the `this` argument to allow proxying the
+    //arguments without requiring a full array allocation to do so. It also
+    //takes advantage of the fact the current `vnode` is the first argument in
+    //all lifecycle methods.
+    function callHook(vnode) {
+        var original = vnode.state;
+        try {
+            return this.apply(original, arguments);
+        } finally{
+            checkState(vnode, original);
+        }
+    }
+    // IE11 (at least) throws an UnspecifiedError when accessing document.activeElement when
+    // inside an iframe. Catch and swallow this error, and heavy-handidly return null.
+    function activeElement() {
+        try {
+            return $doc.activeElement;
+        } catch (e) {
+            return null;
+        }
+    }
+    //create
+    function createNodes(parent, vnodes, start, end, hooks, nextSibling, ns) {
+        for(var i = start; i < end; i++){
+            var vnode = vnodes[i];
+            if (vnode != null) createNode(parent, vnode, hooks, ns, nextSibling);
+        }
+    }
+    function createNode(parent, vnode, hooks, ns, nextSibling) {
+        var tag = vnode.tag;
+        if (typeof tag === "string") {
+            vnode.state = {};
+            if (vnode.attrs != null) initLifecycle(vnode.attrs, vnode, hooks);
+            switch(tag){
+                case "#":
+                    createText(parent, vnode, nextSibling);
+                    break;
+                case "<":
+                    createHTML(parent, vnode, ns, nextSibling);
+                    break;
+                case "[":
+                    createFragment(parent, vnode, hooks, ns, nextSibling);
+                    break;
+                default:
+                    createElement(parent, vnode, hooks, ns, nextSibling);
+            }
+        } else createComponent(parent, vnode, hooks, ns, nextSibling);
+    }
+    function createText(parent, vnode, nextSibling) {
+        vnode.dom = $doc.createTextNode(vnode.children);
+        insertNode(parent, vnode.dom, nextSibling);
+    }
+    var possibleParents = {
+        caption: "table",
+        thead: "table",
+        tbody: "table",
+        tfoot: "table",
+        tr: "tbody",
+        th: "tr",
+        td: "tr",
+        colgroup: "table",
+        col: "colgroup"
+    };
+    function createHTML(parent, vnode, ns, nextSibling) {
+        var match = vnode.children.match(/^\s*?<(\w+)/im) || [];
+        // not using the proper parent makes the child element(s) vanish.
+        //     var div = document.createElement("div")
+        //     div.innerHTML = "<td>i</td><td>j</td>"
+        //     console.log(div.innerHTML)
+        // --> "ij", no <td> in sight.
+        var temp = $doc.createElement(possibleParents[match[1]] || "div");
+        if (ns === "http://www.w3.org/2000/svg") {
+            temp.innerHTML = "<svg xmlns=\"http://www.w3.org/2000/svg\">" + vnode.children + "</svg>";
+            temp = temp.firstChild;
+        } else temp.innerHTML = vnode.children;
+        vnode.dom = temp.firstChild;
+        vnode.domSize = temp.childNodes.length;
+        // Capture nodes to remove, so we don't confuse them.
+        vnode.instance = [];
+        var fragment = $doc.createDocumentFragment();
+        var child;
+        while(child = temp.firstChild){
+            vnode.instance.push(child);
+            fragment.appendChild(child);
+        }
+        insertNode(parent, fragment, nextSibling);
+    }
+    function createFragment(parent, vnode, hooks, ns, nextSibling) {
+        var fragment = $doc.createDocumentFragment();
+        if (vnode.children != null) {
+            var children = vnode.children;
+            createNodes(fragment, children, 0, children.length, hooks, null, ns);
+        }
+        vnode.dom = fragment.firstChild;
+        vnode.domSize = fragment.childNodes.length;
+        insertNode(parent, fragment, nextSibling);
+    }
+    function createElement(parent, vnode, hooks, ns, nextSibling) {
+        var tag = vnode.tag;
+        var attrs = vnode.attrs;
+        var is = attrs && attrs.is;
+        ns = getNameSpace(vnode) || ns;
+        var element = ns ? is ? $doc.createElementNS(ns, tag, {
+            is: is
+        }) : $doc.createElementNS(ns, tag) : is ? $doc.createElement(tag, {
+            is: is
+        }) : $doc.createElement(tag);
+        vnode.dom = element;
+        if (attrs != null) setAttrs(vnode, attrs, ns);
+        insertNode(parent, element, nextSibling);
+        if (!maybeSetContentEditable(vnode)) {
+            if (vnode.children != null) {
+                var children = vnode.children;
+                createNodes(element, children, 0, children.length, hooks, null, ns);
+                if (vnode.tag === "select" && attrs != null) setLateSelectAttrs(vnode, attrs);
+            }
+        }
+    }
+    function initComponent(vnode, hooks) {
+        var sentinel;
+        if (typeof vnode.tag.view === "function") {
+            vnode.state = Object.create(vnode.tag);
+            sentinel = vnode.state.view;
+            if (sentinel.$$reentrantLock$$ != null) return;
+            sentinel.$$reentrantLock$$ = true;
+        } else {
+            vnode.state = void 0;
+            sentinel = vnode.tag;
+            if (sentinel.$$reentrantLock$$ != null) return;
+            sentinel.$$reentrantLock$$ = true;
+            vnode.state = vnode.tag.prototype != null && typeof vnode.tag.prototype.view === "function" ? new vnode.tag(vnode) : vnode.tag(vnode);
+        }
+        initLifecycle(vnode.state, vnode, hooks);
+        if (vnode.attrs != null) initLifecycle(vnode.attrs, vnode, hooks);
+        vnode.instance = Vnode.normalize(callHook.call(vnode.state.view, vnode));
+        if (vnode.instance === vnode) throw Error("A view cannot return the vnode it received as argument");
+        sentinel.$$reentrantLock$$ = null;
+    }
+    function createComponent(parent, vnode, hooks, ns, nextSibling) {
+        initComponent(vnode, hooks);
+        if (vnode.instance != null) {
+            createNode(parent, vnode.instance, hooks, ns, nextSibling);
+            vnode.dom = vnode.instance.dom;
+            vnode.domSize = vnode.dom != null ? vnode.instance.domSize : 0;
+        } else vnode.domSize = 0;
+    }
+    //update
+    /**
+	 * @param {Element|Fragment} parent - the parent element
+	 * @param {Vnode[] | null} old - the list of vnodes of the last `render()` call for
+	 *                               this part of the tree
+	 * @param {Vnode[] | null} vnodes - as above, but for the current `render()` call.
+	 * @param {Function[]} hooks - an accumulator of post-render hooks (oncreate/onupdate)
+	 * @param {Element | null} nextSibling - the next DOM node if we're dealing with a
+	 *                                       fragment that is not the last item in its
+	 *                                       parent
+	 * @param {'svg' | 'math' | String | null} ns) - the current XML namespace, if any
+	 * @returns void
+	 */ // This function diffs and patches lists of vnodes, both keyed and unkeyed.
+    //
+    // We will:
+    //
+    // 1. describe its general structure
+    // 2. focus on the diff algorithm optimizations
+    // 3. discuss DOM node operations.
+    // ## Overview:
+    //
+    // The updateNodes() function:
+    // - deals with trivial cases
+    // - determines whether the lists are keyed or unkeyed based on the first non-null node
+    //   of each list.
+    // - diffs them and patches the DOM if needed (that's the brunt of the code)
+    // - manages the leftovers: after diffing, are there:
+    //   - old nodes left to remove?
+    // 	 - new nodes to insert?
+    // 	 deal with them!
+    //
+    // The lists are only iterated over once, with an exception for the nodes in `old` that
+    // are visited in the fourth part of the diff and in the `removeNodes` loop.
+    // ## Diffing
+    //
+    // Reading https://github.com/localvoid/ivi/blob/ddc09d06abaef45248e6133f7040d00d3c6be853/packages/ivi/src/vdom/implementation.ts#L617-L837
+    // may be good for context on longest increasing subsequence-based logic for moving nodes.
+    //
+    // In order to diff keyed lists, one has to
+    //
+    // 1) match nodes in both lists, per key, and update them accordingly
+    // 2) create the nodes present in the new list, but absent in the old one
+    // 3) remove the nodes present in the old list, but absent in the new one
+    // 4) figure out what nodes in 1) to move in order to minimize the DOM operations.
+    //
+    // To achieve 1) one can create a dictionary of keys => index (for the old list), then iterate
+    // over the new list and for each new vnode, find the corresponding vnode in the old list using
+    // the map.
+    // 2) is achieved in the same step: if a new node has no corresponding entry in the map, it is new
+    // and must be created.
+    // For the removals, we actually remove the nodes that have been updated from the old list.
+    // The nodes that remain in that list after 1) and 2) have been performed can be safely removed.
+    // The fourth step is a bit more complex and relies on the longest increasing subsequence (LIS)
+    // algorithm.
+    //
+    // the longest increasing subsequence is the list of nodes that can remain in place. Imagine going
+    // from `1,2,3,4,5` to `4,5,1,2,3` where the numbers are not necessarily the keys, but the indices
+    // corresponding to the keyed nodes in the old list (keyed nodes `e,d,c,b,a` => `b,a,e,d,c` would
+    //  match the above lists, for example).
+    //
+    // In there are two increasing subsequences: `4,5` and `1,2,3`, the latter being the longest. We
+    // can update those nodes without moving them, and only call `insertNode` on `4` and `5`.
+    //
+    // @localvoid adapted the algo to also support node deletions and insertions (the `lis` is actually
+    // the longest increasing subsequence *of old nodes still present in the new list*).
+    //
+    // It is a general algorithm that is fireproof in all circumstances, but it requires the allocation
+    // and the construction of a `key => oldIndex` map, and three arrays (one with `newIndex => oldIndex`,
+    // the `LIS` and a temporary one to create the LIS).
+    //
+    // So we cheat where we can: if the tails of the lists are identical, they are guaranteed to be part of
+    // the LIS and can be updated without moving them.
+    //
+    // If two nodes are swapped, they are guaranteed not to be part of the LIS, and must be moved (with
+    // the exception of the last node if the list is fully reversed).
+    //
+    // ## Finding the next sibling.
+    //
+    // `updateNode()` and `createNode()` expect a nextSibling parameter to perform DOM operations.
+    // When the list is being traversed top-down, at any index, the DOM nodes up to the previous
+    // vnode reflect the content of the new list, whereas the rest of the DOM nodes reflect the old
+    // list. The next sibling must be looked for in the old list using `getNextSibling(... oldStart + 1 ...)`.
+    //
+    // In the other scenarios (swaps, upwards traversal, map-based diff),
+    // the new vnodes list is traversed upwards. The DOM nodes at the bottom of the list reflect the
+    // bottom part of the new vnodes list, and we can use the `v.dom`  value of the previous node
+    // as the next sibling (cached in the `nextSibling` variable).
+    // ## DOM node moves
+    //
+    // In most scenarios `updateNode()` and `createNode()` perform the DOM operations. However,
+    // this is not the case if the node moved (second and fourth part of the diff algo). We move
+    // the old DOM nodes before updateNode runs because it enables us to use the cached `nextSibling`
+    // variable rather than fetching it using `getNextSibling()`.
+    function updateNodes(parent, old, vnodes, hooks, nextSibling, ns) {
+        if (old === vnodes || old == null && vnodes == null) return;
+        else if (old == null || old.length === 0) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns);
+        else if (vnodes == null || vnodes.length === 0) removeNodes(parent, old, 0, old.length);
+        else {
+            var isOldKeyed = old[0] != null && old[0].key != null;
+            var isKeyed = vnodes[0] != null && vnodes[0].key != null;
+            var start = 0, oldStart = 0;
+            if (!isOldKeyed) while(oldStart < old.length && old[oldStart] == null)oldStart++;
+            if (!isKeyed) while(start < vnodes.length && vnodes[start] == null)start++;
+            if (isOldKeyed !== isKeyed) {
+                removeNodes(parent, old, oldStart, old.length);
+                createNodes(parent, vnodes, start, vnodes.length, hooks, nextSibling, ns);
+            } else if (!isKeyed) {
+                // Don't index past the end of either list (causes deopts).
+                var commonLength = old.length < vnodes.length ? old.length : vnodes.length;
+                // Rewind if necessary to the first non-null index on either side.
+                // We could alternatively either explicitly create or remove nodes when `start !== oldStart`
+                // but that would be optimizing for sparse lists which are more rare than dense ones.
+                start = start < oldStart ? start : oldStart;
+                for(; start < commonLength; start++){
+                    o = old[start];
+                    v = vnodes[start];
+                    if (o === v || o == null && v == null) continue;
+                    else if (o == null) createNode(parent, v, hooks, ns, getNextSibling(old, start + 1, nextSibling));
+                    else if (v == null) removeNode(parent, o);
+                    else updateNode(parent, o, v, hooks, getNextSibling(old, start + 1, nextSibling), ns);
+                }
+                if (old.length > commonLength) removeNodes(parent, old, start, old.length);
+                if (vnodes.length > commonLength) createNodes(parent, vnodes, start, vnodes.length, hooks, nextSibling, ns);
+            } else {
+                // keyed diff
+                var oldEnd = old.length - 1, end = vnodes.length - 1, map, o, v, oe, ve, topSibling;
+                // bottom-up
+                while(oldEnd >= oldStart && end >= start){
+                    oe = old[oldEnd];
+                    ve = vnodes[end];
+                    if (oe.key !== ve.key) break;
+                    if (oe !== ve) updateNode(parent, oe, ve, hooks, nextSibling, ns);
+                    if (ve.dom != null) nextSibling = ve.dom;
+                    oldEnd--, end--;
+                }
+                // top-down
+                while(oldEnd >= oldStart && end >= start){
+                    o = old[oldStart];
+                    v = vnodes[start];
+                    if (o.key !== v.key) break;
+                    oldStart++, start++;
+                    if (o !== v) updateNode(parent, o, v, hooks, getNextSibling(old, oldStart, nextSibling), ns);
+                }
+                // swaps and list reversals
+                while(oldEnd >= oldStart && end >= start){
+                    if (start === end) break;
+                    if (o.key !== ve.key || oe.key !== v.key) break;
+                    topSibling = getNextSibling(old, oldStart, nextSibling);
+                    moveNodes(parent, oe, topSibling);
+                    if (oe !== v) updateNode(parent, oe, v, hooks, topSibling, ns);
+                    if (++start <= --end) moveNodes(parent, o, nextSibling);
+                    if (o !== ve) updateNode(parent, o, ve, hooks, nextSibling, ns);
+                    if (ve.dom != null) nextSibling = ve.dom;
+                    oldStart++;
+                    oldEnd--;
+                    oe = old[oldEnd];
+                    ve = vnodes[end];
+                    o = old[oldStart];
+                    v = vnodes[start];
+                }
+                // bottom up once again
+                while(oldEnd >= oldStart && end >= start){
+                    if (oe.key !== ve.key) break;
+                    if (oe !== ve) updateNode(parent, oe, ve, hooks, nextSibling, ns);
+                    if (ve.dom != null) nextSibling = ve.dom;
+                    oldEnd--, end--;
+                    oe = old[oldEnd];
+                    ve = vnodes[end];
+                }
+                if (start > end) removeNodes(parent, old, oldStart, oldEnd + 1);
+                else if (oldStart > oldEnd) createNodes(parent, vnodes, start, end + 1, hooks, nextSibling, ns);
+                else {
+                    // inspired by ivi https://github.com/ivijs/ivi/ by Boris Kaul
+                    var originalNextSibling = nextSibling, vnodesLength = end - start + 1, oldIndices = new Array(vnodesLength), li = 0, i = 0, pos = 2147483647, matched = 0, map, lisIndices;
+                    for(i = 0; i < vnodesLength; i++)oldIndices[i] = -1;
+                    for(i = end; i >= start; i--){
+                        if (map == null) map = getKeyMap(old, oldStart, oldEnd + 1);
+                        ve = vnodes[i];
+                        var oldIndex = map[ve.key];
+                        if (oldIndex != null) {
+                            pos = oldIndex < pos ? oldIndex : -1 // becomes -1 if nodes were re-ordered
+                            ;
+                            oldIndices[i - start] = oldIndex;
+                            oe = old[oldIndex];
+                            old[oldIndex] = null;
+                            if (oe !== ve) updateNode(parent, oe, ve, hooks, nextSibling, ns);
+                            if (ve.dom != null) nextSibling = ve.dom;
+                            matched++;
+                        }
+                    }
+                    nextSibling = originalNextSibling;
+                    if (matched !== oldEnd - oldStart + 1) removeNodes(parent, old, oldStart, oldEnd + 1);
+                    if (matched === 0) createNodes(parent, vnodes, start, end + 1, hooks, nextSibling, ns);
+                    else {
+                        if (pos === -1) {
+                            // the indices of the indices of the items that are part of the
+                            // longest increasing subsequence in the oldIndices list
+                            lisIndices = makeLisIndices(oldIndices);
+                            li = lisIndices.length - 1;
+                            for(i = end; i >= start; i--){
+                                v = vnodes[i];
+                                if (oldIndices[i - start] === -1) createNode(parent, v, hooks, ns, nextSibling);
+                                else if (lisIndices[li] === i - start) li--;
+                                else moveNodes(parent, v, nextSibling);
+                                if (v.dom != null) nextSibling = vnodes[i].dom;
+                            }
+                        } else for(i = end; i >= start; i--){
+                            v = vnodes[i];
+                            if (oldIndices[i - start] === -1) createNode(parent, v, hooks, ns, nextSibling);
+                            if (v.dom != null) nextSibling = vnodes[i].dom;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    function updateNode(parent, old, vnode, hooks, nextSibling, ns) {
+        var oldTag = old.tag, tag = vnode.tag;
+        if (oldTag === tag) {
+            vnode.state = old.state;
+            vnode.events = old.events;
+            if (shouldNotUpdate(vnode, old)) return;
+            if (typeof oldTag === "string") {
+                if (vnode.attrs != null) updateLifecycle(vnode.attrs, vnode, hooks);
+                switch(oldTag){
+                    case "#":
+                        updateText(old, vnode);
+                        break;
+                    case "<":
+                        updateHTML(parent, old, vnode, ns, nextSibling);
+                        break;
+                    case "[":
+                        updateFragment(parent, old, vnode, hooks, nextSibling, ns);
+                        break;
+                    default:
+                        updateElement(old, vnode, hooks, ns);
+                }
+            } else updateComponent(parent, old, vnode, hooks, nextSibling, ns);
+        } else {
+            removeNode(parent, old);
+            createNode(parent, vnode, hooks, ns, nextSibling);
+        }
+    }
+    function updateText(old, vnode) {
+        if (old.children.toString() !== vnode.children.toString()) old.dom.nodeValue = vnode.children;
+        vnode.dom = old.dom;
+    }
+    function updateHTML(parent, old, vnode, ns, nextSibling) {
+        if (old.children !== vnode.children) {
+            removeHTML(parent, old);
+            createHTML(parent, vnode, ns, nextSibling);
+        } else {
+            vnode.dom = old.dom;
+            vnode.domSize = old.domSize;
+            vnode.instance = old.instance;
+        }
+    }
+    function updateFragment(parent, old, vnode, hooks, nextSibling, ns) {
+        updateNodes(parent, old.children, vnode.children, hooks, nextSibling, ns);
+        var domSize = 0, children = vnode.children;
+        vnode.dom = null;
+        if (children != null) {
+            for(var i = 0; i < children.length; i++){
+                var child = children[i];
+                if (child != null && child.dom != null) {
+                    if (vnode.dom == null) vnode.dom = child.dom;
+                    domSize += child.domSize || 1;
+                }
+            }
+            if (domSize !== 1) vnode.domSize = domSize;
+        }
+    }
+    function updateElement(old, vnode, hooks, ns) {
+        var element = vnode.dom = old.dom;
+        ns = getNameSpace(vnode) || ns;
+        if (vnode.tag === "textarea") {
+            if (vnode.attrs == null) vnode.attrs = {};
+        }
+        updateAttrs(vnode, old.attrs, vnode.attrs, ns);
+        if (!maybeSetContentEditable(vnode)) updateNodes(element, old.children, vnode.children, hooks, null, ns);
+    }
+    function updateComponent(parent, old, vnode, hooks, nextSibling, ns) {
+        vnode.instance = Vnode.normalize(callHook.call(vnode.state.view, vnode));
+        if (vnode.instance === vnode) throw Error("A view cannot return the vnode it received as argument");
+        updateLifecycle(vnode.state, vnode, hooks);
+        if (vnode.attrs != null) updateLifecycle(vnode.attrs, vnode, hooks);
+        if (vnode.instance != null) {
+            if (old.instance == null) createNode(parent, vnode.instance, hooks, ns, nextSibling);
+            else updateNode(parent, old.instance, vnode.instance, hooks, nextSibling, ns);
+            vnode.dom = vnode.instance.dom;
+            vnode.domSize = vnode.instance.domSize;
+        } else if (old.instance != null) {
+            removeNode(parent, old.instance);
+            vnode.dom = undefined;
+            vnode.domSize = 0;
+        } else {
+            vnode.dom = old.dom;
+            vnode.domSize = old.domSize;
+        }
+    }
+    function getKeyMap(vnodes, start, end) {
+        var map = Object.create(null);
+        for(; start < end; start++){
+            var vnode = vnodes[start];
+            if (vnode != null) {
+                var key = vnode.key;
+                if (key != null) map[key] = start;
+            }
+        }
+        return map;
+    }
+    // Lifted from ivi https://github.com/ivijs/ivi/
+    // takes a list of unique numbers (-1 is special and can
+    // occur multiple times) and returns an array with the indices
+    // of the items that are part of the longest increasing
+    // subsequence
+    var lisTemp = [];
+    function makeLisIndices(a) {
+        var result = [
+            0
+        ];
+        var u = 0, v = 0, i = 0;
+        var il = lisTemp.length = a.length;
+        for(var i = 0; i < il; i++)lisTemp[i] = a[i];
+        for(var i = 0; i < il; ++i){
+            if (a[i] === -1) continue;
+            var j = result[result.length - 1];
+            if (a[j] < a[i]) {
+                lisTemp[i] = j;
+                result.push(i);
+                continue;
+            }
+            u = 0;
+            v = result.length - 1;
+            while(u < v){
+                // Fast integer average without overflow.
+                // eslint-disable-next-line no-bitwise
+                var c = (u >>> 1) + (v >>> 1) + (u & v & 1);
+                if (a[result[c]] < a[i]) u = c + 1;
+                else v = c;
+            }
+            if (a[i] < a[result[u]]) {
+                if (u > 0) lisTemp[i] = result[u - 1];
+                result[u] = i;
+            }
+        }
+        u = result.length;
+        v = result[u - 1];
+        while(u-- > 0){
+            result[u] = v;
+            v = lisTemp[v];
+        }
+        lisTemp.length = 0;
+        return result;
+    }
+    function getNextSibling(vnodes, i, nextSibling) {
+        for(; i < vnodes.length; i++){
+            if (vnodes[i] != null && vnodes[i].dom != null) return vnodes[i].dom;
+        }
+        return nextSibling;
+    }
+    // This covers a really specific edge case:
+    // - Parent node is keyed and contains child
+    // - Child is removed, returns unresolved promise in `onbeforeremove`
+    // - Parent node is moved in keyed diff
+    // - Remaining children still need moved appropriately
+    //
+    // Ideally, I'd track removed nodes as well, but that introduces a lot more
+    // complexity and I'm not exactly interested in doing that.
+    function moveNodes(parent, vnode, nextSibling) {
+        var frag = $doc.createDocumentFragment();
+        moveChildToFrag(parent, frag, vnode);
+        insertNode(parent, frag, nextSibling);
+    }
+    function moveChildToFrag(parent, frag, vnode) {
+        // Dodge the recursion overhead in a few of the most common cases.
+        while(vnode.dom != null && vnode.dom.parentNode === parent){
+            if (typeof vnode.tag !== "string") {
+                vnode = vnode.instance;
+                if (vnode != null) continue;
+            } else if (vnode.tag === "<") for(var i = 0; i < vnode.instance.length; i++)frag.appendChild(vnode.instance[i]);
+            else if (vnode.tag !== "[") // Don't recurse for text nodes *or* elements, just fragments
+            frag.appendChild(vnode.dom);
+            else if (vnode.children.length === 1) {
+                vnode = vnode.children[0];
+                if (vnode != null) continue;
+            } else for(var i = 0; i < vnode.children.length; i++){
+                var child = vnode.children[i];
+                if (child != null) moveChildToFrag(parent, frag, child);
+            }
+            break;
+        }
+    }
+    function insertNode(parent, dom, nextSibling) {
+        if (nextSibling != null) parent.insertBefore(dom, nextSibling);
+        else parent.appendChild(dom);
+    }
+    function maybeSetContentEditable(vnode) {
+        if (vnode.attrs == null || vnode.attrs.contenteditable == null && vnode.attrs.contentEditable == null // property
+        ) return false;
+        var children = vnode.children;
+        if (children != null && children.length === 1 && children[0].tag === "<") {
+            var content = children[0].children;
+            if (vnode.dom.innerHTML !== content) vnode.dom.innerHTML = content;
+        } else if (children != null && children.length !== 0) throw new Error("Child node of a contenteditable must be trusted.");
+        return true;
+    }
+    //remove
+    function removeNodes(parent, vnodes, start, end) {
+        for(var i = start; i < end; i++){
+            var vnode = vnodes[i];
+            if (vnode != null) removeNode(parent, vnode);
+        }
+    }
+    function removeNode(parent, vnode) {
+        var mask = 0;
+        var original = vnode.state;
+        var stateResult, attrsResult;
+        if (typeof vnode.tag !== "string" && typeof vnode.state.onbeforeremove === "function") {
+            var result = callHook.call(vnode.state.onbeforeremove, vnode);
+            if (result != null && typeof result.then === "function") {
+                mask = 1;
+                stateResult = result;
+            }
+        }
+        if (vnode.attrs && typeof vnode.attrs.onbeforeremove === "function") {
+            var result = callHook.call(vnode.attrs.onbeforeremove, vnode);
+            if (result != null && typeof result.then === "function") {
+                // eslint-disable-next-line no-bitwise
+                mask |= 2;
+                attrsResult = result;
+            }
+        }
+        checkState(vnode, original);
+        // If we can, try to fast-path it and avoid all the overhead of awaiting
+        if (!mask) {
+            onremove(vnode);
+            removeChild(parent, vnode);
+        } else {
+            if (stateResult != null) {
+                var next = function() {
+                    // eslint-disable-next-line no-bitwise
+                    if (mask & 1) {
+                        mask &= 2;
+                        if (!mask) reallyRemove();
+                    }
+                };
+                stateResult.then(next, next);
+            }
+            if (attrsResult != null) {
+                var next = function() {
+                    // eslint-disable-next-line no-bitwise
+                    if (mask & 2) {
+                        mask &= 1;
+                        if (!mask) reallyRemove();
+                    }
+                };
+                attrsResult.then(next, next);
+            }
+        }
+        function reallyRemove() {
+            checkState(vnode, original);
+            onremove(vnode);
+            removeChild(parent, vnode);
+        }
+    }
+    function removeHTML(parent, vnode) {
+        for(var i = 0; i < vnode.instance.length; i++)parent.removeChild(vnode.instance[i]);
+    }
+    function removeChild(parent, vnode) {
+        // Dodge the recursion overhead in a few of the most common cases.
+        while(vnode.dom != null && vnode.dom.parentNode === parent){
+            if (typeof vnode.tag !== "string") {
+                vnode = vnode.instance;
+                if (vnode != null) continue;
+            } else if (vnode.tag === "<") removeHTML(parent, vnode);
+            else {
+                if (vnode.tag !== "[") {
+                    parent.removeChild(vnode.dom);
+                    if (!Array.isArray(vnode.children)) break;
+                }
+                if (vnode.children.length === 1) {
+                    vnode = vnode.children[0];
+                    if (vnode != null) continue;
+                } else for(var i = 0; i < vnode.children.length; i++){
+                    var child = vnode.children[i];
+                    if (child != null) removeChild(parent, child);
+                }
+            }
+            break;
+        }
+    }
+    function onremove(vnode) {
+        if (typeof vnode.tag !== "string" && typeof vnode.state.onremove === "function") callHook.call(vnode.state.onremove, vnode);
+        if (vnode.attrs && typeof vnode.attrs.onremove === "function") callHook.call(vnode.attrs.onremove, vnode);
+        if (typeof vnode.tag !== "string") {
+            if (vnode.instance != null) onremove(vnode.instance);
+        } else {
+            var children = vnode.children;
+            if (Array.isArray(children)) for(var i = 0; i < children.length; i++){
+                var child = children[i];
+                if (child != null) onremove(child);
+            }
+        }
+    }
+    //attrs
+    function setAttrs(vnode, attrs, ns) {
+        // If you assign an input type that is not supported by IE 11 with an assignment expression, an error will occur.
+        //
+        // Also, the DOM does things to inputs based on the value, so it needs set first.
+        // See: https://github.com/MithrilJS/mithril.js/issues/2622
+        if (vnode.tag === "input" && attrs.type != null) vnode.dom.setAttribute("type", attrs.type);
+        var isFileInput = attrs != null && vnode.tag === "input" && attrs.type === "file";
+        for(var key in attrs)setAttr(vnode, key, null, attrs[key], ns, isFileInput);
+    }
+    function setAttr(vnode, key, old, value, ns, isFileInput) {
+        if (key === "key" || key === "is" || value == null || isLifecycleMethod(key) || old === value && !isFormAttribute(vnode, key) && typeof value !== "object" || key === "type" && vnode.tag === "input") return;
+        if (key[0] === "o" && key[1] === "n") return updateEvent(vnode, key, value);
+        if (key.slice(0, 6) === "xlink:") vnode.dom.setAttributeNS("http://www.w3.org/1999/xlink", key.slice(6), value);
+        else if (key === "style") updateStyle(vnode.dom, old, value);
+        else if (hasPropertyKey(vnode, key, ns)) {
+            if (key === "value") {
+                // Only do the coercion if we're actually going to check the value.
+                /* eslint-disable no-implicit-coercion */ //setting input[value] to same value by typing on focused element moves cursor to end in Chrome
+                //setting input[type=file][value] to same value causes an error to be generated if it's non-empty
+                if ((vnode.tag === "input" || vnode.tag === "textarea") && vnode.dom.value === "" + value && (isFileInput || vnode.dom === activeElement())) return;
+                //setting select[value] to same value while having select open blinks select dropdown in Chrome
+                if (vnode.tag === "select" && old !== null && vnode.dom.value === "" + value) return;
+                //setting option[value] to same value while having select open blinks select dropdown in Chrome
+                if (vnode.tag === "option" && old !== null && vnode.dom.value === "" + value) return;
+                //setting input[type=file][value] to different value is an error if it's non-empty
+                // Not ideal, but it at least works around the most common source of uncaught exceptions for now.
+                if (isFileInput && "" + value !== "") {
+                    console.error("`value` is read-only on file inputs!");
+                    return;
+                }
+            /* eslint-enable no-implicit-coercion */ }
+            vnode.dom[key] = value;
+        } else if (typeof value === "boolean") {
+            if (value) vnode.dom.setAttribute(key, "");
+            else vnode.dom.removeAttribute(key);
+        } else vnode.dom.setAttribute(key === "className" ? "class" : key, value);
+    }
+    function removeAttr(vnode, key, old, ns) {
+        if (key === "key" || key === "is" || old == null || isLifecycleMethod(key)) return;
+        if (key[0] === "o" && key[1] === "n") updateEvent(vnode, key, undefined);
+        else if (key === "style") updateStyle(vnode.dom, old, null);
+        else if (hasPropertyKey(vnode, key, ns) && key !== "className" && key !== "title" // creates "null" as title
+         && !(key === "value" && (vnode.tag === "option" || vnode.tag === "select" && vnode.dom.selectedIndex === -1 && vnode.dom === activeElement())) && !(vnode.tag === "input" && key === "type")) vnode.dom[key] = null;
+        else {
+            var nsLastIndex = key.indexOf(":");
+            if (nsLastIndex !== -1) key = key.slice(nsLastIndex + 1);
+            if (old !== false) vnode.dom.removeAttribute(key === "className" ? "class" : key);
+        }
+    }
+    function setLateSelectAttrs(vnode, attrs) {
+        if ("value" in attrs) {
+            if (attrs.value === null) {
+                if (vnode.dom.selectedIndex !== -1) vnode.dom.value = null;
+            } else {
+                var normalized = "" + attrs.value // eslint-disable-line no-implicit-coercion
+                ;
+                if (vnode.dom.value !== normalized || vnode.dom.selectedIndex === -1) vnode.dom.value = normalized;
+            }
+        }
+        if ("selectedIndex" in attrs) setAttr(vnode, "selectedIndex", null, attrs.selectedIndex, undefined);
+    }
+    function updateAttrs(vnode, old, attrs, ns) {
+        if (old && old === attrs) console.warn("Don't reuse attrs object, use new object for every redraw, this will throw in next major");
+        if (attrs != null) {
+            // If you assign an input type that is not supported by IE 11 with an assignment expression, an error will occur.
+            //
+            // Also, the DOM does things to inputs based on the value, so it needs set first.
+            // See: https://github.com/MithrilJS/mithril.js/issues/2622
+            if (vnode.tag === "input" && attrs.type != null) vnode.dom.setAttribute("type", attrs.type);
+            var isFileInput = vnode.tag === "input" && attrs.type === "file";
+            for(var key in attrs)setAttr(vnode, key, old && old[key], attrs[key], ns, isFileInput);
+        }
+        var val;
+        if (old != null) {
+            for(var key in old)if ((val = old[key]) != null && (attrs == null || attrs[key] == null)) removeAttr(vnode, key, val, ns);
+        }
+    }
+    function isFormAttribute(vnode, attr) {
+        return attr === "value" || attr === "checked" || attr === "selectedIndex" || attr === "selected" && vnode.dom === activeElement() || vnode.tag === "option" && vnode.dom.parentNode === $doc.activeElement;
+    }
+    function isLifecycleMethod(attr) {
+        return attr === "oninit" || attr === "oncreate" || attr === "onupdate" || attr === "onremove" || attr === "onbeforeremove" || attr === "onbeforeupdate";
+    }
+    function hasPropertyKey(vnode, key, ns) {
+        // Filter out namespaced keys
+        return ns === undefined && // If it's a custom element, just keep it.
+        (vnode.tag.indexOf("-") > -1 || vnode.attrs != null && vnode.attrs.is || // If it's a normal element, let's try to avoid a few browser bugs.
+        key !== "href" && key !== "list" && key !== "form" && key !== "width" && key !== "height" // && key !== "type"
+        ) && key in vnode.dom;
+    }
+    //style
+    var uppercaseRegex = /[A-Z]/g;
+    function toLowerCase(capital) {
+        return "-" + capital.toLowerCase();
+    }
+    function normalizeKey(key) {
+        return key[0] === "-" && key[1] === "-" ? key : key === "cssFloat" ? "float" : key.replace(uppercaseRegex, toLowerCase);
+    }
+    function updateStyle(element, old, style) {
+        if (old === style) ;
+        else if (style == null) // New style is missing, just clear it.
+        element.style.cssText = "";
+        else if (typeof style !== "object") // New style is a string, let engine deal with patching.
+        element.style.cssText = style;
+        else if (old == null || typeof old !== "object") {
+            // `old` is missing or a string, `style` is an object.
+            element.style.cssText = "";
+            // Add new style properties
+            for(var key in style){
+                var value = style[key];
+                if (value != null) element.style.setProperty(normalizeKey(key), String(value));
+            }
+        } else {
+            // Both old & new are (different) objects.
+            // Update style properties that have changed
+            for(var key in style){
+                var value = style[key];
+                if (value != null && (value = String(value)) !== String(old[key])) element.style.setProperty(normalizeKey(key), value);
+            }
+            // Remove style properties that no longer exist
+            for(var key in old)if (old[key] != null && style[key] == null) element.style.removeProperty(normalizeKey(key));
+        }
+    }
+    // Here's an explanation of how this works:
+    // 1. The event names are always (by design) prefixed by `on`.
+    // 2. The EventListener interface accepts either a function or an object
+    //    with a `handleEvent` method.
+    // 3. The object does not inherit from `Object.prototype`, to avoid
+    //    any potential interference with that (e.g. setters).
+    // 4. The event name is remapped to the handler before calling it.
+    // 5. In function-based event handlers, `ev.target === this`. We replicate
+    //    that below.
+    // 6. In function-based event handlers, `return false` prevents the default
+    //    action and stops event propagation. We replicate that below.
+    function EventDict() {
+        // Save this, so the current redraw is correctly tracked.
+        this._ = currentRedraw;
+    }
+    EventDict.prototype = Object.create(null);
+    EventDict.prototype.handleEvent = function(ev) {
+        var handler = this["on" + ev.type];
+        var result;
+        if (typeof handler === "function") result = handler.call(ev.currentTarget, ev);
+        else if (typeof handler.handleEvent === "function") handler.handleEvent(ev);
+        if (this._ && ev.redraw !== false) (0, this._)();
+        if (result === false) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+    };
+    //event
+    function updateEvent(vnode, key, value) {
+        if (vnode.events != null) {
+            vnode.events._ = currentRedraw;
+            if (vnode.events[key] === value) return;
+            if (value != null && (typeof value === "function" || typeof value === "object")) {
+                if (vnode.events[key] == null) vnode.dom.addEventListener(key.slice(2), vnode.events, false);
+                vnode.events[key] = value;
+            } else {
+                if (vnode.events[key] != null) vnode.dom.removeEventListener(key.slice(2), vnode.events, false);
+                vnode.events[key] = undefined;
+            }
+        } else if (value != null && (typeof value === "function" || typeof value === "object")) {
+            vnode.events = new EventDict();
+            vnode.dom.addEventListener(key.slice(2), vnode.events, false);
+            vnode.events[key] = value;
+        }
+    }
+    //lifecycle
+    function initLifecycle(source, vnode, hooks) {
+        if (typeof source.oninit === "function") callHook.call(source.oninit, vnode);
+        if (typeof source.oncreate === "function") hooks.push(callHook.bind(source.oncreate, vnode));
+    }
+    function updateLifecycle(source, vnode, hooks) {
+        if (typeof source.onupdate === "function") hooks.push(callHook.bind(source.onupdate, vnode));
+    }
+    function shouldNotUpdate(vnode, old) {
+        do {
+            if (vnode.attrs != null && typeof vnode.attrs.onbeforeupdate === "function") {
+                var force = callHook.call(vnode.attrs.onbeforeupdate, vnode, old);
+                if (force !== undefined && !force) break;
+            }
+            if (typeof vnode.tag !== "string" && typeof vnode.state.onbeforeupdate === "function") {
+                var force = callHook.call(vnode.state.onbeforeupdate, vnode, old);
+                if (force !== undefined && !force) break;
+            }
+            return false;
+        }while (false) // eslint-disable-line no-constant-condition
+        vnode.dom = old.dom;
+        vnode.domSize = old.domSize;
+        vnode.instance = old.instance;
+        // One would think having the actual latest attributes would be ideal,
+        // but it doesn't let us properly diff based on our current internal
+        // representation. We have to save not only the old DOM info, but also
+        // the attributes used to create it, as we diff *that*, not against the
+        // DOM directly (with a few exceptions in `setAttr`). And, of course, we
+        // need to save the children and text as they are conceptually not
+        // unlike special "attributes" internally.
+        vnode.attrs = old.attrs;
+        vnode.children = old.children;
+        vnode.text = old.text;
+        return true;
+    }
+    var currentDOM;
+    return function(dom, vnodes, redraw) {
+        if (!dom) throw new TypeError("DOM element being rendered to does not exist.");
+        if (currentDOM != null && dom.contains(currentDOM)) throw new TypeError("Node is currently being rendered to and thus is locked.");
+        var prevRedraw = currentRedraw;
+        var prevDOM = currentDOM;
+        var hooks = [];
+        var active = activeElement();
+        var namespace = dom.namespaceURI;
+        currentDOM = dom;
+        currentRedraw = typeof redraw === "function" ? redraw : undefined;
+        try {
+            // First time rendering into a node clears it out
+            if (dom.vnodes == null) dom.textContent = "";
+            vnodes = Vnode.normalizeChildren(Array.isArray(vnodes) ? vnodes : [
+                vnodes
+            ]);
+            updateNodes(dom, dom.vnodes, vnodes, hooks, null, namespace === "http://www.w3.org/1999/xhtml" ? undefined : namespace);
+            dom.vnodes = vnodes;
+            // `document.activeElement` can return null: https://html.spec.whatwg.org/multipage/interaction.html#dom-document-activeelement
+            if (active != null && activeElement() !== active && typeof active.focus === "function") active.focus();
+            for(var i = 0; i < hooks.length; i++)hooks[i]();
+        } finally{
+            currentRedraw = prevRedraw;
+            currentDOM = prevDOM;
+        }
+    };
+};
+
+},{"../render/vnode":"egGtB"}],"hNjwY":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+module.exports = function(render, schedule, console) {
+    var subscriptions = [];
+    var pending = false;
+    var offset = -1;
+    function sync() {
+        for(offset = 0; offset < subscriptions.length; offset += 2)try {
+            render(subscriptions[offset], Vnode(subscriptions[offset + 1]), redraw);
+        } catch (e) {
+            console.error(e);
+        }
+        offset = -1;
+    }
+    function redraw() {
+        if (!pending) {
+            pending = true;
+            schedule(function() {
+                pending = false;
+                sync();
+            });
+        }
+    }
+    redraw.sync = sync;
+    function mount(root, component) {
+        if (component != null && component.view == null && typeof component !== "function") throw new TypeError("m.mount expects a component, not a vnode.");
+        var index = subscriptions.indexOf(root);
+        if (index >= 0) {
+            subscriptions.splice(index, 2);
+            if (index <= offset) offset -= 2;
+            render(root, []);
+        }
+        if (component != null) {
+            subscriptions.push(root, component);
+            render(root, Vnode(component), redraw);
+        }
+    }
+    return {
+        mount: mount,
+        redraw: redraw
+    };
+};
+
+},{"../render/vnode":"egGtB"}],"7XXSl":[function(require,module,exports) {
+"use strict";
+var buildPathname = require("../pathname/build");
+var hasOwn = require("../util/hasOwn");
+module.exports = function($window, oncompletion) {
+    function PromiseProxy(executor) {
+        return new Promise(executor);
+    }
+    function makeRequest(url, args) {
+        return new Promise(function(resolve, reject) {
+            url = buildPathname(url, args.params);
+            var method = args.method != null ? args.method.toUpperCase() : "GET";
+            var body = args.body;
+            var assumeJSON = (args.serialize == null || args.serialize === JSON.serialize) && !(body instanceof $window.FormData || body instanceof $window.URLSearchParams);
+            var responseType = args.responseType || (typeof args.extract === "function" ? "" : "json");
+            var xhr = new $window.XMLHttpRequest(), aborted = false, isTimeout = false;
+            var original = xhr, replacedAbort;
+            var abort = xhr.abort;
+            xhr.abort = function() {
+                aborted = true;
+                abort.call(this);
+            };
+            xhr.open(method, url, args.async !== false, typeof args.user === "string" ? args.user : undefined, typeof args.password === "string" ? args.password : undefined);
+            if (assumeJSON && body != null && !hasHeader(args, "content-type")) xhr.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            if (typeof args.deserialize !== "function" && !hasHeader(args, "accept")) xhr.setRequestHeader("Accept", "application/json, text/*");
+            if (args.withCredentials) xhr.withCredentials = args.withCredentials;
+            if (args.timeout) xhr.timeout = args.timeout;
+            xhr.responseType = responseType;
+            for(var key in args.headers)if (hasOwn.call(args.headers, key)) xhr.setRequestHeader(key, args.headers[key]);
+            xhr.onreadystatechange = function(ev) {
+                // Don't throw errors on xhr.abort().
+                if (aborted) return;
+                if (ev.target.readyState === 4) try {
+                    var success = ev.target.status >= 200 && ev.target.status < 300 || ev.target.status === 304 || /^file:\/\//i.test(url);
+                    // When the response type isn't "" or "text",
+                    // `xhr.responseText` is the wrong thing to use.
+                    // Browsers do the right thing and throw here, and we
+                    // should honor that and do the right thing by
+                    // preferring `xhr.response` where possible/practical.
+                    var response = ev.target.response, message;
+                    if (responseType === "json") {
+                        // For IE and Edge, which don't implement
+                        // `responseType: "json"`.
+                        if (!ev.target.responseType && typeof args.extract !== "function") // Handle no-content which will not parse.
+                        try {
+                            response = JSON.parse(ev.target.responseText);
+                        } catch (e) {
+                            response = null;
+                        }
+                    } else if (!responseType || responseType === "text") // Only use this default if it's text. If a parsed
+                    // document is needed on old IE and friends (all
+                    // unsupported), the user should use a custom
+                    // `config` instead. They're already using this at
+                    // their own risk.
+                    {
+                        if (response == null) response = ev.target.responseText;
+                    }
+                    if (typeof args.extract === "function") {
+                        response = args.extract(ev.target, args);
+                        success = true;
+                    } else if (typeof args.deserialize === "function") response = args.deserialize(response);
+                    if (success) {
+                        if (typeof args.type === "function") {
+                            if (Array.isArray(response)) for(var i = 0; i < response.length; i++)response[i] = new args.type(response[i]);
+                            else response = new args.type(response);
+                        }
+                        resolve(response);
+                    } else {
+                        var completeErrorResponse = function() {
+                            try {
+                                message = ev.target.responseText;
+                            } catch (e) {
+                                message = response;
+                            }
+                            var error = new Error(message);
+                            error.code = ev.target.status;
+                            error.response = response;
+                            reject(error);
+                        };
+                        if (xhr.status === 0) // Use setTimeout to push this code block onto the event queue
+                        // This allows `xhr.ontimeout` to run in the case that there is a timeout
+                        // Without this setTimeout, `xhr.ontimeout` doesn't have a chance to reject
+                        // as `xhr.onreadystatechange` will run before it
+                        setTimeout(function() {
+                            if (isTimeout) return;
+                            completeErrorResponse();
+                        });
+                        else completeErrorResponse();
+                    }
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            xhr.ontimeout = function(ev) {
+                isTimeout = true;
+                var error = new Error("Request timed out");
+                error.code = ev.target.status;
+                reject(error);
+            };
+            if (typeof args.config === "function") {
+                xhr = args.config(xhr, args, url) || xhr;
+                // Propagate the `abort` to any replacement XHR as well.
+                if (xhr !== original) {
+                    replacedAbort = xhr.abort;
+                    xhr.abort = function() {
+                        aborted = true;
+                        replacedAbort.call(this);
+                    };
+                }
+            }
+            if (body == null) xhr.send();
+            else if (typeof args.serialize === "function") xhr.send(args.serialize(body));
+            else if (body instanceof $window.FormData || body instanceof $window.URLSearchParams) xhr.send(body);
+            else xhr.send(JSON.stringify(body));
+        });
+    }
+    // In case the global Promise is some userland library's where they rely on
+    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
+    // similar. Let's *not* break them.
+    PromiseProxy.prototype = Promise.prototype;
+    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
+    ;
+    function hasHeader(args, name) {
+        for(var key in args.headers){
+            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
+        }
+        return false;
+    }
+    return {
+        request: function(url, args) {
+            if (typeof url !== "string") {
+                args = url;
+                url = url.url;
+            } else if (args == null) args = {};
+            var promise1 = makeRequest(url, args);
+            if (args.background === true) return promise1;
+            var count = 0;
+            function complete() {
+                if (--count === 0 && typeof oncompletion === "function") oncompletion();
+            }
+            return wrap(promise1);
+            function wrap(promise) {
+                var then = promise.then;
+                // Set the constructor, so engines know to not await or resolve
+                // this as a native promise. At the time of writing, this is
+                // only necessary for V8, but their behavior is the correct
+                // behavior per spec. See this spec issue for more details:
+                // https://github.com/tc39/ecma262/issues/1577. Also, see the
+                // corresponding comment in `request/tests/test-request.js` for
+                // a bit more background on the issue at hand.
+                promise.constructor = PromiseProxy;
+                promise.then = function() {
+                    count++;
+                    var next = then.apply(promise, arguments);
+                    next.then(complete, function(e) {
+                        complete();
+                        if (count === 0) throw e;
+                    });
+                    return wrap(next);
+                };
+                return promise;
+            }
+        }
+    };
+};
+
+},{"../pathname/build":"lXNwO","../util/hasOwn":"94qwS"}],"lXNwO":[function(require,module,exports) {
+"use strict";
+var buildQueryString = require("../querystring/build");
+var assign = require("../util/assign");
+// Returns `path` from `template` + `params`
+module.exports = function(template, params) {
+    if (/:([^\/\.-]+)(\.{3})?:/.test(template)) throw new SyntaxError("Template parameter names must be separated by either a '/', '-', or '.'.");
+    if (params == null) return template;
+    var queryIndex = template.indexOf("?");
+    var hashIndex = template.indexOf("#");
+    var queryEnd = hashIndex < 0 ? template.length : hashIndex;
+    var pathEnd = queryIndex < 0 ? queryEnd : queryIndex;
+    var path = template.slice(0, pathEnd);
+    var query = {};
+    assign(query, params);
+    var resolved = path.replace(/:([^\/\.-]+)(\.{3})?/g, function(m, key, variadic) {
+        delete query[key];
+        // If no such parameter exists, don't interpolate it.
+        if (params[key] == null) return m;
+        // Escape normal parameters, but not variadic ones.
+        return variadic ? params[key] : encodeURIComponent(String(params[key]));
+    });
+    // In case the template substitution adds new query/hash parameters.
+    var newQueryIndex = resolved.indexOf("?");
+    var newHashIndex = resolved.indexOf("#");
+    var newQueryEnd = newHashIndex < 0 ? resolved.length : newHashIndex;
+    var newPathEnd = newQueryIndex < 0 ? newQueryEnd : newQueryIndex;
+    var result = resolved.slice(0, newPathEnd);
+    if (queryIndex >= 0) result += template.slice(queryIndex, queryEnd);
+    if (newQueryIndex >= 0) result += (queryIndex < 0 ? "?" : "&") + resolved.slice(newQueryIndex, newQueryEnd);
+    var querystring = buildQueryString(query);
+    if (querystring) result += (queryIndex < 0 && newQueryIndex < 0 ? "?" : "&") + querystring;
+    if (hashIndex >= 0) result += template.slice(hashIndex);
+    if (newHashIndex >= 0) result += (hashIndex < 0 ? "" : "&") + resolved.slice(newHashIndex);
+    return result;
+};
+
+},{"../querystring/build":"dJUE4","../util/assign":"3fHzt"}],"dJUE4":[function(require,module,exports) {
+"use strict";
+module.exports = function(object) {
+    if (Object.prototype.toString.call(object) !== "[object Object]") return "";
+    var args = [];
+    for(var key1 in object)destructure(key1, object[key1]);
+    return args.join("&");
+    function destructure(key, value) {
+        if (Array.isArray(value)) {
+            for(var i = 0; i < value.length; i++){
+                destructure(key + "[" + i + "]", value[i]);
+            }
+        } else if (Object.prototype.toString.call(value) === "[object Object]") {
+            for(var i in value){
+                destructure(key + "[" + i + "]", value[i]);
+            }
+        } else args.push(encodeURIComponent(key) + (value != null && value !== "" ? "=" + encodeURIComponent(value) : ""));
+    }
+};
+
+},{}],"3fHzt":[function(require,module,exports) {
+// This exists so I'm only saving it once.
+"use strict";
+var hasOwn = require("./hasOwn");
+module.exports = Object.assign || function(target, source) {
+    for(var key in source)if (hasOwn.call(source, key)) target[key] = source[key];
+};
+
+},{"./hasOwn":"94qwS"}],"8HVTZ":[function(require,module,exports) {
+"use strict";
+var mountRedraw = require("./mount-redraw");
+module.exports = require("./api/router")(typeof window !== "undefined" ? window : null, mountRedraw);
+
+},{"./mount-redraw":"dvp1x","./api/router":"4yJlG"}],"4yJlG":[function(require,module,exports) {
+"use strict";
+var Vnode = require("../render/vnode");
+var m = require("../render/hyperscript");
+var buildPathname = require("../pathname/build");
+var parsePathname = require("../pathname/parse");
+var compileTemplate = require("../pathname/compileTemplate");
+var assign = require("../util/assign");
+var censor = require("../util/censor");
+var sentinel = {};
+function decodeURIComponentSave(component) {
+    try {
+        return decodeURIComponent(component);
+    } catch (e) {
+        return component;
+    }
+}
+module.exports = function($window, mountRedraw) {
+    var callAsync = $window == null ? null : typeof $window.setImmediate === "function" ? $window.setImmediate : $window.setTimeout;
+    var p = Promise.resolve();
+    var scheduled = false;
+    // state === 0: init
+    // state === 1: scheduled
+    // state === 2: done
+    var ready = false;
+    var state1 = 0;
+    var compiled, fallbackRoute;
+    var currentResolver = sentinel, component, attrs, currentPath, lastUpdate;
+    var RouterRoot = {
+        onbeforeupdate: function() {
+            state1 = state1 ? 2 : 1;
+            return !(!state1 || sentinel === currentResolver);
+        },
+        onremove: function() {
+            $window.removeEventListener("popstate", fireAsync, false);
+            $window.removeEventListener("hashchange", resolveRoute, false);
+        },
+        view: function() {
+            if (!state1 || sentinel === currentResolver) return;
+            // Wrap in a fragment to preserve existing key semantics
+            var vnode = [
+                Vnode(component, attrs.key, attrs)
+            ];
+            if (currentResolver) vnode = currentResolver.render(vnode[0]);
+            return vnode;
+        }
+    };
+    var SKIP = route1.SKIP = {};
+    function resolveRoute() {
+        scheduled = false;
+        // Consider the pathname holistically. The prefix might even be invalid,
+        // but that's not our problem.
+        var prefix = $window.location.hash;
+        if (route1.prefix[0] !== "#") {
+            prefix = $window.location.search + prefix;
+            if (route1.prefix[0] !== "?") {
+                prefix = $window.location.pathname + prefix;
+                if (prefix[0] !== "/") prefix = "/" + prefix;
+            }
+        }
+        // This seemingly useless `.concat()` speeds up the tests quite a bit,
+        // since the representation is consistently a relatively poorly
+        // optimized cons string.
+        var path = prefix.concat().replace(/(?:%[a-f89][a-f0-9])+/gim, decodeURIComponentSave).slice(route1.prefix.length);
+        var data = parsePathname(path);
+        assign(data.params, $window.history.state);
+        function reject(e) {
+            console.error(e);
+            setPath(fallbackRoute, null, {
+                replace: true
+            });
+        }
+        loop(0);
+        function loop(i) {
+            // state === 0: init
+            // state === 1: scheduled
+            // state === 2: done
+            for(; i < compiled.length; i++)if (compiled[i].check(data)) {
+                var payload = compiled[i].component;
+                var matchedRoute = compiled[i].route;
+                var localComp = payload;
+                var update = lastUpdate = function(comp) {
+                    if (update !== lastUpdate) return;
+                    if (comp === SKIP) return loop(i + 1);
+                    component = comp != null && (typeof comp.view === "function" || typeof comp === "function") ? comp : "div";
+                    attrs = data.params, currentPath = path, lastUpdate = null;
+                    currentResolver = payload.render ? payload : null;
+                    if (state1 === 2) mountRedraw.redraw();
+                    else {
+                        state1 = 2;
+                        mountRedraw.redraw.sync();
+                    }
+                };
+                // There's no understating how much I *wish* I could
+                // use `async`/`await` here...
+                if (payload.view || typeof payload === "function") {
+                    payload = {};
+                    update(localComp);
+                } else if (payload.onmatch) p.then(function() {
+                    return payload.onmatch(data.params, path, matchedRoute);
+                }).then(update, path === fallbackRoute ? null : reject);
+                else update("div");
+                return;
+            }
+            if (path === fallbackRoute) throw new Error("Could not resolve default route " + fallbackRoute + ".");
+            setPath(fallbackRoute, null, {
+                replace: true
+            });
+        }
+    }
+    // Set it unconditionally so `m.route.set` and `m.route.Link` both work,
+    // even if neither `pushState` nor `hashchange` are supported. It's
+    // cleared if `hashchange` is used, since that makes it automatically
+    // async.
+    function fireAsync() {
+        if (!scheduled) {
+            scheduled = true;
+            // TODO: just do `mountRedraw.redraw()` here and elide the timer
+            // dependency. Note that this will muck with tests a *lot*, so it's
+            // not as easy of a change as it sounds.
+            callAsync(resolveRoute);
+        }
+    }
+    function setPath(path, data, options) {
+        path = buildPathname(path, data);
+        if (ready) {
+            fireAsync();
+            var state = options ? options.state : null;
+            var title = options ? options.title : null;
+            if (options && options.replace) $window.history.replaceState(state, title, route1.prefix + path);
+            else $window.history.pushState(state, title, route1.prefix + path);
+        } else $window.location.href = route1.prefix + path;
+    }
+    function route1(root, defaultRoute, routes) {
+        if (!root) throw new TypeError("DOM element being rendered to does not exist.");
+        compiled = Object.keys(routes).map(function(route) {
+            if (route[0] !== "/") throw new SyntaxError("Routes must start with a '/'.");
+            if (/:([^\/\.-]+)(\.{3})?:/.test(route)) throw new SyntaxError("Route parameter names must be separated with either '/', '.', or '-'.");
+            return {
+                route: route,
+                component: routes[route],
+                check: compileTemplate(route)
+            };
+        });
+        fallbackRoute = defaultRoute;
+        if (defaultRoute != null) {
+            var defaultData = parsePathname(defaultRoute);
+            if (!compiled.some(function(i) {
+                return i.check(defaultData);
+            })) throw new ReferenceError("Default route doesn't match any known routes.");
+        }
+        if (typeof $window.history.pushState === "function") $window.addEventListener("popstate", fireAsync, false);
+        else if (route1.prefix[0] === "#") $window.addEventListener("hashchange", resolveRoute, false);
+        ready = true;
+        mountRedraw.mount(root, RouterRoot);
+        resolveRoute();
+    }
+    route1.set = function(path, data, options) {
+        if (lastUpdate != null) {
+            options = options || {};
+            options.replace = true;
+        }
+        lastUpdate = null;
+        setPath(path, data, options);
+    };
+    route1.get = function() {
+        return currentPath;
+    };
+    route1.prefix = "#!";
+    route1.Link = {
+        view: function(vnode) {
+            // Omit the used parameters from the rendered element - they are
+            // internal. Also, censor the various lifecycle methods.
+            //
+            // We don't strip the other parameters because for convenience we
+            // let them be specified in the selector as well.
+            var child = m(vnode.attrs.selector || "a", censor(vnode.attrs, [
+                "options",
+                "params",
+                "selector",
+                "onclick"
+            ]), vnode.children);
+            var options, onclick, href;
+            // Let's provide a *right* way to disable a route link, rather than
+            // letting people screw up accessibility on accident.
+            //
+            // The attribute is coerced so users don't get surprised over
+            // `disabled: 0` resulting in a button that's somehow routable
+            // despite being visibly disabled.
+            if (child.attrs.disabled = Boolean(child.attrs.disabled)) {
+                child.attrs.href = null;
+                child.attrs["aria-disabled"] = "true";
+            // If you *really* do want add `onclick` on a disabled link, use
+            // an `oncreate` hook to add it.
+            } else {
+                options = vnode.attrs.options;
+                onclick = vnode.attrs.onclick;
+                // Easier to build it now to keep it isomorphic.
+                href = buildPathname(child.attrs.href, vnode.attrs.params);
+                child.attrs.href = route1.prefix + href;
+                child.attrs.onclick = function(e) {
+                    var result;
+                    if (typeof onclick === "function") result = onclick.call(e.currentTarget, e);
+                    else if (onclick == null || typeof onclick !== "object") ;
+                    else if (typeof onclick.handleEvent === "function") onclick.handleEvent(e);
+                    // Adapted from React Router's implementation:
+                    // https://github.com/ReactTraining/react-router/blob/520a0acd48ae1b066eb0b07d6d4d1790a1d02482/packages/react-router-dom/modules/Link.js
+                    //
+                    // Try to be flexible and intuitive in how we handle links.
+                    // Fun fact: links aren't as obvious to get right as you
+                    // would expect. There's a lot more valid ways to click a
+                    // link than this, and one might want to not simply click a
+                    // link, but right click or command-click it to copy the
+                    // link target, etc. Nope, this isn't just for blind people.
+                    if (// Skip if `onclick` prevented default
+                    result !== false && !e.defaultPrevented && (e.button === 0 || e.which === 0 || e.which === 1) && (!e.currentTarget.target || e.currentTarget.target === "_self") && // No modifier keys
+                    !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+                        e.preventDefault();
+                        e.redraw = false;
+                        route1.set(href, null, options);
+                    }
+                };
+            }
+            return child;
+        }
+    };
+    route1.param = function(key) {
+        return attrs && key != null ? attrs[key] : attrs;
+    };
+    return route1;
+};
+
+},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
+"use strict";
+var parseQueryString = require("../querystring/parse");
+// Returns `{path, params}` from `url`
+module.exports = function(url) {
+    var queryIndex = url.indexOf("?");
+    var hashIndex = url.indexOf("#");
+    var queryEnd = hashIndex < 0 ? url.length : hashIndex;
+    var pathEnd = queryIndex < 0 ? queryEnd : queryIndex;
+    var path = url.slice(0, pathEnd).replace(/\/{2,}/g, "/");
+    if (!path) path = "/";
+    else if (path[0] !== "/") path = "/" + path;
+    return {
+        path: path,
+        params: queryIndex < 0 ? {} : parseQueryString(url.slice(queryIndex + 1, queryEnd))
+    };
+};
+
+},{"../querystring/parse":"1Bqsf"}],"1Bqsf":[function(require,module,exports) {
+"use strict";
+function decodeURIComponentSave(str) {
+    try {
+        return decodeURIComponent(str);
+    } catch (err) {
+        return str;
+    }
+}
+module.exports = function(string) {
+    if (string === "" || string == null) return {};
+    if (string.charAt(0) === "?") string = string.slice(1);
+    var entries = string.split("&"), counters = {}, data = {};
+    for(var i = 0; i < entries.length; i++){
+        var entry = entries[i].split("=");
+        var key = decodeURIComponentSave(entry[0]);
+        var value = entry.length === 2 ? decodeURIComponentSave(entry[1]) : "";
+        if (value === "true") value = true;
+        else if (value === "false") value = false;
+        var levels = key.split(/\]\[?|\[/);
+        var cursor = data;
+        if (key.indexOf("[") > -1) levels.pop();
+        for(var j = 0; j < levels.length; j++){
+            var level = levels[j], nextLevel = levels[j + 1];
+            var isNumber = nextLevel == "" || !isNaN(parseInt(nextLevel, 10));
+            if (level === "") {
+                var key = levels.slice(0, j).join();
+                if (counters[key] == null) counters[key] = Array.isArray(cursor) ? cursor.length : 0;
+                level = counters[key]++;
+            } else if (level === "__proto__") break;
+            if (j === levels.length - 1) cursor[level] = value;
+            else {
+                // Read own properties exclusively to disallow indirect
+                // prototype pollution
+                var desc = Object.getOwnPropertyDescriptor(cursor, level);
+                if (desc != null) desc = desc.value;
+                if (desc == null) cursor[level] = desc = isNumber ? [] : {};
+                cursor = desc;
+            }
+        }
+    }
+    return data;
+};
+
+},{}],"dZhtQ":[function(require,module,exports) {
+"use strict";
+var parsePathname = require("./parse");
+// Compiles a template into a function that takes a resolved path (without query
+// strings) and returns an object containing the template parameters with their
+// parsed values. This expects the input of the compiled template to be the
+// output of `parsePathname`. Note that it does *not* remove query parameters
+// specified in the template.
+module.exports = function(template) {
+    var templateData = parsePathname(template);
+    var templateKeys = Object.keys(templateData.params);
+    var keys = [];
+    var regexp = new RegExp("^" + templateData.path.replace(// I escape literal text so people can use things like `:file.:ext` or
+    // `:lang-:locale` in routes. This is all merged into one pass so I
+    // don't also accidentally escape `-` and make it harder to detect it to
+    // ban it from template parameters.
+    /:([^\/.-]+)(\.{3}|\.(?!\.)|-)?|[\\^$*+.()|\[\]{}]/g, function(m, key, extra) {
+        if (key == null) return "\\" + m;
+        keys.push({
+            k: key,
+            r: extra === "..."
+        });
+        if (extra === "...") return "(.*)";
+        if (extra === ".") return "([^/]+)\\.";
+        return "([^/]+)" + (extra || "");
+    }) + "$");
+    return function(data) {
+        // First, check the params. Usually, there isn't any, and it's just
+        // checking a static set.
+        for(var i = 0; i < templateKeys.length; i++){
+            if (templateData.params[templateKeys[i]] !== data.params[templateKeys[i]]) return false;
+        }
+        // If no interpolations exist, let's skip all the ceremony
+        if (!keys.length) return regexp.test(data.path);
+        var values = regexp.exec(data.path);
+        if (values == null) return false;
+        for(var i = 0; i < keys.length; i++)data.params[keys[i].k] = keys[i].r ? values[i + 1] : decodeURIComponent(values[i + 1]);
+        return true;
+    };
+};
+
+},{"./parse":"jciPb"}],"9jEja":[function(require,module,exports) {
+"use strict";
+// Note: this is mildly perf-sensitive.
+//
+// It does *not* use `delete` - dynamic `delete`s usually cause objects to bail
+// out into dictionary mode and just generally cause a bunch of optimization
+// issues within engines.
+//
+// Ideally, I would've preferred to do this, if it weren't for the optimization
+// issues:
+//
+// ```js
+// const hasOwn = require("./hasOwn")
+// const magic = [
+//     "key", "oninit", "oncreate", "onbeforeupdate", "onupdate",
+//     "onbeforeremove", "onremove",
+// ]
+// module.exports = (attrs, extras) => {
+//     const result = Object.assign(Object.create(null), attrs)
+//     for (const key of magic) delete result[key]
+//     if (extras != null) for (const key of extras) delete result[key]
+//     return result
+// }
+// ```
+var hasOwn = require("./hasOwn");
+// Words in RegExp literals are sometimes mangled incorrectly by the internal bundler, so use RegExp().
+var magic = new RegExp("^(?:key|oninit|oncreate|onbeforeupdate|onupdate|onbeforeremove|onremove)$");
+module.exports = function(attrs, extras) {
+    var result = {};
+    if (extras != null) {
+        for(var key in attrs)if (hasOwn.call(attrs, key) && !magic.test(key) && extras.indexOf(key) < 0) result[key] = attrs[key];
+    } else {
+        for(var key in attrs)if (hasOwn.call(attrs, key) && !magic.test(key)) result[key] = attrs[key];
+    }
+    return result;
+};
+
+},{"./hasOwn":"94qwS"}]},["k1xWN","20BJq"], "20BJq", "parcelRequire8806")
 
