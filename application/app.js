@@ -1,7 +1,6 @@
 "use strict";
 
 import localforage from "localforage";
-import Mustache from "mustache";
 import { sort_array } from "./assets/js/helper.js";
 import { toaster } from "./assets/js/helper.js";
 import { validate } from "./assets/js/helper.js";
@@ -15,6 +14,7 @@ import { export_ical } from "./assets/js/eximport.js";
 import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
+import { m } from "mithdril";
 
 let months = [
   "Jan",
@@ -607,6 +607,7 @@ let clear_form = function () {
 // //////////////
 */
 
+/*
 const month = document.getElementById("calendar");
 const add_edit_event = document.getElementById("add-edit-event");
 const list_view = document.getElementById("list-view");
@@ -788,7 +789,7 @@ let router = function (view) {
     bottom_bar("QR", "", "save");
   }
 };
-
+*/
 let list_subscriptions = function () {
   if (subscriptions == null) return false;
 
