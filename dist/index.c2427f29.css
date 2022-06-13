@@ -2,7 +2,7 @@ div#qr-screen {
   z-index: 200000;
   min-height: 100vh;
   min-width: 100vw;
-  z-index: 2000000000000;
+  z-index: 2147483647;
   display: none;
   position: fixed;
   top: 0;

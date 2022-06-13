@@ -142,7 +142,7 @@
       this[globalName] = mainExports;
     }
   }
-})({"k1xWN":[function(require,module,exports) {
+})({"il488":[function(require,module,exports) {
 "use strict";
 var HMR_HOST = null;
 var HMR_PORT = null;
@@ -605,7 +605,6 @@ getManifest(manifest);
 let find_closest_date = function(search_term) {
     let t2 = 0;
     let search = new Date(search_term).getTime();
-    console.log(search);
     for(let i = 0; i < events.length; i++){
         let item = new Date(events[i].dateStart).getTime();
         if (search < item) {
@@ -617,9 +616,9 @@ let find_closest_date = function(search_term) {
         if (search > new Date(events[events.length - 1].dateStart).getTime()) {
             t2 = events[events.length - 1].dateStart;
             i = events.length;
+            console.log("ii" + t2);
         }
     }
-    console.log(document.querySelectorAll("article[data-date='" + t2 + "']"));
     document.querySelectorAll("article[data-date='" + t2 + "']")[0].focus();
     return t2;
 };
@@ -722,18 +721,16 @@ let event_check_day = function(date) {
     k.innerHTML = "";
     //hide all
     let item = document.querySelectorAll("div#event-slider article");
+    console.log(item);
     for(let i = 0; i < item.length; i++){
         item[i].style.display = "none";
         let a = new Date(item[i].getAttribute("data-date")).getTime();
         let b = new Date(item[i].getAttribute("data-date-end")).getTime();
         let c = new Date(date).getTime();
-        //hide/show alarm icon
-        if (item[i].getAttribute("data-alarm")) {
-            if (item[i].getAttribute("data-alarm") == "none") item[i].querySelector("div.icons-bar img.bell").style.display = "none";
-        }
+        let d1 = item[i].getAttribute("data-rrule");
+        item[i].getAttribute("data-alarm");
         //all day event
         if (item[i].getAttribute("data-time-start") == "00:00:00" && item[i].getAttribute("data-time-end") == "00:00:00") item[i].querySelector("div.time").innerHTML = "All day";
-        let d1 = item[i].getAttribute("data-rrule");
         if (d1 === "none" || d1 === "") {
             if (a === c || b === c || a < c && b > c) {
                 //if multiday event
@@ -783,6 +780,7 @@ let event_check_day = function(date) {
     }
     if (slider != "" && slider.length > 0) k.style.opacity = 100;
     else k.style.opacity = 0;
+    console.log("slider" + slider);
 };
 let slider_navigation = function() {
     let p = document.querySelectorAll("div#event-slider-indicator div div");
@@ -835,6 +833,7 @@ Date.prototype.getWeek = function() {
 };
 let showCalendar = function(month, year) {
     _helperJs.bottom_bar("add", "events", "options");
+    console.log(month);
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
     let tbl = document.getElementById("calendar-body");
@@ -976,7 +975,35 @@ var page_calendar = {
             }),
             _mithrilDefault.default("div", {
                 id: "event-slider"
-            }),
+            }, [
+                //events slider
+                events.map(function(item, index) {
+                    return _mithrilDefault.default("article", {
+                        class: "event-slider-item",
+                        "data-id": item.UID,
+                        "data-date": item.dateStart,
+                        "data-time-start": item.time_start,
+                        "data-time-end": item.time_end,
+                        "data-date-end": item.dateEnd,
+                        "data-rrule": item.rrule_,
+                        "data-multidayevent": item.multidayevent
+                    }, [
+                        _mithrilDefault.default("div", {
+                            class: "date"
+                        }, item.dateStart),
+                        _mithrilDefault.default("div", {
+                            class: "time"
+                        }, item.time_start),
+                        _mithrilDefault.default("h2", {
+                            class: "time"
+                        }, item.SUMMARY),
+                        _mithrilDefault.default("div", item.LOCATION),
+                        _mithrilDefault.default("div", {
+                            class: "description"
+                        }, item.DESCRIPTION), 
+                    ]);
+                }), 
+            ]),
             _mithrilDefault.default("div", {
                 id: "event-slider-indicator",
                 class: "flex width-100 justify-content-spacearound"
@@ -990,16 +1017,35 @@ var page_calendar = {
     oncreate: ({ dom  })=>setTimeout(function() {
             dom.focus();
             if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            console.log(document.activeElement.getAttribute("data-date"));
             _helperJs.bottom_bar("add", "events", "options");
-            let t6 = new Date(status.selected_day);
-            currentMonth = t6.getMonth();
-            currentYear = t6.getFullYear();
+            if (status.selected_day != "") {
+                let t6 = new Date(status.selected_day);
+                currentMonth = t6.getMonth();
+                currentYear = t6.getFullYear();
+            }
             let k = status.selected_day;
             document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-                if (item.getAttribute("data-date") == k) item.focus();
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_check_day(k);
+                }
             });
             showCalendar(currentMonth, currentYear);
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            //month.style.display = "block";
+            _helperJs.bottom_bar("add", "events", "options");
+            // status.edit_event = false;
+            let t7 = new Date(status.selected_day);
+            currentMonth = t7.getMonth();
+            currentYear = t7.getFullYear();
+            showCalendar(currentMonth, currentYear);
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_check_day(k);
+                }
+            });
+            clear_form();
         }, 500)
 };
 /*
@@ -1033,11 +1079,11 @@ var page_calendar = {
                 "data-multidayevent": item.multidayevent
             }, [
                 _mithrilDefault.default("div", {
-                    class: "icons-bar flex"
+                    class: "icons-bar"
                 }, [
                     _mithrilDefault.default("div", {
                         class: "date"
-                    }),
+                    }, item.dateStart),
                     _mithrilDefault.default("div", {
                         class: "time"
                     }, item.time_start),
@@ -1060,30 +1106,22 @@ var page_calendar = {
 var page_options = {
     view: function() {
         return _mithrilDefault.default("div", {
-            class: "width-100 height-100",
-            id: "intro"
-        }, [
-            _mithrilDefault.default("div", {
-                class: "width-100",
-                id: "version"
-            }), 
-        ]);
-    }
-};
-var page_settings = {
-    view: function() {
-        return _mithrilDefault.default("div", {
             id: "settings"
-        });
+        }, "hey");
     }
 };
 var page_add_edit_event = {
     view: function() {
         return _mithrilDefault.default("div", {
-            id: "add-edit-event"
+            id: "add-edit-event",
+            tabindex: "0"
         }, [
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: 0,
+                oncreate: ({ dom  })=>setTimeout(function() {
+                        dom.focus();
+                    }, 500)
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-title"
@@ -1092,10 +1130,11 @@ var page_add_edit_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-title"
-                })
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "1"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-location"
@@ -1104,10 +1143,11 @@ var page_add_edit_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-location"
-                })
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "2"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-date"
@@ -1115,11 +1155,13 @@ var page_add_edit_event = {
                 _mithrilDefault.default("input", {
                     placeholder: "YYYY-MM-DD",
                     type: "date",
-                    id: "event-date"
-                })
+                    id: "event-date",
+                    value: status.selected_day
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "3"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-date-end"
@@ -1128,10 +1170,11 @@ var page_add_edit_event = {
                     placeholder: "YYYY-MM-DD",
                     type: "date",
                     id: "event-date-end"
-                })
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "4"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-time-start"
@@ -1139,11 +1182,13 @@ var page_add_edit_event = {
                 _mithrilDefault.default("input", {
                     placeholder: "hh:mm:ss",
                     type: "time",
-                    id: "event-time-start"
-                })
+                    id: "event-time-start",
+                    value: new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds()
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "5"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-time-end"
@@ -1152,10 +1197,11 @@ var page_add_edit_event = {
                     placeholder: "hh:mm:ss",
                     type: "time",
                     id: "event-time-end"
-                })
+                }), 
             ]),
             _mithrilDefault.default("div", {
-                class: "item input-parent"
+                class: "item input-parent",
+                tabindex: "6"
             }, [
                 _mithrilDefault.default("label", {
                     for: "event-description"
@@ -1164,7 +1210,7 @@ var page_add_edit_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-description"
-                })
+                }), 
             ]),
             _mithrilDefault.default("div", {
                 class: "item input-parent",
@@ -1173,13 +1219,12 @@ var page_add_edit_event = {
             }, [
                 _mithrilDefault.default("label", {
                     for: "notification"
-                }, "End Time"),
+                }, "Notification"),
                 _mithrilDefault.default("select", {
                     id: "event-notification-time"
                 }, [
                     _mithrilDefault.default("option", {
-                        value: "none",
-                        selected
+                        value: "none"
                     }, "none"),
                     _mithrilDefault.default("option", {
                         value: "5"
@@ -1193,7 +1238,7 @@ var page_add_edit_event = {
                     _mithrilDefault.default("option", {
                         value: "1440"
                     }, "1 Day"), 
-                ])
+                ]), 
             ]),
             _mithrilDefault.default("div", {
                 class: "item input-parent",
@@ -1207,8 +1252,7 @@ var page_add_edit_event = {
                     id: "event-recur"
                 }, [
                     _mithrilDefault.default("option", {
-                        value: "none",
-                        selected
+                        value: "none"
                     }, "none"),
                     _mithrilDefault.default("option", {
                         value: "DAILY"
@@ -1222,12 +1266,13 @@ var page_add_edit_event = {
                     _mithrilDefault.default("option", {
                         value: "YEARLY"
                     }, "Yearly"), 
-                ])
+                ]), 
             ]),
             _mithrilDefault.default("button", {
                 class: "item",
                 tabindex: "",
-                id: "select-image"
+                id: "select-image",
+                tabindex: "9"
             }, "add image"),
             _mithrilDefault.default("div", {
                 id: "form-image-wrapper"
@@ -1235,7 +1280,7 @@ var page_add_edit_event = {
                 _mithrilDefault.default("img", {
                     id: "form-image",
                     "data-blob": ""
-                })
+                }), 
             ]),
             _mithrilDefault.default("button", {
                 tabindex: "10",
@@ -1245,12 +1290,18 @@ var page_add_edit_event = {
             _mithrilDefault.default("button", {
                 tabindex: "11",
                 id: "delete-event",
-                class: "item"
+                class: "item",
+                onclick: function() {
+                    delete_event();
+                }
             }, "delete"),
             _mithrilDefault.default("button", {
                 tabindex: "12",
                 id: "export-event",
-                class: "item"
+                class: "item",
+                onclick: function() {
+                    store_event();
+                }
             }, "export event"), 
         ]);
     }
@@ -1259,7 +1310,6 @@ _mithrilDefault.default.route(root, "/page_calendar", {
     "/page_calendar": page_calendar,
     "/page_events": page_events,
     "/page_options": page_options,
-    "/page_settings": page_settings,
     "/page_add_edit_event": page_add_edit_event
 });
 _mithrilDefault.default.route.prefix = "#";
@@ -1294,6 +1344,8 @@ let option_button_bar = function () {
       status.selected_day = document.activeElement.getAttribute("data-date");
 
     document.getElementById("event-date").value = status.selected_day;
+        add_edit_event.querySelectorAll(".item")[0].focus();
+
 
     add_edit_event.style.display = "block";
     document
@@ -1542,7 +1594,7 @@ let nav = function(move) {
         console.log(items);
     }
     if (_mithrilDefault.default.route.get() == "page_subscription") items = document.querySelectorAll("div#subscription-form > div.item");
-    if (_mithrilDefault.default.route.get() == "/page_add-edit-event" || _mithrilDefault.default.route.get() == "/page_options") {
+    if (_mithrilDefault.default.route.get() == "/page_add_edit_event" || _mithrilDefault.default.route.get() == "/page_options") {
         let b = document.activeElement.parentNode;
         items = b.querySelectorAll(".item");
         if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -1567,7 +1619,6 @@ let nav = function(move) {
         behavior: "smooth"
     });
     if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") {
-        console.log(targetElement);
         if (targetElement.hasAttribute("data-date")) {
             status.selected_day = targetElement.getAttribute("data-date");
             status.selected_day_id = targetElement.getAttribute("data-id");
@@ -1716,8 +1767,8 @@ let test_alarm = function () {
 // STORE EVENTS//
 // /////////////
 // /////////////
-let convert_ics_date = function(t7) {
-    let nn = t7.replace(/-/g, "");
+let convert_ics_date = function(t8) {
+    let nn = t8.replace(/-/g, "");
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
     nn = nn + "00";
@@ -1784,8 +1835,9 @@ let store_event = function() {
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
         // clean form
         clear_form();
-        renderHello(events);
         _eximportJs.export_ical("greg.ics", without_subscription);
+        _helperJs.side_toaster("event saved", 2000);
+        _mithrilDefault.default.route.set("/page_calendar");
     }).catch(function(err) {
         console.log(err);
     });
@@ -1880,18 +1932,16 @@ let edit_event = function() {
 //DELETE EVENT
 ///////////
 let delete_event = function() {
-    let f = false;
     events = events.filter((person)=>person.UID != status.selected_day_id
     );
     remove_alarm(status.selected_day_id);
-    f = true;
-    status.edit_event = false;
     let without_subscription = events.filter((events3)=>events3.isSubscription === false
     );
     clear_form();
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
-        renderHello(events);
         _eximportJs.export_ical("greg.ics", value);
+        _helperJs.side_toaster("event deleted", 2000);
+        _mithrilDefault.default.route.set("/page_calendar");
     }).catch(function(err) {
         // This code runs if there were any errors
         console.log(err);
@@ -1908,7 +1958,6 @@ let y = t.getFullYear();
 let import_event = function(id, date) {
     _helperJs.toaster("done", 2000);
     _helperJs.bottom_bar("edit", "", "");
-    //renderHello(events);
     let without_subscription = events.filter((events4)=>events4.isSubscription === false
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
@@ -1929,8 +1978,8 @@ let set_datetime_form = function() {
     document.getElementById("event-time-end").value = pp;
 };
 let pick_image_callback = function(resultBlob) {
-    let t8 = document.getElementById("form-image");
-    t8.src = URL.createObjectURL(resultBlob);
+    let t9 = document.getElementById("form-image");
+    t9.src = URL.createObjectURL(resultBlob);
     document.getElementById("form-image-wrapper").classList.add("item");
     document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
         i.setAttribute("tabindex", p);
@@ -2006,10 +2055,8 @@ function shortpress_action(param) {
             break;
         case "SoftRight":
         case "Alt":
-            console.log(status.view);
-            if (status.view == "month") {
-                status.view = "options";
-                router();
+            if (_mithrilDefault.default.route.get() == "/page_calendar") {
+                _mithrilDefault.default.route.set("/page_options");
                 return true;
             }
             if (status.view == "subscription") {
@@ -2028,7 +2075,7 @@ function shortpress_action(param) {
                 status.selected_day_id = document.activeElement.getAttribute("data-id");
                 status.edit_event = true;
                 edit_event();
-                _mithrilDefault.default.route.set();
+                _mithrilDefault.default.route.set("/page_add_edit_event");
             }
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
                 _scanJs.start_scan(callback_scan);
@@ -2040,7 +2087,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_calendar") {
-                _mithrilDefault.default.route.set();
+                _mithrilDefault.default.route.set("/page_add_edit_event");
                 // when new event
                 // set time
                 // set_datetime_form();
@@ -2071,7 +2118,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.getAttribute("data-function") == "add-subscription") {
-                _mithrilDefault.default.route.get() = "/page_subscription";
+                _mithrilDefault.default.route.set("/page_subscription");
                 return true;
             }
             // same button with different text and action
@@ -2081,7 +2128,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.id == "delete-event") {
-                if (delete_event()) _mithrilDefault.default.route.get() = "/page_calendar";
+                if (delete_event()) _mithrilDefault.default.route.set("/page_calendar");
                 return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_options") {
@@ -2097,19 +2144,19 @@ function shortpress_action(param) {
             _mithrilDefault.default.route.get() == "/page_calendar" ? _mithrilDefault.default.route.set("/page_events") : _mithrilDefault.default.route.set("/page_calendar");
             break;
         case "Backspace":
-            if (_mithrilDefault.default.route.get() == "add-edit-event" && document.activeElement.tagName != "INPUT") {
+            if (_mithrilDefault.default.route.get() == "/page_add_edit_event" && document.activeElement.tagName != "INPUT") {
                 param.preventDefault;
-                _mithrilDefault.default.route.get();
+                _mithrilDefault.default.route.set("/page_calendar");
             }
-            if (status.view == "options") _mithrilDefault.default.route.get();
+            if (_mithrilDefault.default.route.get() == "/page_options") _mithrilDefault.default.route.set("/page_calendar");
             if (status.view == "scan") {
                 param.preventDefault;
-                _mithrilDefault.default.route.set() = "/page_subscriptions";
+                _mithrilDefault.default.route.set("/page_subscriptions");
                 _scanJs.stop_scan();
             }
             if (status.view == "subscription") {
                 param.preventDefault;
-                _mithrilDefault.default.route.set() = "/page_options";
+                _mithrilDefault.default.route.set("/page_options");
             }
             break;
     }
@@ -2148,7 +2195,7 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
-},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"8ZRFG":[function(require,module,exports) {
+},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ","mithril":"05eVJ"}],"8ZRFG":[function(require,module,exports) {
 var global = arguments[3];
 /*!
     localForage -- Offline Storage, Improved
@@ -4690,7 +4737,7 @@ function write_file(data, filename) {
     };
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"4z6iA":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"cj2YQ":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -4756,7 +4803,7 @@ function getMoonPhase(year, month, day) {
     return b;
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"4kH1V":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"4kH1V":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "export_ical", ()=>export_ical
@@ -4961,7 +5008,7 @@ function loadICS(filename, callback) {
     };
 }
 
-},{"./helper.js":"db1Xp","../../app.js":"20BJq","ical":"3FyRN","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"3FyRN":[function(require,module,exports) {
+},{"./helper.js":"db1Xp","../../app.js":"20BJq","ical":"3FyRN","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"3FyRN":[function(require,module,exports) {
 module.exports = require('./ical');
 var node = require('./node-ical');
 // Copy node functions across to exports
@@ -5308,7 +5355,7 @@ ical.objectHandlers['END'] = function(val, params, curr, stack) {
     return originalEnd.call(this, val, params, curr, stack);
 };
 
-},{"./ical":"he2bB","fs":"6DQzB","rrule":"idCmx"}],"6DQzB":[function(require,module,exports) {
+},{"./ical":"he2bB","fs":"jgbrw","rrule":"idCmx"}],"jgbrw":[function(require,module,exports) {
 "use strict";
 
 },{}],"idCmx":[function(require,module,exports) {
@@ -5356,7 +5403,7 @@ var rrulestr = function() {
 };
 exports.default = _rruleDefault.default;
 
-},{"./rrule":"fQtN4","./rruleset":"1v7S8","./rrulestr":"ai34i","./types":"9biul","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"fQtN4":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./rruleset":"1v7S8","./rrulestr":"ai34i","./types":"9biul","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"fQtN4":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Days", ()=>Days
@@ -5721,7 +5768,7 @@ function isFiltered(bymonth, ii, currentDay, byweekno, byweekday, byeaster, bymo
     return _helpers.notEmpty(bymonth) && !_helpers.includes(bymonth, ii.mmask[currentDay]) || _helpers.notEmpty(byweekno) && !ii.wnomask[currentDay] || _helpers.notEmpty(byweekday) && !_helpers.includes(byweekday, ii.wdaymask[currentDay]) || _helpers.notEmpty(ii.nwdaymask) && !ii.nwdaymask[currentDay] || byeaster !== null && !_helpers.includes(ii.eastermask, currentDay) || (_helpers.notEmpty(bymonthday) || _helpers.notEmpty(bynmonthday)) && !_helpers.includes(bymonthday, ii.mdaymask[currentDay]) && !_helpers.includes(bynmonthday, ii.nmdaymask[currentDay]) || _helpers.notEmpty(byyearday) && (currentDay < ii.yearlen && !_helpers.includes(byyearday, currentDay + 1) && !_helpers.includes(byyearday, -ii.yearlen + currentDay) || currentDay >= ii.yearlen && !_helpers.includes(byyearday, currentDay + 1 - ii.yearlen) && !_helpers.includes(byyearday, -ii.nextyearlen + currentDay - ii.yearlen));
 }
 
-},{"./dateutil":"gS1CZ","./iterinfo":"bSntn","./helpers":"9UCZ2","./iterresult":"iQsEc","./callbackiterresult":"llph6","./types":"9biul","./parseoptions":"hWO1x","./parsestring":"l6q9L","./optionstostring":"3Gs9h","./cache":"9fAk1","./weekday":"2Q77D","luxon":"kmRFS","./nlp":"jkQ8q","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"gS1CZ":[function(require,module,exports) {
+},{"./dateutil":"gS1CZ","./iterinfo":"bSntn","./helpers":"9UCZ2","./iterresult":"iQsEc","./callbackiterresult":"llph6","./types":"9biul","./parseoptions":"hWO1x","./parsestring":"l6q9L","./optionstostring":"3Gs9h","./cache":"9fAk1","./weekday":"2Q77D","luxon":"kmRFS","./nlp":"jkQ8q","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"gS1CZ":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "dateutil", ()=>dateutil
@@ -6022,7 +6069,7 @@ var dateutil;
 })(dateutil || (dateutil = {}));
 exports.default = dateutil;
 
-},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9UCZ2":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9UCZ2":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "isPresent", ()=>isPresent
@@ -6122,7 +6169,7 @@ var includes = function(arr, val) {
     return notEmpty(arr) && arr.indexOf(val) !== -1;
 };
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"bSntn":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"bSntn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _masks = require("./masks");
@@ -6384,7 +6431,7 @@ var Iterinfo = /** @class */ function() {
 }();
 exports.default = Iterinfo;
 
-},{"./masks":"2cuda","./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"2cuda":[function(require,module,exports) {
+},{"./masks":"2cuda","./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"2cuda":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "WDAYMASK", ()=>WDAYMASK
@@ -6460,7 +6507,7 @@ var WDAYMASK = function() {
     return wdaymask;
 }();
 
-},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"iQsEc":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"iQsEc":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -6532,7 +6579,7 @@ parcelHelpers.defineInteropFlag(exports);
 }();
 exports.default = IterResult;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"llph6":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"llph6":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _iterresult = require("./iterresult");
@@ -6577,7 +6624,7 @@ var __extends = undefined && undefined.__extends || function() {
 }(_iterresultDefault.default);
 exports.default = CallbackIterResult;
 
-},{"./iterresult":"iQsEc","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9biul":[function(require,module,exports) {
+},{"./iterresult":"iQsEc","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9biul":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Frequency", ()=>Frequency
@@ -6593,7 +6640,7 @@ var Frequency;
     Frequency1[Frequency1["SECONDLY"] = 6] = "SECONDLY";
 })(Frequency || (Frequency = {}));
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"hWO1x":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"hWO1x":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "initializeOptions", ()=>initializeOptions
@@ -6779,7 +6826,7 @@ function parseOptions(options) {
     };
 }
 
-},{"./helpers":"9UCZ2","./rrule":"fQtN4","./dateutil":"gS1CZ","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"2Q77D":[function(require,module,exports) {
+},{"./helpers":"9UCZ2","./rrule":"fQtN4","./dateutil":"gS1CZ","./weekday":"2Q77D","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"2Q77D":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Weekday", ()=>Weekday
@@ -6823,7 +6870,7 @@ var Weekday = /** @class */ function() {
     return Weekday1;
 }();
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"l6q9L":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"l6q9L":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "parseString", ()=>parseString
@@ -6917,7 +6964,7 @@ function parseString(rfcString) {
     return options;
 }
 
-},{"./types":"9biul","./weekday":"2Q77D","./dateutil":"gS1CZ","./rrule":"fQtN4","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"3Gs9h":[function(require,module,exports) {
+},{"./types":"9biul","./weekday":"2Q77D","./dateutil":"gS1CZ","./rrule":"fQtN4","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"3Gs9h":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "optionsToString", ()=>optionsToString
@@ -6992,7 +7039,7 @@ function optionsToString(options) {
     return strings.join(';');
 }
 
-},{"./rrule":"fQtN4","./helpers":"9UCZ2","./weekday":"2Q77D","./dateutil":"gS1CZ","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"9fAk1":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./helpers":"9UCZ2","./weekday":"2Q77D","./dateutil":"gS1CZ","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"9fAk1":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Cache", ()=>Cache
@@ -7062,7 +7109,7 @@ var Cache = /** @class */ function() {
     return Cache1;
 }();
 
-},{"./iterresult":"iQsEc","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"kmRFS":[function(require,module,exports) {
+},{"./iterresult":"iQsEc","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"kmRFS":[function(require,module,exports) {
 'use strict';
 Object.defineProperty(exports, '__esModule', {
     value: true
@@ -13381,7 +13428,7 @@ var toText = function(rrule, gettext, language) {
 };
 var isFullyConvertible = _totextDefault.default.isFullyConvertible;
 
-},{"./totext":"fchUC","./parsetext":"908Jq","../index":"idCmx","./i18n":"cRPwz","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"fchUC":[function(require,module,exports) {
+},{"./totext":"fchUC","./parsetext":"908Jq","../index":"idCmx","./i18n":"cRPwz","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"fchUC":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _i18N = require("./i18n");
@@ -13661,7 +13708,7 @@ var defaultGetText = function(id) {
 }();
 exports.default = ToText;
 
-},{"./i18n":"cRPwz","../index":"idCmx","../helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"cRPwz":[function(require,module,exports) {
+},{"./i18n":"cRPwz","../index":"idCmx","../helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"cRPwz":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 // =============================================================================
@@ -13738,7 +13785,7 @@ var ENGLISH = {
 };
 exports.default = ENGLISH;
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"908Jq":[function(require,module,exports) {
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"908Jq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _i18N = require("./i18n");
@@ -14134,7 +14181,7 @@ function parseText(text, language) {
 }
 exports.default = parseText;
 
-},{"./i18n":"cRPwz","../index":"idCmx","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"1v7S8":[function(require,module,exports) {
+},{"./i18n":"cRPwz","../index":"idCmx","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"1v7S8":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _rrule = require("./rrule");
@@ -14308,7 +14355,7 @@ var __extends = undefined && undefined.__extends || function() {
 }(_rruleDefault.default);
 exports.default = RRuleSet;
 
-},{"./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"ai34i":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./dateutil":"gS1CZ","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"ai34i":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 var _rrule = require("./rrule");
@@ -14608,7 +14655,7 @@ var _helpers = require("./helpers");
 }();
 exports.default = RRuleStr;
 
-},{"./rrule":"fQtN4","./rruleset":"1v7S8","./dateutil":"gS1CZ","./weekday":"2Q77D","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"6auJa":[function(require,module,exports) {
+},{"./rrule":"fQtN4","./rruleset":"1v7S8","./dateutil":"gS1CZ","./weekday":"2Q77D","./helpers":"9UCZ2","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"6auJa":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "stop_scan", ()=>stop_scan
@@ -14665,7 +14712,7 @@ let start_scan = function(callback) {
     else console.log("getUserMedia not supported");
 };
 
-},{"jsqr":"04jWG","../../app.js":"20BJq","@parcel/transformer-js/src/esmodule-helpers.js":"4z6iA"}],"04jWG":[function(require,module,exports) {
+},{"jsqr":"04jWG","../../app.js":"20BJq","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"04jWG":[function(require,module,exports) {
 (function webpackUniversalModuleDefinition(root, factory) {
     module.exports = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
@@ -26054,15 +26101,17 @@ m.route = require("./route");
 m.render = require("./render");
 m.redraw = mountRedraw.redraw;
 m.request = request.request;
+m.jsonp = request.jsonp;
 m.parseQueryString = require("./querystring/parse");
 m.buildQueryString = require("./querystring/build");
 m.parsePathname = require("./pathname/parse");
 m.buildPathname = require("./pathname/build");
 m.vnode = require("./render/vnode");
+m.PromisePolyfill = require("./promise/polyfill");
 m.censor = require("./util/censor");
 module.exports = m;
 
-},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
+},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./promise/polyfill":"b42rx","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
 "use strict";
 var hyperscript = require("./render/hyperscript");
 hyperscript.trust = require("./render/trust");
@@ -26247,10 +26296,141 @@ module.exports = function() {
 
 },{"../render/vnode":"egGtB","./hyperscriptVnode":"iRFFB"}],"ljSDe":[function(require,module,exports) {
 "use strict";
+var PromisePolyfill = require("./promise/promise");
 var mountRedraw = require("./mount-redraw");
-module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, mountRedraw.redraw);
+module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, PromisePolyfill, mountRedraw.redraw);
 
-},{"./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"dvp1x":[function(require,module,exports) {
+},{"./promise/promise":"hO3Aw","./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"hO3Aw":[function(require,module,exports) {
+/* global window */ "use strict";
+var global = arguments[3];
+var PromisePolyfill = require("./polyfill");
+if (typeof window !== "undefined") {
+    if (typeof window.Promise === "undefined") window.Promise = PromisePolyfill;
+    else if (!window.Promise.prototype.finally) window.Promise.prototype.finally = PromisePolyfill.prototype.finally;
+    module.exports = window.Promise;
+} else if (typeof global !== "undefined") {
+    if (typeof global.Promise === "undefined") global.Promise = PromisePolyfill;
+    else if (!global.Promise.prototype.finally) global.Promise.prototype.finally = PromisePolyfill.prototype.finally;
+    module.exports = global.Promise;
+} else module.exports = PromisePolyfill;
+
+},{"./polyfill":"b42rx"}],"b42rx":[function(require,module,exports) {
+"use strict";
+/** @constructor */ var PromisePolyfill = function(executor) {
+    if (!(this instanceof PromisePolyfill)) throw new Error("Promise must be called with 'new'.");
+    if (typeof executor !== "function") throw new TypeError("executor must be a function.");
+    var self = this, resolvers = [], rejectors = [], resolveCurrent = handler(resolvers, true), rejectCurrent = handler(rejectors, false);
+    var instance = self._instance = {
+        resolvers: resolvers,
+        rejectors: rejectors
+    };
+    var callAsync = typeof setImmediate === "function" ? setImmediate : setTimeout;
+    function handler(list, shouldAbsorb) {
+        return function execute(value) {
+            var then;
+            try {
+                if (shouldAbsorb && value != null && (typeof value === "object" || typeof value === "function") && typeof (then = value.then) === "function") {
+                    if (value === self) throw new TypeError("Promise can't be resolved with itself.");
+                    executeOnce(then.bind(value));
+                } else callAsync(function() {
+                    if (!shouldAbsorb && list.length === 0) console.error("Possible unhandled promise rejection:", value);
+                    for(var i = 0; i < list.length; i++)list[i](value);
+                    resolvers.length = 0, rejectors.length = 0;
+                    instance.state = shouldAbsorb;
+                    instance.retry = function() {
+                        execute(value);
+                    };
+                });
+            } catch (e) {
+                rejectCurrent(e);
+            }
+        };
+    }
+    function executeOnce(then) {
+        var runs = 0;
+        function run(fn) {
+            return function(value) {
+                if (runs++ > 0) return;
+                fn(value);
+            };
+        }
+        var onerror = run(rejectCurrent);
+        try {
+            then(run(resolveCurrent), onerror);
+        } catch (e) {
+            onerror(e);
+        }
+    }
+    executeOnce(executor);
+};
+PromisePolyfill.prototype.then = function(onFulfilled, onRejection) {
+    var self = this, instance = self._instance;
+    function handle(callback, list, next, state) {
+        list.push(function(value) {
+            if (typeof callback !== "function") next(value);
+            else try {
+                resolveNext(callback(value));
+            } catch (e) {
+                if (rejectNext) rejectNext(e);
+            }
+        });
+        if (typeof instance.retry === "function" && state === instance.state) instance.retry();
+    }
+    var resolveNext, rejectNext;
+    var promise = new PromisePolyfill(function(resolve, reject) {
+        resolveNext = resolve, rejectNext = reject;
+    });
+    handle(onFulfilled, instance.resolvers, resolveNext, true), handle(onRejection, instance.rejectors, rejectNext, false);
+    return promise;
+};
+PromisePolyfill.prototype.catch = function(onRejection) {
+    return this.then(null, onRejection);
+};
+PromisePolyfill.prototype.finally = function(callback) {
+    return this.then(function(value) {
+        return PromisePolyfill.resolve(callback()).then(function() {
+            return value;
+        });
+    }, function(reason) {
+        return PromisePolyfill.resolve(callback()).then(function() {
+            return PromisePolyfill.reject(reason);
+        });
+    });
+};
+PromisePolyfill.resolve = function(value) {
+    if (value instanceof PromisePolyfill) return value;
+    return new PromisePolyfill(function(resolve) {
+        resolve(value);
+    });
+};
+PromisePolyfill.reject = function(value) {
+    return new PromisePolyfill(function(resolve, reject) {
+        reject(value);
+    });
+};
+PromisePolyfill.all = function(list) {
+    return new PromisePolyfill(function(resolve, reject) {
+        var total = list.length, count = 0, values = [];
+        if (list.length === 0) resolve([]);
+        else for(var i1 = 0; i1 < list.length; i1++)(function(i) {
+            function consume(value) {
+                count++;
+                values[i] = value;
+                if (count === total) resolve(values);
+            }
+            if (list[i] != null && (typeof list[i] === "object" || typeof list[i] === "function") && typeof list[i].then === "function") list[i].then(consume, reject);
+            else consume(list[i]);
+        })(i1);
+    });
+};
+PromisePolyfill.race = function(list) {
+    return new PromisePolyfill(function(resolve, reject) {
+        for(var i = 0; i < list.length; i++)list[i].then(resolve, reject);
+    });
+};
+module.exports = PromisePolyfill;
+
+},{}],"dvp1x":[function(require,module,exports) {
 "use strict";
 var render = require("./render");
 module.exports = require("./api/mount-redraw")(render, typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : null, typeof console !== "undefined" ? console : null);
@@ -26515,6 +26695,11 @@ module.exports = function($window) {
     // this is not the case if the node moved (second and fourth part of the diff algo). We move
     // the old DOM nodes before updateNode runs because it enables us to use the cached `nextSibling`
     // variable rather than fetching it using `getNextSibling()`.
+    //
+    // The fourth part of the diff currently inserts nodes unconditionally, leading to issues
+    // like #1791 and #1999. We need to be smarter about those situations where adjascent old
+    // nodes remain together in the new list in a way that isn't covered by parts one and
+    // three of the diff algo.
     function updateNodes(parent, old, vnodes, hooks, nextSibling, ns) {
         if (old === vnodes || old == null && vnodes == null) return;
         else if (old == null || old.length === 0) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns);
@@ -27208,13 +27393,69 @@ module.exports = function(render, schedule, console) {
 "use strict";
 var buildPathname = require("../pathname/build");
 var hasOwn = require("../util/hasOwn");
-module.exports = function($window, oncompletion) {
+module.exports = function($window, Promise, oncompletion) {
+    var callbackCount = 0;
     function PromiseProxy(executor) {
         return new Promise(executor);
     }
-    function makeRequest(url, args) {
-        return new Promise(function(resolve, reject) {
-            url = buildPathname(url, args.params);
+    // In case the global Promise is some userland library's where they rely on
+    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
+    // similar. Let's *not* break them.
+    PromiseProxy.prototype = Promise.prototype;
+    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
+    ;
+    function makeRequest(factory) {
+        return function(url, args) {
+            if (typeof url !== "string") {
+                args = url;
+                url = url.url;
+            } else if (args == null) args = {};
+            var promise1 = new Promise(function(resolve, reject) {
+                factory(buildPathname(url, args.params), args, function(data) {
+                    if (typeof args.type === "function") {
+                        if (Array.isArray(data)) for(var i = 0; i < data.length; i++)data[i] = new args.type(data[i]);
+                        else data = new args.type(data);
+                    }
+                    resolve(data);
+                }, reject);
+            });
+            if (args.background === true) return promise1;
+            var count = 0;
+            function complete() {
+                if (--count === 0 && typeof oncompletion === "function") oncompletion();
+            }
+            return wrap(promise1);
+            function wrap(promise) {
+                var then = promise.then;
+                // Set the constructor, so engines know to not await or resolve
+                // this as a native promise. At the time of writing, this is
+                // only necessary for V8, but their behavior is the correct
+                // behavior per spec. See this spec issue for more details:
+                // https://github.com/tc39/ecma262/issues/1577. Also, see the
+                // corresponding comment in `request/tests/test-request.js` for
+                // a bit more background on the issue at hand.
+                promise.constructor = PromiseProxy;
+                promise.then = function() {
+                    count++;
+                    var next = then.apply(promise, arguments);
+                    next.then(complete, function(e) {
+                        complete();
+                        if (count === 0) throw e;
+                    });
+                    return wrap(next);
+                };
+                return promise;
+            }
+        };
+    }
+    function hasHeader(args, name) {
+        for(var key in args.headers){
+            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
+        }
+        return false;
+    }
+    return {
+        request: makeRequest(function(url, args, resolve, reject) {
             var method = args.method != null ? args.method.toUpperCase() : "GET";
             var body = args.body;
             var assumeJSON = (args.serialize == null || args.serialize === JSON.serialize) && !(body instanceof $window.FormData || body instanceof $window.URLSearchParams);
@@ -27265,13 +27506,8 @@ module.exports = function($window, oncompletion) {
                         response = args.extract(ev.target, args);
                         success = true;
                     } else if (typeof args.deserialize === "function") response = args.deserialize(response);
-                    if (success) {
-                        if (typeof args.type === "function") {
-                            if (Array.isArray(response)) for(var i = 0; i < response.length; i++)response[i] = new args.type(response[i]);
-                            else response = new args.type(response);
-                        }
-                        resolve(response);
-                    } else {
+                    if (success) resolve(response);
+                    else {
                         var completeErrorResponse = function() {
                             try {
                                 message = ev.target.responseText;
@@ -27318,55 +27554,23 @@ module.exports = function($window, oncompletion) {
             else if (typeof args.serialize === "function") xhr.send(args.serialize(body));
             else if (body instanceof $window.FormData || body instanceof $window.URLSearchParams) xhr.send(body);
             else xhr.send(JSON.stringify(body));
-        });
-    }
-    // In case the global Promise is some userland library's where they rely on
-    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
-    // similar. Let's *not* break them.
-    PromiseProxy.prototype = Promise.prototype;
-    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
-    ;
-    function hasHeader(args, name) {
-        for(var key in args.headers){
-            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
-        }
-        return false;
-    }
-    return {
-        request: function(url, args) {
-            if (typeof url !== "string") {
-                args = url;
-                url = url.url;
-            } else if (args == null) args = {};
-            var promise1 = makeRequest(url, args);
-            if (args.background === true) return promise1;
-            var count = 0;
-            function complete() {
-                if (--count === 0 && typeof oncompletion === "function") oncompletion();
-            }
-            return wrap(promise1);
-            function wrap(promise) {
-                var then = promise.then;
-                // Set the constructor, so engines know to not await or resolve
-                // this as a native promise. At the time of writing, this is
-                // only necessary for V8, but their behavior is the correct
-                // behavior per spec. See this spec issue for more details:
-                // https://github.com/tc39/ecma262/issues/1577. Also, see the
-                // corresponding comment in `request/tests/test-request.js` for
-                // a bit more background on the issue at hand.
-                promise.constructor = PromiseProxy;
-                promise.then = function() {
-                    count++;
-                    var next = then.apply(promise, arguments);
-                    next.then(complete, function(e) {
-                        complete();
-                        if (count === 0) throw e;
-                    });
-                    return wrap(next);
-                };
-                return promise;
-            }
-        }
+        }),
+        jsonp: makeRequest(function(url, args, resolve, reject) {
+            var callbackName = args.callbackName || "_mithril_" + Math.round(Math.random() * 1e16) + "_" + callbackCount++;
+            var script = $window.document.createElement("script");
+            $window[callbackName] = function(data) {
+                delete $window[callbackName];
+                script.parentNode.removeChild(script);
+                resolve(data);
+            };
+            script.onerror = function() {
+                delete $window[callbackName];
+                script.parentNode.removeChild(script);
+                reject(new Error("JSONP request failed"));
+            };
+            script.src = url + (url.indexOf("?") < 0 ? "?" : "&") + encodeURIComponent(args.callbackKey || "callback") + "=" + encodeURIComponent(callbackName);
+            $window.document.documentElement.appendChild(script);
+        })
     };
 };
 
@@ -27444,6 +27648,7 @@ module.exports = require("./api/router")(typeof window !== "undefined" ? window 
 "use strict";
 var Vnode = require("../render/vnode");
 var m = require("../render/hyperscript");
+var Promise = require("../promise/promise");
 var buildPathname = require("../pathname/build");
 var parsePathname = require("../pathname/parse");
 var compileTemplate = require("../pathname/compileTemplate");
@@ -27672,7 +27877,7 @@ module.exports = function($window, mountRedraw) {
     return route1;
 };
 
-},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
+},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../promise/promise":"hO3Aw","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
 "use strict";
 var parseQueryString = require("../querystring/parse");
 // Returns `{path, params}` from `url`
@@ -27683,7 +27888,10 @@ module.exports = function(url) {
     var pathEnd = queryIndex < 0 ? queryEnd : queryIndex;
     var path = url.slice(0, pathEnd).replace(/\/{2,}/g, "/");
     if (!path) path = "/";
-    else if (path[0] !== "/") path = "/" + path;
+    else {
+        if (path[0] !== "/") path = "/" + path;
+        if (path.length > 1 && path[path.length - 1] === "/") path = path.slice(0, -1);
+    }
     return {
         path: path,
         params: queryIndex < 0 ? {} : parseQueryString(url.slice(queryIndex + 1, queryEnd))
@@ -27812,5 +28020,5 @@ module.exports = function(attrs, extras) {
     return result;
 };
 
-},{"./hasOwn":"94qwS"}]},["k1xWN","20BJq"], "20BJq", "parcelRequire8806")
+},{"./hasOwn":"94qwS"}]},["il488","20BJq"], "20BJq", "parcelRequire8806")
 

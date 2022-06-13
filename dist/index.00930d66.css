@@ -376,7 +376,6 @@ span.weeknumber {
 div#add-edit-event {
   z-index: 2;
   height: 92vh;
-  display: none;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -429,7 +428,6 @@ div#list-view {
   z-index: 4;
   height: 92vh;
   padding: 5px;
-  display: none;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -450,13 +448,10 @@ div#list-view div.icons-bar img {
 }
 
 div#event-slider {
-  height: 70px;
+  min-height: 70px;
+  background: red;
   margin: 15px 0 0;
   position: relative;
-}
-
-div#event-slider div.description {
-  display: none;
 }
 
 div#event-slider div.date {
@@ -507,7 +502,6 @@ div#event-slider article h2 {
 div#event-slider article {
   margin: 0 0 15px;
   font-size: .9rem;
-  display: none;
   position: absolute;
   top: 0;
 }
