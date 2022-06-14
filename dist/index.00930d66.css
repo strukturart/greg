@@ -437,19 +437,17 @@ div#list-view article {
   margin: 0 0 15px;
 }
 
-div#list-view div.icons-bar {
-  width: 50px;
+div.icons-bar {
   margin: 5px 0;
 }
 
-div#list-view div.icons-bar img {
-  width: 15px;
+div.icons-bar img {
+  max-width: 15px;
   height: auto;
 }
 
 div#event-slider {
   min-height: 70px;
-  background: red;
   margin: 15px 0 0;
   position: relative;
 }
@@ -514,7 +512,6 @@ div#options {
   z-index: 4;
   height: 92vh;
   padding: 10px 0 0;
-  display: none;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -525,7 +522,6 @@ div#options div#import-text {
   margin: 0 0 20px;
   padding: 10px;
   font-weight: bold;
-  display: none;
 }
 
 div#options div#subscription-text {
@@ -536,13 +532,12 @@ div#options div#subscription-text {
 }
 
 div#subscription-form {
-  z-index: 5;
-  height: 190px;
-  background: #fff;
-  border-top: 2px solid #000;
-  display: none;
-  position: fixed;
-  bottom: 15px;
+  z-index: 4;
+  height: 92vh;
+  padding: 10px 0 0;
+  position: absolute;
+  top: 0;
+  overflow: hidden;
 }
 
 div#bottom-bar {

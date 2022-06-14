@@ -1,15 +1,11 @@
 import jsQR from "jsqr";
-import { status } from "../../app.js";
 
 let video;
 let intv;
 
-export let stop_scan = function () {
+export let stop_scan = function (callback) {
   document.getElementById("qr-screen").style.display = "none";
-
-  document.getElementById("cal-subs-url").focus();
-  status.view = "subscription";
-  console.log("yeah");
+  callback();
 };
 
 export let start_scan = function (callback) {
@@ -56,11 +52,10 @@ export let start_scan = function (callback) {
             var idd = imageData.data;
 
             let code = jsQR(idd, imageWidth, imageHeight);
-            console.log(code);
 
             if (code) {
-              stop_scan();
               callback(code.data);
+              stop_scan();
               clearInterval(intv);
             }
           }, 1000);

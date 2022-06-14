@@ -476,13 +476,12 @@ div#list-view article {
   margin: 0 0 15px 0;
 }
 
-div#list-view div.icons-bar {
-  width: 50px;
+div.icons-bar {
   margin: 5px 0;
 }
 
-div#list-view div.icons-bar img {
-  width: 15px;
+div.icons-bar img {
+  max-width: 15px;
   height: auto;
 }
 
@@ -490,7 +489,6 @@ div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
   min-height: 70px;
-  background: red;
 }
 
 div#event-slider div.date {
@@ -553,7 +551,6 @@ div#options {
   position: absolute;
   z-index: 4;
   top: 0;
-  display: none;
   padding: 5px;
   height: 92vh;
   overflow: hidden;
@@ -565,7 +562,6 @@ div#options div#import-text {
   font-weight: bold;
   margin: 0 0 20px 0;
   text-align: center;
-  display: none;
 }
 
 div#options div#subscription-text {
@@ -576,13 +572,13 @@ div#options div#subscription-text {
 }
 
 div#subscription-form {
-  position: fixed;
-  z-index: 5;
-  bottom: 15px;
-  display: none;
-  height: 190px;
-  background: white;
-  border-top: 2px solid black;
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  padding: 5px;
+  height: 92vh;
+  overflow: hidden;
+  padding: 10px 0 0 0;
 }
 
 /*/////////////////

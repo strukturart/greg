@@ -734,10 +734,7 @@ let event_check_day = function(date) {
         let b = new Date(item[i].getAttribute("data-date-end")).getTime();
         let c = new Date(date).getTime();
         let d1 = item[i].getAttribute("data-rrule");
-        //hide/show alarm icon
-        if (item[i].getAttribute("data-alarm")) {
-            if (item[i].getAttribute("data-alarm") == "none") item[i].querySelector("div.icons-bar img.bell").style.display = "none";
-        }
+        item[i].getAttribute("data-alarm");
         //all day event
         if (item[i].getAttribute("data-time-start") == "00:00:00" && item[i].getAttribute("data-time-end") == "00:00:00") item[i].querySelector("div.time").innerHTML = "All day";
         if (d1 === "none" || d1 === "") {
@@ -918,6 +915,13 @@ let showCalendar = function(month, year) {
 function renderHello(arr) {
     document.getElementById("event-slider").style.opacity = 0;
     _helperJs.sort_array(arr, "dateStart", "date");
+    var template = document.getElementById("template").innerHTML;
+    var rendered = Mustache.render(template, {
+        data: arr
+    });
+    document.getElementById("list-view").innerHTML = rendered;
+    document.getElementById("event-slider").innerHTML = rendered;
+    document.getElementById("event-slider").style.opacity = 100;
     //event_check_day(document.activeElement.getAttribute("data-date"));
     //format date
     document.querySelectorAll("article").forEach(function(index) {
@@ -1083,10 +1087,6 @@ var page_calendar = {
                 _mithrilDefault.default("div", {
                     class: "icons-bar"
                 }, [
-                    _mithrilDefault.default("img", {
-                        class: "bell",
-                        src: "assets/image/bell.svg"
-                    }),
                     _mithrilDefault.default("div", {
                         class: "date"
                     }, item.dateStart),
@@ -1185,20 +1185,25 @@ var page_options = {
             _mithrilDefault.default("div", {
                 id: "subscription-text"
             }, "Subscriptions"),
-            subscriptions.map(function(item, index) {
-                return _mithrilDefault.default("button", {
-                    class: "item subscriptions-item",
-                    "data-id": item.url,
-                    tabindex: index + 4,
-                    onblur: function() {
-                        _helperJs.bottom_bar("", "", "");
-                    },
-                    onfocus: function() {
-                        _helperJs.bottom_bar("delete", "", "");
-                    }
-                }, item.name);
-            }),
-            _mithrilDefault.default("div", {
+            /*
+      subscriptions.map(function (item, index) {
+        return m(
+          "button",
+          {
+            class: "item subscriptions-item",
+            "data-id": item.url,
+
+            tabindex: index + 4,
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+            onfocus: function () {
+              bottom_bar("delete", "", "");
+            },
+          },
+          item.name
+        );
+      }),*/ _mithrilDefault.default("div", {
                 id: "KaiOsAds-Wrapper"
             }, [
                 _mithrilDefault.default("iframe")
@@ -1632,7 +1637,16 @@ let option_button_bar = function () {
     bottom_bar("QR", "", "save");
   }
 };
-*/ let lp = 0;
+*/ let list_subscriptions = function() {
+    if (subscriptions == null) return false;
+    subscriptions.forEach(function(item) {
+        document.querySelector("div#options div#subscription-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="subscription">' + item.name + "</button>");
+        document.querySelectorAll("div#options button").forEach(function(i, p) {
+            i.setAttribute("tabindex", p);
+        });
+    });
+};
+let lp = 0;
 let load_subscriptions = function() {
     if (subscriptions == null || subscriptions.lenght == -1 || subscriptions.lenght == "undefined") return false;
     if (lp < subscriptions.length) {
@@ -1682,16 +1696,15 @@ let delete_subscription = function() {
 };
 _localforageDefault.default.getItem("events").then(function(value) {
     if (value != null) events = value;
-}).catch(function(err) {});
+//renderHello(events);
+// jump_to_today();
+}).catch(function(err) {
+//jump_to_today();
+});
 _localforageDefault.default.getItem("subscriptions").then(function(value) {
     subscriptions = value;
     setTimeout(function() {
-        if (subscriptions == null) {
-            subscriptions = [
-                {}
-            ];
-            return false;
-        }
+        if (subscriptions == null) return false;
         load_subscriptions();
         console.log(subscriptions);
     }, 2000);
@@ -2147,7 +2160,6 @@ function longpress_action(param) {
 let backup_events = function() {
     _localforageDefault.default.getItem("events").then(function(value) {
         _eximportJs.export_ical("greg.ics", value);
-        _helperJs.bottom_bar();
     }).catch(function(err) {
         console.log(err);
     });
