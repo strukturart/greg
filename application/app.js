@@ -38,7 +38,8 @@ let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
-let once = false;
+
+let update_event_date;
 
 export let status = {
   selected_day: "",
@@ -250,8 +251,6 @@ let event_check_day = function (date) {
   k.innerHTML = "";
   //hide all
   let item = document.querySelectorAll("div#event-slider article");
-
-  console.log(item);
 
   for (let i = 0; i < item.length; i++) {
     item[i].style.display = "none";
@@ -536,53 +535,6 @@ let showCalendar = function (month, year) {
   }
 };
 
-//RENDER
-
-function renderHello(arr) {
-  document.getElementById("event-slider").style.opacity = 0;
-  sort_array(arr, "dateStart", "date");
-
-  //event_check_day(document.activeElement.getAttribute("data-date"));
-
-  //format date
-  document.querySelectorAll("article").forEach(function (index) {
-    let w = index.getAttribute("data-time-start");
-    let s = index.getAttribute("data-time-end");
-
-    if (w == "00:00:00" && s == "00:00:00") {
-      index.querySelector("div.time").innerHTML = "All day";
-    }
-
-    let t = new Date(index.getAttribute("data-date"));
-    let n = new Date(index.getAttribute("data-date-end"));
-
-    let d =
-      weekday[t.getDay()] +
-      ", " +
-      t.getFullYear() +
-      " " +
-      months[t.getMonth()] +
-      " " +
-      t.getDate();
-
-    let m =
-      weekday[n.getDay()] +
-      ", " +
-      n.getFullYear() +
-      " " +
-      months[n.getMonth()] +
-      " " +
-      n.getDate();
-
-    // to do singel day event or not
-    if (index.classList.contains("multidayevent")) {
-      index.querySelector("div.date").innerText = d + " - " + m;
-    } else {
-      index.querySelector("div.date").innerText = d;
-    }
-  });
-}
-
 let clear_form = function () {
   document.querySelectorAll("div#add-edit-event input").forEach(function (e) {
     e.value = "";
@@ -668,6 +620,7 @@ var page_calendar = {
   oncreate: ({ dom }) =>
     setTimeout(function () {
       dom.focus();
+      // document.querySelectorAll("div#event-slider").style.opacity = "0";
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
 
@@ -694,9 +647,7 @@ var page_calendar = {
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
 
-      //month.style.display = "block";
       bottom_bar("add", "events", "options");
-      // status.edit_event = false;
 
       let t = new Date(status.selected_day);
       currentMonth = t.getMonth();
@@ -714,24 +665,9 @@ var page_calendar = {
         });
 
       clear_form();
+      document.querySelectorAll("div#event-slider").style.opacity = "100";
     }, 500),
 };
-/*
-
-        {{#data}}
-            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} data-time-start={{time_start}} data-time-end={{time_end}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} data-multidayevent={{multidayevent}} class="item {{#isSubscription}}subscription{{/isSubscription}} ">
-               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
-                <div class="date"></div>
-                <div class="time">
-                    {{time_start}}
-                    {{#time_end.length}} - {{time_end}}{{/time_end.length}}
-                </div>
-                <h2>{{SUMMARY}}</h2>
-                <div>{{LOCATION}}</div>
-                <div class="description">{{DESCRIPTION}}</div>
-            </article>
-            {{/data}}
-            */
 
 var page_events = {
   view: function (vnode) {
@@ -767,6 +703,7 @@ var page_events = {
   oncreate: ({ dom }) =>
     setTimeout(function () {
       dom.focus();
+      sort_array(events, "dateStart", "date");
       find_closest_date(status.selected_day);
     }, 1500),
 };
@@ -851,6 +788,9 @@ var page_options = {
       m("div", { id: "KaiOsAds-Wrapper" }, [m("iframe")]),
     ]);
   },
+  oncreate: function () {
+    bottom_bar("", "", "");
+  },
 };
 
 var page_subscriptions = {
@@ -881,6 +821,9 @@ var page_subscriptions = {
           tabindex: "1",
           onfocus: function () {
             bottom_bar("qr-scan", "", "");
+          },
+          onblur: function () {
+            bottom_bar("", "", "");
           },
         },
         [
@@ -1060,6 +1003,192 @@ var page_add_edit_event = {
       ),
     ]);
   },
+  oncreate: function () {
+    bottom_bar("", "", "");
+  },
+};
+
+/*
+let edit_event = function () {
+  events.forEach(function (index) {
+    if (index.UID == status.selected_day_id) {
+      document.getElementById("event-title").value = index.SUMMARY;
+      document.getElementById("event-date").value = index.dateStart;
+      document.getElementById("event-date-end").value = index.dateEnd;
+      document.getElementById("event-time-start").value = index.time_start;
+      document.getElementById("event-time-end").value = index.time_end;
+      document.getElementById("event-description").value = index.DESCRIPTION;
+      document.getElementById("event-location").value = index.LOCATION;
+      document.querySelector("#event-notification-time").value = index.alarm;
+      document.getElementById("form-image").src = index.ATTACH;
+      document.getElementById("event-recur").value = index.rrule_;
+    }
+  });
+};
+*/
+
+var page_edit_event = {
+  view: function () {
+    return m("div", { id: "add-edit-event", tabindex: "0" }, [
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: 0,
+          oncreate: ({ dom }) =>
+            setTimeout(function () {
+              dom.focus();
+            }, 500),
+        },
+        [
+          m("label", { for: "event-title" }, "title"),
+          m("input", {
+            placeholder: "",
+            type: "text",
+            id: "event-title",
+            value: update_event_date.SUMMARY,
+          }),
+        ]
+      ),
+
+      m("div", { class: "item input-parent", tabindex: "1" }, [
+        m("label", { for: "event-location" }, "Location"),
+        m("input", { placeholder: "", type: "text", id: "event-location" }),
+      ]),
+      m("div", { class: "item input-parent", tabindex: "2" }, [
+        m("label", { for: "event-date" }, "Start Date"),
+        m("input", {
+          placeholder: "YYYY-MM-DD",
+          type: "date",
+          id: "event-date",
+          value: update_event_date.dateStart,
+        }),
+      ]),
+
+      m("div", { class: "item input-parent", tabindex: "3" }, [
+        m("label", { for: "event-date-end" }, "End Date"),
+        m("input", {
+          placeholder: "YYYY-MM-DD",
+          type: "date",
+          id: "event-date-end",
+          value: update_event_date.dateEnd,
+        }),
+      ]),
+      m("div", { class: "item input-parent", tabindex: "4" }, [
+        m("label", { for: "event-time-start" }, "Start Time"),
+        m("input", {
+          placeholder: "hh:mm:ss",
+          type: "time",
+          id: "event-time-start",
+        }),
+      ]),
+      m("div", { class: "item input-parent", tabindex: "5" }, [
+        m("label", { for: "event-time-end" }, "End Time"),
+        m("input", {
+          placeholder: "hh:mm:ss",
+          type: "time",
+          id: "event-time-end",
+          value: update_event_date.time_end,
+        }),
+      ]),
+      m("div", { class: "item input-parent", tabindex: "6" }, [
+        m("label", { for: "event-description" }, "Description"),
+        m("input", {
+          placeholder: "",
+          type: "text",
+          id: "event-description",
+          value: update_event_date.DESCRIPTION,
+        }),
+      ]),
+
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          id: "event-notification-time-wrapper",
+          tabindex: "7",
+        },
+        [
+          m("label", { for: "notification" }, "Notification"),
+          m("select", { id: "event-notification-time" }, [
+            m("option", { value: "none" }, "none"),
+            m("option", { value: "5" }, "5 minutes"),
+            m("option", { value: "10" }, "10 minutes"),
+            m("option", { value: "30" }, "30 minutes"),
+            m("option", { value: "1440" }, "1 Day"),
+          ]),
+        ]
+      ),
+
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          id: "event-recur-wrapper",
+          tabindex: "8",
+        },
+        [
+          m("label", { for: "notification" }, "Recur"),
+          m("select", { id: "event-recur", value: update_event_date.rrule_ }, [
+            m("option", { value: "none" }, "none"),
+            m("option", { value: "DAILY" }, "Daily"),
+            m("option", { value: "WEEKLY" }, "Weekly"),
+            m("option", { value: "MONTHLY" }, "Monthly"),
+            m("option", { value: "YEARLY" }, "Yearly"),
+          ]),
+        ]
+      ),
+
+      m(
+        "button",
+        { class: "item", tabindex: "", id: "select-image", tabindex: "9" },
+        "add image"
+      ),
+      m("div", { id: "form-image-wrapper" }, [
+        m("img", {
+          id: "form-image",
+          "data-blob": update_event_date.ATTACH,
+        }),
+      ]),
+
+      m(
+        "button",
+        {
+          tabindex: "10",
+          id: "save-event",
+          class: "item",
+          onclick: function () {
+            update_event();
+          },
+        },
+        "update"
+      ),
+      m(
+        "button",
+        {
+          tabindex: "11",
+          id: "delete-event",
+          class: "item",
+          onclick: function () {
+            delete_event();
+          },
+        },
+        "delete"
+      ),
+      m(
+        "button",
+        {
+          tabindex: "12",
+          id: "export-event",
+          class: "item",
+          onclick: function () {
+            export_data();
+          },
+        },
+        "export event"
+      ),
+    ]);
+  },
 };
 
 m.route(root, "/page_calendar", {
@@ -1067,183 +1196,10 @@ m.route(root, "/page_calendar", {
   "/page_events": page_events,
   "/page_options": page_options,
   "/page_add_edit_event": page_add_edit_event,
+  "/page_edit_event": page_edit_event,
   "/page_subscriptions": page_subscriptions,
 });
 m.route.prefix = "#";
-
-/*
-const month = document.getElementById("calendar");
-const add_edit_event = document.getElementById("add-edit-event");
-const list_view = document.getElementById("list-view");
-const options = document.getElementById("options");
-
-let option_button_bar = function () {
-  setTimeout(function () {
-    if (status.view == "options") {
-      if (
-        document.activeElement.getAttribute("data-function") == "subscription"
-      ) {
-        bottom_bar("delete", "select", "");
-        return true;
-      } else {
-        bottom_bar("", "select", "");
-        return true;
-      }
-    }
-  }, 500);
-};
-
-
-
-
-  // add event view
-  if (status.view == "add-edit-event") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    document.getElementById("event-date").value = status.selected_day;
-        add_edit_event.querySelectorAll(".item")[0].focus();
-
-
-    add_edit_event.style.display = "block";
-    document
-      .querySelectorAll("div#add-edit-event .item")
-      .forEach(function (i, p) {
-        i.setAttribute("tabindex", p);
-      });
-    add_edit_event.querySelectorAll(".item")[0].focus();
-    bottom_bar("", "edit", "");
-
-    if (document.getElementById("event-date-end").value == "") {
-      document.getElementById("event-date-end").value =
-        document.getElementById("event-date").value;
-    }
-
-    if (status.edit_event) {
-      document.getElementById("save-event").innerText = "update";
-    }
-    console.log(status.edit_event);
-
-    if (!status.edit_event) {
-      document.getElementById("save-event").innerText = "save";
-
-      document.getElementById("event-notification-time").value =
-        settings.default_notification;
-    }
-    return true;
-  }
-
-  // month view
-  if (status.view == "month") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    options.style.display = "none";
-    month.style.display = "block";
-    bottom_bar("add", "events", "options");
-    status.edit_event = false;
-
-    let t = new Date(status.selected_day);
-    currentMonth = t.getMonth();
-    currentYear = t.getFullYear();
-
-    let k = status.selected_day;
-    showCalendar(currentMonth, currentYear);
-
-    document
-      .querySelectorAll("div#calendar-body div.item")
-      .forEach(function (item) {
-        if (item.getAttribute("data-date") == k) {
-          item.focus();
-          event_check_day(k);
-        }
-      });
-
-    clear_form();
-  }
-
-  // list view
-  if (status.view == "list-view") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    options.style.display = "none";
-    status.edit_event = false;
-    clear_form();
-
-    bottom_bar("edit", "month", "options");
-
-    list_view.style.display = "block";
-    setTimeout(function () {
-      let articles = document.querySelectorAll("div#list-view article");
-
-      let success = false;
-      for (var k = 0; k < articles.length; k++) {
-        if (articles[k].getAttribute("data-date") == status.selected_day) {
-          articles[k].focus();
-          k = articles.length;
-          success = true;
-        }
-      }
-
-      for (var k = 0; k < articles.length; k++) {
-        console.log(articles[k].getAttribute("data-alarm"));
-        if (articles[k].getAttribute("data-alarm") == "none") {
-          articles[k].querySelector("img.bell").style.display = "none";
-        }
-      }
-      if (!success) {
-        document.querySelectorAll("div#list-view article")[0].focus();
-        find_closest_date(status.selected_day);
-      }
-      const rect = document.activeElement.getBoundingClientRect();
-      const elY =
-        rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
-
-      document.activeElement.parentNode.scrollBy({
-        left: 0,
-        top: elY - window.innerHeight / 2,
-        behavior: "smooth",
-      });
-    }, 1000);
-  }
-  if (status.view == "options") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    if (!once) {
-      list_ics();
-      list_subscriptions();
-      once = true;
-    }
-
-    document.getElementById("options").style.display = "block";
-    document.querySelectorAll("div#options .item")[0].focus();
-    document.getElementById("options").style.opacity = "1";
-    document.getElementById("subscription-form").style.display = "none";
-    setTimeout(function () {
-      Array.from(document.querySelectorAll("div#options .item")).forEach(
-        function (i, p) {
-          i.setAttribute("tabindex", p);
-        }
-      );
-    }, 2000);
-
-    option_button_bar();
-  }
-
-  if (status.view == "subscription") {
-    document.getElementById("options").style.opacity = "0.3";
-    document.getElementById("subscription-form").style.display = "block";
-
-    document
-      .querySelectorAll("div#subscription-form div.item input")[0]
-      .focus();
-
-    bottom_bar("QR", "", "save");
-  }
-};
-*/
 
 let lp = 0;
 let load_subscriptions = function () {
@@ -1288,8 +1244,8 @@ let store_subscription = function () {
     localforage
       .setItem("subscriptions", subscriptions)
       .then(function (value) {
-        document.getElementById("subscription-form").style.display = "none";
-        toaster("subscription stored", 2000);
+        document.getElementById("<subscription-form").style.display = "none";
+        side_toaster("<img src='assets/image/E25C.svg'", 2000);
       })
       .catch(function (err) {
         // This code runs if there were any errors
@@ -1403,7 +1359,10 @@ let nav = function (move) {
     items = b.querySelectorAll(".item");
   }
 
-  if (m.route.get() == "/page_add_edit_event") {
+  if (
+    m.route.get() == "/page_add_edit_event" ||
+    m.route.get() == "/page_edit_event"
+  ) {
     let b = document.activeElement.parentNode;
     items = b.querySelectorAll(".item");
 
@@ -1466,60 +1425,6 @@ let nav = function (move) {
     return true;
   }
 };
-
-// form actions
-// after selection
-/*
-document
-  .getElementById("event-notification-time")
-  .addEventListener("change", (event) => {
-    setTimeout(function () {
-      document.getElementById("event-notification-time").parentElement.focus();
-    }, 500);
-  });
-
-//default when is not set
-settings.default_notification = "none";
-
-document
-  .getElementById("default-notification-time")
-  .addEventListener("change", (event) => {
-    let l = document.getElementById("default-notification-time").value;
-    settings.default_notification = l;
-
-    localforage
-      .setItem("settings", settings)
-      .then(function (value) {})
-      .catch(function (err) {
-        console.log(err);
-      });
-
-    setTimeout(function () {
-      document
-        .getElementById("default-notification-time")
-        .parentElement.focus();
-    }, 500);
-  });
-
-document.querySelectorAll('input[type="time"]').forEach(function (item) {
-  item.addEventListener("change", (event) => {
-    setTimeout(function () {
-      item.parentElement.focus();
-    }, 500);
-  });
-});
-
-document.querySelectorAll('input[type="date"]').forEach(function (item) {
-  item.addEventListener("change", (event) => {
-    setTimeout(function () {
-      item.parentElement.focus();
-    }, 500);
-  });
-});
-
-
-
-*/
 
 // may better to compare all alarms
 // with all events
@@ -1711,12 +1616,12 @@ let store_event = function () {
   localforage
     .setItem("events", without_subscription)
     .then(function (value) {
-      // clean form
       clear_form();
-
       export_ical("greg.ics", without_subscription);
-      side_toaster("event saved", 2000);
-      m.route.set("/page_calendar");
+      side_toaster("<img src='assets/image/E25C.svg'", 2000);
+      setTimeout(function () {
+        m.route.set("/page_calendar");
+      }, 200);
     })
     .catch(function (err) {
       console.log(err);
@@ -1819,39 +1724,13 @@ let update_event = function () {
     .setItem("events", without_subscription)
     .then(function (value) {
       // clean form
-      renderHello(events);
-
+      side_toaster("<img src='assets/image/E25C.svg'", 2000);
+      m.route.set("/page_calendar");
       export_ical("greg.ics", value);
 
       clear_form();
     })
     .catch(function (err) {});
-};
-
-// ////////////
-
-// EDIT EVENT
-
-// /////////
-
-let edit_event = function () {
-  document.getElementById("delete-event").style.display = "block";
-  document.getElementById("export-event").style.display = "block";
-
-  events.forEach(function (index) {
-    if (index.UID == status.selected_day_id) {
-      document.getElementById("event-title").value = index.SUMMARY;
-      document.getElementById("event-date").value = index.dateStart;
-      document.getElementById("event-date-end").value = index.dateEnd;
-      document.getElementById("event-time-start").value = index.time_start;
-      document.getElementById("event-time-end").value = index.time_end;
-      document.getElementById("event-description").value = index.DESCRIPTION;
-      document.getElementById("event-location").value = index.LOCATION;
-      document.querySelector("#event-notification-time").value = index.alarm;
-      document.getElementById("form-image").src = index.ATTACH;
-      document.getElementById("event-recur").value = index.rrule_;
-    }
-  });
 };
 
 //////////////
@@ -1902,8 +1781,6 @@ let import_event_callback = function (id, date) {
   localforage
     .setItem("events", without_subscription)
     .then(function (value) {
-      renderHello(events);
-
       export_ical("greg.ics", without_subscription);
     })
     .catch(function (err) {});
@@ -1960,9 +1837,7 @@ function repeat_action(param) {
 }
 
 // ////////////
-
 // //LONGPRESS
-
 // ///////////
 
 function longpress_action(param) {
@@ -2021,7 +1896,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_events" ||
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
-        m.route.get() == "/page_add_edit_event"
+        m.route.get() == "/page_add_edit_event" ||
+        m.route.get() == "/page_edit_event"
       ) {
         nav(-1);
       }
@@ -2034,7 +1910,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_events" ||
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
-        m.route.get() == "/page_add_edit_event"
+        m.route.get() == "/page_add_edit_event" ||
+        m.route.get() == "/page_edit_event"
       ) {
         nav(+1);
       }
@@ -2096,10 +1973,13 @@ function shortpress_action(param) {
         }
 
         status.selected_day_id = document.activeElement.getAttribute("data-id");
+        update_event_date = events.filter(function (arr) {
+          return arr.UID == status.selected_day_id;
+        })[0];
 
-        edit_event();
+        console.log(update_event_date);
 
-        m.route.set("/page_add_edit_event");
+        m.route.set("/page_edit_event");
       }
       if (m.route.get() == "/page_subscriptions") {
         console.log(document.activeElement.id);
@@ -2176,6 +2056,13 @@ function shortpress_action(param) {
     case "Backspace":
       if (
         m.route.get() == "/page_add_edit_event" &&
+        document.activeElement.tagName != "INPUT"
+      ) {
+        m.route.set("/page_calendar");
+      }
+
+      if (
+        m.route.get() == "/page_edit_event" &&
         document.activeElement.tagName != "INPUT"
       ) {
         m.route.set("/page_calendar");

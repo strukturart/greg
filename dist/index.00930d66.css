@@ -500,6 +500,7 @@ div#event-slider article h2 {
 div#event-slider article {
   margin: 0 0 15px;
   font-size: .9rem;
+  display: none;
   position: absolute;
   top: 0;
 }

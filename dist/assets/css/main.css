@@ -474,15 +474,15 @@ div#list-view {
 
 div#list-view article {
   margin: 0 0 15px 0;
+  display: none;
 }
 
-div#list-view div.icons-bar {
-  width: 50px;
+div.icons-bar {
   margin: 5px 0;
 }
 
-div#list-view div.icons-bar img {
-  width: 15px;
+div.icons-bar img {
+  max-width: 15px;
   height: auto;
 }
 
@@ -490,7 +490,6 @@ div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
   min-height: 70px;
-  background: red;
 }
 
 div#event-slider div.date {
