@@ -642,27 +642,32 @@ let event_check = function(date) {
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
-        //feedback.date = date;
         let a = new Date(events[t3].dateStart).getTime();
         let b = new Date(events[t3].dateEnd).getTime();
         let c = new Date(date).getTime();
+        if (a === c) {
+            console.log("yeah");
+            feedback.event = true;
+            return feedback;
+        }
         // multi day event
         if (events[t3]["rrule_"] == "none") {
             if (a === c || b === c || a < c && b > c) {
                 feedback.event = true;
                 if (events[t3].isSubscription === true) feedback.subscription = true;
                 if (events[t3].multidayevent === true) feedback.multidayevent = true;
-                if (events[t3].time_end == "00:00:00" && events[t3].dateEnd == date) {
-                    feedback.subscription = false;
-                    feedback.event = false;
-                }
-                t3 = events.length;
+                /*
+          if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
+            feedback.subscription = false;
+            feedback.event = false;
+          }*/ t3 = events.length;
+                return feedback;
             }
         }
     }
     return feedback;
 };
-// check if has event
+// check if has recur event
 let rrule_check = function(date) {
     let feedback = {
         date: "",
@@ -671,7 +676,8 @@ let rrule_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
-    for(let t4 = 0; t4 < events.length; t4++)if (typeof events[t4] === "object") {
+    for(let t4 = 0; t4 < events.length; t4++)//console.log(events[t])
+    if (typeof events[t4] === "object") {
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
@@ -682,33 +688,34 @@ let rrule_check = function(date) {
         let c = new Date(date).getTime();
         //recurrences
         if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) {
-            if (new Date(events[t4].dateStart).getTime() <= new Date(date).getTime() && new Date(date).getTime() <= new Date(events[t4].dateEnd).getTime()) {
+            if (a === c || b === c || a < c && b > c) {
+                console.log(events[t4]["RRULE"]);
                 if (events[t4].rrule_ == "MONTHLY") {
                     if (new Date(events[t4].dateStart).getDate() === new Date(date).getDate()) {
+                        feedback.event = true;
                         feedback.rrule = true;
                         t4 = events.length;
-                        return feedback;
                     }
                 }
                 if (events[t4]["rrule_"] == "DAILY") {
                     feedback.rrule = true;
+                    feedback.event = true;
                     t4 = events.length;
-                    return feedback;
                 }
                 if (events[t4].rrule_ == "WEEKLY") {
                     if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) {
                         feedback.rrule = true;
                         t4 = events.length;
-                        return feedback;
                     }
                 }
                 if (events[t4].rrule_ == "YEARLY") {
+                    console.log("yearly");
                     let tt = new Date(events[t4].dateStart);
                     let pp = new Date(date);
                     if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                         feedback.rrule = true;
+                        feedback.event = true;
                         t4 = events.length;
-                        return feedback;
                     }
                 }
             }
@@ -721,32 +728,41 @@ let rrule_check = function(date) {
 ///////////
 let slider = [];
 let slider_index = 0;
-let event_check_day = function(date) {
+let slider_navigation = function() {
+    console.log(slider_index);
+    slider_index++;
+    let p = document.querySelectorAll("div#event-slider-indicator div div");
+    if (slider_index == document.querySelectorAll("div#event-slider article").length) slider_index = 0;
+    document.querySelectorAll("div#event-slider article").forEach(function(item) {
+        item.style.display = "none";
+    });
+    document.querySelectorAll("div#event-slider article")[slider_index].style.display = "block";
+    p.forEach(function(item) {
+        item.classList.remove("active");
+    });
+    p[slider_index].classList.add("active");
+};
+////
+let event_slider = function(date) {
     slider = [];
     let k = document.querySelector("div#event-slider-indicator div");
     k.innerHTML = "";
-    //hide all
-    let item = document.querySelectorAll("div#event-slider article");
-    for(let i = 0; i < item.length; i++){
-        item[i].style.display = "none";
-        let a = new Date(item[i].getAttribute("data-date")).getTime();
-        let b = new Date(item[i].getAttribute("data-date-end")).getTime();
+    document.querySelector("div#event-slider").innerHTML = "";
+    for(let i = 0; i < events.length; i++){
+        let a = new Date(events[i].dateStart).getTime();
+        let b = new Date(events[i].dateEnd).getTime();
         let c = new Date(date).getTime();
-        let d1 = item[i].getAttribute("data-rrule");
-        //hide/show alarm icon
-        if (item[i].getAttribute("data-alarm")) {
-            if (item[i].getAttribute("data-alarm") == "none") item[i].querySelector("div.icons-bar img.bell").style.display = "none";
-        }
+        let d1 = events[i].rrule_;
+        events[i].alarm;
         //all day event
-        if (item[i].getAttribute("data-time-start") == "00:00:00" && item[i].getAttribute("data-time-end") == "00:00:00") item[i].querySelector("div.time").innerHTML = "All day";
+        if (a === c || b === c || a < c && b > c) {
+            if (events[i].time_start == "00:00:00" && events[i].time_end == "00:00:00") slider.push(events[i]);
+        }
+        if (a === c || b === c || a < c && b > c) slider.push(events[i]);
         if (d1 === "none" || d1 === "") {
             if (a === c || b === c || a < c && b > c) {
-                //if multiday event
-                //the end date is next day
-                //time is 00:00:00
-                if (item[i].getAttribute("data-time-end") == "00:00:00" && item[i].getAttribute("data-date-end") == date) return false;
-                slider.push(item[i]);
-                slider[0].style.display = "block";
+                events[i].time_end == "00:00:00" && events[i].dateEnd;
+                slider.push(events[i]);
                 k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
             }
         } else if (a === c || b === c || a < c && b > c && d1) {
@@ -757,51 +773,40 @@ let event_check_day = function(date) {
                 let pp = new Date(date);
                 if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //WEEK
             if (d1 == "WEEKLY") {
-                if (new Date(item[i].getAttribute("data-date")).getDay() == new Date(date).getDay()) {
+                if (new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //MONTH
             if (d1 == "MONTHLY") {
-                if (new Date(item[i].getAttribute("data-date")).getDate() == new Date(date).getDate()) {
+                if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             if (d1 == "DAILY") {
                 if (a === c || b === c || a < c && b > c) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
         }
     }
-    if (slider != "" && slider.length > 0) k.style.opacity = 100;
-    else k.style.opacity = 0;
-    console.log("slider" + slider);
-};
-let slider_navigation = function() {
-    let p = document.querySelectorAll("div#event-slider-indicator div div");
-    if (slider_index == slider.length - 1) slider_index = -1;
-    slider_index++;
-    slider.forEach(function(item) {
-        item.style.display = "none";
-    });
-    slider[slider_index].style.display = "block";
-    p.forEach(function(item) {
-        item.classList.remove("active");
-    });
-    p[slider_index].classList.add("active");
+    if (slider != "") {
+        slider.forEach(function(item) {
+            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
+        });
+        if (slider >= 0) {
+            document.querySelector("div#event-slider article")[0].style.opacity = "100";
+            document.querySelector("div#event-slider article")[0].style.display = "block";
+        }
+    }
 };
 ////
 // JUMP TO TODAY
@@ -810,20 +815,21 @@ let jump_to_today = function() {
     let currentMonth1 = today.getMonth();
     let currentYear1 = today.getFullYear();
     showCalendar(currentMonth1, currentYear1);
-    event_check_day(status.selected_day);
+    //event_check_day(status.selected_day);
+    event_slider(status.selected_day);
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 function next() {
     currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     currentMonth = (currentMonth + 1) % 12;
     showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
+    event_slider(status.selected_day);
 }
 function previous() {
     currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
+    event_slider(status.selected_day);
 }
 //////////////
 //BUILD CALENDAR
@@ -841,7 +847,6 @@ Date.prototype.getWeek = function() {
 };
 let showCalendar = function(month, year) {
     _helperJs.bottom_bar("add", "events", "options");
-    console.log(month);
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
     let tbl = document.getElementById("calendar-body");
@@ -886,10 +891,10 @@ let showCalendar = function(month, year) {
                 cell.setAttribute("data-index", new Date(p).toISOString());
                 // check if has event
                 if (events.length > 0) {
+                    console.log(event_check(p).event);
                     if (event_check(p).event == true) cell.classList.add("event");
                     if (rrule_check(p).rrule) cell.classList.add("event");
-                    // check if has event + subscription
-                    if (event_check(p).subscription == true) cell.classList.add("subscription");
+                    event_check(p).subscription;
                 }
                 cell.classList.add("item");
                 row.appendChild(cell);
@@ -921,15 +926,9 @@ let clear_form = function() {
     });
 };
 /*
- ///////////////
-// ///////////////
 // /////////////////
-// /ROUTER
+// /VIEWS
 // ///////////////
-// ///////////////
-// //////////////
-
-
 */ var root = document.getElementById("app");
 var page_calendar = {
     view: function() {
@@ -956,20 +955,88 @@ var page_calendar = {
                 id: "calendar-body"
             }),
             _mithrilDefault.default("div", {
-                id: "event-slider"
+                id: "event-slider",
+                class: "flex justify-content-spacearound"
             }, [
-                //events slider
-                events.map(function(item, index) {
-                    return _mithrilDefault.default("article", {
-                        class: "event-slider-item",
-                        "data-id": item.UID,
-                        "data-date": item.dateStart,
-                        "data-time-start": item.time_start,
-                        "data-time-end": item.time_end,
-                        "data-date-end": item.dateEnd,
-                        "data-rrule": item.rrule_,
-                        "data-multidayevent": item.multidayevent
+                _mithrilDefault.default("div", {
+                    id: "slider-inner",
+                    class: "flex"
+                })
+            ]),
+            _mithrilDefault.default("div", {
+                id: "event-slider-indicator",
+                class: "flex width-100 justify-content-spacearound"
+            }, [
+                _mithrilDefault.default("div", {
+                    class: "flex justify-content-spacearound"
+                })
+            ]), 
+        ]);
+    },
+    oncreate: ({ dom  })=>setTimeout(function() {
+            dom.focus();
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            _helperJs.bottom_bar("add", "events", "options");
+            if (status.selected_day != "") {
+                let t5 = new Date(status.selected_day);
+                currentMonth = t5.getMonth();
+                currentYear = t5.getFullYear();
+            }
+            let k = status.selected_day;
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_slider(k);
+                }
+            });
+            showCalendar(currentMonth, currentYear);
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            _helperJs.bottom_bar("add", "events", "options");
+            let t6 = new Date(status.selected_day);
+            currentMonth = t6.getMonth();
+            currentYear = t6.getFullYear();
+            showCalendar(currentMonth, currentYear);
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_slider(k);
+                }
+            });
+            clear_form();
+            document.querySelectorAll("div#event-slider").style.opacity = "100";
+        }, 500)
+};
+var page_events = {
+    view: function(vnode) {
+        return _mithrilDefault.default("div", {
+            id: "events-wrapper",
+            oncreate: ()=>setTimeout(function() {
+                    _helperJs.sort_array(events, "dateStart", "date");
+                    find_closest_date(status.selected_day);
+                    _helperJs.bottom_bar("edit", "select", "");
+                }, 1500)
+        }, [
+            events.map(function(item, index) {
+                _helperJs.bottom_bar("edit", "month", "options");
+                return _mithrilDefault.default("article", {
+                    class: "item events",
+                    tabindex: index,
+                    "data-id": item.UID,
+                    "data-date": item.dateStart,
+                    "data-time-start": item.time_start,
+                    "data-time-end": item.time_end,
+                    "data-date-end": item.dateEnd,
+                    "data-rrule": item.rrule_,
+                    "data-multidayevent": item.multidayevent,
+                    "data-alarm": item.alarm
+                }, [
+                    _mithrilDefault.default("div", {
+                        class: "icons-bar"
                     }, [
+                        _mithrilDefault.default("img", {
+                            class: "bell",
+                            src: "assets/image/bell.svg"
+                        }),
                         _mithrilDefault.default("div", {
                             class: "date"
                         }, item.dateStart),
@@ -983,97 +1050,11 @@ var page_calendar = {
                         _mithrilDefault.default("div", {
                             class: "description"
                         }, item.DESCRIPTION), 
-                    ]);
-                }), 
-            ]),
-            _mithrilDefault.default("div", {
-                id: "event-slider-indicator",
-                class: "flex width-100 justify-content-spacearound"
-            }, [
-                _mithrilDefault.default("div", {
-                    class: "flex"
-                })
-            ]), 
+                    ]), 
+                ]);
+            }), 
         ]);
-    },
-    oncreate: ({ dom  })=>setTimeout(function() {
-            dom.focus();
-            // document.querySelectorAll("div#event-slider").style.opacity = "0";
-            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            _helperJs.bottom_bar("add", "events", "options");
-            if (status.selected_day != "") {
-                let t5 = new Date(status.selected_day);
-                currentMonth = t5.getMonth();
-                currentYear = t5.getFullYear();
-            }
-            let k = status.selected_day;
-            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-                if (item.getAttribute("data-date") == k) {
-                    item.focus();
-                    event_check_day(k);
-                }
-            });
-            showCalendar(currentMonth, currentYear);
-            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            _helperJs.bottom_bar("add", "events", "options");
-            let t6 = new Date(status.selected_day);
-            currentMonth = t6.getMonth();
-            currentYear = t6.getFullYear();
-            showCalendar(currentMonth, currentYear);
-            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-                if (item.getAttribute("data-date") == k) {
-                    item.focus();
-                    event_check_day(k);
-                }
-            });
-            clear_form();
-            document.querySelectorAll("div#event-slider").style.opacity = "100";
-        }, 500)
-};
-var page_events = {
-    view: function(vnode) {
-        return events.map(function(item, index) {
-            _helperJs.bottom_bar("edit", "month", "options");
-            return _mithrilDefault.default("article", {
-                class: "item",
-                tabindex: index,
-                "data-id": item.UID,
-                "data-date": item.dateStart,
-                "data-time-start": item.time_start,
-                "data-time-end": item.time_end,
-                "data-date-end": item.dateEnd,
-                "data-rrule": item.rrule_,
-                "data-multidayevent": item.multidayevent
-            }, [
-                _mithrilDefault.default("div", {
-                    class: "icons-bar"
-                }, [
-                    _mithrilDefault.default("img", {
-                        class: "bell",
-                        src: "assets/image/bell.svg"
-                    }),
-                    _mithrilDefault.default("div", {
-                        class: "date"
-                    }, item.dateStart),
-                    _mithrilDefault.default("div", {
-                        class: "time"
-                    }, item.time_start),
-                    _mithrilDefault.default("h2", {
-                        class: "time"
-                    }, item.SUMMARY),
-                    _mithrilDefault.default("div", item.LOCATION),
-                    _mithrilDefault.default("div", {
-                        class: "description"
-                    }, item.DESCRIPTION), 
-                ]), 
-            ]);
-        });
-    },
-    oncreate: ({ dom  })=>setTimeout(function() {
-            dom.focus();
-            _helperJs.sort_array(events, "dateStart", "date");
-            find_closest_date(status.selected_day);
-        }, 1500)
+    }
 };
 var page_options = {
     view: function() {
@@ -1116,7 +1097,8 @@ var page_options = {
                     for: "default-notification"
                 }, "default Notification"),
                 _mithrilDefault.default("select", {
-                    id: "default-notification-time"
+                    id: "default-notification-time",
+                    onchange: function() {}
                 }, [
                     _mithrilDefault.default("option", {
                         value: "none"
@@ -1225,7 +1207,7 @@ var page_subscriptions = {
         ]);
     }
 };
-var page_add_edit_event = {
+var page_add_event = {
     view: function() {
         return _mithrilDefault.default("div", {
             id: "add-edit-event",
@@ -1404,51 +1386,17 @@ var page_add_edit_event = {
                 onclick: function() {
                     store_event();
                 }
-            }, "save"),
-            _mithrilDefault.default("button", {
-                tabindex: "11",
-                id: "delete-event",
-                class: "item",
-                onclick: function() {
-                    delete_event();
-                }
-            }, "delete"),
-            _mithrilDefault.default("button", {
-                tabindex: "12",
-                id: "export-event",
-                class: "item",
-                onclick: function() {
-                    store_event();
-                }
-            }, "export event"), 
+            }, "save"), 
         ]);
     },
     oncreate: function() {
         _helperJs.bottom_bar("", "", "");
     }
 };
-/*
-let edit_event = function () {
-  events.forEach(function (index) {
-    if (index.UID == status.selected_day_id) {
-      document.getElementById("event-title").value = index.SUMMARY;
-      document.getElementById("event-date").value = index.dateStart;
-      document.getElementById("event-date-end").value = index.dateEnd;
-      document.getElementById("event-time-start").value = index.time_start;
-      document.getElementById("event-time-end").value = index.time_end;
-      document.getElementById("event-description").value = index.DESCRIPTION;
-      document.getElementById("event-location").value = index.LOCATION;
-      document.querySelector("#event-notification-time").value = index.alarm;
-      document.getElementById("form-image").src = index.ATTACH;
-      document.getElementById("event-recur").value = index.rrule_;
-    }
-  });
-};
-*/ var page_edit_event = {
+var page_edit_event = {
     view: function() {
         return _mithrilDefault.default("div", {
-            id: "add-edit-event",
-            tabindex: "0"
+            id: "add-edit-event"
         }, [
             _mithrilDefault.default("div", {
                 class: "item input-parent",
@@ -1622,14 +1570,6 @@ let edit_event = function () {
             ]),
             _mithrilDefault.default("button", {
                 tabindex: "10",
-                id: "save-event",
-                class: "item",
-                onclick: function() {
-                    update_event();
-                }
-            }, "update"),
-            _mithrilDefault.default("button", {
-                tabindex: "11",
                 id: "delete-event",
                 class: "item",
                 onclick: function() {
@@ -1637,13 +1577,13 @@ let edit_event = function () {
                 }
             }, "delete"),
             _mithrilDefault.default("button", {
-                tabindex: "12",
-                id: "export-event",
+                tabindex: "11",
+                id: "save-event",
                 class: "item",
                 onclick: function() {
-                    export_data();
+                    update_event();
                 }
-            }, "export event"), 
+            }, "update"), 
         ]);
     }
 };
@@ -1651,7 +1591,7 @@ _mithrilDefault.default.route(root, "/page_calendar", {
     "/page_calendar": page_calendar,
     "/page_events": page_events,
     "/page_options": page_options,
-    "/page_add_edit_event": page_add_edit_event,
+    "/page_add_event": page_add_event,
     "/page_edit_event": page_edit_event,
     "/page_subscriptions": page_subscriptions
 });
@@ -1664,7 +1604,7 @@ let load_subscriptions = function() {
         lp++;
     }
     jump_to_today();
-    event_check_day(document.activeElement.getAttribute("data-date"));
+    event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
 };
 let callback_scan = function(url) {
@@ -1683,6 +1623,7 @@ let store_subscription = function() {
         _localforageDefault.default.setItem("subscriptions", subscriptions).then(function(value) {
             document.getElementById("<subscription-form").style.display = "none";
             _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
+            _mithrilDefault.default.route.set("/page_options");
         }).catch(function(err) {
             // This code runs if there were any errors
             console.log(err);
@@ -1696,8 +1637,7 @@ let delete_subscription = function() {
     );
     _localforageDefault.default.setItem("subscriptions", updated_subscriptions).then(function(value) {
         //Do other things once the value has been saved.
-        console.log("saved: " + value);
-        _helperJs.toaster("subscription deleted", 2000);
+        _helperJs.side_toaster("subscription deleted", 2000);
     }).catch(function(err) {
         // This code runs if there were any errors
         _helperJs.toaster(err, 2000);
@@ -1746,19 +1686,15 @@ let nav = function(move) {
     const currentIndex = document.activeElement.tabIndex;
     let next1 = currentIndex + move;
     let items = 0;
-    if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_options") {
+    if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_events") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
-    }
-    if (_mithrilDefault.default.route.get() == "/page_events") {
-        let b = document.activeElement.parentNode;
-        items = b.querySelectorAll("article");
     }
     if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
     }
-    if (_mithrilDefault.default.route.get() == "/page_add_edit_event" || _mithrilDefault.default.route.get() == "/page_edit_event") {
+    if (_mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") {
         let b = document.activeElement.parentNode;
         items = b.querySelectorAll(".item");
         if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -1786,21 +1722,8 @@ let nav = function(move) {
         if (targetElement.hasAttribute("data-date")) {
             status.selected_day = targetElement.getAttribute("data-date");
             status.selected_day_id = targetElement.getAttribute("data-id");
-            event_check_day(status.selected_day);
+            event_slider(status.selected_day);
         }
-        return true;
-    }
-    if (document.activeElement.id == "form-image-wrapper" && status.view == "add-edit-event") {
-        _helperJs.bottom_bar("", "remove image", "");
-        return true;
-    }
-    if (document.activeElement.id != "form-image-wrapper" && _mithrilDefault.default.route.get() == "/page_add_edit_events") {
-        _helperJs.bottom_bar("", "edit", "");
-        return true;
-    }
-    if (document.activeElement.id == "cal-subs-url") {
-        _helperJs.bottom_bar("qr-scan", "", "");
-        return true;
     }
 };
 // may better to compare all alarms
@@ -1839,22 +1762,6 @@ let remove_alarm = function(id) {
                         console.log("An error occurred: " + this.error.name);
                     };
                 } else console.log("no alarm founded");
-            });
-        };
-        request.onerror = function() {
-            console.log("An error occurred:", this.error.name);
-        };
-    }
-};
-let test_alarm = function() {
-    if (navigator.mozAlarms) {
-        var request = navigator.mozAlarms.getAll();
-        request.onsuccess = function() {
-            this.result.forEach(function(alarm) {
-                console.log("Id:", alarm.id);
-                console.log("date:", alarm.date);
-                console.log("respectTimezone:", alarm.respectTimezone);
-                console.log("data:", JSON.stringify(alarm.data));
             });
         };
         request.onerror = function() {
@@ -2037,7 +1944,6 @@ let t = new Date();
 let m = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear();
-//event_check_day(y + "-" + m + "-" + d);
 // callback import event
 let import_event_callback = function(id, date) {
     _helperJs.toaster("done", 2000);
@@ -2120,11 +2026,11 @@ function shortpress_action(param) {
             break;
         case "ArrowUp":
             if (_mithrilDefault.default.route.get() == "/page_calendar") nav(-7);
-            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(-1);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(-1);
             break;
         case "ArrowDown":
             if (_mithrilDefault.default.route.get() == "/page_calendar") nav(7);
-            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(1);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(1);
             break;
         case "ArrowRight":
             if (_mithrilDefault.default.route.get() != "/page_calendar") return true;
@@ -2171,8 +2077,8 @@ function shortpress_action(param) {
                 update_event_date = events.filter(function(arr) {
                     return arr.UID == status.selected_day_id;
                 })[0];
-                console.log(update_event_date);
                 _mithrilDefault.default.route.set("/page_edit_event");
+                return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
                 console.log(document.activeElement.id);
@@ -2184,7 +2090,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_calendar") {
-                _mithrilDefault.default.route.set("/page_add_edit_event");
+                _mithrilDefault.default.route.set("/page_add_event");
                 // when new event
                 // set time
                 // set_datetime_form();
@@ -2219,7 +2125,7 @@ function shortpress_action(param) {
             if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") _mithrilDefault.default.route.get() == "/page_calendar" ? _mithrilDefault.default.route.set("/page_events") : _mithrilDefault.default.route.set("/page_calendar");
             break;
         case "Backspace":
-            if (_mithrilDefault.default.route.get() == "/page_add_edit_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
+            if (_mithrilDefault.default.route.get() == "/page_add_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_edit_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_options") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") _mithrilDefault.default.route.set("/page_options");
@@ -4964,11 +4870,7 @@ let parse_ics = function(data, callback, saveOnDevice, subscription) {
             }
             let parse_rrule = function() {
                 let feedback = "none";
-                if (ev.rrule != null || ev.rrule != undefined) {
-                    let a = ev.rrule;
-                    feedback = a.freq;
-                //console.log(ev.rrule);
-                }
+                if (ev.rrule != null || ev.rrule != undefined) feedback = ev.rrule.freq;
                 return feedback;
             };
             let imp = {
@@ -26160,17 +26062,15 @@ m.route = require("./route");
 m.render = require("./render");
 m.redraw = mountRedraw.redraw;
 m.request = request.request;
-m.jsonp = request.jsonp;
 m.parseQueryString = require("./querystring/parse");
 m.buildQueryString = require("./querystring/build");
 m.parsePathname = require("./pathname/parse");
 m.buildPathname = require("./pathname/build");
 m.vnode = require("./render/vnode");
-m.PromisePolyfill = require("./promise/polyfill");
 m.censor = require("./util/censor");
 module.exports = m;
 
-},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./promise/polyfill":"b42rx","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
+},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
 "use strict";
 var hyperscript = require("./render/hyperscript");
 hyperscript.trust = require("./render/trust");
@@ -26355,141 +26255,10 @@ module.exports = function() {
 
 },{"../render/vnode":"egGtB","./hyperscriptVnode":"iRFFB"}],"ljSDe":[function(require,module,exports) {
 "use strict";
-var PromisePolyfill = require("./promise/promise");
 var mountRedraw = require("./mount-redraw");
-module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, PromisePolyfill, mountRedraw.redraw);
+module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, mountRedraw.redraw);
 
-},{"./promise/promise":"hO3Aw","./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"hO3Aw":[function(require,module,exports) {
-/* global window */ "use strict";
-var global = arguments[3];
-var PromisePolyfill = require("./polyfill");
-if (typeof window !== "undefined") {
-    if (typeof window.Promise === "undefined") window.Promise = PromisePolyfill;
-    else if (!window.Promise.prototype.finally) window.Promise.prototype.finally = PromisePolyfill.prototype.finally;
-    module.exports = window.Promise;
-} else if (typeof global !== "undefined") {
-    if (typeof global.Promise === "undefined") global.Promise = PromisePolyfill;
-    else if (!global.Promise.prototype.finally) global.Promise.prototype.finally = PromisePolyfill.prototype.finally;
-    module.exports = global.Promise;
-} else module.exports = PromisePolyfill;
-
-},{"./polyfill":"b42rx"}],"b42rx":[function(require,module,exports) {
-"use strict";
-/** @constructor */ var PromisePolyfill = function(executor) {
-    if (!(this instanceof PromisePolyfill)) throw new Error("Promise must be called with 'new'.");
-    if (typeof executor !== "function") throw new TypeError("executor must be a function.");
-    var self = this, resolvers = [], rejectors = [], resolveCurrent = handler(resolvers, true), rejectCurrent = handler(rejectors, false);
-    var instance = self._instance = {
-        resolvers: resolvers,
-        rejectors: rejectors
-    };
-    var callAsync = typeof setImmediate === "function" ? setImmediate : setTimeout;
-    function handler(list, shouldAbsorb) {
-        return function execute(value) {
-            var then;
-            try {
-                if (shouldAbsorb && value != null && (typeof value === "object" || typeof value === "function") && typeof (then = value.then) === "function") {
-                    if (value === self) throw new TypeError("Promise can't be resolved with itself.");
-                    executeOnce(then.bind(value));
-                } else callAsync(function() {
-                    if (!shouldAbsorb && list.length === 0) console.error("Possible unhandled promise rejection:", value);
-                    for(var i = 0; i < list.length; i++)list[i](value);
-                    resolvers.length = 0, rejectors.length = 0;
-                    instance.state = shouldAbsorb;
-                    instance.retry = function() {
-                        execute(value);
-                    };
-                });
-            } catch (e) {
-                rejectCurrent(e);
-            }
-        };
-    }
-    function executeOnce(then) {
-        var runs = 0;
-        function run(fn) {
-            return function(value) {
-                if (runs++ > 0) return;
-                fn(value);
-            };
-        }
-        var onerror = run(rejectCurrent);
-        try {
-            then(run(resolveCurrent), onerror);
-        } catch (e) {
-            onerror(e);
-        }
-    }
-    executeOnce(executor);
-};
-PromisePolyfill.prototype.then = function(onFulfilled, onRejection) {
-    var self = this, instance = self._instance;
-    function handle(callback, list, next, state) {
-        list.push(function(value) {
-            if (typeof callback !== "function") next(value);
-            else try {
-                resolveNext(callback(value));
-            } catch (e) {
-                if (rejectNext) rejectNext(e);
-            }
-        });
-        if (typeof instance.retry === "function" && state === instance.state) instance.retry();
-    }
-    var resolveNext, rejectNext;
-    var promise = new PromisePolyfill(function(resolve, reject) {
-        resolveNext = resolve, rejectNext = reject;
-    });
-    handle(onFulfilled, instance.resolvers, resolveNext, true), handle(onRejection, instance.rejectors, rejectNext, false);
-    return promise;
-};
-PromisePolyfill.prototype.catch = function(onRejection) {
-    return this.then(null, onRejection);
-};
-PromisePolyfill.prototype.finally = function(callback) {
-    return this.then(function(value) {
-        return PromisePolyfill.resolve(callback()).then(function() {
-            return value;
-        });
-    }, function(reason) {
-        return PromisePolyfill.resolve(callback()).then(function() {
-            return PromisePolyfill.reject(reason);
-        });
-    });
-};
-PromisePolyfill.resolve = function(value) {
-    if (value instanceof PromisePolyfill) return value;
-    return new PromisePolyfill(function(resolve) {
-        resolve(value);
-    });
-};
-PromisePolyfill.reject = function(value) {
-    return new PromisePolyfill(function(resolve, reject) {
-        reject(value);
-    });
-};
-PromisePolyfill.all = function(list) {
-    return new PromisePolyfill(function(resolve, reject) {
-        var total = list.length, count = 0, values = [];
-        if (list.length === 0) resolve([]);
-        else for(var i1 = 0; i1 < list.length; i1++)(function(i) {
-            function consume(value) {
-                count++;
-                values[i] = value;
-                if (count === total) resolve(values);
-            }
-            if (list[i] != null && (typeof list[i] === "object" || typeof list[i] === "function") && typeof list[i].then === "function") list[i].then(consume, reject);
-            else consume(list[i]);
-        })(i1);
-    });
-};
-PromisePolyfill.race = function(list) {
-    return new PromisePolyfill(function(resolve, reject) {
-        for(var i = 0; i < list.length; i++)list[i].then(resolve, reject);
-    });
-};
-module.exports = PromisePolyfill;
-
-},{}],"dvp1x":[function(require,module,exports) {
+},{"./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"dvp1x":[function(require,module,exports) {
 "use strict";
 var render = require("./render");
 module.exports = require("./api/mount-redraw")(render, typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : null, typeof console !== "undefined" ? console : null);
@@ -26754,11 +26523,6 @@ module.exports = function($window) {
     // this is not the case if the node moved (second and fourth part of the diff algo). We move
     // the old DOM nodes before updateNode runs because it enables us to use the cached `nextSibling`
     // variable rather than fetching it using `getNextSibling()`.
-    //
-    // The fourth part of the diff currently inserts nodes unconditionally, leading to issues
-    // like #1791 and #1999. We need to be smarter about those situations where adjascent old
-    // nodes remain together in the new list in a way that isn't covered by parts one and
-    // three of the diff algo.
     function updateNodes(parent, old, vnodes, hooks, nextSibling, ns) {
         if (old === vnodes || old == null && vnodes == null) return;
         else if (old == null || old.length === 0) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns);
@@ -27452,69 +27216,13 @@ module.exports = function(render, schedule, console) {
 "use strict";
 var buildPathname = require("../pathname/build");
 var hasOwn = require("../util/hasOwn");
-module.exports = function($window, Promise, oncompletion) {
-    var callbackCount = 0;
+module.exports = function($window, oncompletion) {
     function PromiseProxy(executor) {
         return new Promise(executor);
     }
-    // In case the global Promise is some userland library's where they rely on
-    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
-    // similar. Let's *not* break them.
-    PromiseProxy.prototype = Promise.prototype;
-    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
-    ;
-    function makeRequest(factory) {
-        return function(url, args) {
-            if (typeof url !== "string") {
-                args = url;
-                url = url.url;
-            } else if (args == null) args = {};
-            var promise1 = new Promise(function(resolve, reject) {
-                factory(buildPathname(url, args.params), args, function(data) {
-                    if (typeof args.type === "function") {
-                        if (Array.isArray(data)) for(var i = 0; i < data.length; i++)data[i] = new args.type(data[i]);
-                        else data = new args.type(data);
-                    }
-                    resolve(data);
-                }, reject);
-            });
-            if (args.background === true) return promise1;
-            var count = 0;
-            function complete() {
-                if (--count === 0 && typeof oncompletion === "function") oncompletion();
-            }
-            return wrap(promise1);
-            function wrap(promise) {
-                var then = promise.then;
-                // Set the constructor, so engines know to not await or resolve
-                // this as a native promise. At the time of writing, this is
-                // only necessary for V8, but their behavior is the correct
-                // behavior per spec. See this spec issue for more details:
-                // https://github.com/tc39/ecma262/issues/1577. Also, see the
-                // corresponding comment in `request/tests/test-request.js` for
-                // a bit more background on the issue at hand.
-                promise.constructor = PromiseProxy;
-                promise.then = function() {
-                    count++;
-                    var next = then.apply(promise, arguments);
-                    next.then(complete, function(e) {
-                        complete();
-                        if (count === 0) throw e;
-                    });
-                    return wrap(next);
-                };
-                return promise;
-            }
-        };
-    }
-    function hasHeader(args, name) {
-        for(var key in args.headers){
-            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
-        }
-        return false;
-    }
-    return {
-        request: makeRequest(function(url, args, resolve, reject) {
+    function makeRequest(url, args) {
+        return new Promise(function(resolve, reject) {
+            url = buildPathname(url, args.params);
             var method = args.method != null ? args.method.toUpperCase() : "GET";
             var body = args.body;
             var assumeJSON = (args.serialize == null || args.serialize === JSON.serialize) && !(body instanceof $window.FormData || body instanceof $window.URLSearchParams);
@@ -27565,8 +27273,13 @@ module.exports = function($window, Promise, oncompletion) {
                         response = args.extract(ev.target, args);
                         success = true;
                     } else if (typeof args.deserialize === "function") response = args.deserialize(response);
-                    if (success) resolve(response);
-                    else {
+                    if (success) {
+                        if (typeof args.type === "function") {
+                            if (Array.isArray(response)) for(var i = 0; i < response.length; i++)response[i] = new args.type(response[i]);
+                            else response = new args.type(response);
+                        }
+                        resolve(response);
+                    } else {
                         var completeErrorResponse = function() {
                             try {
                                 message = ev.target.responseText;
@@ -27613,23 +27326,55 @@ module.exports = function($window, Promise, oncompletion) {
             else if (typeof args.serialize === "function") xhr.send(args.serialize(body));
             else if (body instanceof $window.FormData || body instanceof $window.URLSearchParams) xhr.send(body);
             else xhr.send(JSON.stringify(body));
-        }),
-        jsonp: makeRequest(function(url, args, resolve, reject) {
-            var callbackName = args.callbackName || "_mithril_" + Math.round(Math.random() * 1e16) + "_" + callbackCount++;
-            var script = $window.document.createElement("script");
-            $window[callbackName] = function(data) {
-                delete $window[callbackName];
-                script.parentNode.removeChild(script);
-                resolve(data);
-            };
-            script.onerror = function() {
-                delete $window[callbackName];
-                script.parentNode.removeChild(script);
-                reject(new Error("JSONP request failed"));
-            };
-            script.src = url + (url.indexOf("?") < 0 ? "?" : "&") + encodeURIComponent(args.callbackKey || "callback") + "=" + encodeURIComponent(callbackName);
-            $window.document.documentElement.appendChild(script);
-        })
+        });
+    }
+    // In case the global Promise is some userland library's where they rely on
+    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
+    // similar. Let's *not* break them.
+    PromiseProxy.prototype = Promise.prototype;
+    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
+    ;
+    function hasHeader(args, name) {
+        for(var key in args.headers){
+            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
+        }
+        return false;
+    }
+    return {
+        request: function(url, args) {
+            if (typeof url !== "string") {
+                args = url;
+                url = url.url;
+            } else if (args == null) args = {};
+            var promise1 = makeRequest(url, args);
+            if (args.background === true) return promise1;
+            var count = 0;
+            function complete() {
+                if (--count === 0 && typeof oncompletion === "function") oncompletion();
+            }
+            return wrap(promise1);
+            function wrap(promise) {
+                var then = promise.then;
+                // Set the constructor, so engines know to not await or resolve
+                // this as a native promise. At the time of writing, this is
+                // only necessary for V8, but their behavior is the correct
+                // behavior per spec. See this spec issue for more details:
+                // https://github.com/tc39/ecma262/issues/1577. Also, see the
+                // corresponding comment in `request/tests/test-request.js` for
+                // a bit more background on the issue at hand.
+                promise.constructor = PromiseProxy;
+                promise.then = function() {
+                    count++;
+                    var next = then.apply(promise, arguments);
+                    next.then(complete, function(e) {
+                        complete();
+                        if (count === 0) throw e;
+                    });
+                    return wrap(next);
+                };
+                return promise;
+            }
+        }
     };
 };
 
@@ -27707,7 +27452,6 @@ module.exports = require("./api/router")(typeof window !== "undefined" ? window 
 "use strict";
 var Vnode = require("../render/vnode");
 var m = require("../render/hyperscript");
-var Promise = require("../promise/promise");
 var buildPathname = require("../pathname/build");
 var parsePathname = require("../pathname/parse");
 var compileTemplate = require("../pathname/compileTemplate");
@@ -27936,7 +27680,7 @@ module.exports = function($window, mountRedraw) {
     return route1;
 };
 
-},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../promise/promise":"hO3Aw","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
+},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
 "use strict";
 var parseQueryString = require("../querystring/parse");
 // Returns `{path, params}` from `url`
@@ -27947,10 +27691,7 @@ module.exports = function(url) {
     var pathEnd = queryIndex < 0 ? queryEnd : queryIndex;
     var path = url.slice(0, pathEnd).replace(/\/{2,}/g, "/");
     if (!path) path = "/";
-    else {
-        if (path[0] !== "/") path = "/" + path;
-        if (path.length > 1 && path[path.length - 1] === "/") path = path.slice(0, -1);
-    }
+    else if (path[0] !== "/") path = "/" + path;
     return {
         path: path,
         params: queryIndex < 0 ? {} : parseQueryString(url.slice(queryIndex + 1, queryEnd))

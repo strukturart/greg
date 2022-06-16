@@ -242,6 +242,15 @@ div#side-toast img {
   width: 60px;
 }
 
+article.events {
+  margin: 0 0 10px;
+  padding: 5px;
+}
+
+article.events[data-alarm="none"] img.bell {
+  display: none;
+}
+
 div#calendar {
   padding: 10px;
 }
@@ -284,11 +293,12 @@ div#calendar div#calendar-body div:focus {
 
 div#calendar div#calendar-body div div {
   text-align: center;
+  background: #fff;
   padding: 2px 0 0;
 }
 
 div#calendar div#calendar-body div div.today {
-  background: pink;
+  background: #78b7ff;
 }
 
 div#calendar div#calendar-body :focus span {
@@ -302,11 +312,11 @@ div#calendar div#calendar-body :focus span {
 }
 
 div#calendar div#calendar-body div div.event {
-  background: var(--color-seven);
+  background: pink !important;
 }
 
 div#calendar div#calendar-body div div.subscription {
-  background: var(--color-eight);
+  background: #f5f5a9;
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
@@ -420,10 +430,6 @@ div#event-recur-wrapper {
   margin: 0 0 20px !important;
 }
 
-button#delete-event, button#export-event {
-  display: none;
-}
-
 div#list-view {
   z-index: 4;
   height: 92vh;
@@ -447,7 +453,7 @@ div.icons-bar img {
 }
 
 div#event-slider {
-  min-height: 70px;
+  min-height: 40px;
   margin: 15px 0 0;
   position: relative;
 }
@@ -501,6 +507,18 @@ div#event-slider article {
   margin: 0 0 15px;
   font-size: .9rem;
   display: none;
+  position: absolute;
+  top: 0;
+}
+
+div#event-slider article > * {
+  text-align: center;
+}
+
+div#event-slider article:nth-child(1) {
+  margin: 0 0 15px;
+  font-size: .9rem;
+  display: block;
   position: absolute;
   top: 0;
 }
@@ -670,45 +688,6 @@ div#settings label {
   min-width: 80%;
   height: 30px;
   margin: 5px 5px 0 0;
-}
-
-#goodbye {
-  z-index: 50000;
-  color: #fff;
-  background: #000;
-  padding: 70px 5px 5px;
-  font-size: 18px;
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-}
-
-#ciao {
-  text-align: center;
-  padding: 5px;
-  display: none;
-}
-
-#ciao ul {
-  margin: 20px 0 0;
-}
-
-#ciao ul li {
-  margin: 0;
-  font-size: 14px;
-  list-style: none;
-}
-
-#ciao ul li:first-child {
-  color: #ff0;
-  margin: 0 0 5px;
-}
-
-#donation {
-  text-align: center;
-  padding: 5px;
-  display: none;
 }
 
 @keyframes jump {

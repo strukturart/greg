@@ -574,7 +574,7 @@ let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
-let once = false;
+let update_event_date;
 let status = {
     selected_day: "",
     visible: false,
@@ -642,7 +642,6 @@ let event_check = function(date) {
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
-        //feedback.date = date;
         let a = new Date(events[t3].dateStart).getTime();
         let b = new Date(events[t3].dateEnd).getTime();
         let c = new Date(date).getTime();
@@ -662,7 +661,7 @@ let event_check = function(date) {
     }
     return feedback;
 };
-// check if has event
+// check if has recur event
 let rrule_check = function(date) {
     let feedback = {
         date: "",
@@ -671,7 +670,8 @@ let rrule_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
-    for(let t4 = 0; t4 < events.length; t4++)if (typeof events[t4] === "object") {
+    for(let t4 = 0; t4 < events.length; t4++)//console.log(events[t])
+    if (typeof events[t4] === "object") {
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
@@ -681,34 +681,36 @@ let rrule_check = function(date) {
         let b = new Date(events[t4].dateEnd).getTime();
         let c = new Date(date).getTime();
         //recurrences
-        if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) {
-            if (new Date(events[t4].dateStart).getTime() <= new Date(date).getTime() && new Date(date).getTime() <= new Date(events[t4].dateEnd).getTime()) {
+        if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) //console.log(events[t]["RRULE"]);
+        {
+            if (a === c || b === c || a < c && b > c) {
                 if (events[t4].rrule_ == "MONTHLY") {
                     if (new Date(events[t4].dateStart).getDate() === new Date(date).getDate()) {
+                        feedback.event = true;
                         feedback.rrule = true;
-                        t4 = events.length;
-                        return feedback;
+                    // t = events.length;
+                    //return feedback;
                     }
                 }
                 if (events[t4]["rrule_"] == "DAILY") {
                     feedback.rrule = true;
-                    t4 = events.length;
-                    return feedback;
+                    feedback.event = true;
+                //t = events.length;
+                //return feedback;
                 }
                 if (events[t4].rrule_ == "WEEKLY") {
-                    if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) {
-                        feedback.rrule = true;
-                        t4 = events.length;
-                        return feedback;
-                    }
+                    if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) feedback.rrule = true;
+                // t = events.length;
+                //return feedback;
                 }
                 if (events[t4].rrule_ == "YEARLY") {
+                    console.log("yearly");
                     let tt = new Date(events[t4].dateStart);
                     let pp = new Date(date);
                     if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                         feedback.rrule = true;
-                        t4 = events.length;
-                        return feedback;
+                        feedback.event = true;
+                    //t = events.length;
                     }
                 }
             }
@@ -721,30 +723,43 @@ let rrule_check = function(date) {
 ///////////
 let slider = [];
 let slider_index = 0;
-let event_check_day = function(date) {
+let slider_navigation = function() {
+    console.log(slider_index);
+    let p = document.querySelectorAll("div#event-slider-indicator div div");
+    if (slider_index == document.querySelectorAll("div#event-slider article").length - 1) slider_index = -1;
+    slider_index++;
+    document.querySelectorAll("div#event-slider article").forEach(function(item) {
+        item.style.display = "none";
+    });
+    document.querySelectorAll("div#event-slider article")[slider_index].style.display = "block";
+    p.forEach(function(item) {
+        item.classList.remove("active");
+    });
+    p[slider_index].classList.add("active");
+};
+////
+let event_slider = function(date) {
     slider = [];
     let k = document.querySelector("div#event-slider-indicator div");
     k.innerHTML = "";
-    //hide all
-    let item = document.querySelectorAll("div#event-slider article");
-    console.log(item);
-    for(let i = 0; i < item.length; i++){
-        item[i].style.display = "none";
-        let a = new Date(item[i].getAttribute("data-date")).getTime();
-        let b = new Date(item[i].getAttribute("data-date-end")).getTime();
+    document.querySelector("div#event-slider").innerHTML = "";
+    for(let i = 0; i < events.length; i++){
+        let a = new Date(events[i].dateStart).getTime();
+        let b = new Date(events[i].dateEnd).getTime();
         let c = new Date(date).getTime();
-        let d1 = item[i].getAttribute("data-rrule");
-        item[i].getAttribute("data-alarm");
+        let d1 = events[i].rrule_;
+        events[i].alarm;
         //all day event
-        if (item[i].getAttribute("data-time-start") == "00:00:00" && item[i].getAttribute("data-time-end") == "00:00:00") item[i].querySelector("div.time").innerHTML = "All day";
+        if (a === c || b === c || a < c && b > c) {
+            if (events[i].time_start == "00:00:00" && events[i].time_end == "00:00:00") slider.push(events[i]);
+        }
         if (d1 === "none" || d1 === "") {
             if (a === c || b === c || a < c && b > c) {
                 //if multiday event
                 //the end date is next day
                 //time is 00:00:00
-                if (item[i].getAttribute("data-time-end") == "00:00:00" && item[i].getAttribute("data-date-end") == date) return false;
-                slider.push(item[i]);
-                slider[0].style.display = "block";
+                if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) return false;
+                slider.push(events[i]);
                 k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
             }
         } else if (a === c || b === c || a < c && b > c && d1) {
@@ -755,51 +770,40 @@ let event_check_day = function(date) {
                 let pp = new Date(date);
                 if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //WEEK
             if (d1 == "WEEKLY") {
-                if (new Date(item[i].getAttribute("data-date")).getDay() == new Date(date).getDay()) {
+                if (new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //MONTH
             if (d1 == "MONTHLY") {
-                if (new Date(item[i].getAttribute("data-date")).getDate() == new Date(date).getDate()) {
+                if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             if (d1 == "DAILY") {
                 if (a === c || b === c || a < c && b > c) {
                     slider.push(item[i]);
-                    slider[0].style.display = "block";
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
         }
     }
-    if (slider != "" && slider.length > 0) k.style.opacity = 100;
-    else k.style.opacity = 0;
-    console.log("slider" + slider);
-};
-let slider_navigation = function() {
-    let p = document.querySelectorAll("div#event-slider-indicator div div");
-    if (slider_index == slider.length - 1) slider_index = -1;
-    slider_index++;
-    slider.forEach(function(item) {
-        item.style.display = "none";
-    });
-    slider[slider_index].style.display = "block";
-    p.forEach(function(item) {
-        item.classList.remove("active");
-    });
-    p[slider_index].classList.add("active");
+    if (slider != "") {
+        slider.forEach(function(item) {
+            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
+        });
+        if (slider >= 0) {
+            document.querySelector("div#event-slider article")[0].style.opacity = "100";
+            document.querySelector("div#event-slider article")[0].style.display = "block";
+        }
+    }
 };
 ////
 // JUMP TO TODAY
@@ -808,20 +812,21 @@ let jump_to_today = function() {
     let currentMonth1 = today.getMonth();
     let currentYear1 = today.getFullYear();
     showCalendar(currentMonth1, currentYear1);
-    event_check_day(status.selected_day);
+    //event_check_day(status.selected_day);
+    event_slider(status.selected_day);
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 function next() {
     currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     currentMonth = (currentMonth + 1) % 12;
     showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
+    event_slider(status.selected_day);
 }
 function previous() {
     currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     showCalendar(currentMonth, currentYear);
-    event_check_day(status.selected_day);
+    event_slider(status.selected_day);
 }
 //////////////
 //BUILD CALENDAR
@@ -839,7 +844,6 @@ Date.prototype.getWeek = function() {
 };
 let showCalendar = function(month, year) {
     _helperJs.bottom_bar("add", "events", "options");
-    console.log(month);
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
     let tbl = document.getElementById("calendar-body");
@@ -911,32 +915,6 @@ let showCalendar = function(month, year) {
         document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
     }
 };
-//RENDER
-function renderHello(arr) {
-    document.getElementById("event-slider").style.opacity = 0;
-    _helperJs.sort_array(arr, "dateStart", "date");
-    var template = document.getElementById("template").innerHTML;
-    var rendered = Mustache.render(template, {
-        data: arr
-    });
-    document.getElementById("list-view").innerHTML = rendered;
-    document.getElementById("event-slider").innerHTML = rendered;
-    document.getElementById("event-slider").style.opacity = 100;
-    //event_check_day(document.activeElement.getAttribute("data-date"));
-    //format date
-    document.querySelectorAll("article").forEach(function(index) {
-        let w = index.getAttribute("data-time-start");
-        let s = index.getAttribute("data-time-end");
-        if (w == "00:00:00" && s == "00:00:00") index.querySelector("div.time").innerHTML = "All day";
-        let t5 = new Date(index.getAttribute("data-date"));
-        let n = new Date(index.getAttribute("data-date-end"));
-        let d2 = weekday[t5.getDay()] + ", " + t5.getFullYear() + " " + months[t5.getMonth()] + " " + t5.getDate();
-        let m1 = weekday[n.getDay()] + ", " + n.getFullYear() + " " + months[n.getMonth()] + " " + n.getDate();
-        // to do singel day event or not
-        if (index.classList.contains("multidayevent")) index.querySelector("div.date").innerText = d2 + " - " + m1;
-        else index.querySelector("div.date").innerText = d2;
-    });
-}
 let clear_form = function() {
     document.querySelectorAll("div#add-edit-event input").forEach(function(e) {
         e.value = "";
@@ -945,15 +923,9 @@ let clear_form = function() {
     });
 };
 /*
- ///////////////
-// ///////////////
 // /////////////////
-// /ROUTER
+// /VIEWS
 // ///////////////
-// ///////////////
-// //////////////
-
-
 */ var root = document.getElementById("app");
 var page_calendar = {
     view: function() {
@@ -981,19 +953,81 @@ var page_calendar = {
             }),
             _mithrilDefault.default("div", {
                 id: "event-slider"
+            }),
+            _mithrilDefault.default("div", {
+                id: "event-slider-indicator",
+                class: "flex width-100 justify-content-spacearound"
             }, [
-                //events slider
-                events.map(function(item, index) {
-                    return _mithrilDefault.default("article", {
-                        class: "event-slider-item",
-                        "data-id": item.UID,
-                        "data-date": item.dateStart,
-                        "data-time-start": item.time_start,
-                        "data-time-end": item.time_end,
-                        "data-date-end": item.dateEnd,
-                        "data-rrule": item.rrule_,
-                        "data-multidayevent": item.multidayevent
+                _mithrilDefault.default("div", {
+                    class: "flex width-100 justify-content-spacearound"
+                })
+            ]), 
+        ]);
+    },
+    oncreate: ({ dom  })=>setTimeout(function() {
+            dom.focus();
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            _helperJs.bottom_bar("add", "events", "options");
+            if (status.selected_day != "") {
+                let t5 = new Date(status.selected_day);
+                currentMonth = t5.getMonth();
+                currentYear = t5.getFullYear();
+            }
+            let k = status.selected_day;
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_slider(k);
+                }
+            });
+            showCalendar(currentMonth, currentYear);
+            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+            _helperJs.bottom_bar("add", "events", "options");
+            let t6 = new Date(status.selected_day);
+            currentMonth = t6.getMonth();
+            currentYear = t6.getFullYear();
+            showCalendar(currentMonth, currentYear);
+            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+                if (item.getAttribute("data-date") == k) {
+                    item.focus();
+                    event_slider(k);
+                }
+            });
+            clear_form();
+            document.querySelectorAll("div#event-slider").style.opacity = "100";
+        }, 500)
+};
+var page_events = {
+    view: function(vnode) {
+        return _mithrilDefault.default("div", {
+            id: "events-wrapper",
+            oncreate: ()=>setTimeout(function() {
+                    _helperJs.sort_array(events, "dateStart", "date");
+                    find_closest_date(status.selected_day);
+                    _helperJs.bottom_bar("edit", "select", "");
+                }, 1500)
+        }, [
+            events.map(function(item, index) {
+                _helperJs.bottom_bar("edit", "month", "options");
+                return _mithrilDefault.default("article", {
+                    class: "item events",
+                    tabindex: index,
+                    "data-id": item.UID,
+                    "data-date": item.dateStart,
+                    "data-time-start": item.time_start,
+                    "data-time-end": item.time_end,
+                    "data-date-end": item.dateEnd,
+                    "data-rrule": item.rrule_,
+                    "data-multidayevent": item.multidayevent,
+                    "data-alarm": item.alarm
+                }, [
+                    _mithrilDefault.default("div", {
+                        class: "icons-bar"
                     }, [
+                        _mithrilDefault.default("img", {
+                            class: "bell",
+                            src: "assets/image/bell.svg"
+                        }),
                         _mithrilDefault.default("div", {
                             class: "date"
                         }, item.dateStart),
@@ -1007,107 +1041,11 @@ var page_calendar = {
                         _mithrilDefault.default("div", {
                             class: "description"
                         }, item.DESCRIPTION), 
-                    ]);
-                }), 
-            ]),
-            _mithrilDefault.default("div", {
-                id: "event-slider-indicator",
-                class: "flex width-100 justify-content-spacearound"
-            }, [
-                _mithrilDefault.default("div", {
-                    class: "flex"
-                })
-            ]), 
+                    ]), 
+                ]);
+            }), 
         ]);
-    },
-    oncreate: ({ dom  })=>setTimeout(function() {
-            dom.focus();
-            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            _helperJs.bottom_bar("add", "events", "options");
-            if (status.selected_day != "") {
-                let t6 = new Date(status.selected_day);
-                currentMonth = t6.getMonth();
-                currentYear = t6.getFullYear();
-            }
-            let k = status.selected_day;
-            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-                if (item.getAttribute("data-date") == k) {
-                    item.focus();
-                    event_check_day(k);
-                }
-            });
-            showCalendar(currentMonth, currentYear);
-            if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            //month.style.display = "block";
-            _helperJs.bottom_bar("add", "events", "options");
-            // status.edit_event = false;
-            let t7 = new Date(status.selected_day);
-            currentMonth = t7.getMonth();
-            currentYear = t7.getFullYear();
-            showCalendar(currentMonth, currentYear);
-            document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
-                if (item.getAttribute("data-date") == k) {
-                    item.focus();
-                    event_check_day(k);
-                }
-            });
-            clear_form();
-        }, 500)
-};
-/*
-
-        {{#data}}
-            <article data-id={{UID}} data-date={{dateStart}} data-alarm={{alarm}} data-time-start={{time_start}} data-time-end={{time_end}} {{#ATTACH}}data-attach="true"{{/ATTACH}} data-date-end={{dateEnd}} data-rrule={{rrule_}} data-multidayevent={{multidayevent}} class="item {{#isSubscription}}subscription{{/isSubscription}} ">
-               <div class="icons-bar flex"><img class="bell" src="assets/image/bell.svg"> {{#ATTACH}}<img class="picture" src="assets/image/picture.svg">{{/ATTACH}}</div>
-                <div class="date"></div>
-                <div class="time">
-                    {{time_start}}
-                    {{#time_end.length}} - {{time_end}}{{/time_end.length}}
-                </div>
-                <h2>{{SUMMARY}}</h2>
-                <div>{{LOCATION}}</div>
-                <div class="description">{{DESCRIPTION}}</div>
-            </article>
-            {{/data}}
-            */ var page_events = {
-    view: function(vnode) {
-        return events.map(function(item, index) {
-            _helperJs.bottom_bar("edit", "month", "options");
-            return _mithrilDefault.default("article", {
-                class: "item",
-                tabindex: index,
-                "data-id": item.UID,
-                "data-date": item.dateStart,
-                "data-time-start": item.time_start,
-                "data-time-end": item.time_end,
-                "data-date-end": item.dateEnd,
-                "data-rrule": item.rrule_,
-                "data-multidayevent": item.multidayevent
-            }, [
-                _mithrilDefault.default("div", {
-                    class: "icons-bar"
-                }, [
-                    _mithrilDefault.default("div", {
-                        class: "date"
-                    }, item.dateStart),
-                    _mithrilDefault.default("div", {
-                        class: "time"
-                    }, item.time_start),
-                    _mithrilDefault.default("h2", {
-                        class: "time"
-                    }, item.SUMMARY),
-                    _mithrilDefault.default("div", item.LOCATION),
-                    _mithrilDefault.default("div", {
-                        class: "description"
-                    }, item.DESCRIPTION), 
-                ]), 
-            ]);
-        });
-    },
-    oncreate: ({ dom  })=>setTimeout(function() {
-            dom.focus();
-            find_closest_date(status.selected_day);
-        }, 1500)
+    }
 };
 var page_options = {
     view: function() {
@@ -1185,30 +1123,28 @@ var page_options = {
             _mithrilDefault.default("div", {
                 id: "subscription-text"
             }, "Subscriptions"),
-            /*
-      subscriptions.map(function (item, index) {
-        return m(
-          "button",
-          {
-            class: "item subscriptions-item",
-            "data-id": item.url,
-
-            tabindex: index + 4,
-            onblur: function () {
-              bottom_bar("", "", "");
-            },
-            onfocus: function () {
-              bottom_bar("delete", "", "");
-            },
-          },
-          item.name
-        );
-      }),*/ _mithrilDefault.default("div", {
+            subscriptions.map(function(item, index) {
+                return _mithrilDefault.default("button", {
+                    class: "item subscriptions-item",
+                    "data-id": item.url,
+                    tabindex: index + 4,
+                    onblur: function() {
+                        _helperJs.bottom_bar("", "", "");
+                    },
+                    onfocus: function() {
+                        _helperJs.bottom_bar("delete", "", "");
+                    }
+                }, item.name);
+            }),
+            _mithrilDefault.default("div", {
                 id: "KaiOsAds-Wrapper"
             }, [
                 _mithrilDefault.default("iframe")
             ]), 
         ]);
+    },
+    oncreate: function() {
+        _helperJs.bottom_bar("", "", "");
     }
 };
 var page_subscriptions = {
@@ -1237,6 +1173,9 @@ var page_subscriptions = {
                 tabindex: "1",
                 onfocus: function() {
                     _helperJs.bottom_bar("qr-scan", "", "");
+                },
+                onblur: function() {
+                    _helperJs.bottom_bar("", "", "");
                 }
             }, [
                 _mithrilDefault.default("label", {
@@ -1258,7 +1197,7 @@ var page_subscriptions = {
         ]);
     }
 };
-var page_add_edit_event = {
+var page_add_event = {
     view: function() {
         return _mithrilDefault.default("div", {
             id: "add-edit-event",
@@ -1455,197 +1394,222 @@ var page_add_edit_event = {
                 }
             }, "export event"), 
         ]);
+    },
+    oncreate: function() {
+        _helperJs.bottom_bar("", "", "");
+    }
+};
+var page_edit_event = {
+    view: function() {
+        return _mithrilDefault.default("div", {
+            id: "add-edit-event"
+        }, [
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: 0,
+                oncreate: ({ dom  })=>setTimeout(function() {
+                        dom.focus();
+                    }, 500)
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-title"
+                }, "title"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-title",
+                    value: update_event_date.SUMMARY
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "1"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-location"
+                }, "Location"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-location"
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "2"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-date"
+                }, "Start Date"),
+                _mithrilDefault.default("input", {
+                    placeholder: "YYYY-MM-DD",
+                    type: "date",
+                    id: "event-date",
+                    value: update_event_date.dateStart
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "3"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-date-end"
+                }, "End Date"),
+                _mithrilDefault.default("input", {
+                    placeholder: "YYYY-MM-DD",
+                    type: "date",
+                    id: "event-date-end",
+                    value: update_event_date.dateEnd
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "4"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-time-start"
+                }, "Start Time"),
+                _mithrilDefault.default("input", {
+                    placeholder: "hh:mm:ss",
+                    type: "time",
+                    id: "event-time-start"
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "5"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-time-end"
+                }, "End Time"),
+                _mithrilDefault.default("input", {
+                    placeholder: "hh:mm:ss",
+                    type: "time",
+                    id: "event-time-end",
+                    value: update_event_date.time_end
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                tabindex: "6"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "event-description"
+                }, "Description"),
+                _mithrilDefault.default("input", {
+                    placeholder: "",
+                    type: "text",
+                    id: "event-description",
+                    value: update_event_date.DESCRIPTION
+                }), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                id: "event-notification-time-wrapper",
+                tabindex: "7"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "notification"
+                }, "Notification"),
+                _mithrilDefault.default("select", {
+                    id: "event-notification-time"
+                }, [
+                    _mithrilDefault.default("option", {
+                        value: "none"
+                    }, "none"),
+                    _mithrilDefault.default("option", {
+                        value: "5"
+                    }, "5 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "10"
+                    }, "10 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "30"
+                    }, "30 minutes"),
+                    _mithrilDefault.default("option", {
+                        value: "1440"
+                    }, "1 Day"), 
+                ]), 
+            ]),
+            _mithrilDefault.default("div", {
+                class: "item input-parent",
+                id: "event-recur-wrapper",
+                tabindex: "8"
+            }, [
+                _mithrilDefault.default("label", {
+                    for: "notification"
+                }, "Recur"),
+                _mithrilDefault.default("select", {
+                    id: "event-recur",
+                    value: update_event_date.rrule_
+                }, [
+                    _mithrilDefault.default("option", {
+                        value: "none"
+                    }, "none"),
+                    _mithrilDefault.default("option", {
+                        value: "DAILY"
+                    }, "Daily"),
+                    _mithrilDefault.default("option", {
+                        value: "WEEKLY"
+                    }, "Weekly"),
+                    _mithrilDefault.default("option", {
+                        value: "MONTHLY"
+                    }, "Monthly"),
+                    _mithrilDefault.default("option", {
+                        value: "YEARLY"
+                    }, "Yearly"), 
+                ]), 
+            ]),
+            _mithrilDefault.default("button", {
+                class: "item",
+                tabindex: "",
+                id: "select-image",
+                tabindex: "9"
+            }, "add image"),
+            _mithrilDefault.default("div", {
+                id: "form-image-wrapper"
+            }, [
+                _mithrilDefault.default("img", {
+                    id: "form-image",
+                    "data-blob": update_event_date.ATTACH
+                }), 
+            ]),
+            _mithrilDefault.default("button", {
+                tabindex: "10",
+                id: "delete-event",
+                class: "item",
+                onclick: function() {
+                    delete_event();
+                }
+            }, "delete"),
+            _mithrilDefault.default("button", {
+                tabindex: "11",
+                id: "save-event",
+                class: "item",
+                onclick: function() {
+                    update_event();
+                }
+            }, "update"),
+            _mithrilDefault.default("button", {
+                tabindex: "12",
+                id: "export-event",
+                class: "item",
+                onclick: function() {
+                    export_data();
+                }
+            }, "export event"), 
+        ]);
     }
 };
 _mithrilDefault.default.route(root, "/page_calendar", {
     "/page_calendar": page_calendar,
     "/page_events": page_events,
     "/page_options": page_options,
-    "/page_add_edit_event": page_add_edit_event,
+    "/page_add_event": page_add_event,
+    "/page_edit_event": page_edit_event,
     "/page_subscriptions": page_subscriptions
 });
 _mithrilDefault.default.route.prefix = "#";
-/*
-const month = document.getElementById("calendar");
-const add_edit_event = document.getElementById("add-edit-event");
-const list_view = document.getElementById("list-view");
-const options = document.getElementById("options");
-
-let option_button_bar = function () {
-  setTimeout(function () {
-    if (status.view == "options") {
-      if (
-        document.activeElement.getAttribute("data-function") == "subscription"
-      ) {
-        bottom_bar("delete", "select", "");
-        return true;
-      } else {
-        bottom_bar("", "select", "");
-        return true;
-      }
-    }
-  }, 500);
-};
-
-
-
-
-  // add event view
-  if (status.view == "add-edit-event") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    document.getElementById("event-date").value = status.selected_day;
-        add_edit_event.querySelectorAll(".item")[0].focus();
-
-
-    add_edit_event.style.display = "block";
-    document
-      .querySelectorAll("div#add-edit-event .item")
-      .forEach(function (i, p) {
-        i.setAttribute("tabindex", p);
-      });
-    add_edit_event.querySelectorAll(".item")[0].focus();
-    bottom_bar("", "edit", "");
-
-    if (document.getElementById("event-date-end").value == "") {
-      document.getElementById("event-date-end").value =
-        document.getElementById("event-date").value;
-    }
-
-    if (status.edit_event) {
-      document.getElementById("save-event").innerText = "update";
-    }
-    console.log(status.edit_event);
-
-    if (!status.edit_event) {
-      document.getElementById("save-event").innerText = "save";
-
-      document.getElementById("event-notification-time").value =
-        settings.default_notification;
-    }
-    return true;
-  }
-
-  // month view
-  if (status.view == "month") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    options.style.display = "none";
-    month.style.display = "block";
-    bottom_bar("add", "events", "options");
-    status.edit_event = false;
-
-    let t = new Date(status.selected_day);
-    currentMonth = t.getMonth();
-    currentYear = t.getFullYear();
-
-    let k = status.selected_day;
-    showCalendar(currentMonth, currentYear);
-
-    document
-      .querySelectorAll("div#calendar-body div.item")
-      .forEach(function (item) {
-        if (item.getAttribute("data-date") == k) {
-          item.focus();
-          event_check_day(k);
-        }
-      });
-
-    clear_form();
-  }
-
-  // list view
-  if (status.view == "list-view") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    options.style.display = "none";
-    status.edit_event = false;
-    clear_form();
-
-    bottom_bar("edit", "month", "options");
-
-    list_view.style.display = "block";
-    setTimeout(function () {
-      let articles = document.querySelectorAll("div#list-view article");
-
-      let success = false;
-      for (var k = 0; k < articles.length; k++) {
-        if (articles[k].getAttribute("data-date") == status.selected_day) {
-          articles[k].focus();
-          k = articles.length;
-          success = true;
-        }
-      }
-
-      for (var k = 0; k < articles.length; k++) {
-        console.log(articles[k].getAttribute("data-alarm"));
-        if (articles[k].getAttribute("data-alarm") == "none") {
-          articles[k].querySelector("img.bell").style.display = "none";
-        }
-      }
-      if (!success) {
-        document.querySelectorAll("div#list-view article")[0].focus();
-        find_closest_date(status.selected_day);
-      }
-      const rect = document.activeElement.getBoundingClientRect();
-      const elY =
-        rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
-
-      document.activeElement.parentNode.scrollBy({
-        left: 0,
-        top: elY - window.innerHeight / 2,
-        behavior: "smooth",
-      });
-    }, 1000);
-  }
-  if (status.view == "options") {
-    if (document.activeElement.hasAttribute("data-date"))
-      status.selected_day = document.activeElement.getAttribute("data-date");
-
-    if (!once) {
-      list_ics();
-      list_subscriptions();
-      once = true;
-    }
-
-    document.getElementById("options").style.display = "block";
-    document.querySelectorAll("div#options .item")[0].focus();
-    document.getElementById("options").style.opacity = "1";
-    document.getElementById("subscription-form").style.display = "none";
-    setTimeout(function () {
-      Array.from(document.querySelectorAll("div#options .item")).forEach(
-        function (i, p) {
-          i.setAttribute("tabindex", p);
-        }
-      );
-    }, 2000);
-
-    option_button_bar();
-  }
-
-  if (status.view == "subscription") {
-    document.getElementById("options").style.opacity = "0.3";
-    document.getElementById("subscription-form").style.display = "block";
-
-    document
-      .querySelectorAll("div#subscription-form div.item input")[0]
-      .focus();
-
-    bottom_bar("QR", "", "save");
-  }
-};
-*/ let list_subscriptions = function() {
-    if (subscriptions == null) return false;
-    subscriptions.forEach(function(item) {
-        document.querySelector("div#options div#subscription-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="subscription">' + item.name + "</button>");
-        document.querySelectorAll("div#options button").forEach(function(i, p) {
-            i.setAttribute("tabindex", p);
-        });
-    });
-};
 let lp = 0;
 let load_subscriptions = function() {
     if (subscriptions == null || subscriptions.lenght == -1 || subscriptions.lenght == "undefined") return false;
@@ -1654,7 +1618,7 @@ let load_subscriptions = function() {
         lp++;
     }
     jump_to_today();
-    event_check_day(document.activeElement.getAttribute("data-date"));
+    event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
 };
 let callback_scan = function(url) {
@@ -1671,8 +1635,9 @@ let store_subscription = function() {
         document.querySelector("input#cal-subs-name").val = "";
         document.querySelector("input#cal-subs-url").val = "";
         _localforageDefault.default.setItem("subscriptions", subscriptions).then(function(value) {
-            document.getElementById("subscription-form").style.display = "none";
-            _helperJs.toaster("subscription stored", 2000);
+            document.getElementById("<subscription-form").style.display = "none";
+            _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
+            _mithrilDefault.default.route.set("/page_options");
         }).catch(function(err) {
             // This code runs if there were any errors
             console.log(err);
@@ -1696,15 +1661,16 @@ let delete_subscription = function() {
 };
 _localforageDefault.default.getItem("events").then(function(value) {
     if (value != null) events = value;
-//renderHello(events);
-// jump_to_today();
-}).catch(function(err) {
-//jump_to_today();
-});
+}).catch(function(err) {});
 _localforageDefault.default.getItem("subscriptions").then(function(value) {
     subscriptions = value;
     setTimeout(function() {
-        if (subscriptions == null) return false;
+        if (subscriptions == null) {
+            subscriptions = [
+                {}
+            ];
+            return false;
+        }
         load_subscriptions();
         console.log(subscriptions);
     }, 2000);
@@ -1735,19 +1701,15 @@ let nav = function(move) {
     const currentIndex = document.activeElement.tabIndex;
     let next1 = currentIndex + move;
     let items = 0;
-    if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_options") {
+    if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_events") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
-    }
-    if (_mithrilDefault.default.route.get() == "/page_events") {
-        let b = document.activeElement.parentNode;
-        items = b.querySelectorAll("article");
     }
     if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
     }
-    if (_mithrilDefault.default.route.get() == "/page_add_edit_event") {
+    if (_mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") {
         let b = document.activeElement.parentNode;
         items = b.querySelectorAll(".item");
         if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -1775,76 +1737,11 @@ let nav = function(move) {
         if (targetElement.hasAttribute("data-date")) {
             status.selected_day = targetElement.getAttribute("data-date");
             status.selected_day_id = targetElement.getAttribute("data-id");
-            event_check_day(status.selected_day);
+            event_slider(status.selected_day);
         }
-        return true;
-    }
-    if (document.activeElement.id == "form-image-wrapper" && status.view == "add-edit-event") {
-        _helperJs.bottom_bar("", "remove image", "");
-        return true;
-    }
-    if (document.activeElement.id != "form-image-wrapper" && _mithrilDefault.default.route.get() == "/page_add_edit_events") {
-        _helperJs.bottom_bar("", "edit", "");
-        return true;
-    }
-    if (document.activeElement.id == "cal-subs-url") {
-        _helperJs.bottom_bar("qr-scan", "", "");
-        return true;
     }
 };
-// form actions
-// after selection
-/*
-document
-  .getElementById("event-notification-time")
-  .addEventListener("change", (event) => {
-    setTimeout(function () {
-      document.getElementById("event-notification-time").parentElement.focus();
-    }, 500);
-  });
-
-//default when is not set
-settings.default_notification = "none";
-
-document
-  .getElementById("default-notification-time")
-  .addEventListener("change", (event) => {
-    let l = document.getElementById("default-notification-time").value;
-    settings.default_notification = l;
-
-    localforage
-      .setItem("settings", settings)
-      .then(function (value) {})
-      .catch(function (err) {
-        console.log(err);
-      });
-
-    setTimeout(function () {
-      document
-        .getElementById("default-notification-time")
-        .parentElement.focus();
-    }, 500);
-  });
-
-document.querySelectorAll('input[type="time"]').forEach(function (item) {
-  item.addEventListener("change", (event) => {
-    setTimeout(function () {
-      item.parentElement.focus();
-    }, 500);
-  });
-});
-
-document.querySelectorAll('input[type="date"]').forEach(function (item) {
-  item.addEventListener("change", (event) => {
-    setTimeout(function () {
-      item.parentElement.focus();
-    }, 500);
-  });
-});
-
-
-
-*/ // may better to compare all alarms
+// may better to compare all alarms
 // with all events
 // to clean
 let add_alarm = function(date, message_text, id) {
@@ -1887,22 +1784,6 @@ let remove_alarm = function(id) {
         };
     }
 };
-let test_alarm = function() {
-    if (navigator.mozAlarms) {
-        var request = navigator.mozAlarms.getAll();
-        request.onsuccess = function() {
-            this.result.forEach(function(alarm) {
-                console.log("Id:", alarm.id);
-                console.log("date:", alarm.date);
-                console.log("respectTimezone:", alarm.respectTimezone);
-                console.log("data:", JSON.stringify(alarm.data));
-            });
-        };
-        request.onerror = function() {
-            console.log("An error occurred:", this.error.name);
-        };
-    }
-};
 // //////////////////
 // //BUILD EVENT-LIST
 // /////////////////
@@ -1911,8 +1792,8 @@ let test_alarm = function() {
 // STORE EVENTS//
 // /////////////
 // /////////////
-let convert_ics_date = function(t8) {
-    let nn = t8.replace(/-/g, "");
+let convert_ics_date = function(t7) {
+    let nn = t7.replace(/-/g, "");
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
     nn = nn + "00";
@@ -1977,11 +1858,12 @@ let store_event = function() {
     let without_subscription = events.filter((events1)=>events1.isSubscription === false
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
-        // clean form
         clear_form();
         _eximportJs.export_ical("greg.ics", without_subscription);
-        _helperJs.side_toaster("event saved", 2000);
-        _mithrilDefault.default.route.set("/page_calendar");
+        _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        setTimeout(function() {
+            _mithrilDefault.default.route.set("/page_calendar");
+        }, 200);
     }).catch(function(err) {
         console.log(err);
     });
@@ -2046,31 +1928,11 @@ let update_event = function() {
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
         // clean form
-        renderHello(events);
+        _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        _mithrilDefault.default.route.set("/page_calendar");
         _eximportJs.export_ical("greg.ics", value);
         clear_form();
     }).catch(function(err) {});
-};
-// ////////////
-// EDIT EVENT
-// /////////
-let edit_event = function() {
-    document.getElementById("delete-event").style.display = "block";
-    document.getElementById("export-event").style.display = "block";
-    events.forEach(function(index) {
-        if (index.UID == status.selected_day_id) {
-            document.getElementById("event-title").value = index.SUMMARY;
-            document.getElementById("event-date").value = index.dateStart;
-            document.getElementById("event-date-end").value = index.dateEnd;
-            document.getElementById("event-time-start").value = index.time_start;
-            document.getElementById("event-time-end").value = index.time_end;
-            document.getElementById("event-description").value = index.DESCRIPTION;
-            document.getElementById("event-location").value = index.LOCATION;
-            document.querySelector("#event-notification-time").value = index.alarm;
-            document.getElementById("form-image").src = index.ATTACH;
-            document.getElementById("event-recur").value = index.rrule_;
-        }
-    });
 };
 //////////////
 //DELETE EVENT
@@ -2097,7 +1959,6 @@ let t = new Date();
 let m = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear();
-//event_check_day(y + "-" + m + "-" + d);
 // callback import event
 let import_event_callback = function(id, date) {
     _helperJs.toaster("done", 2000);
@@ -2105,25 +1966,24 @@ let import_event_callback = function(id, date) {
     let without_subscription = events.filter((events4)=>events4.isSubscription === false
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
-        renderHello(events);
         _eximportJs.export_ical("greg.ics", without_subscription);
     }).catch(function(err) {});
 };
 let set_datetime_form = function() {
-    let d3 = new Date();
-    let d_h = `0${d3.getHours()}`.slice(-2);
-    let d_m = `0${d3.getMinutes()}`.slice(-2);
+    let d2 = new Date();
+    let d_h = `0${d2.getHours()}`.slice(-2);
+    let d_m = `0${d2.getMinutes()}`.slice(-2);
     let p = d_h + ":" + d_m;
-    let d_h_ = `0${d3.getHours() + 1}`.slice(-2);
-    let d_m_ = `0${d3.getMinutes()}`.slice(-2);
+    let d_h_ = `0${d2.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d2.getMinutes()}`.slice(-2);
     if (d_h_ > 23) d_h_ = "23";
     let pp = d_h_ + ":" + d_m_;
     document.getElementById("event-time-start").value = p;
     document.getElementById("event-time-end").value = pp;
 };
 let pick_image_callback = function(resultBlob) {
-    let t9 = document.getElementById("form-image");
-    t9.src = URL.createObjectURL(resultBlob);
+    let t8 = document.getElementById("form-image");
+    t8.src = URL.createObjectURL(resultBlob);
     document.getElementById("form-image-wrapper").classList.add("item");
     document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
         i.setAttribute("tabindex", p);
@@ -2160,6 +2020,7 @@ function longpress_action(param) {
 let backup_events = function() {
     _localforageDefault.default.getItem("events").then(function(value) {
         _eximportJs.export_ical("greg.ics", value);
+        _helperJs.bottom_bar();
     }).catch(function(err) {
         console.log(err);
     });
@@ -2180,11 +2041,11 @@ function shortpress_action(param) {
             break;
         case "ArrowUp":
             if (_mithrilDefault.default.route.get() == "/page_calendar") nav(-7);
-            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event") nav(-1);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(-1);
             break;
         case "ArrowDown":
             if (_mithrilDefault.default.route.get() == "/page_calendar") nav(7);
-            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_edit_event") nav(1);
+            if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(1);
             break;
         case "ArrowRight":
             if (_mithrilDefault.default.route.get() != "/page_calendar") return true;
@@ -2228,8 +2089,11 @@ function shortpress_action(param) {
                     return false;
                 }
                 status.selected_day_id = document.activeElement.getAttribute("data-id");
-                edit_event();
-                _mithrilDefault.default.route.set("/page_add_edit_event");
+                update_event_date = events.filter(function(arr) {
+                    return arr.UID == status.selected_day_id;
+                })[0];
+                _mithrilDefault.default.route.set("/page_edit_event");
+                return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
                 console.log(document.activeElement.id);
@@ -2241,7 +2105,7 @@ function shortpress_action(param) {
                 return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_calendar") {
-                _mithrilDefault.default.route.set("/page_add_edit_event");
+                _mithrilDefault.default.route.set("/page_add_event");
                 // when new event
                 // set time
                 // set_datetime_form();
@@ -2276,7 +2140,8 @@ function shortpress_action(param) {
             if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") _mithrilDefault.default.route.get() == "/page_calendar" ? _mithrilDefault.default.route.set("/page_events") : _mithrilDefault.default.route.set("/page_calendar");
             break;
         case "Backspace":
-            if (_mithrilDefault.default.route.get() == "/page_add_edit_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
+            if (_mithrilDefault.default.route.get() == "/page_add_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
+            if (_mithrilDefault.default.route.get() == "/page_edit_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_options") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") _mithrilDefault.default.route.set("/page_options");
             break;
@@ -5020,11 +4885,7 @@ let parse_ics = function(data, callback, saveOnDevice, subscription) {
             }
             let parse_rrule = function() {
                 let feedback = "none";
-                if (ev.rrule != null || ev.rrule != undefined) {
-                    let a = ev.rrule;
-                    feedback = a.freq;
-                //console.log(ev.rrule);
-                }
+                if (ev.rrule != null || ev.rrule != undefined) feedback = ev.rrule.freq;
                 return feedback;
             };
             let imp = {

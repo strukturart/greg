@@ -275,6 +275,15 @@ div#side-toast img {
 /*///////////////////////////
 ///VIEWS////////////////*/
 
+article.events {
+  margin: 0 0 10px 0;
+  padding: 5px;
+}
+
+article.events[data-alarm="none"] img.bell {
+  display: none;
+}
+
 div#calendar {
   padding: 10px;
 }
@@ -317,10 +326,11 @@ div#calendar div#calendar-body div:focus {
 div#calendar div#calendar-body div div {
   text-align: center;
   padding: 2px 0 0 0;
+  background: white;
 }
 
 div#calendar div#calendar-body div div.today {
-  background: pink;
+  background: rgb(120, 183, 255);
 }
 
 div#calendar div#calendar-body :focus span {
@@ -334,11 +344,11 @@ div#calendar div#calendar-body :focus span {
 }
 
 div#calendar div#calendar-body div div.event {
-  background: var(--color-seven);
+  background: pink !important;
 }
 
 div#calendar div#calendar-body div div.subscription {
-  background: var(--color-eight);
+  background: rgb(245, 245, 169);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
@@ -453,14 +463,6 @@ div#event-recur-wrapper {
   margin: 0 0 20px 0 !important;
 }
 
-button#delete-event {
-  display: none;
-}
-
-button#export-event {
-  display: none;
-}
-
 /*List view*/
 
 div#list-view {
@@ -475,14 +477,13 @@ div#list-view {
 div#list-view article {
   margin: 0 0 15px 0;
 }
-
-div#list-view div.icons-bar {
-  width: 50px;
+/*event slider*/
+div.icons-bar {
   margin: 5px 0;
 }
 
-div#list-view div.icons-bar img {
-  width: 15px;
+div.icons-bar img {
+  max-width: 15px;
   height: auto;
 }
 
@@ -490,7 +491,6 @@ div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
   min-height: 70px;
-  background: red;
 }
 
 div#event-slider div.date {
@@ -543,11 +543,25 @@ div#event-slider article {
   font-size: 0.9rem;
   position: absolute;
   top: 0px;
+  display: none;
+}
+
+div#event-slider article > * {
+  text-align: center;
+}
+div#event-slider article:nth-child(1) {
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+  position: absolute;
+  top: 0px;
+  display: block;
 }
 
 div#event-slider article h2 {
   background: var(--color-five);
 }
+
+/*options view*/
 
 div#options {
   position: absolute;
@@ -722,45 +736,6 @@ div#settings label {
   min-width: 80%;
   height: 30px;
   margin: 5px 5px 0 0;
-}
-
-#goodbye {
-  position: fixed;
-  z-index: 50000;
-  left: 0;
-  top: 0;
-  background: black;
-  color: white;
-  font-size: 18px;
-  padding: 70px 5px 5px 5px;
-  display: none;
-}
-
-#ciao {
-  padding: 5px;
-  text-align: center;
-  display: none;
-}
-
-#ciao ul {
-  margin: 20px 0 0px 0;
-}
-
-#ciao ul li {
-  margin: 0 0 0px 0;
-  font-size: 14px;
-  list-style: none;
-}
-
-#ciao ul li:first-child {
-  color: yellow;
-  margin: 0 0 5px 0;
-}
-
-#donation {
-  padding: 5px;
-  text-align: center;
-  display: none;
 }
 
 @keyframes jump {

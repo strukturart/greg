@@ -61,9 +61,7 @@ export let export_ical = function (filename, event_data) {
 };
 
 // //////////
-
 // /LIST ICS
-
 // ////////////
 
 export let list_ics = function () {
@@ -169,9 +167,7 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
         let parse_rrule = function () {
           let feedback = "none";
           if (ev.rrule != null || ev.rrule != undefined) {
-            let a = ev.rrule;
-            feedback = a.freq;
-            //console.log(ev.rrule);
+            feedback = ev.rrule.freq;
           }
 
           return feedback;

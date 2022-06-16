@@ -22,8 +22,10 @@
   "devDependencies": {
     "buffer": "^6.0.3",
     "cssnano": "^5.0.17",
+    "events": "^3.3.0",
     "parcel-plugin-static-files-copy": "^2.6.0",
-    "postcss": "^8.4.6"
+    "postcss": "^8.4.6",
+    "stream-browserify": "^3.0.0"
   },
   "dependencies": {
     "as": "^0.4.1",
@@ -32,7 +34,8 @@
     "ical.js": "^1.5.0",
     "jsqr": "^1.4.0",
     "localforage": "^1.10.0",
-    "mithril":"^3.0.0-next.3"
+    "mithril": "^3.0.0-next.3",
+    "tsdav": "^2.0.2"
   },
   "staticFiles": {
     "staticPath": [
