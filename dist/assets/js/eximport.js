@@ -100,6 +100,8 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
 
   const datas = ical.parseICS(data);
 
+  if (subscription) subscription = "subscription";
+
   let last_uid;
   let last_date;
 

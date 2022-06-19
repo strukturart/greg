@@ -596,8 +596,10 @@ let getManifest = function(callback) {
 let self;
 //KaiOs store true||false
 function manifest(a) {
+    console.log(a.manifest.version);
     self = a.origin;
     let t1 = document.getElementById("KaiOsAds-Wrapper");
+    document.getElementById("version").innerText = "Verson: " + a.manifest.version;
     if (a.installOrigin == "app://kaios-plus.kaiostech.com") document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
     else {
         console.log("Ads free");
@@ -622,7 +624,6 @@ let find_closest_date = function(search_term) {
         if (search > new Date(events[events.length - 1].dateStart).getTime()) {
             t2 = events[events.length - 1].dateStart;
             i = events.length;
-            console.log("ii" + t2);
         }
     }
     document.querySelectorAll("article[data-date='" + t2 + "']")[0].focus();
@@ -645,17 +646,22 @@ let event_check = function(date) {
         let a = new Date(events[t3].dateStart).getTime();
         let b = new Date(events[t3].dateEnd).getTime();
         let c = new Date(date).getTime();
+        if (a === c) {
+            feedback.event = true;
+            return feedback;
+        }
         // multi day event
         if (events[t3]["rrule_"] == "none") {
             if (a === c || b === c || a < c && b > c) {
                 feedback.event = true;
                 if (events[t3].isSubscription === true) feedback.subscription = true;
                 if (events[t3].multidayevent === true) feedback.multidayevent = true;
-                if (events[t3].time_end == "00:00:00" && events[t3].dateEnd == date) {
-                    feedback.subscription = false;
-                    feedback.event = false;
-                }
-                t3 = events.length;
+                /*
+          if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
+            feedback.subscription = false;
+            feedback.event = false;
+          }*/ t3 = events.length;
+                return feedback;
             }
         }
     }
@@ -681,27 +687,26 @@ let rrule_check = function(date) {
         let b = new Date(events[t4].dateEnd).getTime();
         let c = new Date(date).getTime();
         //recurrences
-        if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) //console.log(events[t]["RRULE"]);
-        {
+        if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) {
             if (a === c || b === c || a < c && b > c) {
+                console.log(events[t4]["RRULE"]);
                 if (events[t4].rrule_ == "MONTHLY") {
                     if (new Date(events[t4].dateStart).getDate() === new Date(date).getDate()) {
                         feedback.event = true;
                         feedback.rrule = true;
-                    // t = events.length;
-                    //return feedback;
+                        t4 = events.length;
                     }
                 }
                 if (events[t4]["rrule_"] == "DAILY") {
                     feedback.rrule = true;
                     feedback.event = true;
-                //t = events.length;
-                //return feedback;
+                    t4 = events.length;
                 }
                 if (events[t4].rrule_ == "WEEKLY") {
-                    if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) feedback.rrule = true;
-                // t = events.length;
-                //return feedback;
+                    if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) {
+                        feedback.rrule = true;
+                        t4 = events.length;
+                    }
                 }
                 if (events[t4].rrule_ == "YEARLY") {
                     console.log("yearly");
@@ -710,7 +715,7 @@ let rrule_check = function(date) {
                     if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                         feedback.rrule = true;
                         feedback.event = true;
-                    //t = events.length;
+                        t4 = events.length;
                     }
                 }
             }
@@ -724,10 +729,10 @@ let rrule_check = function(date) {
 let slider = [];
 let slider_index = 0;
 let slider_navigation = function() {
-    console.log(slider_index);
-    let p = document.querySelectorAll("div#event-slider-indicator div div");
-    if (slider_index == document.querySelectorAll("div#event-slider article").length - 1) slider_index = -1;
     slider_index++;
+    if (slider_index > document.querySelectorAll("div#event-slider article").length - 1) slider_index = 0;
+    let p = document.querySelectorAll("div#event-slider-indicator div div");
+    console.log(document.querySelectorAll("div#event-slider article").length - 1 + "/" + slider_index);
     document.querySelectorAll("div#event-slider article").forEach(function(item) {
         item.style.display = "none";
     });
@@ -747,62 +752,93 @@ let event_slider = function(date) {
         let a = new Date(events[i].dateStart).getTime();
         let b = new Date(events[i].dateEnd).getTime();
         let c = new Date(date).getTime();
-        let d1 = events[i].rrule_;
+        let d = events[i].rrule_;
         events[i].alarm;
         //all day event
-        if (a === c || b === c || a < c && b > c) {
-            if (events[i].time_start == "00:00:00" && events[i].time_end == "00:00:00") slider.push(events[i]);
-        }
-        if (d1 === "none" || d1 === "") {
-            if (a === c || b === c || a < c && b > c) {
-                //if multiday event
-                //the end date is next day
-                //time is 00:00:00
-                if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) return false;
-                slider.push(events[i]);
-                k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-            }
-        } else if (a === c || b === c || a < c && b > c && d1) {
-            //recurrences
-            //YEAR
-            if (d1 == "YEARLY") {
-                let tt = new Date(item[i].getAttribute("data-date"));
-                let pp = new Date(date);
-                if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
-                    slider.push(item[i]);
-                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-                }
-            }
-            //WEEK
-            if (d1 == "WEEKLY") {
-                if (new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()) {
-                    slider.push(item[i]);
-                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-                }
-            }
-            //MONTH
-            if (d1 == "MONTHLY") {
-                if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
-                    slider.push(item[i]);
-                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-                }
-            }
-            if (d1 == "DAILY") {
-                if (a === c || b === c || a < c && b > c) {
-                    slider.push(item[i]);
-                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-                }
-            }
-        }
+        /*
+    if (a === c || b === c || (a < c && b > c)) {
+      if (
+        events[i].time_start == "00:00:00" &&
+        events[i].time_end == "00:00:00"
+      ) {
+        slider.push(events[i]);
+      }
     }
+    */ if (a === c || b === c || a < c && b > c) {
+            slider.push(events[i]);
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+        }
+    /*
+    if (d === "none" || d === "") {
+      if (a === c || b === c || (a < c && b > c)) {
+        //if multiday event
+        //the end date is next day
+        //time is 00:00:00
+        if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) {
+          // return false;
+        }
+        slider.push(events[i]);
+
+        k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+      }
+    } else {
+      if (a === c || b === c || (a < c && b > c && d)) {
+        //recurrences
+        //YEAR
+        if (d == "YEARLY") {
+          let tt = new Date(item[i].getAttribute("data-date"));
+          let pp = new Date(date);
+
+          if (
+            tt.getDate() + "-" + tt.getMonth() ===
+            pp.getDate() + "-" + pp.getMonth()
+          ) {
+            slider.push(item[i]);
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
+        //WEEK
+        if (d == "WEEKLY") {
+          if (
+            new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()
+          ) {
+            slider.push(item[i]);
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
+        //MONTH
+
+        if (d == "MONTHLY") {
+          if (
+            new Date(item[i].item.dateStart).getDate() ==
+            new Date(date).getDate()
+          ) {
+            slider.push(item[i]);
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
+        if (d == "DAILY") {
+          if (a === c || b === c || (a < c && b > c)) {
+            slider.push(item[i]);
+
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+      }
+    }
+    */ }
     if (slider != "") {
         slider.forEach(function(item) {
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
         });
-        if (slider >= 0) {
-            document.querySelector("div#event-slider article")[0].style.opacity = "100";
-            document.querySelector("div#event-slider article")[0].style.display = "block";
-        }
+        if (slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
+        if (slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
     }
 };
 ////
@@ -812,7 +848,6 @@ let jump_to_today = function() {
     let currentMonth1 = today.getMonth();
     let currentYear1 = today.getFullYear();
     showCalendar(currentMonth1, currentYear1);
-    //event_check_day(status.selected_day);
     event_slider(status.selected_day);
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
@@ -888,10 +923,10 @@ let showCalendar = function(month, year) {
                 cell.setAttribute("data-index", new Date(p).toISOString());
                 // check if has event
                 if (events.length > 0) {
+                    console.log(event_check(p).event);
                     if (event_check(p).event == true) cell.classList.add("event");
                     if (rrule_check(p).rrule) cell.classList.add("event");
-                    // check if has event + subscription
-                    if (event_check(p).subscription == true) cell.classList.add("subscription");
+                    event_check(p).subscription;
                 }
                 cell.classList.add("item");
                 row.appendChild(cell);
@@ -952,14 +987,20 @@ var page_calendar = {
                 id: "calendar-body"
             }),
             _mithrilDefault.default("div", {
-                id: "event-slider"
-            }),
+                id: "event-slider",
+                class: "flex justify-content-spacearound"
+            }, [
+                _mithrilDefault.default("div", {
+                    id: "slider-inner",
+                    class: "flex"
+                })
+            ]),
             _mithrilDefault.default("div", {
                 id: "event-slider-indicator",
                 class: "flex width-100 justify-content-spacearound"
             }, [
                 _mithrilDefault.default("div", {
-                    class: "flex width-100 justify-content-spacearound"
+                    class: "flex justify-content-spacearound"
                 })
             ]), 
         ]);
@@ -1004,13 +1045,13 @@ var page_events = {
             oncreate: ()=>setTimeout(function() {
                     _helperJs.sort_array(events, "dateStart", "date");
                     find_closest_date(status.selected_day);
-                    _helperJs.bottom_bar("edit", "select", "");
+                    _helperJs.bottom_bar("edit", "calendar", "");
                 }, 1500)
         }, [
             events.map(function(item, index) {
-                _helperJs.bottom_bar("edit", "month", "options");
+                _helperJs.bottom_bar("edit", "calendar", "");
                 return _mithrilDefault.default("article", {
-                    class: "item events",
+                    class: "item events " + item.isSubscription,
                     tabindex: index,
                     "data-id": item.UID,
                     "data-date": item.dateStart,
@@ -1052,6 +1093,7 @@ var page_options = {
         return _mithrilDefault.default("div", {
             id: "options"
         }, [
+            _mithrilDefault.default("h2", "Key assignment"),
             _mithrilDefault.default("ul", {
                 id: "keys",
                 class: "item",
@@ -1060,9 +1102,6 @@ var page_options = {
                     dom.focus();
                 }
             }, [
-                _mithrilDefault.default("li", [
-                    _mithrilDefault.default("span", "keys")
-                ]),
                 _mithrilDefault.default("li", [
                     _mithrilDefault.default("span", "1 & 3")
                 ], "Months"),
@@ -1077,8 +1116,19 @@ var page_options = {
                 ], "Moon"),
                 _mithrilDefault.default("li", [
                     _mithrilDefault.default("span", "*")
-                ], "Jump to today"), 
+                ], "Jump to today"),
+                _mithrilDefault.default("li", [
+                    _mithrilDefault.default("span", {
+                        class: "keys-current-day"
+                    }, "")
+                ], "current day"),
+                _mithrilDefault.default("li", [
+                    _mithrilDefault.default("span", {
+                        class: "keys-day-event"
+                    }, "")
+                ], "day with event"), 
             ]),
+            _mithrilDefault.default("h2", "settings"),
             _mithrilDefault.default("div", {
                 class: "item input-parent",
                 id: "event-notification-time-wrapper",
@@ -1088,7 +1138,13 @@ var page_options = {
                     for: "default-notification"
                 }, "default Notification"),
                 _mithrilDefault.default("select", {
-                    id: "default-notification-time"
+                    id: "default-notification-time",
+                    onchange: function() {
+                        store_settings();
+                    },
+                    oncreate: function() {
+                        load_settings();
+                    }
                 }, [
                     _mithrilDefault.default("option", {
                         value: "none"
@@ -1109,12 +1165,14 @@ var page_options = {
             ]),
             _mithrilDefault.default("button", {
                 class: "item",
-                "data-function": "export",
-                tabindex: "2"
+                tabindex: "2",
+                onclick: function() {
+                    backup_events();
+                }
             }, "Backup events"),
+            _mithrilDefault.default("h2", "Subscriptions"),
             _mithrilDefault.default("button", {
                 class: "item",
-                "data-function": "add-subscription",
                 tabindex: "3",
                 onclick: function() {
                     _mithrilDefault.default.route.set("/page_subscriptions");
@@ -1122,7 +1180,7 @@ var page_options = {
             }, "add subscription"),
             _mithrilDefault.default("div", {
                 id: "subscription-text"
-            }, "Subscriptions"),
+            }, "Your subscriptions"),
             subscriptions.map(function(item, index) {
                 return _mithrilDefault.default("button", {
                     class: "item subscriptions-item",
@@ -1171,9 +1229,6 @@ var page_subscriptions = {
             _mithrilDefault.default("div", {
                 class: "item input-parent",
                 tabindex: "1",
-                onfocus: function() {
-                    _helperJs.bottom_bar("qr-scan", "", "");
-                },
                 onblur: function() {
                     _helperJs.bottom_bar("", "", "");
                 }
@@ -1184,7 +1239,13 @@ var page_subscriptions = {
                 _mithrilDefault.default("input", {
                     placeholder: "URL",
                     type: "text",
-                    id: "cal-subs-url"
+                    id: "cal-subs-url",
+                    onfocus: function() {
+                        _helperJs.bottom_bar("qr-scan", "", "");
+                    },
+                    onblur: function() {
+                        _helperJs.bottom_bar("", "", "");
+                    }
                 }), 
             ]),
             _mithrilDefault.default("button", {
@@ -1376,23 +1437,7 @@ var page_add_event = {
                 onclick: function() {
                     store_event();
                 }
-            }, "save"),
-            _mithrilDefault.default("button", {
-                tabindex: "11",
-                id: "delete-event",
-                class: "item",
-                onclick: function() {
-                    delete_event();
-                }
-            }, "delete"),
-            _mithrilDefault.default("button", {
-                tabindex: "12",
-                id: "export-event",
-                class: "item",
-                onclick: function() {
-                    store_event();
-                }
-            }, "export event"), 
+            }, "save"), 
         ]);
     },
     oncreate: function() {
@@ -1571,7 +1616,7 @@ var page_edit_event = {
             }, [
                 _mithrilDefault.default("img", {
                     id: "form-image",
-                    "data-blob": update_event_date.ATTACH
+                    "src": update_event_date.ATTACH
                 }), 
             ]),
             _mithrilDefault.default("button", {
@@ -1589,15 +1634,7 @@ var page_edit_event = {
                 onclick: function() {
                     update_event();
                 }
-            }, "update"),
-            _mithrilDefault.default("button", {
-                tabindex: "12",
-                id: "export-event",
-                class: "item",
-                onclick: function() {
-                    export_data();
-                }
-            }, "export event"), 
+            }, "update"), 
         ]);
     }
 };
@@ -1610,6 +1647,14 @@ _mithrilDefault.default.route(root, "/page_calendar", {
     "/page_subscriptions": page_subscriptions
 });
 _mithrilDefault.default.route.prefix = "#";
+let store_settings = function() {
+    settings.default_notification = document.getElementById("default-notification-time").value;
+    _localforageDefault.default.setItem("settings", settings).then(function(value) {
+        _helperJs.side_toaster("settings saved", 2000);
+    }).catch(function(err) {
+        console.log(err);
+    });
+};
 let lp = 0;
 let load_subscriptions = function() {
     if (subscriptions == null || subscriptions.lenght == -1 || subscriptions.lenght == "undefined") return false;
@@ -1651,8 +1696,7 @@ let delete_subscription = function() {
     );
     _localforageDefault.default.setItem("subscriptions", updated_subscriptions).then(function(value) {
         //Do other things once the value has been saved.
-        console.log("saved: " + value);
-        _helperJs.toaster("subscription deleted", 2000);
+        _helperJs.side_toaster("subscription deleted", 2000);
     }).catch(function(err) {
         // This code runs if there were any errors
         _helperJs.toaster(err, 2000);
@@ -1678,14 +1722,17 @@ _localforageDefault.default.getItem("subscriptions").then(function(value) {
     // This code runs if there were any errors
     console.log(err);
 });
-_localforageDefault.default.getItem("settings").then(function(value) {
-    if (value == null) return false;
-    settings = value;
-    document.getElementById("default-notification-time").value = settings.default_notification;
-}).catch(function(err) {
-    // This code runs if there were any errors
-    console.log(err);
-});
+load_settings = function() {
+    _localforageDefault.default.getItem("settings").then(function(value) {
+        if (value == null) return false;
+        settings = value;
+        document.getElementById("default-notification-time").value = settings.default_notification;
+    }).catch(function(err) {
+        // This code runs if there were any errors
+        console.log(err);
+    });
+};
+load_settings();
 function handleVisibilityChange() {
     if (document.visibilityState === "hidden") status.visible = false;
     else setTimeout(function() {
@@ -1855,6 +1902,7 @@ let store_event = function() {
         add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
     events.push(event);
+    console.log(JSON.stringify(event));
     let without_subscription = events.filter((events1)=>events1.isSubscription === false
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
@@ -1970,12 +2018,12 @@ let import_event_callback = function(id, date) {
     }).catch(function(err) {});
 };
 let set_datetime_form = function() {
-    let d2 = new Date();
-    let d_h = `0${d2.getHours()}`.slice(-2);
-    let d_m = `0${d2.getMinutes()}`.slice(-2);
+    let d1 = new Date();
+    let d_h = `0${d1.getHours()}`.slice(-2);
+    let d_m = `0${d1.getMinutes()}`.slice(-2);
     let p = d_h + ":" + d_m;
-    let d_h_ = `0${d2.getHours() + 1}`.slice(-2);
-    let d_m_ = `0${d2.getMinutes()}`.slice(-2);
+    let d_h_ = `0${d1.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d1.getMinutes()}`.slice(-2);
     if (d_h_ > 23) d_h_ = "23";
     let pp = d_h_ + ":" + d_m_;
     document.getElementById("event-time-start").value = p;
@@ -1991,6 +2039,7 @@ let pick_image_callback = function(resultBlob) {
     let fr = new FileReader();
     fr.onload = function() {
         blob = fr.result;
+        console.log("blob" + blob);
     };
     fr.readAsDataURL(resultBlob);
 };
@@ -2020,7 +2069,6 @@ function longpress_action(param) {
 let backup_events = function() {
     _localforageDefault.default.getItem("events").then(function(value) {
         _eximportJs.export_ical("greg.ics", value);
-        _helperJs.bottom_bar();
     }).catch(function(err) {
         console.log(err);
     });
@@ -2092,7 +2140,10 @@ function shortpress_action(param) {
                 update_event_date = events.filter(function(arr) {
                     return arr.UID == status.selected_day_id;
                 })[0];
-                _mithrilDefault.default.route.set("/page_edit_event");
+                setTimeout(function() {
+                    console.log(update_event_date.ATTACH);
+                    _mithrilDefault.default.route.set("/page_edit_event");
+                }, 1000);
                 return true;
             }
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
@@ -2143,7 +2194,10 @@ function shortpress_action(param) {
             if (_mithrilDefault.default.route.get() == "/page_add_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_edit_event" && document.activeElement.tagName != "INPUT") _mithrilDefault.default.route.set("/page_calendar");
             if (_mithrilDefault.default.route.get() == "/page_options") _mithrilDefault.default.route.set("/page_calendar");
-            if (_mithrilDefault.default.route.get() == "/page_subscriptions") _mithrilDefault.default.route.set("/page_options");
+            if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
+                _mithrilDefault.default.route.set("/page_options");
+                if (document.getElementById("qr-screen").style == "block") _scanJs.stop_scan(stop_scan_callback);
+            }
             break;
     }
 }
@@ -4857,6 +4911,7 @@ let list_ics = function() {
 let parse_ics = function(data, callback, saveOnDevice, subscription) {
     const ical = require("ical");
     const datas = ical.parseICS(data);
+    if (subscription) subscription = "subscription";
     let last_uid;
     let last_date;
     for(let k in datas)if (datas.hasOwnProperty(k)) {
@@ -26077,17 +26132,15 @@ m.route = require("./route");
 m.render = require("./render");
 m.redraw = mountRedraw.redraw;
 m.request = request.request;
-m.jsonp = request.jsonp;
 m.parseQueryString = require("./querystring/parse");
 m.buildQueryString = require("./querystring/build");
 m.parsePathname = require("./pathname/parse");
 m.buildPathname = require("./pathname/build");
 m.vnode = require("./render/vnode");
-m.PromisePolyfill = require("./promise/polyfill");
 m.censor = require("./util/censor");
 module.exports = m;
 
-},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./promise/polyfill":"b42rx","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
+},{"./hyperscript":"aVriM","./request":"ljSDe","./mount-redraw":"dvp1x","./route":"8HVTZ","./render":"88EoG","./querystring/parse":"1Bqsf","./querystring/build":"dJUE4","./pathname/parse":"jciPb","./pathname/build":"lXNwO","./render/vnode":"egGtB","./util/censor":"9jEja"}],"aVriM":[function(require,module,exports) {
 "use strict";
 var hyperscript = require("./render/hyperscript");
 hyperscript.trust = require("./render/trust");
@@ -26272,141 +26325,10 @@ module.exports = function() {
 
 },{"../render/vnode":"egGtB","./hyperscriptVnode":"iRFFB"}],"ljSDe":[function(require,module,exports) {
 "use strict";
-var PromisePolyfill = require("./promise/promise");
 var mountRedraw = require("./mount-redraw");
-module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, PromisePolyfill, mountRedraw.redraw);
+module.exports = require("./request/request")(typeof window !== "undefined" ? window : null, mountRedraw.redraw);
 
-},{"./promise/promise":"hO3Aw","./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"hO3Aw":[function(require,module,exports) {
-/* global window */ "use strict";
-var global = arguments[3];
-var PromisePolyfill = require("./polyfill");
-if (typeof window !== "undefined") {
-    if (typeof window.Promise === "undefined") window.Promise = PromisePolyfill;
-    else if (!window.Promise.prototype.finally) window.Promise.prototype.finally = PromisePolyfill.prototype.finally;
-    module.exports = window.Promise;
-} else if (typeof global !== "undefined") {
-    if (typeof global.Promise === "undefined") global.Promise = PromisePolyfill;
-    else if (!global.Promise.prototype.finally) global.Promise.prototype.finally = PromisePolyfill.prototype.finally;
-    module.exports = global.Promise;
-} else module.exports = PromisePolyfill;
-
-},{"./polyfill":"b42rx"}],"b42rx":[function(require,module,exports) {
-"use strict";
-/** @constructor */ var PromisePolyfill = function(executor) {
-    if (!(this instanceof PromisePolyfill)) throw new Error("Promise must be called with 'new'.");
-    if (typeof executor !== "function") throw new TypeError("executor must be a function.");
-    var self = this, resolvers = [], rejectors = [], resolveCurrent = handler(resolvers, true), rejectCurrent = handler(rejectors, false);
-    var instance = self._instance = {
-        resolvers: resolvers,
-        rejectors: rejectors
-    };
-    var callAsync = typeof setImmediate === "function" ? setImmediate : setTimeout;
-    function handler(list, shouldAbsorb) {
-        return function execute(value) {
-            var then;
-            try {
-                if (shouldAbsorb && value != null && (typeof value === "object" || typeof value === "function") && typeof (then = value.then) === "function") {
-                    if (value === self) throw new TypeError("Promise can't be resolved with itself.");
-                    executeOnce(then.bind(value));
-                } else callAsync(function() {
-                    if (!shouldAbsorb && list.length === 0) console.error("Possible unhandled promise rejection:", value);
-                    for(var i = 0; i < list.length; i++)list[i](value);
-                    resolvers.length = 0, rejectors.length = 0;
-                    instance.state = shouldAbsorb;
-                    instance.retry = function() {
-                        execute(value);
-                    };
-                });
-            } catch (e) {
-                rejectCurrent(e);
-            }
-        };
-    }
-    function executeOnce(then) {
-        var runs = 0;
-        function run(fn) {
-            return function(value) {
-                if (runs++ > 0) return;
-                fn(value);
-            };
-        }
-        var onerror = run(rejectCurrent);
-        try {
-            then(run(resolveCurrent), onerror);
-        } catch (e) {
-            onerror(e);
-        }
-    }
-    executeOnce(executor);
-};
-PromisePolyfill.prototype.then = function(onFulfilled, onRejection) {
-    var self = this, instance = self._instance;
-    function handle(callback, list, next, state) {
-        list.push(function(value) {
-            if (typeof callback !== "function") next(value);
-            else try {
-                resolveNext(callback(value));
-            } catch (e) {
-                if (rejectNext) rejectNext(e);
-            }
-        });
-        if (typeof instance.retry === "function" && state === instance.state) instance.retry();
-    }
-    var resolveNext, rejectNext;
-    var promise = new PromisePolyfill(function(resolve, reject) {
-        resolveNext = resolve, rejectNext = reject;
-    });
-    handle(onFulfilled, instance.resolvers, resolveNext, true), handle(onRejection, instance.rejectors, rejectNext, false);
-    return promise;
-};
-PromisePolyfill.prototype.catch = function(onRejection) {
-    return this.then(null, onRejection);
-};
-PromisePolyfill.prototype.finally = function(callback) {
-    return this.then(function(value) {
-        return PromisePolyfill.resolve(callback()).then(function() {
-            return value;
-        });
-    }, function(reason) {
-        return PromisePolyfill.resolve(callback()).then(function() {
-            return PromisePolyfill.reject(reason);
-        });
-    });
-};
-PromisePolyfill.resolve = function(value) {
-    if (value instanceof PromisePolyfill) return value;
-    return new PromisePolyfill(function(resolve) {
-        resolve(value);
-    });
-};
-PromisePolyfill.reject = function(value) {
-    return new PromisePolyfill(function(resolve, reject) {
-        reject(value);
-    });
-};
-PromisePolyfill.all = function(list) {
-    return new PromisePolyfill(function(resolve, reject) {
-        var total = list.length, count = 0, values = [];
-        if (list.length === 0) resolve([]);
-        else for(var i1 = 0; i1 < list.length; i1++)(function(i) {
-            function consume(value) {
-                count++;
-                values[i] = value;
-                if (count === total) resolve(values);
-            }
-            if (list[i] != null && (typeof list[i] === "object" || typeof list[i] === "function") && typeof list[i].then === "function") list[i].then(consume, reject);
-            else consume(list[i]);
-        })(i1);
-    });
-};
-PromisePolyfill.race = function(list) {
-    return new PromisePolyfill(function(resolve, reject) {
-        for(var i = 0; i < list.length; i++)list[i].then(resolve, reject);
-    });
-};
-module.exports = PromisePolyfill;
-
-},{}],"dvp1x":[function(require,module,exports) {
+},{"./mount-redraw":"dvp1x","./request/request":"7XXSl"}],"dvp1x":[function(require,module,exports) {
 "use strict";
 var render = require("./render");
 module.exports = require("./api/mount-redraw")(render, typeof requestAnimationFrame !== "undefined" ? requestAnimationFrame : null, typeof console !== "undefined" ? console : null);
@@ -26671,11 +26593,6 @@ module.exports = function($window) {
     // this is not the case if the node moved (second and fourth part of the diff algo). We move
     // the old DOM nodes before updateNode runs because it enables us to use the cached `nextSibling`
     // variable rather than fetching it using `getNextSibling()`.
-    //
-    // The fourth part of the diff currently inserts nodes unconditionally, leading to issues
-    // like #1791 and #1999. We need to be smarter about those situations where adjascent old
-    // nodes remain together in the new list in a way that isn't covered by parts one and
-    // three of the diff algo.
     function updateNodes(parent, old, vnodes, hooks, nextSibling, ns) {
         if (old === vnodes || old == null && vnodes == null) return;
         else if (old == null || old.length === 0) createNodes(parent, vnodes, 0, vnodes.length, hooks, nextSibling, ns);
@@ -27369,69 +27286,13 @@ module.exports = function(render, schedule, console) {
 "use strict";
 var buildPathname = require("../pathname/build");
 var hasOwn = require("../util/hasOwn");
-module.exports = function($window, Promise, oncompletion) {
-    var callbackCount = 0;
+module.exports = function($window, oncompletion) {
     function PromiseProxy(executor) {
         return new Promise(executor);
     }
-    // In case the global Promise is some userland library's where they rely on
-    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
-    // similar. Let's *not* break them.
-    PromiseProxy.prototype = Promise.prototype;
-    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
-    ;
-    function makeRequest(factory) {
-        return function(url, args) {
-            if (typeof url !== "string") {
-                args = url;
-                url = url.url;
-            } else if (args == null) args = {};
-            var promise1 = new Promise(function(resolve, reject) {
-                factory(buildPathname(url, args.params), args, function(data) {
-                    if (typeof args.type === "function") {
-                        if (Array.isArray(data)) for(var i = 0; i < data.length; i++)data[i] = new args.type(data[i]);
-                        else data = new args.type(data);
-                    }
-                    resolve(data);
-                }, reject);
-            });
-            if (args.background === true) return promise1;
-            var count = 0;
-            function complete() {
-                if (--count === 0 && typeof oncompletion === "function") oncompletion();
-            }
-            return wrap(promise1);
-            function wrap(promise) {
-                var then = promise.then;
-                // Set the constructor, so engines know to not await or resolve
-                // this as a native promise. At the time of writing, this is
-                // only necessary for V8, but their behavior is the correct
-                // behavior per spec. See this spec issue for more details:
-                // https://github.com/tc39/ecma262/issues/1577. Also, see the
-                // corresponding comment in `request/tests/test-request.js` for
-                // a bit more background on the issue at hand.
-                promise.constructor = PromiseProxy;
-                promise.then = function() {
-                    count++;
-                    var next = then.apply(promise, arguments);
-                    next.then(complete, function(e) {
-                        complete();
-                        if (count === 0) throw e;
-                    });
-                    return wrap(next);
-                };
-                return promise;
-            }
-        };
-    }
-    function hasHeader(args, name) {
-        for(var key in args.headers){
-            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
-        }
-        return false;
-    }
-    return {
-        request: makeRequest(function(url, args, resolve, reject) {
+    function makeRequest(url, args) {
+        return new Promise(function(resolve, reject) {
+            url = buildPathname(url, args.params);
             var method = args.method != null ? args.method.toUpperCase() : "GET";
             var body = args.body;
             var assumeJSON = (args.serialize == null || args.serialize === JSON.serialize) && !(body instanceof $window.FormData || body instanceof $window.URLSearchParams);
@@ -27482,8 +27343,13 @@ module.exports = function($window, Promise, oncompletion) {
                         response = args.extract(ev.target, args);
                         success = true;
                     } else if (typeof args.deserialize === "function") response = args.deserialize(response);
-                    if (success) resolve(response);
-                    else {
+                    if (success) {
+                        if (typeof args.type === "function") {
+                            if (Array.isArray(response)) for(var i = 0; i < response.length; i++)response[i] = new args.type(response[i]);
+                            else response = new args.type(response);
+                        }
+                        resolve(response);
+                    } else {
                         var completeErrorResponse = function() {
                             try {
                                 message = ev.target.responseText;
@@ -27530,23 +27396,55 @@ module.exports = function($window, Promise, oncompletion) {
             else if (typeof args.serialize === "function") xhr.send(args.serialize(body));
             else if (body instanceof $window.FormData || body instanceof $window.URLSearchParams) xhr.send(body);
             else xhr.send(JSON.stringify(body));
-        }),
-        jsonp: makeRequest(function(url, args, resolve, reject) {
-            var callbackName = args.callbackName || "_mithril_" + Math.round(Math.random() * 1e16) + "_" + callbackCount++;
-            var script = $window.document.createElement("script");
-            $window[callbackName] = function(data) {
-                delete $window[callbackName];
-                script.parentNode.removeChild(script);
-                resolve(data);
-            };
-            script.onerror = function() {
-                delete $window[callbackName];
-                script.parentNode.removeChild(script);
-                reject(new Error("JSONP request failed"));
-            };
-            script.src = url + (url.indexOf("?") < 0 ? "?" : "&") + encodeURIComponent(args.callbackKey || "callback") + "=" + encodeURIComponent(callbackName);
-            $window.document.documentElement.appendChild(script);
-        })
+        });
+    }
+    // In case the global Promise is some userland library's where they rely on
+    // `foo instanceof this.constructor`, `this.constructor.resolve(value)`, or
+    // similar. Let's *not* break them.
+    PromiseProxy.prototype = Promise.prototype;
+    PromiseProxy.__proto__ = Promise // eslint-disable-line no-proto
+    ;
+    function hasHeader(args, name) {
+        for(var key in args.headers){
+            if (hasOwn.call(args.headers, key) && key.toLowerCase() === name) return true;
+        }
+        return false;
+    }
+    return {
+        request: function(url, args) {
+            if (typeof url !== "string") {
+                args = url;
+                url = url.url;
+            } else if (args == null) args = {};
+            var promise1 = makeRequest(url, args);
+            if (args.background === true) return promise1;
+            var count = 0;
+            function complete() {
+                if (--count === 0 && typeof oncompletion === "function") oncompletion();
+            }
+            return wrap(promise1);
+            function wrap(promise) {
+                var then = promise.then;
+                // Set the constructor, so engines know to not await or resolve
+                // this as a native promise. At the time of writing, this is
+                // only necessary for V8, but their behavior is the correct
+                // behavior per spec. See this spec issue for more details:
+                // https://github.com/tc39/ecma262/issues/1577. Also, see the
+                // corresponding comment in `request/tests/test-request.js` for
+                // a bit more background on the issue at hand.
+                promise.constructor = PromiseProxy;
+                promise.then = function() {
+                    count++;
+                    var next = then.apply(promise, arguments);
+                    next.then(complete, function(e) {
+                        complete();
+                        if (count === 0) throw e;
+                    });
+                    return wrap(next);
+                };
+                return promise;
+            }
+        }
     };
 };
 
@@ -27624,7 +27522,6 @@ module.exports = require("./api/router")(typeof window !== "undefined" ? window 
 "use strict";
 var Vnode = require("../render/vnode");
 var m = require("../render/hyperscript");
-var Promise = require("../promise/promise");
 var buildPathname = require("../pathname/build");
 var parsePathname = require("../pathname/parse");
 var compileTemplate = require("../pathname/compileTemplate");
@@ -27853,7 +27750,7 @@ module.exports = function($window, mountRedraw) {
     return route1;
 };
 
-},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../promise/promise":"hO3Aw","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
+},{"../render/vnode":"egGtB","../render/hyperscript":"5oIm8","../pathname/build":"lXNwO","../pathname/parse":"jciPb","../pathname/compileTemplate":"dZhtQ","../util/assign":"3fHzt","../util/censor":"9jEja"}],"jciPb":[function(require,module,exports) {
 "use strict";
 var parseQueryString = require("../querystring/parse");
 // Returns `{path, params}` from `url`
@@ -27864,10 +27761,7 @@ module.exports = function(url) {
     var pathEnd = queryIndex < 0 ? queryEnd : queryIndex;
     var path = url.slice(0, pathEnd).replace(/\/{2,}/g, "/");
     if (!path) path = "/";
-    else {
-        if (path[0] !== "/") path = "/" + path;
-        if (path.length > 1 && path[path.length - 1] === "/") path = path.slice(0, -1);
-    }
+    else if (path[0] !== "/") path = "/" + path;
     return {
         path: path,
         params: queryIndex < 0 ? {} : parseQueryString(url.slice(queryIndex + 1, queryEnd))

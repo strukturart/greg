@@ -69,13 +69,17 @@ let getManifest = function (callback) {
 let self;
 //KaiOs store true||false
 function manifest(a) {
+  console.log(a.manifest.version);
   self = a.origin;
   let t = document.getElementById("KaiOsAds-Wrapper");
+  document.getElementById("version").innerText =
+    "Verson: " + a.manifest.version;
   if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
     document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
   } else {
     console.log("Ads free");
-    t.style.display = "none";
+    // t.style.display = "none";
+    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
   }
 }
 
@@ -101,7 +105,6 @@ let find_closest_date = function (search_term) {
     if (search > new Date(events[events.length - 1].dateStart).getTime()) {
       t = events[events.length - 1].dateStart;
       i = events.length;
-      console.log("ii" + t);
     }
   }
 
@@ -132,7 +135,6 @@ let event_check = function (date) {
       let c = new Date(date).getTime();
 
       if (a === c) {
-        console.log("yeah");
         feedback.event = true;
         return feedback;
       }
@@ -250,15 +252,23 @@ let slider = [];
 let slider_index = 0;
 
 let slider_navigation = function () {
-  console.log(slider_index);
   slider_index++;
 
-  let p = document.querySelectorAll("div#event-slider-indicator div div");
   if (
-    slider_index == document.querySelectorAll("div#event-slider article").length
+    slider_index >
+    document.querySelectorAll("div#event-slider article").length - 1
   ) {
     slider_index = 0;
   }
+
+  let p = document.querySelectorAll("div#event-slider-indicator div div");
+  console.log(
+    document.querySelectorAll("div#event-slider article").length -
+      1 +
+      "/" +
+      slider_index
+  );
+
   document
     .querySelectorAll("div#event-slider article")
     .forEach(function (item) {
@@ -293,6 +303,7 @@ let event_slider = function (date) {
       //if (events[i].alarm == "none") slider.push(events[i]);
     }
     //all day event
+    /*
     if (a === c || b === c || (a < c && b > c)) {
       if (
         events[i].time_start == "00:00:00" &&
@@ -301,11 +312,13 @@ let event_slider = function (date) {
         slider.push(events[i]);
       }
     }
+    */
 
     if (a === c || b === c || (a < c && b > c)) {
       slider.push(events[i]);
+      k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
     }
-
+    /*
     if (d === "none" || d === "") {
       if (a === c || b === c || (a < c && b > c)) {
         //if multiday event
@@ -369,6 +382,7 @@ let event_slider = function (date) {
         }
       }
     }
+    */
   }
 
   if (slider != "") {
@@ -381,10 +395,14 @@ let event_slider = function (date) {
         );
     });
     if (slider >= 0) {
-      document.querySelector("div#event-slider article")[0].style.opacity =
-        "100";
       document.querySelector("div#event-slider article")[0].style.display =
         "block";
+    }
+
+    if (slider >= 0) {
+      document.querySelectorAll(
+        "div#event-slider .indicator"
+      )[0].style.classList.add = "active";
     }
   }
 };
@@ -398,7 +416,6 @@ let jump_to_today = function () {
   let currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
 
-  //event_check_day(status.selected_day);
   event_slider(status.selected_day);
 
   status.selected_day = document.activeElement.getAttribute("data-date");
@@ -673,17 +690,17 @@ var page_events = {
           setTimeout(function () {
             sort_array(events, "dateStart", "date");
             find_closest_date(status.selected_day);
-            bottom_bar("edit", "select", "");
+            bottom_bar("edit", "calendar", "");
           }, 1500),
       },
       [
         events.map(function (item, index) {
-          bottom_bar("edit", "month", "options");
+          bottom_bar("edit", "calendar", "");
 
           return m(
             "article",
             {
-              class: "item events",
+              class: "item events " + item.isSubscription,
               tabindex: index,
               "data-id": item.UID,
               "data-date": item.dateStart,
@@ -710,9 +727,12 @@ var page_events = {
     );
   },
 };
+
 var page_options = {
   view: function () {
     return m("div", { id: "options" }, [
+      m("h2", "Key assignment"),
+
       m(
         "ul",
         {
@@ -724,14 +744,24 @@ var page_options = {
           },
         },
         [
-          m("li", [m("span", "keys")]),
           m("li", [m("span", "1 & 3")], "Months"),
           m("li", [m("span", "2")], "Event slider"),
           m("li", [m("span", "Enter")], "Events/Month"),
           m("li", [m("span", "#")], "Moon"),
           m("li", [m("span", "*")], "Jump to today"),
+          m(
+            "li",
+            [m("span", { class: "keys-current-day" }, "")],
+            "current day"
+          ),
+          m(
+            "li",
+            [m("span", { class: "keys-day-event" }, "")],
+            "day with event"
+          ),
         ]
       ),
+      m("h2", "settings"),
 
       m(
         "div",
@@ -747,7 +777,10 @@ var page_options = {
             {
               id: "default-notification-time",
               onchange: function () {
-                settings_;
+                store_settings();
+              },
+              oncreate: function () {
+                load_settings();
               },
             },
             [
@@ -762,14 +795,21 @@ var page_options = {
       ),
       m(
         "button",
-        { class: "item", "data-function": "export", tabindex: "2" },
+        {
+          class: "item",
+          tabindex: "2",
+          onclick: function () {
+            backup_events();
+          },
+        },
         "Backup events"
       ),
+      m("h2", "Subscriptions"),
+
       m(
         "button",
         {
           class: "item",
-          "data-function": "add-subscription",
           tabindex: "3",
           onclick: function () {
             m.route.set("/page_subscriptions");
@@ -777,7 +817,7 @@ var page_options = {
         },
         "add subscription"
       ),
-      m("div", { id: "subscription-text" }, "Subscriptions"),
+      m("div", { id: "subscription-text" }, "Your subscriptions"),
 
       subscriptions.map(function (item, index) {
         return m(
@@ -797,7 +837,32 @@ var page_options = {
           item.name
         );
       }),
-      m("div", { id: "KaiOsAds-Wrapper" }, [m("iframe")]),
+      m(
+        "div",
+        {
+          id: "KaiOsAds-Wrapper",
+          tabindex: subscriptions.length + 4,
+          class: "item",
+          onfocus: function () {
+            bottom_bar("", "open", "");
+            document.getElementById("KaiOsAd").style.border = "2px solid red";
+          },
+          onblur: function () {
+            bottom_bar("delete", "", "");
+          },
+          onclick: function () {
+            bottom_bar("", "open", "");
+          },
+        },
+        [
+          m("iframe", {
+            oncreate: function () {
+              document.querySelector("#KaiOsAds-Wrapper iframe").src =
+                "./ads.html";
+            },
+          }),
+        ]
+      ),
     ]);
   },
   oncreate: function () {
@@ -831,9 +896,7 @@ var page_subscriptions = {
         {
           class: "item input-parent",
           tabindex: "1",
-          onfocus: function () {
-            bottom_bar("qr-scan", "", "");
-          },
+
           onblur: function () {
             bottom_bar("", "", "");
           },
@@ -844,6 +907,12 @@ var page_subscriptions = {
             placeholder: "URL",
             type: "text",
             id: "cal-subs-url",
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
           }),
         ]
       ),
@@ -1125,7 +1194,7 @@ var page_edit_event = {
         m("div", { id: "form-image-wrapper" }, [
           m("img", {
             id: "form-image",
-            "data-blob": update_event_date.ATTACH,
+            "src": update_event_date.ATTACH,
           }),
         ]),
         m(
@@ -1167,6 +1236,21 @@ m.route(root, "/page_calendar", {
   "/page_subscriptions": page_subscriptions,
 });
 m.route.prefix = "#";
+
+let store_settings = function () {
+  settings.default_notification = document.getElementById(
+    "default-notification-time"
+  ).value;
+
+  localforage
+    .setItem("settings", settings)
+    .then(function (value) {
+      side_toaster("settings saved", 2000);
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+};
 
 let lp = 0;
 let load_subscriptions = function () {
@@ -1271,18 +1355,22 @@ localforage
     console.log(err);
   });
 
-localforage
-  .getItem("settings")
-  .then(function (value) {
-    if (value == null) return false;
-    settings = value;
-    document.getElementById("default-notification-time").value =
-      settings.default_notification;
-  })
-  .catch(function (err) {
-    // This code runs if there were any errors
-    console.log(err);
-  });
+load_settings = function () {
+  localforage
+    .getItem("settings")
+    .then(function (value) {
+      if (value == null) return false;
+      settings = value;
+      document.getElementById("default-notification-time").value =
+        settings.default_notification;
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      console.log(err);
+    });
+};
+
+load_settings();
 
 function handleVisibilityChange() {
   if (document.visibilityState === "hidden") {
@@ -1537,6 +1625,8 @@ let store_event = function () {
 
   events.push(event);
 
+  console.log(JSON.stringify(event));
+
   let without_subscription = events.filter(
     (events) => events.isSubscription === false
   );
@@ -1744,6 +1834,7 @@ let pick_image_callback = function (resultBlob) {
   let fr = new FileReader();
   fr.onload = function () {
     blob = fr.result;
+    console.log("blob" + blob);
   };
   fr.readAsDataURL(resultBlob);
 };
@@ -1786,7 +1877,6 @@ let backup_events = function () {
     .getItem("events")
     .then(function (value) {
       export_ical("greg.ics", value);
-      bottom_bar();
     })
     .catch(function (err) {
       console.log(err);
@@ -1904,7 +1994,12 @@ function shortpress_action(param) {
           return arr.UID == status.selected_day_id;
         })[0];
 
-        m.route.set("/page_edit_event");
+        setTimeout(function () {
+          console.log(update_event_date.ATTACH);
+
+          m.route.set("/page_edit_event");
+        }, 1000);
+
         return true;
       }
       if (m.route.get() == "/page_subscriptions") {
@@ -2000,9 +2095,9 @@ function shortpress_action(param) {
 
       if (m.route.get() == "/page_subscriptions") {
         m.route.set("/page_options");
+        if (document.getElementById("qr-screen").style == "block")
+          stop_scan(stop_scan_callback);
       }
-
-      //stop_scan(stop_scan_callback);
 
       break;
   }

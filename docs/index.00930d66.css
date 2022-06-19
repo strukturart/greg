@@ -142,6 +142,21 @@ div#intro {
   position: fixed;
 }
 
+div#intro #version {
+  z-index: 100000;
+  color: #fff;
+  text-align: center;
+  background: #000;
+  font-size: .8rem;
+  animation-name: intro_img;
+  animation-duration: 2s;
+  animation-iteration-count: 1;
+  animation-delay: 1s;
+  animation-fill-mode: forwards;
+  position: absolute;
+  bottom: 20px;
+}
+
 div#intro img {
   width: 180px;
   height: auto;
@@ -193,22 +208,6 @@ div#intro img {
   width: 220px;
 }
 
-ul#keys li span {
-  min-width: 60px;
-  width: 60px;
-  font-weight: bold;
-  display: inline-block;
-}
-
-ul#keys li {
-  margin: 0;
-  padding: 5px 0 0 10px;
-}
-
-ul#keys {
-  margin: 0 0 20px;
-}
-
 div#toast {
   height: auto;
   overflow: none;
@@ -240,11 +239,6 @@ div#side-toast {
 
 div#side-toast img {
   width: 60px;
-}
-
-article.events {
-  margin: 0 0 10px;
-  padding: 5px;
 }
 
 article.events[data-alarm="none"] img.bell {
@@ -430,16 +424,18 @@ div#event-recur-wrapper {
   margin: 0 0 20px !important;
 }
 
-div#list-view {
+div#events-wrapper {
   z-index: 4;
   height: 92vh;
+  width: 100vw;
   padding: 5px;
   position: absolute;
   top: 0;
   overflow: hidden;
 }
 
-div#list-view article {
+div#events-wrapper article {
+  min-width: 100%;
   margin: 0 0 15px;
 }
 
@@ -453,7 +449,7 @@ div.icons-bar img {
 }
 
 div#event-slider {
-  min-height: 70px;
+  min-height: 40px;
   margin: 15px 0 0;
   position: relative;
 }
@@ -496,7 +492,7 @@ div#event-slider-indicator div div.active {
 }
 
 div#event-slider-indicator {
-  margin: 3px 0 0 -10px;
+  margin: 3px 0 0;
 }
 
 div#event-slider article h2 {
@@ -530,7 +526,7 @@ div#event-slider article h2 {
 div#options {
   z-index: 4;
   height: 92vh;
-  padding: 10px 0 0;
+  padding: 0 5px 5px 0;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -548,6 +544,56 @@ div#options div#subscription-text {
   margin: 0 0 10px;
   padding: 10px;
   font-weight: bold;
+}
+
+ul#keys li span {
+  min-width: 60px;
+  width: 60px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+div#options ul#keys li {
+  margin: 0;
+  padding: 5px 0 0 10px;
+}
+
+div#options ul#keys:focus {
+  background: #fff;
+}
+
+div#options ul#keys {
+  margin: 0 0 20px;
+}
+
+ul#keys li:first-child {
+  min-width: 100vw;
+  width: 100%;
+}
+
+div#options h2 {
+  min-width: 100vw;
+  width: 100vw;
+  background: #e6e6e6;
+  margin: 0 0 10px;
+  padding: 10px;
+  font-weight: bold;
+}
+
+div#options li span.keys-day-event {
+  min-width: 20px;
+  width: 20px;
+  background: pink;
+  margin: 0 40px 0 0;
+  padding: 5px;
+}
+
+div#options li span.keys-current-day {
+  min-width: 20px;
+  width: 20px;
+  background: #78b7ff 0 0 / 10%;
+  margin: 0 40px 0 0;
+  padding: 5px;
 }
 
 div#subscription-form {
