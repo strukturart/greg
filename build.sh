@@ -3,6 +3,8 @@ rm -rf ./dist
 mkdir ./dist
 mkdir ./dist/assets
 cp ./application/manifest.webapp ./dist/
+cp ./application/ads.html ./dist/
+
 cp -r ./application/assets/ ./dist/
 parcel build --no-source-maps  --no-cache --public-url ./ application/index.html 
 

@@ -75,11 +75,11 @@ function manifest(a) {
   document.getElementById("version").innerText =
     "Verson: " + a.manifest.version;
   if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
-    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
+    settings.ads = true;
   } else {
     console.log("Ads free");
     // t.style.display = "none";
-    document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
+    settings.ads = false;
   }
 }
 
@@ -91,22 +91,29 @@ getManifest(manifest);
 
 let find_closest_date = function (search_term) {
   let t = 0;
-  let search = new Date(search_term).getTime();
+  let search = new Date(status.selected_day).getTime();
 
   for (let i = 0; i < events.length; i++) {
+    console.log(events);
     let item = new Date(events[i].dateStart).getTime();
+    console.log(search + " " + item + events[i].dateStart);
 
-    if (search < item) {
-      t = events[i - 1].dateStart;
+    if (search == item) {
+      t = events[i].dateStart;
       i = events.length;
-    }
-    //after last event
-    //focus last event
-    if (search > new Date(events[events.length - 1].dateStart).getTime()) {
-      t = events[events.length - 1].dateStart;
-      i = events.length;
+    } else {
+      if (search < item) {
+        t = events[i].dateStart;
+        i = events.length;
+      }
     }
   }
+
+  if (t == 0) {
+    t = events[0].dateStart;
+  }
+
+  console.log(t);
 
   document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
 
@@ -176,7 +183,6 @@ let rrule_check = function (date) {
   };
 
   for (let t = 0; t < events.length; t++) {
-    //console.log(events[t])
     if (typeof events[t] === "object") {
       feedback.event = false;
       feedback.subscription = false;
@@ -289,7 +295,8 @@ let slider_navigation = function () {
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector("div#event-slider-indicator div");
-  k.innerHTML = "";
+  if (k.innerHTML != "") k.innerHTML = "";
+
   document.querySelector("div#event-slider").innerHTML = "";
 
   for (let i = 0; i < events.length; i++) {
@@ -524,18 +531,12 @@ let showCalendar = function (month, year) {
 
         // check if has event
         if (events.length > 0) {
-          console.log(event_check(p).event);
           if (event_check(p).event == true) {
             cell.classList.add("event");
           }
 
           if (rrule_check(p).rrule) {
             cell.classList.add("event");
-          }
-
-          // check if has event + subscription
-          if (event_check(p).subscription == true) {
-            //cell.classList.add("subscription");
           }
         }
 
@@ -676,7 +677,7 @@ var page_calendar = {
         });
 
       clear_form();
-      document.querySelectorAll("div#event-slider").style.opacity = "100";
+      //document.querySelectorAll("div#event-slider").style.opacity = "100";
     }, 500),
 };
 
@@ -688,8 +689,7 @@ var page_events = {
         id: "events-wrapper",
         oncreate: () =>
           setTimeout(function () {
-            sort_array(events, "dateStart", "date");
-            find_closest_date(status.selected_day);
+            find_closest_date();
             bottom_bar("edit", "calendar", "");
           }, 1500),
       },
@@ -857,8 +857,10 @@ var page_options = {
         [
           m("iframe", {
             oncreate: function () {
-              document.querySelector("#KaiOsAds-Wrapper iframe").src =
-                "./ads.html";
+              if (settings.ads) {
+                document.querySelector("#KaiOsAds-Wrapper iframe").src =
+                  "./ads.html";
+              }
             },
           }),
         ]
@@ -1274,7 +1276,6 @@ let load_subscriptions = function () {
 };
 
 let callback_scan = function (url) {
-  bottom_bar("QR", "", "save");
   document.querySelector("div#subscription-form input#cal-subs-url").value =
     url;
 };
@@ -1333,6 +1334,7 @@ localforage
   .getItem("events")
   .then(function (value) {
     if (value != null) events = value;
+    sort_array(events, "dateStart", "date");
   })
   .catch(function (err) {});
 
@@ -1456,6 +1458,7 @@ let nav = function (move) {
       status.selected_day = targetElement.getAttribute("data-date");
       status.selected_day_id = targetElement.getAttribute("data-id");
       event_slider(status.selected_day);
+      console.log(status.selected_day);
     }
   }
 };
@@ -1639,6 +1642,7 @@ let store_event = function () {
       side_toaster("<img src='assets/image/E25C.svg'", 2000);
       setTimeout(function () {
         m.route.set("/page_calendar");
+        sort_array(events, "dateStart", "date");
       }, 200);
     })
     .catch(function (err) {
@@ -2059,9 +2063,6 @@ function shortpress_action(param) {
         blob = "";
         return true;
       }
-
-      if (document.activeElement.hasAttribute("data-date"))
-        status.selected_day = document.activeElement.getAttribute("data-date");
 
       //toggle month/events
       if (

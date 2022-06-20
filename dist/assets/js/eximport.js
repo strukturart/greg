@@ -1,6 +1,8 @@
 import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
+import { sort_array } from "./helper.js";
+
 import { events } from "../../app.js";
 
 export let export_ical = function (filename, event_data) {
@@ -210,6 +212,9 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
       }
     }
   }
+  console.log(events);
+  sort_array(events, "dateStart", "date");
+
   callback(last_uid, last_date);
 
   if (saveOnDevice) {
