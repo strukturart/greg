@@ -90,33 +90,33 @@ getManifest(manifest);
 // ////////
 
 let find_closest_date = function (search_term) {
-  let t = 0;
   let search = new Date(status.selected_day).getTime();
-
+  //equal
   for (let i = 0; i < events.length; i++) {
-    console.log(events);
     let item = new Date(events[i].dateStart).getTime();
-    console.log(search + " " + item + events[i].dateStart);
+    //console.log(search + " " + item);
 
     if (search == item) {
       t = events[i].dateStart;
       i = events.length;
-    } else {
-      if (search < item) {
+    }
+  }
+  //between
+  if (t == 0) {
+    for (let i = 0; i < events.length - 1; i++) {
+      if (search > new Date(events[i].dateStart).getTime()) {
         t = events[i].dateStart;
         i = events.length;
+        console.log("result" + t);
       }
     }
   }
-
+  //default
   if (t == 0) {
+    console.log("no match");
     t = events[0].dateStart;
   }
-
-  console.log(t);
-
   document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
-
   return t;
 };
 
@@ -202,7 +202,7 @@ let rrule_check = function (date) {
       ) {
         if (a === c || b === c || (a < c && b > c)) {
           console.log(events[t]["RRULE"]);
-
+          return false;
           if (events[t].rrule_ == "MONTHLY") {
             if (
               new Date(events[t].dateStart).getDate() ===
@@ -1010,13 +1010,23 @@ var page_add_event = {
         },
         [
           m("label", { for: "notification" }, "Notification"),
-          m("select", { id: "event-notification-time" }, [
-            m("option", { value: "none" }, "none"),
-            m("option", { value: "5" }, "5 minutes"),
-            m("option", { value: "10" }, "10 minutes"),
-            m("option", { value: "30" }, "30 minutes"),
-            m("option", { value: "1440" }, "1 Day"),
-          ]),
+          m(
+            "select",
+            {
+              id: "event-notification-time",
+              oncreate: function () {
+                document.getElementById("event-notification-time").value =
+                  settings.default_notification;
+              },
+            },
+            [
+              m("option", { value: "none" }, "none"),
+              m("option", { value: "5" }, "5 minutes"),
+              m("option", { value: "10" }, "10 minutes"),
+              m("option", { value: "30" }, "30 minutes"),
+              m("option", { value: "1440" }, "1 Day"),
+            ]
+          ),
         ]
       ),
 

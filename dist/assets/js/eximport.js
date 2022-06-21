@@ -212,8 +212,6 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
       }
     }
   }
-  console.log(events);
-  sort_array(events, "dateStart", "date");
 
   callback(last_uid, last_date);
 

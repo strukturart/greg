@@ -612,24 +612,31 @@ getManifest(manifest);
 // finde closest event to selected date in list view
 // ////////
 let find_closest_date = function(search_term) {
-    let t1 = 0;
     let search = new Date(status.selected_day).getTime();
+    //equal
     for(let i = 0; i < events.length; i++){
-        console.log(events);
         let item = new Date(events[i].dateStart).getTime();
-        console.log(search + " " + item + events[i].dateStart);
+        //console.log(search + " " + item);
         if (search == item) {
-            t1 = events[i].dateStart;
-            i = events.length;
-        } else if (search < item) {
-            t1 = events[i].dateStart;
+            t = events[i].dateStart;
             i = events.length;
         }
     }
-    if (t1 == 0) t1 = events[0].dateStart;
-    console.log(t1);
-    document.querySelectorAll("article[data-date='" + t1 + "']")[0].focus();
-    return t1;
+    //between
+    if (t == 0) {
+        for(let i = 0; i < events.length - 1; i++)if (search > new Date(events[i].dateStart).getTime()) {
+            t = events[i].dateStart;
+            i = events.length;
+            console.log("result" + t);
+        }
+    }
+    //default
+    if (t == 0) {
+        console.log("no match");
+        t = events[0].dateStart;
+    }
+    document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
+    return t;
 };
 // check if has event
 let event_check = function(date) {
@@ -640,29 +647,29 @@ let event_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
-    for(let t2 = 0; t2 < events.length; t2++)if (typeof events[t2] === "object") {
+    for(let t1 = 0; t1 < events.length; t1++)if (typeof events[t1] === "object") {
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
-        let a = new Date(events[t2].dateStart).getTime();
-        let b = new Date(events[t2].dateEnd).getTime();
+        let a = new Date(events[t1].dateStart).getTime();
+        let b = new Date(events[t1].dateEnd).getTime();
         let c = new Date(date).getTime();
         if (a === c) {
             feedback.event = true;
             return feedback;
         }
         // multi day event
-        if (events[t2]["rrule_"] == "none") {
+        if (events[t1]["rrule_"] == "none") {
             if (a === c || b === c || a < c && b > c) {
                 feedback.event = true;
-                if (events[t2].isSubscription === true) feedback.subscription = true;
-                if (events[t2].multidayevent === true) feedback.multidayevent = true;
+                if (events[t1].isSubscription === true) feedback.subscription = true;
+                if (events[t1].multidayevent === true) feedback.multidayevent = true;
                 /*
           if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
             feedback.subscription = false;
             feedback.event = false;
-          }*/ t2 = events.length;
+          }*/ t1 = events.length;
                 return feedback;
             }
         }
@@ -678,47 +685,20 @@ let rrule_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
-    for(let t3 = 0; t3 < events.length; t3++)if (typeof events[t3] === "object") {
+    for(let t2 = 0; t2 < events.length; t2++)if (typeof events[t2] === "object") {
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
         feedback.date = date;
-        let a = new Date(events[t3].dateStart).getTime();
-        let b = new Date(events[t3].dateEnd).getTime();
+        let a = new Date(events[t2].dateStart).getTime();
+        let b = new Date(events[t2].dateEnd).getTime();
         let c = new Date(date).getTime();
         //recurrences
-        if (typeof events[t3]["rrule_"] !== "undefined" && events[t3]["rrule_"] !== undefined) {
+        if (typeof events[t2]["rrule_"] !== "undefined" && events[t2]["rrule_"] !== undefined) {
             if (a === c || b === c || a < c && b > c) {
-                console.log(events[t3]["RRULE"]);
-                if (events[t3].rrule_ == "MONTHLY") {
-                    if (new Date(events[t3].dateStart).getDate() === new Date(date).getDate()) {
-                        feedback.event = true;
-                        feedback.rrule = true;
-                        t3 = events.length;
-                    }
-                }
-                if (events[t3]["rrule_"] == "DAILY") {
-                    feedback.rrule = true;
-                    feedback.event = true;
-                    t3 = events.length;
-                }
-                if (events[t3].rrule_ == "WEEKLY") {
-                    if (new Date(events[t3].dateStart).getDay() === new Date(date).getDay()) {
-                        feedback.rrule = true;
-                        t3 = events.length;
-                    }
-                }
-                if (events[t3].rrule_ == "YEARLY") {
-                    console.log("yearly");
-                    let tt = new Date(events[t3].dateStart);
-                    let pp = new Date(date);
-                    if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
-                        feedback.rrule = true;
-                        feedback.event = true;
-                        t3 = events.length;
-                    }
-                }
+                console.log(events[t2]["RRULE"]);
+                return false;
             }
         }
     }
@@ -1009,9 +989,9 @@ var page_calendar = {
             if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
             _helperJs.bottom_bar("add", "events", "options");
             if (status.selected_day != "") {
-                let t4 = new Date(status.selected_day);
-                currentMonth = t4.getMonth();
-                currentYear = t4.getFullYear();
+                let t3 = new Date(status.selected_day);
+                currentMonth = t3.getMonth();
+                currentYear = t3.getFullYear();
             }
             let k = status.selected_day;
             document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
@@ -1023,9 +1003,9 @@ var page_calendar = {
             showCalendar(currentMonth, currentYear);
             if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
             _helperJs.bottom_bar("add", "events", "options");
-            let t5 = new Date(status.selected_day);
-            currentMonth = t5.getMonth();
-            currentYear = t5.getFullYear();
+            let t4 = new Date(status.selected_day);
+            currentMonth = t4.getMonth();
+            currentYear = t4.getFullYear();
             showCalendar(currentMonth, currentYear);
             document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
                 if (item.getAttribute("data-date") == k) {
@@ -1383,7 +1363,10 @@ var page_add_event = {
                     for: "notification"
                 }, "Notification"),
                 _mithrilDefault.default("select", {
-                    id: "event-notification-time"
+                    id: "event-notification-time",
+                    oncreate: function() {
+                        document.getElementById("event-notification-time").value = settings.default_notification;
+                    }
                 }, [
                     _mithrilDefault.default("option", {
                         value: "none"
@@ -1854,8 +1837,8 @@ let remove_alarm = function(id) {
 // STORE EVENTS//
 // /////////////
 // /////////////
-let convert_ics_date = function(t6) {
-    let nn = t6.replace(/-/g, "");
+let convert_ics_date = function(t5) {
+    let nn = t5.replace(/-/g, "");
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
     nn = nn + "00";
@@ -2046,8 +2029,8 @@ let set_datetime_form = function() {
     document.getElementById("event-time-end").value = pp;
 };
 let pick_image_callback = function(resultBlob) {
-    let t7 = document.getElementById("form-image");
-    t7.src = URL.createObjectURL(resultBlob);
+    let t6 = document.getElementById("form-image");
+    t6.src = URL.createObjectURL(resultBlob);
     document.getElementById("form-image-wrapper").classList.add("item");
     document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
         i.setAttribute("tabindex", p);
