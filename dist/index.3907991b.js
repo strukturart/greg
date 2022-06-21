@@ -603,7 +603,6 @@ function manifest(a) {
     if (a.installOrigin == "app://kaios-plus.kaiostech.com") settings.ads = true;
     else {
         console.log("Ads free");
-        // t.style.display = "none";
         settings.ads = false;
     }
 }
@@ -616,7 +615,6 @@ let find_closest_date = function(search_term) {
     //equal
     for(let i = 0; i < events.length; i++){
         let item = new Date(events[i].dateStart).getTime();
-        //console.log(search + " " + item);
         if (search == item) {
             t = events[i].dateStart;
             i = events.length;
@@ -655,21 +653,21 @@ let event_check = function(date) {
         let a = new Date(events[t1].dateStart).getTime();
         let b = new Date(events[t1].dateEnd).getTime();
         let c = new Date(date).getTime();
+        let d1 = events[t1].rrule_;
         if (a === c) {
             feedback.event = true;
             return feedback;
         }
-        // multi day event
-        if (events[t1]["rrule_"] == "none") {
+        if (d1 === "none" || d1 === "" || d1 === undefined || d1 === "DAILY") {
             if (a === c || b === c || a < c && b > c) {
                 feedback.event = true;
                 if (events[t1].isSubscription === true) feedback.subscription = true;
                 if (events[t1].multidayevent === true) feedback.multidayevent = true;
-                /*
-          if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
-            feedback.subscription = false;
-            feedback.event = false;
-          }*/ t1 = events.length;
+                if (events[t1].time_end == "00:00:00" && events[t1].dateEnd == date) {
+                    feedback.subscription = false;
+                    feedback.event = false;
+                }
+                t1 = events.length;
                 return feedback;
             }
         }
@@ -694,11 +692,45 @@ let rrule_check = function(date) {
         let a = new Date(events[t2].dateStart).getTime();
         let b = new Date(events[t2].dateEnd).getTime();
         let c = new Date(date).getTime();
+        let d = events[t2].rrule_;
         //recurrences
         if (typeof events[t2]["rrule_"] !== "undefined" && events[t2]["rrule_"] !== undefined) {
             if (a === c || b === c || a < c && b > c) {
-                console.log(events[t2]["RRULE"]);
-                return false;
+                console.log(events[t2]["rrule_"]);
+                //return false;
+                if (events[t2].rrule_ == "MONTHLY") {
+                    if (new Date(events[t2].dateStart).getDate() === new Date(date).getDate()) {
+                        feedback.event = true;
+                        feedback.rrule = true;
+                        t2 = events.length;
+                        return false;
+                    }
+                }
+                if (events[t2]["rrule_"] == "DAILY") {
+                    feedback.rrule = true;
+                    feedback.event = true;
+                    t2 = events.length;
+                    return false;
+                }
+                if (events[t2].rrule_ == "WEEKLY") {
+                    if (new Date(events[t2].dateStart).getDay() === new Date(date).getDay()) {
+                        feedback.rrule = true;
+                        feedback.event = true;
+                        t2 = events.length;
+                        return false;
+                    }
+                }
+                if (events[t2].rrule_ == "YEARLY") {
+                    console.log("yearly");
+                    let tt = new Date(events[t2].dateStart);
+                    let pp = new Date(date);
+                    if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
+                        feedback.rrule = true;
+                        feedback.event = true;
+                        t2 = events.length;
+                        return false;
+                    }
+                }
             }
         }
     }
@@ -733,7 +765,7 @@ let event_slider = function(date) {
         let a = new Date(events[i].dateStart).getTime();
         let b = new Date(events[i].dateEnd).getTime();
         let c = new Date(date).getTime();
-        let d = events[i].rrule_;
+        let d2 = events[i].rrule_;
         events[i].alarm;
         //all day event
         /*
@@ -745,75 +777,48 @@ let event_slider = function(date) {
         slider.push(events[i]);
       }
     }
-    */ if (a === c || b === c || a < c && b > c) {
-            slider.push(events[i]);
-            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+    */ if (d2 === "none" || d2 === "" || d2 === undefined) {
+            if (a === c || b === c || a < c && b > c) {
+                //if multiday event
+                //the end date is next day
+                //time is 00:00:00
+                if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) return false;
+                slider.push(events[i]);
+                k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+            }
+        } else if (a === c || b === c || a < c && b > c) {
+            //recurrences
+            //YEAR
+            if (d2 == "YEARLY") {
+                let tt = new Date(events[i].getAttribute("data-date"));
+                let pp = new Date(date);
+                if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
+                    slider.push(events[i]);
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            }
+            //WEEK
+            if (d2 == "WEEKLY") {
+                if (new Date(events[i].dateStart).getDay() == new Date(date).getDay()) {
+                    slider.push(events[i]);
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            }
+            //MONTH
+            if (d2 == "MONTHLY") {
+                if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
+                    slider.push(events[i]);
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            }
+            if (d2 == "DAILY") {
+                if (a === c || b === c || a < c && b > c) {
+                    slider.push(events[i]);
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            }
         }
-    /*
-    if (d === "none" || d === "") {
-      if (a === c || b === c || (a < c && b > c)) {
-        //if multiday event
-        //the end date is next day
-        //time is 00:00:00
-        if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) {
-          // return false;
-        }
-        slider.push(events[i]);
-
-        k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-      }
-    } else {
-      if (a === c || b === c || (a < c && b > c && d)) {
-        //recurrences
-        //YEAR
-        if (d == "YEARLY") {
-          let tt = new Date(item[i].getAttribute("data-date"));
-          let pp = new Date(date);
-
-          if (
-            tt.getDate() + "-" + tt.getMonth() ===
-            pp.getDate() + "-" + pp.getMonth()
-          ) {
-            slider.push(item[i]);
-
-            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-          }
-        }
-
-        //WEEK
-        if (d == "WEEKLY") {
-          if (
-            new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()
-          ) {
-            slider.push(item[i]);
-
-            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-          }
-        }
-
-        //MONTH
-
-        if (d == "MONTHLY") {
-          if (
-            new Date(item[i].item.dateStart).getDate() ==
-            new Date(date).getDate()
-          ) {
-            slider.push(item[i]);
-
-            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-          }
-        }
-
-        if (d == "DAILY") {
-          if (a === c || b === c || (a < c && b > c)) {
-            slider.push(item[i]);
-
-            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-          }
-        }
-      }
     }
-    */ }
     if (slider != "") {
         slider.forEach(function(item) {
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
@@ -1190,6 +1195,7 @@ var page_options = {
                 _mithrilDefault.default("iframe", {
                     oncreate: function() {
                         if (settings.ads) document.querySelector("#KaiOsAds-Wrapper iframe").src = "./ads.html";
+                        else document.querySelector("#KaiOsAds-Wrapper").remove();
                     }
                 }), 
             ]), 
@@ -1846,6 +1852,17 @@ let convert_ics_date = function(t5) {
 };
 let export_data = [];
 let store_event = function() {
+    let validation = true;
+    if (document.getElementById("event-title").value == "") {
+        _helperJs.toaster("Title can't be empty", 2000);
+        validation = false;
+    }
+    if (document.getElementById("event-recur").value != "none") {
+        if (document.getElementById("event-date-end").value == "") {
+            _helperJs.toaster("An end date is required for a recurrence", 2000);
+            validation = false;
+        }
+    }
     let start_time = "00:00:00";
     if (document.getElementById("event-time-start").value != "") start_time = document.getElementById("event-time-start").value;
     let end_time = "00:00:00";
@@ -1871,6 +1888,7 @@ let store_event = function() {
         if (p != "" || p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + convert_ics_date(convert_dt_end);
         return r;
     };
+    if (validation == false) return false;
     let event = {
         UID: _helperJs.uid(),
         SUMMARY: document.getElementById("event-title").value,
@@ -1919,6 +1937,17 @@ let store_event = function() {
 // UPDATE EVENT
 // /////////
 let update_event = function() {
+    let validation = true;
+    if (document.getElementById("event-title").value == "") {
+        _helperJs.toaster("Title can't be empty", 2000);
+        validation = false;
+    }
+    if (document.getElementById("event-recur").value != "none") {
+        if (document.getElementById("event-date-end").value == "") {
+            _helperJs.toaster("An end date is required for a recurrence", 2000);
+            validation = false;
+        }
+    }
     events.forEach(function(index) {
         let a = new Date(document.getElementById("event-date").value).getTime();
         let b = new Date(document.getElementById("event-date-end").value).getTime();
@@ -1945,6 +1974,7 @@ let update_event = function() {
                 if (p != "" || p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + convert_ics_date(convert_dt_end);
                 return r;
             };
+            if (validation == false) return false;
             index.SUMMARY = document.getElementById("event-title").value;
             index.DESCRIPTION = document.getElementById("event-description").value;
             index.LOCATION = document.getElementById("event-location").value;
@@ -2017,12 +2047,12 @@ let import_event_callback = function(id, date) {
     }).catch(function(err) {});
 };
 let set_datetime_form = function() {
-    let d1 = new Date();
-    let d_h = `0${d1.getHours()}`.slice(-2);
-    let d_m = `0${d1.getMinutes()}`.slice(-2);
+    let d3 = new Date();
+    let d_h = `0${d3.getHours()}`.slice(-2);
+    let d_m = `0${d3.getMinutes()}`.slice(-2);
     let p = d_h + ":" + d_m;
-    let d_h_ = `0${d1.getHours() + 1}`.slice(-2);
-    let d_m_ = `0${d1.getMinutes()}`.slice(-2);
+    let d_h_ = `0${d3.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d3.getMinutes()}`.slice(-2);
     if (d_h_ > 23) d_h_ = "23";
     let pp = d_h_ + ":" + d_m_;
     document.getElementById("event-time-start").value = p;

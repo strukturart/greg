@@ -8,7 +8,6 @@ import { uid } from "./assets/js/helper.js";
 import { pick_image } from "./assets/js/helper.js";
 import { bottom_bar } from "./assets/js/helper.js";
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
-import { list_ics } from "./assets/js/eximport.js";
 import { fetch_ics } from "./assets/js/eximport.js";
 import { export_ical } from "./assets/js/eximport.js";
 import { loadICS } from "./assets/js/eximport.js";
@@ -78,7 +77,6 @@ function manifest(a) {
     settings.ads = true;
   } else {
     console.log("Ads free");
-    // t.style.display = "none";
     settings.ads = false;
   }
 }
@@ -94,7 +92,6 @@ let find_closest_date = function (search_term) {
   //equal
   for (let i = 0; i < events.length; i++) {
     let item = new Date(events[i].dateStart).getTime();
-    //console.log(search + " " + item);
 
     if (search == item) {
       t = events[i].dateStart;
@@ -140,14 +137,14 @@ let event_check = function (date) {
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
+      let d = events[t].rrule_;
 
       if (a === c) {
         feedback.event = true;
         return feedback;
       }
 
-      // multi day event
-      if (events[t]["rrule_"] == "none") {
+      if (d === "none" || d === "" || d === undefined || d === "DAILY") {
         if (a === c || b === c || (a < c && b > c)) {
           feedback.event = true;
           if (events[t].isSubscription === true) {
@@ -157,11 +154,11 @@ let event_check = function (date) {
           if (events[t].multidayevent === true) {
             feedback.multidayevent = true;
           }
-          /*
+
           if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
             feedback.subscription = false;
             feedback.event = false;
-          }*/
+          }
 
           t = events.length;
           return feedback;
@@ -193,6 +190,7 @@ let rrule_check = function (date) {
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
+      let d = events[t].rrule_;
 
       //recurrences
 
@@ -201,8 +199,8 @@ let rrule_check = function (date) {
         events[t]["rrule_"] !== undefined
       ) {
         if (a === c || b === c || (a < c && b > c)) {
-          console.log(events[t]["RRULE"]);
-          return false;
+          console.log(events[t]["rrule_"]);
+          //return false;
           if (events[t].rrule_ == "MONTHLY") {
             if (
               new Date(events[t].dateStart).getDate() ===
@@ -211,6 +209,7 @@ let rrule_check = function (date) {
               feedback.event = true;
               feedback.rrule = true;
               t = events.length;
+              return false;
             }
           }
 
@@ -218,6 +217,7 @@ let rrule_check = function (date) {
             feedback.rrule = true;
             feedback.event = true;
             t = events.length;
+            return false;
           }
 
           if (events[t].rrule_ == "WEEKLY") {
@@ -225,7 +225,10 @@ let rrule_check = function (date) {
               new Date(events[t].dateStart).getDay() === new Date(date).getDay()
             ) {
               feedback.rrule = true;
+              feedback.event = true;
               t = events.length;
+
+              return false;
             }
           }
 
@@ -241,6 +244,7 @@ let rrule_check = function (date) {
               feedback.rrule = true;
               feedback.event = true;
               t = events.length;
+              return false;
             }
           }
         }
@@ -321,37 +325,30 @@ let event_slider = function (date) {
     }
     */
 
-    if (a === c || b === c || (a < c && b > c)) {
-      slider.push(events[i]);
-      k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
-    }
-    /*
-    if (d === "none" || d === "") {
+    if (d === "none" || d === "" || d === undefined) {
       if (a === c || b === c || (a < c && b > c)) {
         //if multiday event
         //the end date is next day
         //time is 00:00:00
         if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) {
-          // return false;
+          return false;
         }
         slider.push(events[i]);
-
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
       }
     } else {
-      if (a === c || b === c || (a < c && b > c && d)) {
+      if (a === c || b === c || (a < c && b > c)) {
         //recurrences
         //YEAR
         if (d == "YEARLY") {
-          let tt = new Date(item[i].getAttribute("data-date"));
+          let tt = new Date(events[i].getAttribute("data-date"));
           let pp = new Date(date);
 
           if (
             tt.getDate() + "-" + tt.getMonth() ===
             pp.getDate() + "-" + pp.getMonth()
           ) {
-            slider.push(item[i]);
-
+            slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
           }
         }
@@ -359,10 +356,9 @@ let event_slider = function (date) {
         //WEEK
         if (d == "WEEKLY") {
           if (
-            new Date(item[i].item.dateStart).getDay() == new Date(date).getDay()
+            new Date(events[i].dateStart).getDay() == new Date(date).getDay()
           ) {
-            slider.push(item[i]);
-
+            slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
           }
         }
@@ -374,22 +370,19 @@ let event_slider = function (date) {
             new Date(item[i].item.dateStart).getDate() ==
             new Date(date).getDate()
           ) {
-            slider.push(item[i]);
-
+            slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
           }
         }
 
         if (d == "DAILY") {
           if (a === c || b === c || (a < c && b > c)) {
-            slider.push(item[i]);
-
+            slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
           }
         }
       }
     }
-    */
   }
 
   if (slider != "") {
@@ -860,6 +853,8 @@ var page_options = {
               if (settings.ads) {
                 document.querySelector("#KaiOsAds-Wrapper iframe").src =
                   "./ads.html";
+              } else {
+                document.querySelector("#KaiOsAds-Wrapper").remove();
               }
             },
           }),
@@ -1549,6 +1544,18 @@ let convert_ics_date = function (t) {
 let export_data = [];
 
 let store_event = function () {
+  let validation = true;
+  if (document.getElementById("event-title").value == "") {
+    toaster("Title can't be empty", 2000);
+    validation = false;
+  }
+
+  if (document.getElementById("event-recur").value != "none") {
+    if (document.getElementById("event-date-end").value == "") {
+      toaster("An end date is required for a recurrence", 2000);
+      validation = false;
+    }
+  }
   let start_time = "00:00:00";
   if (document.getElementById("event-time-start").value != "") {
     start_time = document.getElementById("event-time-start").value;
@@ -1605,6 +1612,8 @@ let store_event = function () {
     }
     return r;
   };
+
+  if (validation == false) return false;
 
   let event = {
     UID: uid(),
@@ -1665,6 +1674,18 @@ let store_event = function () {
 // /////////
 
 let update_event = function () {
+  let validation = true;
+  if (document.getElementById("event-title").value == "") {
+    toaster("Title can't be empty", 2000);
+    validation = false;
+  }
+
+  if (document.getElementById("event-recur").value != "none") {
+    if (document.getElementById("event-date-end").value == "") {
+      toaster("An end date is required for a recurrence", 2000);
+      validation = false;
+    }
+  }
   events.forEach(function (index) {
     let a = new Date(document.getElementById("event-date").value).getTime();
     let b = new Date(document.getElementById("event-date-end").value).getTime();
@@ -1719,6 +1740,8 @@ let update_event = function () {
         }
         return r;
       };
+
+      if (validation == false) return false;
 
       index.SUMMARY = document.getElementById("event-title").value;
       index.DESCRIPTION = document.getElementById("event-description").value;
