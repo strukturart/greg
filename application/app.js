@@ -15,6 +15,7 @@ import { export_ical } from "./assets/js/eximport.js";
 import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
+import { DAVClient } from 'tsdav';
 
 let months = [
   "Jan",
@@ -1854,3 +1855,7 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
+
+window.addEventListener("load", function() {
+    console.dir(DAVClient); // ready
+});
