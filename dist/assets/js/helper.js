@@ -5,7 +5,7 @@ export let sort_array = function (arr, item_key, type) {
     arr.sort((a, b) => {
       let da = new Date(a[item_key]),
         db = new Date(b[item_key]);
-      return da - db;
+      return db - da;
     });
   }
 

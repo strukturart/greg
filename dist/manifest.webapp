@@ -1,19 +1,19 @@
 {
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"name": "greg",
 	"id":"greg",
 	"categories": ["utilities"],
-	"description": "greg",
+	"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars. you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #",
 	"launch_path": "/index.html",
 	"type": "privileged",
 	"fullscreen": "true",
 	"icons": {
-		"56": "/assets/icons/icon-56-56.svg",
-		"112": "/assets/icons/icon-112-112.svg"
+		"56": "/assets/icons/icon-56-56.png",
+		"112": "/assets/icons/icon-112-112.png"
 	},
 	"developer": {
 		"name": "strukturart",
-		"url": "https://strukturart.com"
+		"url": "https://github.com/strukturart/greg"
 	},
 	"dependencies": {
 		"ads-sdk": "1.5.0"
@@ -22,7 +22,7 @@
 		"en-US": {
 			"name": "greg",
 			"subtitle": "greg",
-			"description": "greg"
+			"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars. you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #"
 		}
 	},
 	"default_locale": "en-US",
