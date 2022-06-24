@@ -14,6 +14,7 @@ import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
+import tsdav from "tsdav";
 
 let months = [
   "Jan",
