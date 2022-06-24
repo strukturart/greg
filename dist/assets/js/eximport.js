@@ -1,6 +1,8 @@
 import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
+import { sort_array } from "./helper.js";
+
 import { events } from "../../app.js";
 
 export let export_ical = function (filename, event_data) {
@@ -61,9 +63,7 @@ export let export_ical = function (filename, event_data) {
 };
 
 // //////////
-
 // /LIST ICS
-
 // ////////////
 
 export let list_ics = function () {
@@ -101,6 +101,8 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
   const ical = require("ical");
 
   const datas = ical.parseICS(data);
+
+  if (subscription) subscription = "subscription";
 
   let last_uid;
   let last_date;
@@ -169,9 +171,7 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
         let parse_rrule = function () {
           let feedback = "none";
           if (ev.rrule != null || ev.rrule != undefined) {
-            let a = ev.rrule;
-            feedback = a.freq;
-            //console.log(ev.rrule);
+            feedback = ev.rrule.freq;
           }
 
           return feedback;
@@ -212,6 +212,7 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
       }
     }
   }
+
   callback(last_uid, last_date);
 
   if (saveOnDevice) {

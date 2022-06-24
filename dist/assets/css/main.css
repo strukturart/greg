@@ -169,6 +169,21 @@ div#intro {
   animation-fill-mode: forwards;
 }
 
+div#intro #version {
+  position: absolute;
+  background: black;
+  z-index: 100000;
+  bottom: 20px;
+  color: white;
+  text-align: center;
+  font-size: 0.8rem;
+  animation-name: intro_img;
+  animation-duration: 2s;
+  animation-delay: 1s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
 div#intro img {
   width: 180px;
   height: auto;
@@ -218,23 +233,6 @@ div#intro img {
   width: 220px;
 }
 
-ul#keys li span {
-  display: inline-block;
-
-  min-width: 60px;
-  width: 60px;
-  font-weight: bold;
-}
-
-ul#keys li {
-  margin: 0 0 0px 0;
-  padding: 5px 0 0 10px;
-}
-
-ul#keys {
-  margin: 0 0 20px 0;
-}
-
 /*///////////////////////////
 ///TOAST////////////////*/
 
@@ -274,6 +272,10 @@ div#side-toast img {
 }
 /*///////////////////////////
 ///VIEWS////////////////*/
+
+article.events[data-alarm="none"] img.bell {
+  display: none;
+}
 
 div#calendar {
   padding: 10px;
@@ -317,10 +319,11 @@ div#calendar div#calendar-body div:focus {
 div#calendar div#calendar-body div div {
   text-align: center;
   padding: 2px 0 0 0;
+  background: white;
 }
 
 div#calendar div#calendar-body div div.today {
-  background: pink;
+  background: rgb(120, 183, 255);
 }
 
 div#calendar div#calendar-body :focus span {
@@ -334,11 +337,11 @@ div#calendar div#calendar-body :focus span {
 }
 
 div#calendar div#calendar-body div div.event {
-  background: var(--color-seven);
+  background: pink !important;
 }
 
 div#calendar div#calendar-body div div.subscription {
-  background: var(--color-eight);
+  background: rgb(245, 245, 169);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
@@ -406,7 +409,6 @@ span.weeknumber {
 }
 
 div#add-edit-event {
-  display: none;
   position: absolute;
   z-index: 2;
   top: 0;
@@ -454,47 +456,36 @@ div#event-recur-wrapper {
   margin: 0 0 20px 0 !important;
 }
 
-button#delete-event {
-  display: none;
-}
-
-button#export-event {
-  display: none;
-}
-
 /*List view*/
 
-div#list-view {
+div#events-wrapper {
   position: absolute;
   z-index: 4;
   top: 0;
-  display: none;
   padding: 5px;
   height: 92vh;
+  width: 100vw;
   overflow: hidden;
 }
 
-div#list-view article {
+div#events-wrapper article {
   margin: 0 0 15px 0;
+  min-width: 100%;
 }
-
-div#list-view div.icons-bar {
-  width: 50px;
+/*event slider*/
+div.icons-bar {
   margin: 5px 0;
 }
 
-div#list-view div.icons-bar img {
-  width: 15px;
+div.icons-bar img {
+  max-width: 15px;
   height: auto;
 }
 
 div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
-  height: 70px;
-}
-div#event-slider div.description {
-  display: none;
+  min-height: 40px;
 }
 
 div#event-slider div.date {
@@ -535,7 +526,7 @@ div#event-slider-indicator div div.active {
 }
 
 div#event-slider-indicator {
-  margin: 3px 0 0 -10px;
+  margin: 3px 0 0 0px;
 }
 
 div#event-slider article h2 {
@@ -550,20 +541,30 @@ div#event-slider article {
   display: none;
 }
 
+div#event-slider article > * {
+  text-align: center;
+}
+div#event-slider article:nth-child(1) {
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+  position: absolute;
+  top: 0px;
+  display: block;
+}
+
 div#event-slider article h2 {
   background: var(--color-five);
 }
 
+/*options view*/
+
 div#options {
-  display: none;
   position: absolute;
   z-index: 4;
   top: 0;
-  display: none;
-  padding: 5px;
+  padding: 0px 5px 5px 0px;
   height: 92vh;
   overflow: hidden;
-  padding: 10px 0 0 0;
 }
 
 div#options div#import-text {
@@ -571,7 +572,6 @@ div#options div#import-text {
   font-weight: bold;
   margin: 0 0 20px 0;
   text-align: center;
-  display: none;
 }
 
 div#options div#subscription-text {
@@ -580,15 +580,66 @@ div#options div#subscription-text {
   margin: 0 0 10px 0;
   text-align: center;
 }
+ul#keys li span {
+  display: inline-block;
+
+  min-width: 60px;
+  width: 60px;
+  font-weight: bold;
+}
+
+div#options ul#keys li {
+  margin: 0 0 0px 0;
+  padding: 5px 0 0 10px;
+}
+
+div#options ul#keys:focus {
+  background: white;
+}
+
+div#options ul#keys {
+  margin: 0 0 20px 0;
+}
+
+ul#keys li:first-child {
+  min-width: 100vw;
+  width: 100%;
+}
+
+div#options h2 {
+  background: rgb(230, 230, 230);
+  min-width: 100vw;
+  width: 100vw;
+  font-weight: bold;
+  padding: 10px;
+  margin: 0px 0 10px 0;
+}
+
+div#options li span.keys-day-event {
+  min-width: 20px;
+  width: 20px;
+  background: pink;
+  padding: 5px;
+  margin: 0 40px 0 0;
+}
+
+div#options li span.keys-current-day {
+  min-width: 20px;
+  width: 20px;
+  background: rgb(120, 183, 255);
+  background-size: 10%;
+  padding: 5px;
+  margin: 0 40px 0 0;
+}
 
 div#subscription-form {
-  position: fixed;
-  z-index: 5;
-  bottom: 15px;
-  display: none;
-  height: 190px;
-  background: white;
-  border-top: 2px solid black;
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  padding: 5px;
+  height: 92vh;
+  overflow: hidden;
+  padding: 10px 0 0 0;
 }
 
 /*/////////////////
@@ -730,45 +781,6 @@ div#settings label {
   min-width: 80%;
   height: 30px;
   margin: 5px 5px 0 0;
-}
-
-#goodbye {
-  position: fixed;
-  z-index: 50000;
-  left: 0;
-  top: 0;
-  background: black;
-  color: white;
-  font-size: 18px;
-  padding: 70px 5px 5px 5px;
-  display: none;
-}
-
-#ciao {
-  padding: 5px;
-  text-align: center;
-  display: none;
-}
-
-#ciao ul {
-  margin: 20px 0 0px 0;
-}
-
-#ciao ul li {
-  margin: 0 0 0px 0;
-  font-size: 14px;
-  list-style: none;
-}
-
-#ciao ul li:first-child {
-  color: yellow;
-  margin: 0 0 5px 0;
-}
-
-#donation {
-  padding: 5px;
-  text-align: center;
-  display: none;
 }
 
 @keyframes jump {
