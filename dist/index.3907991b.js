@@ -534,12 +534,20 @@ parcelHelpers.export(exports, "events", ()=>events
 );
 var _localforage = require("localforage");
 var _localforageDefault = parcelHelpers.interopDefault(_localforage);
+<<<<<<< HEAD
+=======
+var _mustache = require("mustache");
+var _mustacheDefault = parcelHelpers.interopDefault(_mustache);
+>>>>>>> master
 var _helperJs = require("./assets/js/helper.js");
 var _getMoonPhaseJs = require("./assets/js/getMoonPhase.js");
 var _eximportJs = require("./assets/js/eximport.js");
 var _scanJs = require("./assets/js/scan.js");
+<<<<<<< HEAD
 var _mithril = require("mithril");
 var _mithrilDefault = parcelHelpers.interopDefault(_mithril);
+=======
+>>>>>>> master
 "use strict";
 let months = [
     "Jan",
@@ -564,18 +572,28 @@ let weekday = [
     "Fri",
     "Sat"
 ];
+<<<<<<< HEAD
 let subscriptions = [
     {
         name: "test",
         url: "test"
     }
 ];
+=======
+>>>>>>> master
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 let currentDay = today.getDate();
+<<<<<<< HEAD
 let update_event_date;
 let status = {
+=======
+let monthAndYear = document.getElementById("monthAndYear");
+let once = false;
+let status = {
+    view: "month",
+>>>>>>> master
     selected_day: "",
     visible: false,
     update_event_id: ""
@@ -596,6 +614,7 @@ let getManifest = function(callback) {
 let self;
 //KaiOs store true||false
 function manifest(a) {
+<<<<<<< HEAD
     console.log(a.manifest.version);
     self = a.origin;
     let t = document.getElementById("KaiOsAds-Wrapper");
@@ -604,6 +623,14 @@ function manifest(a) {
     else {
         console.log("Ads free");
         settings.ads = false;
+=======
+    self = a.origin;
+    let t1 = document.getElementById("KaiOsAds-Wrapper");
+    if (a.installOrigin == "app://kaios-plus.kaiostech.com") document.querySelector("#KaiOsAds-Wrapper iframe").src = "ads.html";
+    else {
+        console.log("Ads free");
+        t1.style.display = "none";
+>>>>>>> master
     }
 }
 getManifest(manifest);
@@ -611,6 +638,7 @@ getManifest(manifest);
 // finde closest event to selected date in list view
 // ////////
 let find_closest_date = function(search_term) {
+<<<<<<< HEAD
     let search = new Date(status.selected_day).getTime();
     //equal
     for(let i = 0; i < events.length; i++){
@@ -635,6 +663,25 @@ let find_closest_date = function(search_term) {
     }
     document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
     return t;
+=======
+    let t2 = 0;
+    let search = new Date(search_term).getTime();
+    for(let i = 0; i < events.length; i++){
+        let item = new Date(events[i].dateStart).getTime();
+        if (search < item) {
+            t2 = events[i - 1].dateStart;
+            i = events.length;
+        }
+        //after last event
+        //focus last event
+        if (search > new Date(events[events.length - 1].dateStart).getTime()) {
+            t2 = events[events.length - 1].dateStart;
+            i = events.length;
+        }
+    }
+    document.querySelectorAll("div#list-view article[data-date='" + t2 + "']")[0].focus();
+    return t2;
+>>>>>>> master
 };
 // check if has event
 let event_check = function(date) {
@@ -645,11 +692,16 @@ let event_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
+<<<<<<< HEAD
     for(let t1 = 0; t1 < events.length; t1++)if (typeof events[t1] === "object") {
+=======
+    for(let t3 = 0; t3 < events.length; t3++)if (typeof events[t3] === "object") {
+>>>>>>> master
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
+<<<<<<< HEAD
         let a = new Date(events[t1].dateStart).getTime();
         let b = new Date(events[t1].dateEnd).getTime();
         let c = new Date(date).getTime();
@@ -669,12 +721,33 @@ let event_check = function(date) {
                 }
                 t1 = events.length;
                 return feedback;
+=======
+        //feedback.date = date;
+        let a = new Date(events[t3].dateStart).getTime();
+        let b = new Date(events[t3].dateEnd).getTime();
+        let c = new Date(date).getTime();
+        // multi day event
+        if (events[t3]["rrule_"] == "none") {
+            if (a === c || b === c || a < c && b > c) {
+                feedback.event = true;
+                if (events[t3].isSubscription === true) feedback.subscription = true;
+                if (events[t3].multidayevent === true) feedback.multidayevent = true;
+                if (events[t3].time_end == "00:00:00" && events[t3].dateEnd == date) {
+                    feedback.subscription = false;
+                    feedback.event = false;
+                }
+                t3 = events.length;
+>>>>>>> master
             }
         }
     }
     return feedback;
 };
+<<<<<<< HEAD
 // check if has recur event
+=======
+// check if has event
+>>>>>>> master
 let rrule_check = function(date) {
     let feedback = {
         date: "",
@@ -683,12 +756,17 @@ let rrule_check = function(date) {
         multidayevent: false,
         rrule: "none"
     };
+<<<<<<< HEAD
     for(let t2 = 0; t2 < events.length; t2++)if (typeof events[t2] === "object") {
+=======
+    for(let t4 = 0; t4 < events.length; t4++)if (typeof events[t4] === "object") {
+>>>>>>> master
         feedback.event = false;
         feedback.subscription = false;
         feedback.multidayevent = false;
         feedback.rrule = false;
         feedback.date = date;
+<<<<<<< HEAD
         let a = new Date(events[t2].dateStart).getTime();
         let b = new Date(events[t2].dateEnd).getTime();
         let c = new Date(date).getTime();
@@ -729,6 +807,40 @@ let rrule_check = function(date) {
                         feedback.event = true;
                         t2 = events.length;
                         return false;
+=======
+        let a = new Date(events[t4].dateStart).getTime();
+        let b = new Date(events[t4].dateEnd).getTime();
+        let c = new Date(date).getTime();
+        //recurrences
+        if (typeof events[t4]["rrule_"] !== "undefined" && events[t4]["rrule_"] !== undefined) {
+            if (new Date(events[t4].dateStart).getTime() <= new Date(date).getTime() && new Date(date).getTime() <= new Date(events[t4].dateEnd).getTime()) {
+                if (events[t4].rrule_ == "MONTHLY") {
+                    if (new Date(events[t4].dateStart).getDate() === new Date(date).getDate()) {
+                        feedback.rrule = true;
+                        t4 = events.length;
+                        return feedback;
+                    }
+                }
+                if (events[t4]["rrule_"] == "DAILY") {
+                    feedback.rrule = true;
+                    t4 = events.length;
+                    return feedback;
+                }
+                if (events[t4].rrule_ == "WEEKLY") {
+                    if (new Date(events[t4].dateStart).getDay() === new Date(date).getDay()) {
+                        feedback.rrule = true;
+                        t4 = events.length;
+                        return feedback;
+                    }
+                }
+                if (events[t4].rrule_ == "YEARLY") {
+                    let tt = new Date(events[t4].dateStart);
+                    let pp = new Date(date);
+                    if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
+                        feedback.rrule = true;
+                        t4 = events.length;
+                        return feedback;
+>>>>>>> master
                     }
                 }
             }
@@ -741,6 +853,7 @@ let rrule_check = function(date) {
 ///////////
 let slider = [];
 let slider_index = 0;
+<<<<<<< HEAD
 let slider_navigation = function() {
     slider_index++;
     if (slider_index > document.querySelectorAll("div#event-slider article").length - 1) slider_index = 0;
@@ -778,10 +891,32 @@ let event_slider = function(date) {
       }
     }
     */ if (d2 === "none" || d2 === "" || d2 === undefined) {
+=======
+let event_check_day = function(date) {
+    slider = [];
+    let k = document.querySelector("div#event-slider-indicator div");
+    k.innerHTML = "";
+    //hide all
+    let item = document.querySelectorAll("div#event-slider article");
+    for(let i = 0; i < item.length; i++){
+        item[i].style.display = "none";
+        let a = new Date(item[i].getAttribute("data-date")).getTime();
+        let b = new Date(item[i].getAttribute("data-date-end")).getTime();
+        let c = new Date(date).getTime();
+        //hide/show alarm icon
+        if (item[i].getAttribute("data-alarm")) {
+            if (item[i].getAttribute("data-alarm") == "none") item[i].querySelector("div.icons-bar img.bell").style.display = "none";
+        }
+        //all day event
+        if (item[i].getAttribute("data-time-start") == "00:00:00" && item[i].getAttribute("data-time-end") == "00:00:00") item[i].querySelector("div.time").innerHTML = "All day";
+        let d1 = item[i].getAttribute("data-rrule");
+        if (d1 === "none" || d1 === "") {
+>>>>>>> master
             if (a === c || b === c || a < c && b > c) {
                 //if multiday event
                 //the end date is next day
                 //time is 00:00:00
+<<<<<<< HEAD
                 if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) return false;
                 slider.push(events[i]);
                 k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -794,17 +929,41 @@ let event_slider = function(date) {
                 let pp = new Date(date);
                 if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
                     slider.push(events[i]);
+=======
+                if (item[i].getAttribute("data-time-end") == "00:00:00" && item[i].getAttribute("data-date-end") == date) return false;
+                slider.push(item[i]);
+                slider[0].style.display = "block";
+                k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+            }
+        } else if (a === c || b === c || a < c && b > c && d1) {
+            //recurrences
+            //YEAR
+            if (d1 == "YEARLY") {
+                let tt = new Date(item[i].getAttribute("data-date"));
+                let pp = new Date(date);
+                if (tt.getDate() + "-" + tt.getMonth() === pp.getDate() + "-" + pp.getMonth()) {
+                    slider.push(item[i]);
+                    slider[0].style.display = "block";
+>>>>>>> master
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //WEEK
+<<<<<<< HEAD
             if (d2 == "WEEKLY") {
                 if (new Date(events[i].dateStart).getDay() == new Date(date).getDay()) {
                     slider.push(events[i]);
+=======
+            if (d1 == "WEEKLY") {
+                if (new Date(item[i].getAttribute("data-date")).getDay() == new Date(date).getDay()) {
+                    slider.push(item[i]);
+                    slider[0].style.display = "block";
+>>>>>>> master
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
             //MONTH
+<<<<<<< HEAD
             if (d2 == "MONTHLY") {
                 if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
                     slider.push(events[i]);
@@ -814,11 +973,25 @@ let event_slider = function(date) {
             if (d2 == "DAILY") {
                 if (a === c || b === c || a < c && b > c) {
                     slider.push(events[i]);
+=======
+            if (d1 == "MONTHLY") {
+                if (new Date(item[i].getAttribute("data-date")).getDate() == new Date(date).getDate()) {
+                    slider.push(item[i]);
+                    slider[0].style.display = "block";
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            }
+            if (d1 == "DAILY") {
+                if (a === c || b === c || a < c && b > c) {
+                    slider.push(item[i]);
+                    slider[0].style.display = "block";
+>>>>>>> master
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
             }
         }
     }
+<<<<<<< HEAD
     if (slider != "") {
         slider.forEach(function(item) {
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
@@ -826,6 +999,23 @@ let event_slider = function(date) {
         if (slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if (slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
     }
+=======
+    if (slider != "" && slider.length > 0) k.style.opacity = 100;
+    else k.style.opacity = 0;
+};
+let slider_navigation = function() {
+    let p = document.querySelectorAll("div#event-slider-indicator div div");
+    if (slider_index == slider.length - 1) slider_index = -1;
+    slider_index++;
+    slider.forEach(function(item) {
+        item.style.display = "none";
+    });
+    slider[slider_index].style.display = "block";
+    p.forEach(function(item) {
+        item.classList.remove("active");
+    });
+    p[slider_index].classList.add("active");
+>>>>>>> master
 };
 ////
 // JUMP TO TODAY
@@ -834,20 +1024,32 @@ let jump_to_today = function() {
     let currentMonth1 = today.getMonth();
     let currentYear1 = today.getFullYear();
     showCalendar(currentMonth1, currentYear1);
+<<<<<<< HEAD
     event_slider(status.selected_day);
+=======
+    event_check_day(status.selected_day);
+>>>>>>> master
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 function next() {
     currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
     currentMonth = (currentMonth + 1) % 12;
     showCalendar(currentMonth, currentYear);
+<<<<<<< HEAD
     event_slider(status.selected_day);
+=======
+    event_check_day(status.selected_day);
+>>>>>>> master
 }
 function previous() {
     currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
     currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
     showCalendar(currentMonth, currentYear);
+<<<<<<< HEAD
     event_slider(status.selected_day);
+=======
+    event_check_day(status.selected_day);
+>>>>>>> master
 }
 //////////////
 //BUILD CALENDAR
@@ -863,15 +1065,26 @@ Date.prototype.getWeek = function() {
     // Adjust to Thursday in week 1 and count number of weeks from date to week1.
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 };
+<<<<<<< HEAD
 let showCalendar = function(month, year) {
     _helperJs.bottom_bar("add", "events", "options");
     let firstDay = new Date(year, month).getDay();
     let daysInMonth = 32 - new Date(year, month, 32).getDate();
+=======
+let showCalendar = function(month1, year) {
+    _helperJs.bottom_bar("add", "events", "options");
+    let firstDay = new Date(year, month1).getDay();
+    let daysInMonth = 32 - new Date(year, month1, 32).getDate();
+>>>>>>> master
     let tbl = document.getElementById("calendar-body");
     // clearing all previous cells
     tbl.innerHTML = "";
     // filing data about month and in the page via DOM.
+<<<<<<< HEAD
     document.getElementById("monthAndYear").innerHTML = months[month] + " " + year;
+=======
+    monthAndYear.innerHTML = months[month1] + " " + year;
+>>>>>>> master
     // creating all cells
     let date = 1;
     for(let i = 0; i < 6; i++){
@@ -900,10 +1113,17 @@ let showCalendar = function(month, year) {
                 // store date with leading 0
                 // because input type date
                 // accept only day month with leading zero
+<<<<<<< HEAD
                 let mmonth = `0${month + 1}`.slice(-2);
                 let day = `0${date}`.slice(-2);
                 let p = year + "-" + mmonth + "-" + day;
                 moon.classList.add("moon-phase-" + _getMoonPhaseJs.getMoonPhase(year, month, date));
+=======
+                let mmonth = `0${month1 + 1}`.slice(-2);
+                let day = `0${date}`.slice(-2);
+                let p = year + "-" + mmonth + "-" + day;
+                moon.classList.add("moon-phase-" + _getMoonPhaseJs.getMoonPhase(year, month1, date));
+>>>>>>> master
                 cell.appendChild(moon);
                 cell.setAttribute("data-date", p);
                 cell.setAttribute("data-index", new Date(p).toISOString());
@@ -911,6 +1131,11 @@ let showCalendar = function(month, year) {
                 if (events.length > 0) {
                     if (event_check(p).event == true) cell.classList.add("event");
                     if (rrule_check(p).rrule) cell.classList.add("event");
+<<<<<<< HEAD
+=======
+                    // check if has event + subscription
+                    if (event_check(p).subscription == true) cell.classList.add("subscription");
+>>>>>>> master
                 }
                 cell.classList.add("item");
                 row.appendChild(cell);
@@ -920,7 +1145,11 @@ let showCalendar = function(month, year) {
         // add weeknumbers
         let week = document.createElement("span");
         week.classList.add("weeknumber");
+<<<<<<< HEAD
         let weekText = document.createTextNode(new Date(year, month, date).getWeek());
+=======
+        let weekText = document.createTextNode(new Date(year, month1, date).getWeek());
+>>>>>>> master
         week.appendChild(weekText);
         row.appendChild(week);
         //add row
@@ -929,11 +1158,50 @@ let showCalendar = function(month, year) {
     document.querySelectorAll(".item")[0].focus();
     status.selected_day = document.activeElement.getAttribute("data-date");
     // highlight current day
+<<<<<<< HEAD
     if (today.getMonth() == month && today.getFullYear() == year) {
+=======
+    if (today.getMonth() == month1 && today.getFullYear() == year) {
+>>>>>>> master
         document.querySelectorAll(".item")[currentDay - 1].focus();
         document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
     }
 };
+<<<<<<< HEAD
+=======
+let set_tabindex = function() {
+    document.querySelectorAll("div#list-view article").forEach(function(i, p) {
+        i.setAttribute("tabindex", p);
+    });
+};
+//RENDER
+function renderHello(arr) {
+    document.getElementById("event-slider").style.opacity = 0;
+    _helperJs.sort_array(arr, "dateStart", "date");
+    var template = document.getElementById("template").innerHTML;
+    var rendered = _mustacheDefault.default.render(template, {
+        data: arr
+    });
+    document.getElementById("list-view").innerHTML = rendered;
+    document.getElementById("event-slider").innerHTML = rendered;
+    document.getElementById("event-slider").style.opacity = 100;
+    set_tabindex();
+    //event_check_day(document.activeElement.getAttribute("data-date"));
+    //format date
+    document.querySelectorAll("article").forEach(function(index) {
+        let w = index.getAttribute("data-time-start");
+        let s = index.getAttribute("data-time-end");
+        if (w == "00:00:00" && s == "00:00:00") index.querySelector("div.time").innerHTML = "All day";
+        let t5 = new Date(index.getAttribute("data-date"));
+        let n = new Date(index.getAttribute("data-date-end"));
+        let d2 = weekday[t5.getDay()] + ", " + t5.getFullYear() + " " + months[t5.getMonth()] + " " + t5.getDate();
+        let m1 = weekday[n.getDay()] + ", " + n.getFullYear() + " " + months[n.getMonth()] + " " + n.getDate();
+        // to do singel day event or not
+        if (index.classList.contains("multidayevent")) index.querySelector("div.date").innerText = d2 + " - " + m1;
+        else index.querySelector("div.date").innerText = d2;
+    });
+}
+>>>>>>> master
 let clear_form = function() {
     document.querySelectorAll("div#add-edit-event input").forEach(function(e) {
         e.value = "";
@@ -942,6 +1210,7 @@ let clear_form = function() {
     });
 };
 /*
+<<<<<<< HEAD
 // /////////////////
 // /VIEWS
 // ///////////////
@@ -1656,6 +1925,145 @@ let store_settings = function() {
         _helperJs.side_toaster("settings saved", 2000);
     }).catch(function(err) {
         console.log(err);
+=======
+ ///////////////
+// ///////////////
+// /////////////////
+// /ROUTER
+// ///////////////
+// ///////////////
+// //////////////
+*/ const month = document.getElementById("calendar");
+const add_edit_event = document.getElementById("add-edit-event");
+const list_view = document.getElementById("list-view");
+const options = document.getElementById("options");
+let option_button_bar = function() {
+    setTimeout(function() {
+        if (status.view == "options") {
+            if (document.activeElement.getAttribute("data-function") == "subscription") {
+                _helperJs.bottom_bar("delete", "select", "");
+                return true;
+            } else {
+                _helperJs.bottom_bar("", "select", "");
+                return true;
+            }
+        }
+    }, 500);
+};
+const pages = document.querySelectorAll(".page");
+let router = function(view) {
+    pages.forEach(function(index) {
+        index.style.display = "none";
+    });
+    if (view == "view") {
+        if (status.view == "month") status.view = "list-view";
+        else status.view = "month";
+    }
+    // add event view
+    if (status.view == "add-edit-event") {
+        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+        document.getElementById("event-date").value = status.selected_day;
+        add_edit_event.style.display = "block";
+        document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
+            i.setAttribute("tabindex", p);
+        });
+        add_edit_event.querySelectorAll(".item")[0].focus();
+        _helperJs.bottom_bar("", "edit", "");
+        if (document.getElementById("event-date-end").value == "") document.getElementById("event-date-end").value = document.getElementById("event-date").value;
+        if (status.edit_event) document.getElementById("save-event").innerText = "update";
+        console.log(status.edit_event);
+        if (!status.edit_event) {
+            document.getElementById("save-event").innerText = "save";
+            document.getElementById("event-notification-time").value = settings.default_notification;
+        }
+        return true;
+    }
+    // month view
+    if (status.view == "month") {
+        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+        options.style.display = "none";
+        month.style.display = "block";
+        _helperJs.bottom_bar("add", "events", "options");
+        status.edit_event = false;
+        let t6 = new Date(status.selected_day);
+        currentMonth = t6.getMonth();
+        currentYear = t6.getFullYear();
+        let k = status.selected_day;
+        showCalendar(currentMonth, currentYear);
+        document.querySelectorAll("div#calendar-body div.item").forEach(function(item) {
+            if (item.getAttribute("data-date") == k) {
+                item.focus();
+                event_check_day(k);
+            }
+        });
+        clear_form();
+    }
+    // list view
+    if (status.view == "list-view") {
+        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+        options.style.display = "none";
+        status.edit_event = false;
+        clear_form();
+        _helperJs.bottom_bar("edit", "month", "options");
+        list_view.style.display = "block";
+        setTimeout(function() {
+            let articles = document.querySelectorAll("div#list-view article");
+            let success = false;
+            for(var k = 0; k < articles.length; k++)if (articles[k].getAttribute("data-date") == status.selected_day) {
+                articles[k].focus();
+                k = articles.length;
+                success = true;
+            }
+            for(var k = 0; k < articles.length; k++){
+                console.log(articles[k].getAttribute("data-alarm"));
+                if (articles[k].getAttribute("data-alarm") == "none") articles[k].querySelector("img.bell").style.display = "none";
+            }
+            if (!success) {
+                document.querySelectorAll("div#list-view article")[0].focus();
+                find_closest_date(status.selected_day);
+            }
+            const rect = document.activeElement.getBoundingClientRect();
+            const elY = rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+            document.activeElement.parentNode.scrollBy({
+                left: 0,
+                top: elY - window.innerHeight / 2,
+                behavior: "smooth"
+            });
+        }, 1000);
+    }
+    if (status.view == "options") {
+        if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+        if (!once) {
+            _eximportJs.list_ics();
+            list_subscriptions();
+            once = true;
+        }
+        document.getElementById("options").style.display = "block";
+        document.querySelectorAll("div#options .item")[0].focus();
+        document.getElementById("options").style.opacity = "1";
+        document.getElementById("subscription-form").style.display = "none";
+        setTimeout(function() {
+            Array.from(document.querySelectorAll("div#options .item")).forEach(function(i, p) {
+                i.setAttribute("tabindex", p);
+            });
+        }, 2000);
+        option_button_bar();
+    }
+    if (status.view == "subscription") {
+        document.getElementById("options").style.opacity = "0.3";
+        document.getElementById("subscription-form").style.display = "block";
+        document.querySelectorAll("div#subscription-form div.item input")[0].focus();
+        _helperJs.bottom_bar("QR", "", "save");
+    }
+};
+let list_subscriptions = function() {
+    if (subscriptions == null) return false;
+    subscriptions.forEach(function(item) {
+        document.querySelector("div#options div#subscription-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="subscription">' + item.name + "</button>");
+        document.querySelectorAll("div#options button").forEach(function(i, p) {
+            i.setAttribute("tabindex", p);
+        });
+>>>>>>> master
     });
 };
 let lp = 0;
@@ -1666,12 +2074,25 @@ let load_subscriptions = function() {
         lp++;
     }
     jump_to_today();
+<<<<<<< HEAD
     event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
 };
 let callback_scan = function(url) {
     document.querySelector("div#subscription-form input#cal-subs-url").value = url;
 };
+=======
+    renderHello(events);
+    event_check_day(document.activeElement.getAttribute("data-date"));
+    if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
+};
+let callback_scan = function(url) {
+    _helperJs.bottom_bar("QR", "", "save");
+    status.view = "subscription";
+    document.querySelector("div#subscription-form input#cal-subs-url").value = url;
+};
+let subscriptions = new Array();
+>>>>>>> master
 let store_subscription = function() {
     if (_helperJs.validate(document.getElementById("cal-subs-url").value) && document.getElementById("cal-subs-name").value != "") {
         subscriptions = [];
@@ -1682,9 +2103,16 @@ let store_subscription = function() {
         document.querySelector("input#cal-subs-name").val = "";
         document.querySelector("input#cal-subs-url").val = "";
         _localforageDefault.default.setItem("subscriptions", subscriptions).then(function(value) {
+<<<<<<< HEAD
             document.getElementById("<subscription-form").style.display = "none";
             _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
             _mithrilDefault.default.route.set("/page_options");
+=======
+            document.getElementById("subscription-form").style.display = "none";
+            _helperJs.toaster("subscription stored", 2000);
+            status.view = "options";
+            router();
+>>>>>>> master
         }).catch(function(err) {
             // This code runs if there were any errors
             console.log(err);
@@ -1694,11 +2122,22 @@ let store_subscription = function() {
     } else _helperJs.toaster("Please enter a name and a valid url", 2000);
 };
 let delete_subscription = function() {
+<<<<<<< HEAD
     let updated_subscriptions = subscriptions.filter((e)=>e.name != document.activeElement.getAttribute("data-id")
     );
     _localforageDefault.default.setItem("subscriptions", updated_subscriptions).then(function(value) {
         //Do other things once the value has been saved.
         _helperJs.side_toaster("subscription deleted", 2000);
+=======
+    let updated_subscriptions = subscriptions.filter((e)=>e.name != document.activeElement.innerText
+    );
+    _localforageDefault.default.setItem("subscriptions", updated_subscriptions).then(function(value) {
+        //Do other things once the value has been saved.
+        console.log("saved: " + value);
+        _helperJs.toaster("subscription deleted", 2000);
+        status.view = "month";
+        router();
+>>>>>>> master
     }).catch(function(err) {
         // This code runs if there were any errors
         _helperJs.toaster(err, 2000);
@@ -1707,6 +2146,7 @@ let delete_subscription = function() {
 };
 _localforageDefault.default.getItem("events").then(function(value) {
     if (value != null) events = value;
+<<<<<<< HEAD
     _helperJs.sort_array(events, "dateStart", "date");
 }).catch(function(err) {});
 _localforageDefault.default.getItem("subscriptions").then(function(value) {
@@ -1718,6 +2158,17 @@ _localforageDefault.default.getItem("subscriptions").then(function(value) {
             ];
             return false;
         }
+=======
+    renderHello(events);
+    jump_to_today();
+}).catch(function(err) {
+    jump_to_today();
+});
+_localforageDefault.default.getItem("subscriptions").then(function(value) {
+    subscriptions = value;
+    setTimeout(function() {
+        if (subscriptions == null) return false;
+>>>>>>> master
         load_subscriptions();
         console.log(subscriptions);
     }, 2000);
@@ -1725,6 +2176,7 @@ _localforageDefault.default.getItem("subscriptions").then(function(value) {
     // This code runs if there were any errors
     console.log(err);
 });
+<<<<<<< HEAD
 load_settings = function() {
     _localforageDefault.default.getItem("settings").then(function(value) {
         if (value == null) return false;
@@ -1736,6 +2188,16 @@ load_settings = function() {
     });
 };
 load_settings();
+=======
+_localforageDefault.default.getItem("settings").then(function(value) {
+    if (value == null) return false;
+    settings = value;
+    document.getElementById("default-notification-time").value = settings.default_notification;
+}).catch(function(err) {
+    // This code runs if there were any errors
+    console.log(err);
+});
+>>>>>>> master
 function handleVisibilityChange() {
     if (document.visibilityState === "hidden") status.visible = false;
     else setTimeout(function() {
@@ -1751,6 +2213,7 @@ let nav = function(move) {
     const currentIndex = document.activeElement.tabIndex;
     let next1 = currentIndex + move;
     let items = 0;
+<<<<<<< HEAD
     if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_events") {
         let b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
@@ -1760,6 +2223,18 @@ let nav = function(move) {
         items = b.querySelectorAll(".item");
     }
     if (_mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") {
+=======
+    if (status.view == "month") {
+        let b = document.activeElement.parentNode.parentNode;
+        items = b.querySelectorAll(".item");
+    }
+    if (status.view == "list-view") {
+        let b = document.activeElement.parentNode;
+        items = b.querySelectorAll("div#list-view article");
+    }
+    if (status.view == "subscription") items = document.querySelectorAll("div#subscription-form > div.item");
+    if (status.view == "add-edit-event" || status.view == "options") {
+>>>>>>> master
         let b = document.activeElement.parentNode;
         items = b.querySelectorAll(".item");
         if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -1783,6 +2258,7 @@ let nav = function(move) {
         top: elY - window.innerHeight / 2,
         behavior: "smooth"
     });
+<<<<<<< HEAD
     if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") {
         if (targetElement.hasAttribute("data-date")) {
             status.selected_day = targetElement.getAttribute("data-date");
@@ -1795,6 +2271,58 @@ let nav = function(move) {
 // may better to compare all alarms
 // with all events
 // to clean
+=======
+    if (status.view == "month" || status.view == "list-view") {
+        if (targetElement.hasAttribute("data-date")) {
+            status.selected_day = targetElement.getAttribute("data-date");
+            status.selected_day_id = targetElement.getAttribute("data-id");
+            event_check_day(status.selected_day);
+        }
+        return true;
+    }
+    if (document.activeElement.id == "form-image-wrapper" && status.view == "add-edit-event") {
+        _helperJs.bottom_bar("", "remove image", "");
+        return true;
+    }
+    if (document.activeElement.id != "form-image-wrapper" && status.view == "add-edit-event") {
+        _helperJs.bottom_bar("", "edit", "");
+        return true;
+    }
+};
+// foram actions
+// after selection
+document.getElementById("event-notification-time").addEventListener("change", (event)=>{
+    setTimeout(function() {
+        document.getElementById("event-notification-time").parentElement.focus();
+    }, 500);
+});
+//default when is not set
+settings.default_notification = "none";
+document.getElementById("default-notification-time").addEventListener("change", (event)=>{
+    let l = document.getElementById("default-notification-time").value;
+    settings.default_notification = l;
+    _localforageDefault.default.setItem("settings", settings).then(function(value) {}).catch(function(err) {
+        console.log(err);
+    });
+    setTimeout(function() {
+        document.getElementById("default-notification-time").parentElement.focus();
+    }, 500);
+});
+document.querySelectorAll('input[type="time"]').forEach(function(item) {
+    item.addEventListener("change", (event)=>{
+        setTimeout(function() {
+            item.parentElement.focus();
+        }, 500);
+    });
+});
+document.querySelectorAll('input[type="date"]').forEach(function(item) {
+    item.addEventListener("change", (event)=>{
+        setTimeout(function() {
+            item.parentElement.focus();
+        }, 500);
+    });
+});
+>>>>>>> master
 let add_alarm = function(date, message_text, id) {
     // KaiOs  2.xx
     if (navigator.mozAlarms) {
@@ -1813,6 +2341,12 @@ let add_alarm = function(date, message_text, id) {
         };
     }
 };
+<<<<<<< HEAD
+=======
+// may better to compare all alarms
+// with all events
+// to clean
+>>>>>>> master
 let remove_alarm = function(id) {
     // KaiOs  2.xx
     if (navigator.mozAlarms) {
@@ -1835,6 +2369,25 @@ let remove_alarm = function(id) {
         };
     }
 };
+<<<<<<< HEAD
+=======
+let test_alarm = function() {
+    if (navigator.mozAlarms) {
+        var request = navigator.mozAlarms.getAll();
+        request.onsuccess = function() {
+            this.result.forEach(function(alarm) {
+                console.log("Id:", alarm.id);
+                console.log("date:", alarm.date);
+                console.log("respectTimezone:", alarm.respectTimezone);
+                console.log("data:", JSON.stringify(alarm.data));
+            });
+        };
+        request.onerror = function() {
+            console.log("An error occurred:", this.error.name);
+        };
+    }
+};
+>>>>>>> master
 // //////////////////
 // //BUILD EVENT-LIST
 // /////////////////
@@ -1843,8 +2396,13 @@ let remove_alarm = function(id) {
 // STORE EVENTS//
 // /////////////
 // /////////////
+<<<<<<< HEAD
 let convert_ics_date = function(t5) {
     let nn = t5.replace(/-/g, "");
+=======
+let convert_ics_date = function(t7) {
+    let nn = t7.replace(/-/g, "");
+>>>>>>> master
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
     nn = nn + "00";
@@ -1852,6 +2410,7 @@ let convert_ics_date = function(t5) {
 };
 let export_data = [];
 let store_event = function() {
+<<<<<<< HEAD
     let validation = true;
     if (document.getElementById("event-title").value == "") {
         _helperJs.toaster("Title can't be empty", 2000);
@@ -1863,6 +2422,8 @@ let store_event = function() {
             validation = false;
         }
     }
+=======
+>>>>>>> master
     let start_time = "00:00:00";
     if (document.getElementById("event-time-start").value != "") start_time = document.getElementById("event-time-start").value;
     let end_time = "00:00:00";
@@ -1888,7 +2449,10 @@ let store_event = function() {
         if (p != "" || p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + convert_ics_date(convert_dt_end);
         return r;
     };
+<<<<<<< HEAD
     if (validation == false) return false;
+=======
+>>>>>>> master
     let event = {
         UID: _helperJs.uid(),
         SUMMARY: document.getElementById("event-title").value,
@@ -1918,6 +2482,7 @@ let store_event = function() {
         add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
     events.push(event);
+<<<<<<< HEAD
     console.log(JSON.stringify(event));
     let without_subscription = events.filter((events1)=>events1.isSubscription === false
     );
@@ -1932,11 +2497,26 @@ let store_event = function() {
     }).catch(function(err) {
         console.log(err);
     });
+=======
+    let without_subscription = events.filter((events1)=>events1.isSubscription === false
+    );
+    _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
+        // clean form
+        clear_form();
+        renderHello(events);
+        _eximportJs.export_ical("greg.ics", without_subscription);
+    }).catch(function(err) {
+        console.log(err);
+    });
+    status.view = "month";
+    router();
+>>>>>>> master
 };
 // ////////////
 // UPDATE EVENT
 // /////////
 let update_event = function() {
+<<<<<<< HEAD
     let validation = true;
     if (document.getElementById("event-title").value == "") {
         _helperJs.toaster("Title can't be empty", 2000);
@@ -1948,6 +2528,8 @@ let update_event = function() {
             validation = false;
         }
     }
+=======
+>>>>>>> master
     events.forEach(function(index) {
         let a = new Date(document.getElementById("event-date").value).getTime();
         let b = new Date(document.getElementById("event-date-end").value).getTime();
@@ -1974,7 +2556,10 @@ let update_event = function() {
                 if (p != "" || p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + convert_ics_date(convert_dt_end);
                 return r;
             };
+<<<<<<< HEAD
             if (validation == false) return false;
+=======
+>>>>>>> master
             index.SUMMARY = document.getElementById("event-title").value;
             index.DESCRIPTION = document.getElementById("event-description").value;
             index.LOCATION = document.getElementById("event-location").value;
@@ -2005,26 +2590,71 @@ let update_event = function() {
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
         // clean form
+<<<<<<< HEAD
         _helperJs.side_toaster("<img src='assets/image/E25C.svg'", 2000);
         _mithrilDefault.default.route.set("/page_calendar");
         _eximportJs.export_ical("greg.ics", value);
         clear_form();
     }).catch(function(err) {});
 };
+=======
+        renderHello(events);
+        _eximportJs.export_ical("greg.ics", value);
+        status.view = "month";
+        router();
+        clear_form();
+    }).catch(function(err) {});
+};
+// ////////////
+// EDIT EVENT
+// /////////
+let edit_event = function() {
+    document.getElementById("delete-event").style.display = "block";
+    document.getElementById("export-event").style.display = "block";
+    events.forEach(function(index) {
+        if (index.UID == status.selected_day_id) {
+            document.getElementById("event-title").value = index.SUMMARY;
+            document.getElementById("event-date").value = index.dateStart;
+            document.getElementById("event-date-end").value = index.dateEnd;
+            document.getElementById("event-time-start").value = index.time_start;
+            document.getElementById("event-time-end").value = index.time_end;
+            document.getElementById("event-description").value = index.DESCRIPTION;
+            document.getElementById("event-location").value = index.LOCATION;
+            document.querySelector("#event-notification-time").value = index.alarm;
+            document.getElementById("form-image").src = index.ATTACH;
+            document.getElementById("event-recur").value = index.rrule_;
+        }
+    });
+};
+>>>>>>> master
 //////////////
 //DELETE EVENT
 ///////////
 let delete_event = function() {
+<<<<<<< HEAD
     events = events.filter((person)=>person.UID != status.selected_day_id
     );
     remove_alarm(status.selected_day_id);
+=======
+    let f = false;
+    events = events.filter((person)=>person.UID != status.selected_day_id
+    );
+    remove_alarm(status.selected_day_id);
+    f = true;
+    status.edit_event = false;
+>>>>>>> master
     let without_subscription = events.filter((events3)=>events3.isSubscription === false
     );
     clear_form();
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
+<<<<<<< HEAD
         _eximportJs.export_ical("greg.ics", value);
         _helperJs.side_toaster("event deleted", 2000);
         _mithrilDefault.default.route.set("/page_calendar");
+=======
+        renderHello(events);
+        _eximportJs.export_ical("greg.ics", value);
+>>>>>>> master
     }).catch(function(err) {
         // This code runs if there were any errors
         console.log(err);
@@ -2036,6 +2666,7 @@ let t = new Date();
 let m = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear();
+<<<<<<< HEAD
 // callback import event
 let import_event_callback = function(id, date) {
     _helperJs.toaster("done", 2000);
@@ -2043,6 +2674,18 @@ let import_event_callback = function(id, date) {
     let without_subscription = events.filter((events4)=>events4.isSubscription === false
     );
     _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
+=======
+event_check_day(y + "-" + m + "-" + d);
+// callback import event
+let import_event = function(id, date) {
+    _helperJs.toaster("done", 2000);
+    _helperJs.bottom_bar("edit", "", "");
+    //renderHello(events);
+    let without_subscription = events.filter((events4)=>events4.isSubscription === false
+    );
+    _localforageDefault.default.setItem("events", without_subscription).then(function(value) {
+        renderHello(events);
+>>>>>>> master
         _eximportJs.export_ical("greg.ics", without_subscription);
     }).catch(function(err) {});
 };
@@ -2059,8 +2702,13 @@ let set_datetime_form = function() {
     document.getElementById("event-time-end").value = pp;
 };
 let pick_image_callback = function(resultBlob) {
+<<<<<<< HEAD
     let t6 = document.getElementById("form-image");
     t6.src = URL.createObjectURL(resultBlob);
+=======
+    let t8 = document.getElementById("form-image");
+    t8.src = URL.createObjectURL(resultBlob);
+>>>>>>> master
     document.getElementById("form-image-wrapper").classList.add("item");
     document.querySelectorAll("div#add-edit-event .item").forEach(function(i, p) {
         i.setAttribute("tabindex", p);
@@ -2068,7 +2716,10 @@ let pick_image_callback = function(resultBlob) {
     let fr = new FileReader();
     fr.onload = function() {
         blob = fr.result;
+<<<<<<< HEAD
         console.log("blob" + blob);
+=======
+>>>>>>> master
     };
     fr.readAsDataURL(resultBlob);
 };
@@ -2092,6 +2743,7 @@ function longpress_action(param) {
             window.close();
             break;
         case "ArrowLeft":
+<<<<<<< HEAD
             break;
     }
 }
@@ -2108,6 +2760,12 @@ let import_event = function() {
 let stop_scan_callback = function() {
     _mithrilDefault.default.route.set("/page_subscriptions");
 };
+=======
+            status.view;
+            break;
+    }
+}
+>>>>>>> master
 // /////////////
 // //SHORTPRESS
 // ////////////
@@ -2117,6 +2775,7 @@ function shortpress_action(param) {
             jump_to_today();
             break;
         case "ArrowUp":
+<<<<<<< HEAD
             if (_mithrilDefault.default.route.get() == "/page_calendar") nav(-7);
             if (_mithrilDefault.default.route.get() == "/page_events" || _mithrilDefault.default.route.get() == "/page_options" || _mithrilDefault.default.route.get() == "/page_subscriptions" || _mithrilDefault.default.route.get() == "/page_add_event" || _mithrilDefault.default.route.get() == "/page_edit_event") nav(-1);
             break;
@@ -2130,6 +2789,21 @@ function shortpress_action(param) {
             break;
         case "ArrowLeft":
             if (_mithrilDefault.default.route.get() != "/page_calendar") return true;
+=======
+            if (status.view == "month") nav(-7);
+            if (status.view == "add-edit-event" || status.view == "list-view" || status.view == "options" || status.view == "subscription") nav(-1);
+            break;
+        case "ArrowDown":
+            if (status.view == "month") nav(7);
+            if (status.view == "add-edit-event" || status.view == "list-view" || status.view == "options" || status.view == "subscription") nav(1);
+            break;
+        case "ArrowRight":
+            if (status.view != "month") return true;
+            nav(1);
+            break;
+        case "ArrowLeft":
+            if (status.view != "month") return true;
+>>>>>>> master
             nav(-1);
             break;
         case "1":
@@ -2146,10 +2820,21 @@ function shortpress_action(param) {
                 e.classList.toggle("active");
             });
             break;
+<<<<<<< HEAD
         case "SoftRight":
         case "Alt":
             if (_mithrilDefault.default.route.get() == "/page_calendar") {
                 _mithrilDefault.default.route.set("/page_options");
+=======
+        case "7":
+            break;
+        case "SoftRight":
+        case "Alt":
+            console.log(status.view);
+            if (status.view == "month") {
+                status.view = "options";
+                router();
+>>>>>>> master
                 return true;
             }
             if (status.view == "subscription") {
@@ -2160,12 +2845,17 @@ function shortpress_action(param) {
             break;
         case "SoftLeft":
         case "Control":
+<<<<<<< HEAD
             if (_mithrilDefault.default.route.get() == "/page_events") {
+=======
+            if (status.view == "list-view") {
+>>>>>>> master
                 if (document.activeElement.classList.contains("subscription")) {
                     _helperJs.toaster("a subscription cannot be edited", 2000);
                     return false;
                 }
                 status.selected_day_id = document.activeElement.getAttribute("data-id");
+<<<<<<< HEAD
                 update_event_date = events.filter(function(arr) {
                     return arr.UID == status.selected_day_id;
                 })[0];
@@ -2189,6 +2879,28 @@ function shortpress_action(param) {
                 // when new event
                 // set time
                 // set_datetime_form();
+=======
+                status.edit_event = true;
+                edit_event();
+                status.view = "add-edit-event";
+                router();
+            }
+            if (status.view == "subscription") {
+                _scanJs.start_scan(callback_scan);
+                status.view = "scan";
+                return true;
+            }
+            if (status.view == "options") {
+                delete_subscription();
+                return true;
+            }
+            if (status.view == "month") {
+                status.view = "add-edit-event";
+                router();
+                // when new event
+                // set time
+                set_datetime_form();
+>>>>>>> master
                 return true;
             }
             break;
@@ -2215,6 +2927,7 @@ function shortpress_action(param) {
                 blob = "";
                 return true;
             }
+<<<<<<< HEAD
             //toggle month/events
             if (_mithrilDefault.default.route.get() == "/page_calendar" || _mithrilDefault.default.route.get() == "/page_events") _mithrilDefault.default.route.get() == "/page_calendar" ? _mithrilDefault.default.route.set("/page_events") : _mithrilDefault.default.route.set("/page_calendar");
             break;
@@ -2225,6 +2938,57 @@ function shortpress_action(param) {
             if (_mithrilDefault.default.route.get() == "/page_subscriptions") {
                 _mithrilDefault.default.route.set("/page_options");
                 if (document.getElementById("qr-screen").style == "block") _scanJs.stop_scan(stop_scan_callback);
+=======
+            if (document.activeElement.getAttribute("data-function") == "add-subscription") {
+                status.view = "subscription";
+                router();
+                return true;
+            }
+            // same button with different text and action
+            if (document.activeElement.id == "save-event") {
+                if (status.edit_event) update_event();
+                else store_event();
+                return true;
+            }
+            if (document.activeElement.id == "delete-event") {
+                if (delete_event()) {
+                    status.view = "month";
+                    router();
+                }
+                return true;
+            }
+            if (status.view == "options") {
+                if (document.activeElement.getAttribute("data-function") == "export") _localforageDefault.default.getItem("events").then(function(value) {
+                    _eximportJs.export_ical("greg.ics", value);
+                }).catch(function(err) {
+                    console.log(err);
+                });
+                if (document.activeElement.getAttribute("data-function") == "import") _eximportJs.loadICS(document.activeElement.getAttribute("data-filename"), import_event);
+                return true;
+            }
+            if (status.view == "month" || status.view == "list-view") router("view");
+            break;
+        case "Backspace":
+            if (status.view == "add-edit-event" && document.activeElement.tagName != "INPUT") {
+                param.preventDefault;
+                status.view = "month";
+                router();
+            }
+            if (status.view == "options") {
+                status.view = "month";
+                router();
+            }
+            if (status.view == "scan") {
+                param.preventDefault;
+                status.view = "subscription";
+                _scanJs.stop_scan();
+                router();
+            }
+            if (status.view == "subscription") {
+                param.preventDefault;
+                status.view = "options";
+                router();
+>>>>>>> master
             }
             break;
     }
@@ -2233,8 +2997,15 @@ function shortpress_action(param) {
 // //shortpress / longpress logic
 // //////////////////////////////
 function handleKeyDown(evt) {
+<<<<<<< HEAD
     //option_button_bar();
     if (evt.key === "Backspace") evt.preventDefault();
+=======
+    option_button_bar();
+    if (evt.key === "Backspace") {
+        if (status.view == "options" || status.view == "add-edit-event" || status.view == "scan") evt.preventDefault();
+    }
+>>>>>>> master
     if (evt.key === "EndCall") {
         evt.preventDefault();
         window.close();
@@ -2261,7 +3032,11 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
+<<<<<<< HEAD
 },{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"8ZRFG":[function(require,module,exports) {
+=======
+},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ","mustache":"f4a22"}],"8ZRFG":[function(require,module,exports) {
+>>>>>>> master
 var global = arguments[3];
 /*!
     localForage -- Offline Storage, Improved
@@ -4502,7 +5277,11 @@ parcelHelpers.export(exports, "list_files", ()=>list_files
 let sort_array = function(arr, item_key, type) {
     if (type == "date") arr.sort((a, b)=>{
         let da = new Date(a[item_key]), db = new Date(b[item_key]);
+<<<<<<< HEAD
         return db - da;
+=======
+        return da - db;
+>>>>>>> master
     });
     //sort by number
     if (type == "number") arr.sort((a, b)=>{
@@ -4939,7 +5718,10 @@ let list_ics = function() {
 let parse_ics = function(data, callback, saveOnDevice, subscription) {
     const ical = require("ical");
     const datas = ical.parseICS(data);
+<<<<<<< HEAD
     if (subscription) subscription = "subscription";
+=======
+>>>>>>> master
     let last_uid;
     let last_date;
     for(let k in datas)if (datas.hasOwnProperty(k)) {
@@ -4968,7 +5750,15 @@ let parse_ics = function(data, callback, saveOnDevice, subscription) {
             }
             let parse_rrule = function() {
                 let feedback = "none";
+<<<<<<< HEAD
                 if (ev.rrule != null || ev.rrule != undefined) feedback = ev.rrule.freq;
+=======
+                if (ev.rrule != null || ev.rrule != undefined) {
+                    let a = ev.rrule;
+                    feedback = a.freq;
+                //console.log(ev.rrule);
+                }
+>>>>>>> master
                 return feedback;
             };
             let imp = {
@@ -14727,11 +15517,22 @@ parcelHelpers.export(exports, "start_scan", ()=>start_scan
 );
 var _jsqr = require("jsqr");
 var _jsqrDefault = parcelHelpers.interopDefault(_jsqr);
+<<<<<<< HEAD
 let video;
 let intv;
 let stop_scan = function(callback) {
     document.getElementById("qr-screen").style.display = "none";
     callback();
+=======
+var _appJs = require("../../app.js");
+let video;
+let intv;
+let stop_scan = function() {
+    document.getElementById("qr-screen").style.display = "none";
+    document.getElementById("cal-subs-url").focus();
+    _appJs.status.view = "subscription";
+    console.log("yeah");
+>>>>>>> master
 };
 let start_scan = function(callback) {
     document.getElementById("qr-screen").style.display = "block";
@@ -14758,9 +15559,16 @@ let start_scan = function(callback) {
                 var imageData = barcodeContext.getImageData(0, 0, imageWidth, imageHeight);
                 var idd = imageData.data;
                 let code = _jsqrDefault.default(idd, imageWidth, imageHeight);
+<<<<<<< HEAD
                 if (code) {
                     callback(code.data);
                     stop_scan();
+=======
+                console.log(code);
+                if (code) {
+                    stop_scan();
+                    callback(code.data);
+>>>>>>> master
                     clearInterval(intv);
                 }
             }, 1000);
@@ -14771,7 +15579,11 @@ let start_scan = function(callback) {
     else console.log("getUserMedia not supported");
 };
 
+<<<<<<< HEAD
 },{"jsqr":"04jWG","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ"}],"04jWG":[function(require,module,exports) {
+=======
+},{"jsqr":"04jWG","@parcel/transformer-js/src/esmodule-helpers.js":"cj2YQ","../../app.js":"20BJq"}],"04jWG":[function(require,module,exports) {
+>>>>>>> master
 (function webpackUniversalModuleDefinition(root, factory) {
     module.exports = factory();
 })(typeof self !== 'undefined' ? self : this, function() {
@@ -26143,6 +26955,7 @@ let start_scan = function(callback) {
     ])["default"];
 });
 
+<<<<<<< HEAD
 },{}],"05eVJ":[function(require,module,exports) {
 "use strict";
 var hyperscript = require("./hyperscript");
@@ -27919,4 +28732,601 @@ module.exports = function(attrs, extras) {
 };
 
 },{"./hasOwn":"94qwS"}]},["il488","20BJq"], "20BJq", "parcelRequire8806")
+=======
+},{}],"f4a22":[function(require,module,exports) {
+(function(global, factory) {
+    module.exports = factory();
+})(this, function() {
+    'use strict';
+    /*!
+   * mustache.js - Logic-less {{mustache}} templates with JavaScript
+   * http://github.com/janl/mustache.js
+   */ var objectToString = Object.prototype.toString;
+    var isArray = Array.isArray || function isArrayPolyfill(object) {
+        return objectToString.call(object) === '[object Array]';
+    };
+    function isFunction(object) {
+        return typeof object === 'function';
+    }
+    /**
+   * More correct typeof string handling array
+   * which normally returns typeof 'object'
+   */ function typeStr(obj) {
+        return isArray(obj) ? 'array' : typeof obj;
+    }
+    function escapeRegExp(string) {
+        return string.replace(/[\-\[\]{}()*+?.,\\\^$|#\s]/g, '\\$&');
+    }
+    /**
+   * Null safe way of checking whether or not an object,
+   * including its prototype, has a given property
+   */ function hasProperty(obj, propName) {
+        return obj != null && typeof obj === 'object' && propName in obj;
+    }
+    /**
+   * Safe way of detecting whether or not the given thing is a primitive and
+   * whether it has the given property
+   */ function primitiveHasOwnProperty(primitive, propName) {
+        return primitive != null && typeof primitive !== 'object' && primitive.hasOwnProperty && primitive.hasOwnProperty(propName);
+    }
+    // Workaround for https://issues.apache.org/jira/browse/COUCHDB-577
+    // See https://github.com/janl/mustache.js/issues/189
+    var regExpTest = RegExp.prototype.test;
+    function testRegExp(re, string) {
+        return regExpTest.call(re, string);
+    }
+    var nonSpaceRe = /\S/;
+    function isWhitespace(string) {
+        return !testRegExp(nonSpaceRe, string);
+    }
+    var entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+        '/': '&#x2F;',
+        '`': '&#x60;',
+        '=': '&#x3D;'
+    };
+    function escapeHtml(string) {
+        return String(string).replace(/[&<>"'`=\/]/g, function fromEntityMap(s) {
+            return entityMap[s];
+        });
+    }
+    var whiteRe = /\s*/;
+    var spaceRe = /\s+/;
+    var equalsRe = /\s*=/;
+    var curlyRe = /\s*\}/;
+    var tagRe = /#|\^|\/|>|\{|&|=|!/;
+    /**
+   * Breaks up the given `template` string into a tree of tokens. If the `tags`
+   * argument is given here it must be an array with two string values: the
+   * opening and closing tags used in the template (e.g. [ "<%", "%>" ]). Of
+   * course, the default is to use mustaches (i.e. mustache.tags).
+   *
+   * A token is an array with at least 4 elements. The first element is the
+   * mustache symbol that was used inside the tag, e.g. "#" or "&". If the tag
+   * did not contain a symbol (i.e. {{myValue}}) this element is "name". For
+   * all text that appears outside a symbol this element is "text".
+   *
+   * The second element of a token is its "value". For mustache tags this is
+   * whatever else was inside the tag besides the opening symbol. For text tokens
+   * this is the text itself.
+   *
+   * The third and fourth elements of the token are the start and end indices,
+   * respectively, of the token in the original template.
+   *
+   * Tokens that are the root node of a subtree contain two more elements: 1) an
+   * array of tokens in the subtree and 2) the index in the original template at
+   * which the closing tag for that section begins.
+   *
+   * Tokens for partials also contain two more elements: 1) a string value of
+   * indendation prior to that tag and 2) the index of that tag on that line -
+   * eg a value of 2 indicates the partial is the third tag on this line.
+   */ function parseTemplate(template, tags) {
+        if (!template) return [];
+        var lineHasNonSpace = false;
+        var sections = []; // Stack to hold section tokens
+        var tokens = []; // Buffer to hold the tokens
+        var spaces = []; // Indices of whitespace tokens on the current line
+        var hasTag = false; // Is there a {{tag}} on the current line?
+        var nonSpace = false; // Is there a non-space char on the current line?
+        var indentation = ''; // Tracks indentation for tags that use it
+        var tagIndex = 0; // Stores a count of number of tags encountered on a line
+        // Strips all whitespace tokens array for the current line
+        // if there was a {{#tag}} on it and otherwise only space.
+        function stripSpace() {
+            if (hasTag && !nonSpace) while(spaces.length)delete tokens[spaces.pop()];
+            else spaces = [];
+            hasTag = false;
+            nonSpace = false;
+        }
+        var openingTagRe, closingTagRe, closingCurlyRe;
+        function compileTags(tagsToCompile) {
+            if (typeof tagsToCompile === 'string') tagsToCompile = tagsToCompile.split(spaceRe, 2);
+            if (!isArray(tagsToCompile) || tagsToCompile.length !== 2) throw new Error('Invalid tags: ' + tagsToCompile);
+            openingTagRe = new RegExp(escapeRegExp(tagsToCompile[0]) + '\\s*');
+            closingTagRe = new RegExp('\\s*' + escapeRegExp(tagsToCompile[1]));
+            closingCurlyRe = new RegExp('\\s*' + escapeRegExp('}' + tagsToCompile[1]));
+        }
+        compileTags(tags || mustache.tags);
+        var scanner = new Scanner(template);
+        var start, type, value, chr, token, openSection;
+        while(!scanner.eos()){
+            start = scanner.pos;
+            // Match any text between tags.
+            value = scanner.scanUntil(openingTagRe);
+            if (value) for(var i = 0, valueLength = value.length; i < valueLength; ++i){
+                chr = value.charAt(i);
+                if (isWhitespace(chr)) {
+                    spaces.push(tokens.length);
+                    indentation += chr;
+                } else {
+                    nonSpace = true;
+                    lineHasNonSpace = true;
+                    indentation += ' ';
+                }
+                tokens.push([
+                    'text',
+                    chr,
+                    start,
+                    start + 1
+                ]);
+                start += 1;
+                // Check for whitespace on the current line.
+                if (chr === '\n') {
+                    stripSpace();
+                    indentation = '';
+                    tagIndex = 0;
+                    lineHasNonSpace = false;
+                }
+            }
+            // Match the opening tag.
+            if (!scanner.scan(openingTagRe)) break;
+            hasTag = true;
+            // Get the tag type.
+            type = scanner.scan(tagRe) || 'name';
+            scanner.scan(whiteRe);
+            // Get the tag value.
+            if (type === '=') {
+                value = scanner.scanUntil(equalsRe);
+                scanner.scan(equalsRe);
+                scanner.scanUntil(closingTagRe);
+            } else if (type === '{') {
+                value = scanner.scanUntil(closingCurlyRe);
+                scanner.scan(curlyRe);
+                scanner.scanUntil(closingTagRe);
+                type = '&';
+            } else value = scanner.scanUntil(closingTagRe);
+            // Match the closing tag.
+            if (!scanner.scan(closingTagRe)) throw new Error('Unclosed tag at ' + scanner.pos);
+            if (type == '>') token = [
+                type,
+                value,
+                start,
+                scanner.pos,
+                indentation,
+                tagIndex,
+                lineHasNonSpace
+            ];
+            else token = [
+                type,
+                value,
+                start,
+                scanner.pos
+            ];
+            tagIndex++;
+            tokens.push(token);
+            if (type === '#' || type === '^') sections.push(token);
+            else if (type === '/') {
+                // Check section nesting.
+                openSection = sections.pop();
+                if (!openSection) throw new Error('Unopened section "' + value + '" at ' + start);
+                if (openSection[1] !== value) throw new Error('Unclosed section "' + openSection[1] + '" at ' + start);
+            } else if (type === 'name' || type === '{' || type === '&') nonSpace = true;
+            else if (type === '=') // Set the tags for the next time around.
+            compileTags(value);
+        }
+        stripSpace();
+        // Make sure there are no open sections when we're done.
+        openSection = sections.pop();
+        if (openSection) throw new Error('Unclosed section "' + openSection[1] + '" at ' + scanner.pos);
+        return nestTokens(squashTokens(tokens));
+    }
+    /**
+   * Combines the values of consecutive text tokens in the given `tokens` array
+   * to a single token.
+   */ function squashTokens(tokens) {
+        var squashedTokens = [];
+        var token, lastToken;
+        for(var i = 0, numTokens = tokens.length; i < numTokens; ++i){
+            token = tokens[i];
+            if (token) {
+                if (token[0] === 'text' && lastToken && lastToken[0] === 'text') {
+                    lastToken[1] += token[1];
+                    lastToken[3] = token[3];
+                } else {
+                    squashedTokens.push(token);
+                    lastToken = token;
+                }
+            }
+        }
+        return squashedTokens;
+    }
+    /**
+   * Forms the given array of `tokens` into a nested tree structure where
+   * tokens that represent a section have two additional items: 1) an array of
+   * all tokens that appear in that section and 2) the index in the original
+   * template that represents the end of that section.
+   */ function nestTokens(tokens) {
+        var nestedTokens = [];
+        var collector = nestedTokens;
+        var sections = [];
+        var token, section;
+        for(var i = 0, numTokens = tokens.length; i < numTokens; ++i){
+            token = tokens[i];
+            switch(token[0]){
+                case '#':
+                case '^':
+                    collector.push(token);
+                    sections.push(token);
+                    collector = token[4] = [];
+                    break;
+                case '/':
+                    section = sections.pop();
+                    section[5] = token[2];
+                    collector = sections.length > 0 ? sections[sections.length - 1][4] : nestedTokens;
+                    break;
+                default:
+                    collector.push(token);
+            }
+        }
+        return nestedTokens;
+    }
+    /**
+   * A simple string scanner that is used by the template parser to find
+   * tokens in template strings.
+   */ function Scanner(string) {
+        this.string = string;
+        this.tail = string;
+        this.pos = 0;
+    }
+    /**
+   * Returns `true` if the tail is empty (end of string).
+   */ Scanner.prototype.eos = function eos() {
+        return this.tail === '';
+    };
+    /**
+   * Tries to match the given regular expression at the current position.
+   * Returns the matched text if it can match, the empty string otherwise.
+   */ Scanner.prototype.scan = function scan(re) {
+        var match = this.tail.match(re);
+        if (!match || match.index !== 0) return '';
+        var string = match[0];
+        this.tail = this.tail.substring(string.length);
+        this.pos += string.length;
+        return string;
+    };
+    /**
+   * Skips all text until the given regular expression can be matched. Returns
+   * the skipped string, which is the entire tail if no match can be made.
+   */ Scanner.prototype.scanUntil = function scanUntil(re) {
+        var index = this.tail.search(re), match;
+        switch(index){
+            case -1:
+                match = this.tail;
+                this.tail = '';
+                break;
+            case 0:
+                match = '';
+                break;
+            default:
+                match = this.tail.substring(0, index);
+                this.tail = this.tail.substring(index);
+        }
+        this.pos += match.length;
+        return match;
+    };
+    /**
+   * Represents a rendering context by wrapping a view object and
+   * maintaining a reference to the parent context.
+   */ function Context(view, parentContext) {
+        this.view = view;
+        this.cache = {
+            '.': this.view
+        };
+        this.parent = parentContext;
+    }
+    /**
+   * Creates a new context using the given view with this context
+   * as the parent.
+   */ Context.prototype.push = function push(view) {
+        return new Context(view, this);
+    };
+    /**
+   * Returns the value of the given name in this context, traversing
+   * up the context hierarchy if the value is absent in this context's view.
+   */ Context.prototype.lookup = function lookup(name) {
+        var cache = this.cache;
+        var value;
+        if (cache.hasOwnProperty(name)) value = cache[name];
+        else {
+            var context = this, intermediateValue, names, index, lookupHit = false;
+            while(context){
+                if (name.indexOf('.') > 0) {
+                    intermediateValue = context.view;
+                    names = name.split('.');
+                    index = 0;
+                    /**
+           * Using the dot notion path in `name`, we descend through the
+           * nested objects.
+           *
+           * To be certain that the lookup has been successful, we have to
+           * check if the last object in the path actually has the property
+           * we are looking for. We store the result in `lookupHit`.
+           *
+           * This is specially necessary for when the value has been set to
+           * `undefined` and we want to avoid looking up parent contexts.
+           *
+           * In the case where dot notation is used, we consider the lookup
+           * to be successful even if the last "object" in the path is
+           * not actually an object but a primitive (e.g., a string, or an
+           * integer), because it is sometimes useful to access a property
+           * of an autoboxed primitive, such as the length of a string.
+           **/ while(intermediateValue != null && index < names.length){
+                        if (index === names.length - 1) lookupHit = hasProperty(intermediateValue, names[index]) || primitiveHasOwnProperty(intermediateValue, names[index]);
+                        intermediateValue = intermediateValue[names[index++]];
+                    }
+                } else {
+                    intermediateValue = context.view[name];
+                    /**
+           * Only checking against `hasProperty`, which always returns `false` if
+           * `context.view` is not an object. Deliberately omitting the check
+           * against `primitiveHasOwnProperty` if dot notation is not used.
+           *
+           * Consider this example:
+           * ```
+           * Mustache.render("The length of a football field is {{#length}}{{length}}{{/length}}.", {length: "100 yards"})
+           * ```
+           *
+           * If we were to check also against `primitiveHasOwnProperty`, as we do
+           * in the dot notation case, then render call would return:
+           *
+           * "The length of a football field is 9."
+           *
+           * rather than the expected:
+           *
+           * "The length of a football field is 100 yards."
+           **/ lookupHit = hasProperty(context.view, name);
+                }
+                if (lookupHit) {
+                    value = intermediateValue;
+                    break;
+                }
+                context = context.parent;
+            }
+            cache[name] = value;
+        }
+        if (isFunction(value)) value = value.call(this.view);
+        return value;
+    };
+    /**
+   * A Writer knows how to take a stream of tokens and render them to a
+   * string, given a context. It also maintains a cache of templates to
+   * avoid the need to parse the same template twice.
+   */ function Writer() {
+        this.templateCache = {
+            _cache: {},
+            set: function set(key, value) {
+                this._cache[key] = value;
+            },
+            get: function get(key) {
+                return this._cache[key];
+            },
+            clear: function clear() {
+                this._cache = {};
+            }
+        };
+    }
+    /**
+   * Clears all cached templates in this writer.
+   */ Writer.prototype.clearCache = function clearCache() {
+        if (typeof this.templateCache !== 'undefined') this.templateCache.clear();
+    };
+    /**
+   * Parses and caches the given `template` according to the given `tags` or
+   * `mustache.tags` if `tags` is omitted,  and returns the array of tokens
+   * that is generated from the parse.
+   */ Writer.prototype.parse = function parse(template, tags) {
+        var cache = this.templateCache;
+        var cacheKey = template + ':' + (tags || mustache.tags).join(':');
+        var isCacheEnabled = typeof cache !== 'undefined';
+        var tokens = isCacheEnabled ? cache.get(cacheKey) : undefined;
+        if (tokens == undefined) {
+            tokens = parseTemplate(template, tags);
+            isCacheEnabled && cache.set(cacheKey, tokens);
+        }
+        return tokens;
+    };
+    /**
+   * High-level method that is used to render the given `template` with
+   * the given `view`.
+   *
+   * The optional `partials` argument may be an object that contains the
+   * names and templates of partials that are used in the template. It may
+   * also be a function that is used to load partial templates on the fly
+   * that takes a single argument: the name of the partial.
+   *
+   * If the optional `config` argument is given here, then it should be an
+   * object with a `tags` attribute or an `escape` attribute or both.
+   * If an array is passed, then it will be interpreted the same way as
+   * a `tags` attribute on a `config` object.
+   *
+   * The `tags` attribute of a `config` object must be an array with two
+   * string values: the opening and closing tags used in the template (e.g.
+   * [ "<%", "%>" ]). The default is to mustache.tags.
+   *
+   * The `escape` attribute of a `config` object must be a function which
+   * accepts a string as input and outputs a safely escaped string.
+   * If an `escape` function is not provided, then an HTML-safe string
+   * escaping function is used as the default.
+   */ Writer.prototype.render = function render(template, view, partials, config) {
+        var tags = this.getConfigTags(config);
+        var tokens = this.parse(template, tags);
+        var context = view instanceof Context ? view : new Context(view, undefined);
+        return this.renderTokens(tokens, context, partials, template, config);
+    };
+    /**
+   * Low-level method that renders the given array of `tokens` using
+   * the given `context` and `partials`.
+   *
+   * Note: The `originalTemplate` is only ever used to extract the portion
+   * of the original template that was contained in a higher-order section.
+   * If the template doesn't use higher-order sections, this argument may
+   * be omitted.
+   */ Writer.prototype.renderTokens = function renderTokens(tokens, context, partials, originalTemplate, config) {
+        var buffer = '';
+        var token, symbol, value;
+        for(var i = 0, numTokens = tokens.length; i < numTokens; ++i){
+            value = undefined;
+            token = tokens[i];
+            symbol = token[0];
+            if (symbol === '#') value = this.renderSection(token, context, partials, originalTemplate, config);
+            else if (symbol === '^') value = this.renderInverted(token, context, partials, originalTemplate, config);
+            else if (symbol === '>') value = this.renderPartial(token, context, partials, config);
+            else if (symbol === '&') value = this.unescapedValue(token, context);
+            else if (symbol === 'name') value = this.escapedValue(token, context, config);
+            else if (symbol === 'text') value = this.rawValue(token);
+            if (value !== undefined) buffer += value;
+        }
+        return buffer;
+    };
+    Writer.prototype.renderSection = function renderSection(token, context, partials, originalTemplate, config) {
+        var self = this;
+        var buffer = '';
+        var value = context.lookup(token[1]);
+        // This function is used to render an arbitrary template
+        // in the current context by higher-order sections.
+        function subRender(template) {
+            return self.render(template, context, partials, config);
+        }
+        if (!value) return;
+        if (isArray(value)) for(var j = 0, valueLength = value.length; j < valueLength; ++j)buffer += this.renderTokens(token[4], context.push(value[j]), partials, originalTemplate, config);
+        else if (typeof value === 'object' || typeof value === 'string' || typeof value === 'number') buffer += this.renderTokens(token[4], context.push(value), partials, originalTemplate, config);
+        else if (isFunction(value)) {
+            if (typeof originalTemplate !== 'string') throw new Error('Cannot use higher-order sections without the original template');
+            // Extract the portion of the original template that the section contains.
+            value = value.call(context.view, originalTemplate.slice(token[3], token[5]), subRender);
+            if (value != null) buffer += value;
+        } else buffer += this.renderTokens(token[4], context, partials, originalTemplate, config);
+        return buffer;
+    };
+    Writer.prototype.renderInverted = function renderInverted(token, context, partials, originalTemplate, config) {
+        var value = context.lookup(token[1]);
+        // Use JavaScript's definition of falsy. Include empty arrays.
+        // See https://github.com/janl/mustache.js/issues/186
+        if (!value || isArray(value) && value.length === 0) return this.renderTokens(token[4], context, partials, originalTemplate, config);
+    };
+    Writer.prototype.indentPartial = function indentPartial(partial, indentation, lineHasNonSpace) {
+        var filteredIndentation = indentation.replace(/[^ \t]/g, '');
+        var partialByNl = partial.split('\n');
+        for(var i = 0; i < partialByNl.length; i++)if (partialByNl[i].length && (i > 0 || !lineHasNonSpace)) partialByNl[i] = filteredIndentation + partialByNl[i];
+        return partialByNl.join('\n');
+    };
+    Writer.prototype.renderPartial = function renderPartial(token, context, partials, config) {
+        if (!partials) return;
+        var tags = this.getConfigTags(config);
+        var value = isFunction(partials) ? partials(token[1]) : partials[token[1]];
+        if (value != null) {
+            var lineHasNonSpace = token[6];
+            var tagIndex = token[5];
+            var indentation = token[4];
+            var indentedValue = value;
+            if (tagIndex == 0 && indentation) indentedValue = this.indentPartial(value, indentation, lineHasNonSpace);
+            var tokens = this.parse(indentedValue, tags);
+            return this.renderTokens(tokens, context, partials, indentedValue, config);
+        }
+    };
+    Writer.prototype.unescapedValue = function unescapedValue(token, context) {
+        var value = context.lookup(token[1]);
+        if (value != null) return value;
+    };
+    Writer.prototype.escapedValue = function escapedValue(token, context, config) {
+        var escape = this.getConfigEscape(config) || mustache.escape;
+        var value = context.lookup(token[1]);
+        if (value != null) return typeof value === 'number' && escape === mustache.escape ? String(value) : escape(value);
+    };
+    Writer.prototype.rawValue = function rawValue(token) {
+        return token[1];
+    };
+    Writer.prototype.getConfigTags = function getConfigTags(config) {
+        if (isArray(config)) return config;
+        else if (config && typeof config === 'object') return config.tags;
+        else return undefined;
+    };
+    Writer.prototype.getConfigEscape = function getConfigEscape(config) {
+        if (config && typeof config === 'object' && !isArray(config)) return config.escape;
+        else return undefined;
+    };
+    var mustache = {
+        name: 'mustache.js',
+        version: '4.2.0',
+        tags: [
+            '{{',
+            '}}'
+        ],
+        clearCache: undefined,
+        escape: undefined,
+        parse: undefined,
+        render: undefined,
+        Scanner: undefined,
+        Context: undefined,
+        Writer: undefined,
+        /**
+     * Allows a user to override the default caching strategy, by providing an
+     * object with set, get and clear methods. This can also be used to disable
+     * the cache by setting it to the literal `undefined`.
+     */ set templateCache (cache){
+            defaultWriter.templateCache = cache;
+        },
+        /**
+     * Gets the default or overridden caching object from the default writer.
+     */ get templateCache () {
+            return defaultWriter.templateCache;
+        }
+    };
+    // All high-level mustache.* functions use this writer.
+    var defaultWriter = new Writer();
+    /**
+   * Clears all cached templates in the default writer.
+   */ mustache.clearCache = function clearCache() {
+        return defaultWriter.clearCache();
+    };
+    /**
+   * Parses and caches the given template in the default writer and returns the
+   * array of tokens it contains. Doing this ahead of time avoids the need to
+   * parse templates on the fly as they are rendered.
+   */ mustache.parse = function parse(template, tags) {
+        return defaultWriter.parse(template, tags);
+    };
+    /**
+   * Renders the `template` with the given `view`, `partials`, and `config`
+   * using the default writer.
+   */ mustache.render = function render(template, view, partials, config) {
+        if (typeof template !== 'string') throw new TypeError('Invalid template! Template should be a "string" but "' + typeStr(template) + '" was given as the first ' + 'argument for mustache#render(template, view, partials)');
+        return defaultWriter.render(template, view, partials, config);
+    };
+    // Export the escaping function so that the user may override it.
+    // See https://github.com/janl/mustache.js/issues/244
+    mustache.escape = escapeHtml;
+    // Export these mainly for testing, but also for advanced usage.
+    mustache.Scanner = Scanner;
+    mustache.Context = Context;
+    mustache.Writer = Writer;
+    return mustache;
+});
+
+},{}]},["il488","20BJq"], "20BJq", "parcelRequire8806")
+>>>>>>> master
 
