@@ -14,7 +14,86 @@ import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
-import tsdav from "tsdav";
+import { DAVClient } from "./assets/js/tsdav.js";
+
+//import { DAVClient } from "tsdav";
+
+window.addEventListener("load", async function () {
+  // console.log(await testAsyncAwait());
+  const client = new DAVClient({
+    serverUrl:
+      "https://efss.qloud.my/remote.php/dav/principals/users/ahmadmuhamad101@gmail.com/",
+    credentials: {
+      username: "ahmadmuhamad101@gmail.com",
+      password: "",
+    },
+    authMethod: "Basic",
+    defaultAccountType: "caldav",
+  });
+  (async () => {
+    await client.login();
+
+    const calendar = await client.fetchCalendars({
+      calendar: calendar[0],
+    });
+  })();
+});
+
+/*
+
+const client = new DAVClient({
+  serverUrl: "https://shared02.opsone-cloud.ch/remote.php/dav",
+  credentials: {
+    username: "",
+    password: "",
+
+    timezone: "America/Chicago",
+  },
+  authMethod: "Basic",
+  defaultAccountType: "caldav",
+});
+
+async function test() {
+  const headers = {
+    authorization: "Basic",
+    mozSystem: true,
+  };
+
+  try {
+    const calendars = await client.fetchCalendars({
+      account: {
+        username: "",
+        password: "",
+        homeUrl: "/remote.php/dav/principals/users/",
+        rootUrl: "https://shared02.opsone-cloud.ch",
+      },
+      headers,
+    });
+    console.log("n" + calendars[0]);
+  } catch (e) {
+    console.error(e);
+  }
+}
+setTimeout(function () {
+  test();
+}, 5000);
+
+*/
+
+let load_settings = function () {
+  localforage
+    .getItem("settings")
+    .then(function (value) {
+      if (value == null) return false;
+      settings = value;
+      document.getElementById("default-notification-time").value =
+        settings.default_notification;
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      console.log(err);
+    });
+};
 
 let months = [
   "Jan",
@@ -310,22 +389,6 @@ let event_slider = function (date) {
     let c = new Date(date).getTime();
     let d = events[i].rrule_;
 
-    //hide/show alarm icon
-    if (events[i].alarm) {
-      //if (events[i].alarm == "none") slider.push(events[i]);
-    }
-    //all day event
-    /*
-    if (a === c || b === c || (a < c && b > c)) {
-      if (
-        events[i].time_start == "00:00:00" &&
-        events[i].time_end == "00:00:00"
-      ) {
-        slider.push(events[i]);
-      }
-    }
-    */
-
     if (d === "none" || d === "" || d === undefined) {
       if (a === c || b === c || (a < c && b > c)) {
         //if multiday event
@@ -609,7 +672,7 @@ var page_calendar = {
         "div",
         {
           id: "event-slider",
-          class: "flex justify-content-spacearound",
+          class: "flex",
         },
         [m("div", { id: "slider-inner", class: "flex" })]
       ),
@@ -851,7 +914,7 @@ var page_options = {
         [
           m("iframe", {
             oncreate: function () {
-              if (settings.ads) {
+              if (settings.ads == true) {
                 document.querySelector("#KaiOsAds-Wrapper iframe").src =
                   "./ads.html";
               } else {
@@ -1363,23 +1426,6 @@ localforage
     console.log(err);
   });
 
-load_settings = function () {
-  localforage
-    .getItem("settings")
-    .then(function (value) {
-      if (value == null) return false;
-      settings = value;
-      document.getElementById("default-notification-time").value =
-        settings.default_notification;
-    })
-    .catch(function (err) {
-      // This code runs if there were any errors
-      console.log(err);
-    });
-};
-
-load_settings();
-
 function handleVisibilityChange() {
   if (document.visibilityState === "hidden") {
     status.visible = false;
@@ -1820,7 +1866,7 @@ let delete_event = function () {
 
 // event slider
 let t = new Date();
-let m = `0${t.getMonth() + 1}`.slice(-2);
+let mm = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear();
 

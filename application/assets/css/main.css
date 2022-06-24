@@ -474,7 +474,7 @@ div#events-wrapper article {
 }
 /*event slider*/
 div.icons-bar {
-  margin: 5px 0;
+  margin: 5px 0 0 0;
 }
 
 div.icons-bar img {
@@ -527,6 +527,8 @@ div#event-slider-indicator div div.active {
 
 div#event-slider-indicator {
   margin: 3px 0 0 0px;
+  max-width: 90vw;
+  min-width: 90vw;
 }
 
 div#event-slider article h2 {
@@ -535,7 +537,11 @@ div#event-slider article h2 {
 
 div#event-slider article {
   margin: 0 0 15px 0;
+  max-width: 80vw;
+  min-width: 80vw;
   font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   position: absolute;
   top: 0px;
   display: none;
