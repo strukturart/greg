@@ -6,7 +6,7 @@
   "browserslist": "Firefox <= 48",
   "scripts": {
     "start": "rm -rf dist/* && parcel --no-source-maps application/index.html && cp application/manifest.webapp dist && cp -r application/assets/icons dist",
-    "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize application/index.html && cp application/manifest.webapp dist && cp -r application/assets/icons dist"
+    "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize application/index.html && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/* dist/assets/"
   },
   "repository": {
     "type": "git",
@@ -20,11 +20,11 @@
   },
   "homepage": "https://github.com/strukturart/greg#readme",
   "devDependencies": {
-    "@babel/core": "7.17.10",
+    "@babel/core": "^7.18.5",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/plugin-transform-named-capturing-groups-regex": "^7.17.12",
     "@babel/plugin-transform-runtime": "^7.18.5",
     "@babel/preset-env": "^7.18.2",
-    "@babel/runtime": "^7.17.9",
     "assert": "^2.0.0",
     "babel-plugin-transform-async-to-promises": "^0.8.18",
     "browserify-zlib": "^0.2.0",

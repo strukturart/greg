@@ -110,6 +110,7 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
   for (let k in datas) {
     if (datas.hasOwnProperty(k)) {
       var ev = datas[k];
+
       if (datas[k].type == "VEVENT") {
         //date start
         let dateStart, timeStart;
@@ -201,12 +202,10 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
           time_end: timeEnd,
           notification: " ",
           alarm: "none",
-
           rrule_: parse_rrule(),
         };
 
         events.push(imp);
-
         last_uid = imp.UID;
         last_date = imp.DTSTART;
       }

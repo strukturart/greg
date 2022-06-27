@@ -1,13 +1,17 @@
 #!/bin/sh 
+
 rm -rf ./dist
 mkdir ./dist
+
+rm -rf ./build
 mkdir ./build
+
 mkdir ./dist/assets
 cp ./application/manifest.webapp ./dist/
 cp ./application/ads.html ./dist/
 
 cp -r ./application/assets/ ./dist/
-parcel build --no-source-maps  --no-cache --public-url ./ application/index.html 
+npm run  build --no-source-maps --no-optimize  ./ application/index.html 
 
 #!/bin/bash
 #create default app zip

@@ -10,75 +10,46 @@ import { bottom_bar } from "./assets/js/helper.js";
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
 import { fetch_ics } from "./assets/js/eximport.js";
 import { export_ical } from "./assets/js/eximport.js";
+import { parse_ics } from "./assets/js/eximport.js";
+
 import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
 
-//import { DAVClient } from "tsdav";
+let callback_caldata_loaded = function () {
+  showCalendar(currentMonth, currentYear);
+};
 
-window.addEventListener("load", async function () {
-  // console.log(await testAsyncAwait());
-  const client = new DAVClient({
-    serverUrl:
-      "https://efss.qloud.my/remote.php/dav/principals/users/ahmadmuhamad101@gmail.com/",
-    credentials: {
-      username: "ahmadmuhamad101@gmail.com",
-      password: "",
-    },
-    authMethod: "Basic",
-    defaultAccountType: "caldav",
-  });
-  (async () => {
-    await client.login();
-
-    const calendar = await client.fetchCalendars({
-      calendar: calendar[0],
-    });
-  })();
-});
-
-/*
-
-const client = new DAVClient({
-  serverUrl: "https://shared02.opsone-cloud.ch/remote.php/dav",
-  credentials: {
-    username: "",
-    password: "",
-
-    timezone: "America/Chicago",
-  },
-  authMethod: "Basic",
-  defaultAccountType: "caldav",
-});
-
-async function test() {
-  const headers = {
-    authorization: "Basic",
-    mozSystem: true,
-  };
-
-  try {
-    const calendars = await client.fetchCalendars({
-      account: {
-        username: "",
-        password: "",
-        homeUrl: "/remote.php/dav/principals/users/",
-        rootUrl: "https://shared02.opsone-cloud.ch",
+let load_caldav = function () {
+  accounts.forEach(function (item) {
+    const client = new DAVClient({
+      serverUrl: item.server_url,
+      credentials: {
+        username: item.user,
+        password: item.password,
       },
-      headers,
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
     });
-    console.log("n" + calendars[0]);
-  } catch (e) {
-    console.error(e);
-  }
-}
-setTimeout(function () {
-  test();
-}, 5000);
+    (async () => {
+      await client.login();
 
-*/
+      const calendars = await client.fetchCalendars();
+      console.log("cal" + JSON.stringify(calendars));
+
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+        objects.forEach(function (item) {
+          parse_ics(item.data, callback_caldata_loaded, false, true);
+        });
+      }
+    })();
+  });
+};
 
 let load_settings = function () {
   localforage
@@ -111,7 +82,7 @@ let months = [
 ];
 
 let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-let subscriptions = [{ name: "test", url: "test" }];
+let subscriptions = [];
 
 let today = new Date();
 let currentMonth = today.getMonth();
@@ -130,6 +101,22 @@ let settings = {};
 
 let blob = "";
 export let events = [];
+export let accounts = [];
+
+localforage
+  .getItem("accounts")
+  .then(function (value) {
+    if (value == null) {
+      accounts = [];
+      return false;
+    }
+    accounts = value;
+
+    load_caldav();
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
 
 //ads || ads free
 
@@ -279,7 +266,6 @@ let rrule_check = function (date) {
         events[t]["rrule_"] !== undefined
       ) {
         if (a === c || b === c || (a < c && b > c)) {
-          console.log(events[t]["rrule_"]);
           //return false;
           if (events[t].rrule_ == "MONTHLY") {
             if (
@@ -734,7 +720,6 @@ var page_calendar = {
         });
 
       clear_form();
-      //document.querySelectorAll("div#event-slider").style.opacity = "100";
     }, 500),
 };
 
@@ -894,11 +879,46 @@ var page_options = {
           item.name
         );
       }),
+
+      m("h2", "Accounts"),
+
+      m(
+        "button",
+        {
+          class: "item",
+          tabindex: subscriptions.length + 4,
+          onclick: function () {
+            m.route.set("/page_accounts");
+          },
+        },
+        "add account"
+      ),
+      m("div", { id: "accounts-text" }, "Your accounts"),
+
+      accounts.map(function (item, index) {
+        return m(
+          "button",
+          {
+            class: "item subscriptions-item",
+            "data-id": item.url,
+
+            tabindex: index + subscriptions.length + 5,
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+            onfocus: function () {
+              bottom_bar("delete", "", "");
+            },
+          },
+          item.name
+        );
+      }),
+
       m(
         "div",
         {
           id: "KaiOsAds-Wrapper",
-          tabindex: subscriptions.length + 4,
+          tabindex: subscriptions.length + accounts.length + 4,
           class: "item",
           onfocus: function () {
             bottom_bar("", "open", "");
@@ -968,6 +988,7 @@ var page_subscriptions = {
             placeholder: "URL",
             type: "text",
             id: "cal-subs-url",
+            "data-scan-action": "true",
             onfocus: function () {
               bottom_bar("qr-scan", "", "");
             },
@@ -984,6 +1005,120 @@ var page_subscriptions = {
           tabindex: "2",
           onclick: function () {
             store_subscription();
+          },
+        },
+        "save"
+      ),
+    ]);
+  },
+};
+
+var page_accounts = {
+  view: function () {
+    return m("div", { id: "account-form" }, [
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "0",
+          oncreate: function ({ dom }) {
+            dom.focus();
+          },
+        },
+        [
+          m("label", { for: "description" }, "account name"),
+          m("input", {
+            placeholder: "Name",
+            type: "text",
+            id: "account-name",
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "1",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "server"),
+          m("input", {
+            placeholder: "URL",
+            type: "text",
+            id: "account-url",
+            "data-scan-action": "true",
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "2",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "username"),
+          m("input", {
+            placeholder: "username",
+            type: "url",
+            id: "account-username",
+            "data-scan-action": "true",
+            onfocus: function () {
+              bottom_bar("", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "3",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "password"),
+          m("input", {
+            placeholder: "password",
+            type: "password",
+            id: "account-password",
+            "data-scan-action": "true",
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "button",
+        {
+          class: "item",
+          tabindex: "4",
+          onclick: function () {
+            store_account();
           },
         },
         "save"
@@ -1305,6 +1440,7 @@ m.route(root, "/page_calendar", {
   "/page_add_event": page_add_event,
   "/page_edit_event": page_edit_event,
   "/page_subscriptions": page_subscriptions,
+  "/page_accounts": page_accounts,
 });
 m.route.prefix = "#";
 
@@ -1323,19 +1459,18 @@ let store_settings = function () {
     });
 };
 
-let lp = 0;
 let load_subscriptions = function () {
   if (
     subscriptions == null ||
     subscriptions.lenght == -1 ||
-    subscriptions.lenght == "undefined"
+    subscriptions == "undefined"
   )
     return false;
 
-  if (lp < subscriptions.length) {
-    fetch_ics(subscriptions[lp].url, load_subscriptions);
-    lp++;
-  } else {
+  if (subscriptions.length) {
+    subscriptions.forEach(function (item) {
+      fetch_ics(item.url, load_subscriptions);
+    });
   }
   jump_to_today();
 
@@ -1345,15 +1480,15 @@ let load_subscriptions = function () {
 };
 
 let callback_scan = function (url) {
-  document.querySelector("div#subscription-form input#cal-subs-url").value =
-    url;
+  document.activeElement.value = url;
 };
+
 let store_subscription = function () {
   if (
     validate(document.getElementById("cal-subs-url").value) &&
     document.getElementById("cal-subs-name").value != ""
   ) {
-    subscriptions = [];
+    //subscriptions = [];
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
@@ -1375,6 +1510,37 @@ let store_subscription = function () {
       });
     load_subscriptions();
     list_subscriptions();
+  } else {
+    toaster("Please enter a name and a valid url", 2000);
+  }
+};
+
+let store_account = function () {
+  if (
+    validate(document.getElementById("account-url").value) &&
+    document.getElementById("account-name").value != "" &&
+    document.getElementById("account-username").value != "" &&
+    document.getElementById("account-password").value != ""
+  ) {
+    accounts.push({
+      server_url: document.getElementById("account-url").value,
+      user: document.getElementById("account-username").value,
+      password: document.getElementById("account-password").value,
+      name: document.getElementById("account-name").value,
+    });
+
+    console.log(JSON.stringify(accounts));
+
+    localforage
+      .setItem("accounts", accounts)
+      .then(function (value) {
+        side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        m.route.set("/page_options");
+      })
+      .catch(function (err) {
+        // This code runs if there were any errors
+        console.log(err);
+      });
   } else {
     toaster("Please enter a name and a valid url", 2000);
   }
@@ -1418,7 +1584,6 @@ localforage
         return false;
       }
       load_subscriptions();
-      console.log(subscriptions);
     }, 2000);
   })
   .catch(function (err) {
@@ -1464,7 +1629,10 @@ let nav = function (move) {
     items = b.querySelectorAll(".item");
   }
 
-  if (m.route.get() == "/page_subscriptions") {
+  if (
+    m.route.get() == "/page_subscriptions" ||
+    m.route.get() == "/page_accounts"
+  ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll(".item");
   }
@@ -1510,7 +1678,6 @@ let nav = function (move) {
       status.selected_day = targetElement.getAttribute("data-date");
       status.selected_day_id = targetElement.getAttribute("data-id");
       event_slider(status.selected_day);
-      console.log(status.selected_day);
     }
   }
 };
@@ -1975,7 +2142,8 @@ let import_event = function () {
 };
 
 let stop_scan_callback = function () {
-  m.route.set("/page_subscriptions");
+  // m.route.set("/page_subscriptions");
+  document.getElementById("qr-screen").style.display = "none";
 };
 
 // /////////////
@@ -1997,6 +2165,7 @@ function shortpress_action(param) {
         m.route.get() == "/page_events" ||
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
+        m.route.get() == "/page_accounts" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event"
       ) {
@@ -2011,6 +2180,7 @@ function shortpress_action(param) {
         m.route.get() == "/page_events" ||
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
+        m.route.get() == "/page_accounts" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event"
       ) {
@@ -2058,11 +2228,6 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (status.view == "subscription") {
-        // store subscription
-        store_subscription();
-        return true;
-      }
       break;
 
     case "SoftLeft":
@@ -2079,16 +2244,16 @@ function shortpress_action(param) {
         })[0];
 
         setTimeout(function () {
-          console.log(update_event_date.ATTACH);
-
           m.route.set("/page_edit_event");
         }, 1000);
 
         return true;
       }
-      if (m.route.get() == "/page_subscriptions") {
-        console.log(document.activeElement.id);
-        if (document.activeElement.id == "cal-subs-url") {
+      if (
+        m.route.get() == "/page_subscriptions" ||
+        m.route.get() == "/page_accounts"
+      ) {
+        if (document.activeElement.getAttribute("data-scan-action") == "true") {
           start_scan(callback_scan);
         }
 
@@ -2174,10 +2339,14 @@ function shortpress_action(param) {
         m.route.set("/page_calendar");
       }
 
-      if (m.route.get() == "/page_subscriptions") {
+      if (
+        m.route.get() == "/page_subscriptions" ||
+        m.route.get() == "/page_accounts"
+      ) {
         m.route.set("/page_options");
         if (document.getElementById("qr-screen").style == "block")
-          stop_scan(stop_scan_callback);
+          document.getElementById("qr-screen").style = "none";
+        stop_scan(stop_scan_callback);
       }
 
       break;

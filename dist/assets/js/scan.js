@@ -10,7 +10,6 @@ export let stop_scan = function (callback) {
 
 export let start_scan = function (callback) {
   document.getElementById("qr-screen").style.display = "block";
-  console.log("start");
 
   navigator.getUserMedia =
     navigator.getUserMedia ||

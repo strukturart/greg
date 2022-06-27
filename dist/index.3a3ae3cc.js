@@ -19780,11 +19780,11 @@ var $162001cafa2b40fd$export$b04ad9f70842c3f1 = function sort_array(arr, item_ke
         var da = new Date(a[item_key]), db = new Date(b[item_key]);
         return db - da;
     });
-    //sort by number
+     //sort by number
     if (type == "number") arr.sort(function(a, b) {
         return b[item_key] - a[item_key];
     });
-    //sort by string
+     //sort by string
     if (type == "string") arr.sort(function(a, b) {
         var fa = a[item_key].toLowerCase(), fb = b[item_key].toLowerCase();
         if (fa < fb) return -1;
@@ -19804,21 +19804,20 @@ var $162001cafa2b40fd$var$notify = function notify(param_title, param_text, para
     var options = {
         body: param_text,
         silent: param_silent,
-        requireInteraction: false
-    };
-    // Let's check whether notification permissions have already been granted
+        requireInteraction: false //actions: [{ action: "test", title: "test" }],
+    }; // Let's check whether notification permissions have already been granted
     if (Notification.permission === "granted") // If it's okay let's create a notification
     $162001cafa2b40fd$export$2adf6238a2d0dafa = new Notification(param_title, options);
-    // Otherwise, we need to ask the user for permission
+     // Otherwise, we need to ask the user for permission
     if (Notification.permission !== "denied") Notification.requestPermission().then(function(permission) {
         // If the user accepts, let's create a notification
         if (permission === "granted") $162001cafa2b40fd$export$2adf6238a2d0dafa = new Notification(param_title, options);
     });
-};
+}; //https://notifications.spec.whatwg.org/#dictdef-notificationaction
 var $162001cafa2b40fd$export$75525525b38ea7b3 = function pushLocalNotification(title, body) {
     window.Notification.requestPermission().then(function(result) {
         var notification1 = new window.Notification(title, {
-            body: body
+            body: body //requireInteraction: true,
         });
         notification1.onerror = function(err) {
             console.log(err);
@@ -19834,9 +19833,7 @@ var $162001cafa2b40fd$export$75525525b38ea7b3 = function pushLocalNotification(t
                 };
             } else window.open(document.location.origin, "_blank");
         };
-        notification1.onshow = function() {
-        // notification.close();
-        };
+        notification1.onshow = function() {};
     });
 };
 if (navigator.mozSetMessageHandler) navigator.mozSetMessageHandler("alarm", function(message) {
@@ -19857,8 +19854,7 @@ var $162001cafa2b40fd$export$39e873de56f329d8 = function getManifest(callback) {
         callback(self.result);
     };
     self.onerror = function() {};
-};
-//top toaster
+}; //top toaster
 var $162001cafa2b40fd$var$queue = [];
 var $162001cafa2b40fd$var$timeout;
 var $162001cafa2b40fd$export$a224d1f4f6f98541 = function toaster(text, time) {
@@ -19880,8 +19876,7 @@ var $162001cafa2b40fd$var$toast_q = function(text, time) {
             $162001cafa2b40fd$var$toast_q(text, time);
         }, 1000);
     }, time);
-};
-//side toaster
+}; //side toaster
 var $162001cafa2b40fd$var$queue_st = [];
 var $162001cafa2b40fd$var$ttimeout;
 var $162001cafa2b40fd$export$6593825dc0f3a767 = function side_toaster(text, time) {
@@ -19903,14 +19898,14 @@ var $162001cafa2b40fd$var$toast_qq = function(text, time) {
             $162001cafa2b40fd$var$toast_qq(text, time);
         }, 1000);
     }, time);
-};
+}; //bottom bar
 var $162001cafa2b40fd$export$247be4ede8e3a24a = function bottom_bar(left, center, right) {
     document.querySelector("div#bottom-bar div#button-left").textContent = left;
     document.querySelector("div#bottom-bar div#button-center").textContent = center;
     document.querySelector("div#bottom-bar div#button-right").textContent = right;
     if (left == "" && center == "" && right == "") document.querySelector("div#bottom-bar").style.display = "none";
     else document.querySelector("div#bottom-bar").style.display = "block";
-};
+}; //top bar
 var $162001cafa2b40fd$export$7ce2ea7c45ae9a07 = function top_bar(left, center, right) {
     document.querySelector("div#top-bar div.button-left").innerHTML = left;
     document.querySelector("div#top-bar div.button-center").textContent = center;
@@ -19934,7 +19929,7 @@ var $162001cafa2b40fd$export$19d2b7c667666dbd = function screenlock(stat) {
     if (stat == "unlock") {
         if ($162001cafa2b40fd$var$lock.topic == "screen") $162001cafa2b40fd$var$lock.unlock();
     }
-};
+}; //goodbye
 var $162001cafa2b40fd$export$9a9b3b7857355d5b = function goodbye() {
     var message = function message() {
         document.getElementById("donation").style.display = "block";
@@ -19954,7 +19949,7 @@ var $162001cafa2b40fd$export$9a9b3b7857355d5b = function goodbye() {
             window.close();
         }, 2000);
     }
-};
+}; //pick image
 var $162001cafa2b40fd$export$6714d0f9237d35de = function pick_image(cb) {
     var activity = new MozActivity({
         name: "pick",
@@ -19974,7 +19969,7 @@ var $162001cafa2b40fd$export$6714d0f9237d35de = function pick_image(cb) {
     activity.onerror = function() {
         console.log("The activity encouter en error: " + this.error);
     };
-};
+}; //delete file
 var $162001cafa2b40fd$export$dccb98b97a3cb8be = function deleteFile(storage, path, notification2) {
     var sdcard = navigator.getDeviceStorages("sdcard");
     var requestDel = sdcard[storage].delete(path);
@@ -20002,8 +19997,7 @@ var $162001cafa2b40fd$export$99c802f9c0aea792 = function list_files(filetype, ca
     cursor.onerror = function() {
         console.warn("No file found: " + this.error);
     };
-};
-//polyfill
+}; //polyfill
 if (window.NodeList && !NodeList.prototype.forEach) NodeList.prototype.forEach = Array.prototype.forEach;
 function $162001cafa2b40fd$var$hashCode(str) {
     var hash = 0;
@@ -20031,8 +20025,7 @@ function $162001cafa2b40fd$var$share(url) {
     activity.onerror = function() {
         console.log("The activity encounter en error: " + this.error);
     };
-}
-//check if internet connection
+} //check if internet connection
 function $162001cafa2b40fd$var$check_iconnection() {
     var updateOfflineStatus = function updateOfflineStatus() {
         $162001cafa2b40fd$export$a224d1f4f6f98541("Your Browser is offline", 15000);
@@ -20043,23 +20036,16 @@ function $162001cafa2b40fd$var$check_iconnection() {
 function $162001cafa2b40fd$var$delete_file(filename) {
     var sdcard = navigator.getDeviceStorages("sdcard");
     var request = sdcard[1].delete(filename);
-    request.onsuccess = function() {
-    //toaster("File deleted", 2000);
-    };
-    request.onerror = function() {
-    //toaster("Unable to delete the file: " + this.error, 2000);
-    };
+    request.onsuccess = function() {};
+    request.onerror = function() {};
 }
 function $162001cafa2b40fd$var$get_file(filename) {
     var sdcard = navigator.getDeviceStorages("sdcard");
     var request = sdcard[1].get(filename);
     request.onsuccess = function() {
-        var file = this.result;
-    //alert("Get the file: " + file.name);
+        var file = this.result; //alert("Get the file: " + file.name);
     };
-    request.onerror = function() {
-    //alert("Unable to get the file: " + this.error);
-    };
+    request.onerror = function() {};
 }
 function $162001cafa2b40fd$var$write_file(data, filename) {
     var sdcard = navigator.getDeviceStorages("sdcard");
@@ -20070,10 +20056,8 @@ function $162001cafa2b40fd$var$write_file(data, filename) {
     });
     var request = sdcard[1].addNamed(file, filename);
     request.onsuccess = function() {
-        var name = this.result;
-    //toaster('File "' + name + '" successfully wrote on the sdcard storage area', 2000);
-    };
-    // An error typically occur if a file with the same name already exist
+        var name = this.result; //toaster('File "' + name + '" successfully wrote on the sdcard storage area', 2000);
+    }; // An error typically occur if a file with the same name already exist
     request.onerror = function() {
         $162001cafa2b40fd$export$a224d1f4f6f98541("Unable to write the file: " + this.error, 2000);
     };
@@ -20103,7 +20087,7 @@ function $9f0e935a15ef5a93$export$69e63ab66e4cb4c7(year, month, day) {
     jd -= b; //subtract integer part to leave fractional part of original jd
     b = Math.round(jd * 8); //scale fraction from 0-8 and round
     if (b >= 8) b = 0; //0 and 8 are the same so turn 8 into 0
-    // 0 => New Moon
+     // 0 => New Moon
     // 1 => Waxing Crescent Moon
     // 2 => First Quarter Moon
     // 3 => Waxing Gibbous Moon
@@ -20156,7 +20140,7 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("Unable to write the file", 2000);
         };
     }, 2000);
-};
+}; // //////////
 var $78c31c2a3de015ee$export$c0899e1f14c33b33 = function list_ics() {
     var file_list = [];
     var cb = function cb(result) {
@@ -20168,7 +20152,7 @@ var $78c31c2a3de015ee$export$c0899e1f14c33b33 = function list_ics() {
         document.querySelector("div#options div#import-text").insertAdjacentHTML("afterend", '<button class="item dynamic" data-function="import" data-filename="' + result + '">' + fn + "</button>");
     };
     (0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", cb);
-};
+}; // /////////////
 
 var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callback, saveOnDevice, subscription) {
     var _loop = function(k) {
@@ -20181,19 +20165,17 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
                     var DTstart = new Date(ev.start);
                     dateStart = DTstart.getFullYear() + "-" + "0".concat(DTstart.getMonth() + 1).slice(-2) + "-" + "0".concat(DTstart.getDate()).slice(-2);
                     timeStart = "0".concat(DTstart.getHours()).slice(-2) + ":" + "0".concat(DTstart.getMinutes()).slice(-2) + ":" + "0".concat(DTstart.getSeconds()).slice(-2);
-                }
-                //date end
+                } //date end
                 var dateEnd = void 0, timeEnd = void 0;
                 if (ev.end) {
                     var DTstart1 = new Date(ev.end);
                     dateEnd = DTstart1.getFullYear() + "-" + "0".concat(DTstart1.getMonth() + 1).slice(-2) + "-" + "0".concat(DTstart1.getDate()).slice(-2);
                     timeEnd = "0".concat(DTstart1.getHours()).slice(-2) + ":" + "0".concat(DTstart1.getMinutes()).slice(-2) + ":" + "0".concat(DTstart1.getSeconds()).slice(-2);
-                }
-                //multiday event
+                } //multiday event
                 var multidayevent = false;
                 if (ev.end && ev.start) {
                     if (new Date(ev.end) > new Date(ev.start)) multidayevent = true;
-                    //all day events have the time 00:00:00 but the start end date consecutive
+                     //all day events have the time 00:00:00 but the start end date consecutive
                     if (new Date(ev.end) > new Date(ev.start) && timeStart == "00:00:00" && timeEnd == "00:00:00") multidayevent = false;
                 }
                 var parse_rrule = function parse_rrule() {
@@ -20249,7 +20231,7 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
             console.log(err);
         });
     }
-};
+}; /////////////
 var $78c31c2a3de015ee$export$730c80d46f5e5f34 = function fetch_ics(url, cb) {
     var xhttp = new XMLHttpRequest({
         mozSystem: true
@@ -20287,7 +20269,7 @@ function $78c31c2a3de015ee$var$share(url, name) {
     });
     activity.onsuccess = function() {};
     activity.onerror = function() {};
-}
+} // ///////////////////////
 function $78c31c2a3de015ee$export$7430511ad5970e27(filename, callback) {
     var sdcard = navigator.getDeviceStorage("sdcard");
     var request = sdcard.get(filename);
@@ -20308,6 +20290,7 @@ function $78c31c2a3de015ee$export$7430511ad5970e27(filename, callback) {
         console.warn("Unable to get the file: " + this.error);
     };
 }
+
 
 
 
@@ -31693,7 +31676,6 @@ var $2b0cc46421a6d3fe$export$55e6c60a43cc74e2 = function stop_scan(callback) {
 };
 var $2b0cc46421a6d3fe$export$be96fe42679d1b7e = function start_scan(callback) {
     document.getElementById("qr-screen").style.display = "block";
-    console.log("start");
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
     if (navigator.getUserMedia) navigator.getUserMedia({
         audio: false,
@@ -31850,6 +31832,67 @@ function $edd8185bf7b414ff$export$2e2bcd8739ae039(arr) {
 var $aS0o5 = parcelRequire("aS0o5");
 
 var $1Kkv1 = parcelRequire("1Kkv1");
+function $7694bcff5d60c3b1$export$2e2bcd8739ae039(o1, p1) {
+    $7694bcff5d60c3b1$export$2e2bcd8739ae039 = Object.setPrototypeOf ? Object.setPrototypeOf.bind() : function _setPrototypeOf(o, p) {
+        o.__proto__ = p;
+        return o;
+    };
+    return $7694bcff5d60c3b1$export$2e2bcd8739ae039(o1, p1);
+}
+
+
+function $ef4616a93714b865$export$2e2bcd8739ae039(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) throw new TypeError("Super expression must either be null or a function");
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+        constructor: {
+            value: subClass,
+            writable: true,
+            configurable: true
+        }
+    });
+    Object.defineProperty(subClass, "prototype", {
+        writable: false
+    });
+    if (superClass) (0, $7694bcff5d60c3b1$export$2e2bcd8739ae039)(subClass, superClass);
+}
+
+
+
+function $a4be068310fbf330$var$_wrapRegExp() {
+    var buildGroups = function buildGroups(result, re) {
+        var g = _groups.get(re);
+        return Object.keys(g).reduce(function(groups, name) {
+            return groups[name] = result[g[name]], groups;
+        }, Object.create(null));
+    };
+    $a4be068310fbf330$var$_wrapRegExp = function _wrapRegExp(re, groups) {
+        return new BabelRegExp(re, void 0, groups);
+    };
+    var _super = RegExp.prototype, _groups = new WeakMap();
+    function BabelRegExp(re, flags, groups) {
+        var _this = new RegExp(re, flags);
+        return _groups.set(_this, groups || _groups.get(re)), (0, $7694bcff5d60c3b1$export$2e2bcd8739ae039)(_this, BabelRegExp.prototype);
+    }
+    return (0, $ef4616a93714b865$export$2e2bcd8739ae039)(BabelRegExp, RegExp), BabelRegExp.prototype.exec = function(str) {
+        var result = _super.exec.call(this, str);
+        return result && (result.groups = buildGroups(result, this)), result;
+    }, BabelRegExp.prototype[Symbol.replace] = function(str, substitution) {
+        if ("string" == typeof substitution) {
+            var groups = _groups.get(this);
+            return _super[Symbol.replace].call(this, str, substitution.replace(/\$<([^>]+)>/g, function(_, name) {
+                return "$" + groups[name];
+            }));
+        }
+        if ("function" == typeof substitution) {
+            var _this = this;
+            return _super[Symbol.replace].call(this, str, function() {
+                var args = arguments;
+                return "object" != typeof args[args.length - 1] && (args = [].slice.call(args)).push(buildGroups(args, _this)), substitution.apply(this, args);
+            });
+        }
+        return _super[Symbol.replace].call(this, str, substitution);
+    }, $a4be068310fbf330$var$_wrapRegExp.apply(this, arguments);
+}
 /*! *****************************************************************************
 Copyright (c) Microsoft Corporation.
 
@@ -31941,9 +31984,9 @@ var $a4be068310fbf330$var$browserPonyfill = {
             var normalizeValue = function normalizeValue(value) {
                 if (typeof value !== "string") value = String(value);
                 return value;
-            };
-            var iteratorFor = // Build a destructive iterator for the value list
-            function iteratorFor(items) {
+            } // Build a destructive iterator for the value list
+            ;
+            var iteratorFor = function iteratorFor(items) {
                 var iterator = {
                     next: function next() {
                         var value = items.shift();
@@ -32008,8 +32051,7 @@ var $a4be068310fbf330$var$browserPonyfill = {
                     else if (support.formData && FormData.prototype.isPrototypeOf(body)) this._bodyFormData = body;
                     else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) this._bodyText = body.toString();
                     else if (support.arrayBuffer && support.blob && isDataView(body)) {
-                        this._bodyArrayBuffer = bufferClone(body.buffer);
-                        // IE 10-11 can't handle a DataView body.
+                        this._bodyArrayBuffer = bufferClone(body.buffer); // IE 10-11 can't handle a DataView body.
                         this._bodyInit = new Blob([
                             this._bodyArrayBuffer
                         ]);
@@ -32054,7 +32096,8 @@ var $a4be068310fbf330$var$browserPonyfill = {
                     return this.text().then(JSON.parse);
                 };
                 return this;
-            };
+            } // HTTP methods whose capitalization should be normalized
+            ;
             var normalizeMethod = function normalizeMethod(method) {
                 var upcased = method.toUpperCase();
                 return methods.indexOf(upcased) > -1 ? upcased : method;
@@ -32072,8 +32115,7 @@ var $a4be068310fbf330$var$browserPonyfill = {
                 return form;
             };
             var parseHeaders = function parseHeaders(rawHeaders) {
-                var headers = new Headers();
-                // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+                var headers = new Headers(); // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
                 // https://tools.ietf.org/html/rfc7230#section-3.2
                 var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, " ");
                 preProcessedHeaders.split(/\r?\n/).forEach(function(line) {
@@ -32166,7 +32208,7 @@ var $a4be068310fbf330$var$browserPonyfill = {
                     "[object Int32Array]",
                     "[object Uint32Array]",
                     "[object Float32Array]",
-                    "[object Float64Array]", 
+                    "[object Float64Array]"
                 ];
                 var isArrayBufferView = ArrayBuffer.isView || function(obj) {
                     return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1;
@@ -32231,7 +32273,6 @@ var $a4be068310fbf330$var$browserPonyfill = {
                 return iteratorFor(items);
             };
             if (support.iterable) Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
-            // HTTP methods whose capitalization should be normalized
             var methods = [
                 "DELETE",
                 "GET",
@@ -32334,10 +32375,8 @@ var $a4be068310fbf330$var$browserPonyfill = {
             return exports;
         })({});
     })(__self__);
-    __self__.fetch.ponyfill = true;
-    // Remove "polyfill" property added by whatwg-fetch
-    delete __self__.fetch.polyfill;
-    // Choose between native implementation (global) or custom implementation (__self__)
+    __self__.fetch.ponyfill = true; // Remove "polyfill" property added by whatwg-fetch
+    delete __self__.fetch.polyfill; // Choose between native implementation (global) or custom implementation (__self__)
     // var ctx = global.fetch ? global : __self__;
     var ctx = __self__; // this line disable service worker support temporarily
     exports1 = ctx.fetch; // To enable: import fetch from 'cross-fetch'
@@ -32348,8 +32387,7 @@ var $a4be068310fbf330$var$browserPonyfill = {
     exports1.Response = ctx.Response;
     module.exports = exports1;
 })($a4be068310fbf330$var$browserPonyfill, $a4be068310fbf330$var$browserPonyfill.exports);
-var $a4be068310fbf330$var$global$1 = typeof $parcel$global !== "undefined" ? $parcel$global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {};
-// shim for using process in browser
+var $a4be068310fbf330$var$global$1 = typeof $parcel$global !== "undefined" ? $parcel$global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {}; // shim for using process in browser
 // based off https://github.com/defunctzombie/node-process/blob/master/browser.js
 function $a4be068310fbf330$var$defaultSetTimout() {
     throw new Error("setTimeout has not been defined");
@@ -32364,7 +32402,7 @@ if (typeof $a4be068310fbf330$var$global$1.clearTimeout === "function") $a4be0683
 function $a4be068310fbf330$var$runTimeout(fun) {
     if ($a4be068310fbf330$var$cachedSetTimeout === setTimeout) //normal enviroments in sane situations
     return setTimeout(fun, 0);
-    // if setTimeout wasn't available but was latter defined
+     // if setTimeout wasn't available but was latter defined
     if (($a4be068310fbf330$var$cachedSetTimeout === $a4be068310fbf330$var$defaultSetTimout || !$a4be068310fbf330$var$cachedSetTimeout) && setTimeout) {
         $a4be068310fbf330$var$cachedSetTimeout = setTimeout;
         return setTimeout(fun, 0);
@@ -32385,7 +32423,7 @@ function $a4be068310fbf330$var$runTimeout(fun) {
 function $a4be068310fbf330$var$runClearTimeout(marker) {
     if ($a4be068310fbf330$var$cachedClearTimeout === clearTimeout) //normal enviroments in sane situations
     return clearTimeout(marker);
-    // if clearTimeout wasn't available but was latter defined
+     // if clearTimeout wasn't available but was latter defined
     if (($a4be068310fbf330$var$cachedClearTimeout === $a4be068310fbf330$var$defaultClearTimeout || !$a4be068310fbf330$var$cachedClearTimeout) && clearTimeout) {
         $a4be068310fbf330$var$cachedClearTimeout = clearTimeout;
         return clearTimeout(marker);
@@ -32436,8 +32474,7 @@ function $a4be068310fbf330$var$nextTick(fun) {
     if (arguments.length > 1) for(var i = 1; i < arguments.length; i++)args[i - 1] = arguments[i];
     $a4be068310fbf330$var$queue.push(new $a4be068310fbf330$var$Item(fun, args));
     if ($a4be068310fbf330$var$queue.length === 1 && !$a4be068310fbf330$var$draining) $a4be068310fbf330$var$runTimeout($a4be068310fbf330$var$drainQueue);
-}
-// v8 likes predictible objects
+} // v8 likes predictible objects
 function $a4be068310fbf330$var$Item(fun, array) {
     this.fun = fun;
     this.array = array;
@@ -32473,13 +32510,11 @@ function $a4be068310fbf330$var$chdir(dir) {
 }
 function $a4be068310fbf330$var$umask() {
     return 0;
-}
-// from https://github.com/kumavis/browser-process-hrtime/blob/master/index.js
+} // from https://github.com/kumavis/browser-process-hrtime/blob/master/index.js
 var $a4be068310fbf330$var$performance = $a4be068310fbf330$var$global$1.performance || {};
 var $a4be068310fbf330$var$performanceNow = $a4be068310fbf330$var$performance.now || $a4be068310fbf330$var$performance.mozNow || $a4be068310fbf330$var$performance.msNow || $a4be068310fbf330$var$performance.oNow || $a4be068310fbf330$var$performance.webkitNow || function() {
     return new Date().getTime();
-};
-// generate timestamp or delta
+}; // generate timestamp or delta
 // see http://nodejs.org/api/process.html#process_process_hrtime
 function $a4be068310fbf330$var$hrtime(previousTimestamp) {
     var clocktime = $a4be068310fbf330$var$performanceNow.call($a4be068310fbf330$var$performance) * 1e-3;
@@ -32785,8 +32820,7 @@ var $a4be068310fbf330$var$y = $a4be068310fbf330$var$d * 365.25;
             }
             // Disabled?
             if (!debug1.enabled) return;
-            var _$self = debug1;
-            // Set `diff` timestamp
+            var _$self = debug1; // Set `diff` timestamp
             var curr = Number(new Date());
             var ms = curr - (prevTime || curr);
             _$self.diff = ms;
@@ -32796,7 +32830,7 @@ var $a4be068310fbf330$var$y = $a4be068310fbf330$var$d * 365.25;
             args[0] = createDebug.coerce(args[0]);
             if (typeof args[0] !== "string") // Anything else let's inspect with %O
             args.unshift("%O");
-            // Apply any `formatters` transformations
+             // Apply any `formatters` transformations
             var index1 = 0;
             args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match, format) {
                 // If we encounter an escaped % then don't increase the array index
@@ -32805,14 +32839,12 @@ var $a4be068310fbf330$var$y = $a4be068310fbf330$var$d * 365.25;
                 var formatter = createDebug.formatters[format];
                 if (typeof formatter === "function") {
                     var val = args[index1];
-                    match = formatter.call(_$self, val);
-                    // Now we need to remove `args[index]` since it's inlined in the `format`
+                    match = formatter.call(_$self, val); // Now we need to remove `args[index]` since it's inlined in the `format`
                     args.splice(index1, 1);
                     index1--;
                 }
                 return match;
-            });
-            // Apply env-specific formatting (colors, etc.)
+            }); // Apply env-specific formatting (colors, etc.)
             createDebug.formatArgs.call(_$self, args);
             var logFn = _$self.log || createDebug.log;
             logFn.apply(_$self, args);
@@ -32836,8 +32868,7 @@ var $a4be068310fbf330$var$y = $a4be068310fbf330$var$d * 365.25;
             set: function(v) {
                 enableOverride = v;
             }
-        });
-        // Env-specific initialization logic for debug instances
+        }); // Env-specific initialization logic for debug instances
         if (typeof createDebug.init === "function") createDebug.init(debug1);
         return debug1;
     }
@@ -32858,11 +32889,12 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
         // initialized. Since we know we're in Chrome, we'll just detect this case
         // explicitly
         if (typeof window !== "undefined" && window.process && (window.process.type === "renderer" || window.process.__nwjs)) return true;
-        // Internet Explorer and Edge do not support colors.
+         // Internet Explorer and Edge do not support colors.
         if (typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) return false;
-        // Is webkit? http://stackoverflow.com/a/16459606/376773
+         // Is webkit? http://stackoverflow.com/a/16459606/376773
         // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-        return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+        return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+        typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
     };
     var formatArgs = /**
    * Colorize log arguments if enabled.
@@ -32872,8 +32904,7 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
         args[0] = (this.useColors ? "%c" : "") + this.namespace + (this.useColors ? " %c" : " ") + args[0] + (this.useColors ? "%c " : " ") + "+" + module.exports.humanize(this.diff);
         if (!this.useColors) return;
         var c = "color: " + this.color;
-        args.splice(1, 0, c, "color: inherit");
-        // The final "%c" is somewhat tricky, because there could be other
+        args.splice(1, 0, c, "color: inherit"); // The final "%c" is somewhat tricky, because there could be other
         // arguments passed either before or after the %c, so we need to
         // figure out the correct index to insert the CSS into
         var index2 = 0;
@@ -32897,7 +32928,6 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
             if (namespaces) exports.storage.setItem("debug", namespaces);
             else exports.storage.removeItem("debug");
         } catch (error) {
-        // Swallow
         // XXX (@Qix-) should we be logging these?
         }
     };
@@ -32911,10 +32941,8 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
         try {
             r = exports.storage.getItem("debug");
         } catch (error) {
-        // Swallow
         // XXX (@Qix-) should we be logging these?
-        }
-        // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+        } // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
         if (!r && typeof $a4be068310fbf330$var$browser$1$1 !== "undefined" && "env" in $a4be068310fbf330$var$browser$1$1) r = $a4be068310fbf330$var$browser$1$1.env.DEBUG;
         return r;
     };
@@ -32933,7 +32961,6 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
             // The Browser also has localStorage in the global context.
             return localStorage;
         } catch (error) {
-        // Swallow
         // XXX (@Qix-) should we be logging these?
         }
     };
@@ -33031,7 +33058,7 @@ var $a4be068310fbf330$var$common = $a4be068310fbf330$var$setup;
         "#FF9900",
         "#FF9933",
         "#FFCC00",
-        "#FFCC33", 
+        "#FFCC33"
     ];
     /**
    * Invokes `console.debug()` when available.
@@ -33100,15 +33127,13 @@ function $a4be068310fbf330$var$toByteArray(b64) {
     var i, j, l, tmp, placeHolders, arr;
     var len = b64.length;
     if (len % 4 > 0) throw new Error("Invalid string. Length must be a multiple of 4");
-    // the number of equal signs (place holders)
+     // the number of equal signs (place holders)
     // if there are two placeholders, than the two characters before it
     // represent one byte
     // if there is only one, then the three characters before it represent 2 bytes
     // this is just a cheap hack to not do indexOf twice
-    placeHolders = b64[len - 2] === "=" ? 2 : b64[len - 1] === "=" ? 1 : 0;
-    // base64 is 4/3 + up to two characters of the original data
-    arr = new $a4be068310fbf330$var$Arr(len * 3 / 4 - placeHolders);
-    // if there are placeholders, only get up to the last complete 4 chars
+    placeHolders = b64[len - 2] === "=" ? 2 : b64[len - 1] === "=" ? 1 : 0; // base64 is 4/3 + up to two characters of the original data
+    arr = new $a4be068310fbf330$var$Arr(len * 3 / 4 - placeHolders); // if there are placeholders, only get up to the last complete 4 chars
     l = placeHolders > 0 ? len - 4 : len;
     var L = 0;
     for(i = 0, j = 0; i < l; i += 4, j += 3){
@@ -33149,7 +33174,7 @@ function $a4be068310fbf330$var$fromByteArray(uint8) {
     var maxChunkLength = 16383; // must be multiple of 3
     // go through the array every three bytes, we'll deal with trailing stuff later
     for(var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength)parts.push($a4be068310fbf330$var$encodeChunk(uint8, i, i + maxChunkLength > len2 ? len2 : i + maxChunkLength));
-    // pad the end with zeros, but make sure to not forget the extra bytes
+     // pad the end with zeros, but make sure to not forget the extra bytes
     if (extraBytes === 1) {
         tmp = uint8[len - 1];
         output += $a4be068310fbf330$var$lookup[tmp >> 2];
@@ -33296,7 +33321,7 @@ function $a4be068310fbf330$var$createBuffer(that, length) {
  * The `Uint8Array` prototype remains unmodified.
  */ function $a4be068310fbf330$var$Buffer$1(arg, encodingOrOffset, length) {
     if (!$a4be068310fbf330$var$Buffer$1.TYPED_ARRAY_SUPPORT && !(this instanceof $a4be068310fbf330$var$Buffer$1)) return new $a4be068310fbf330$var$Buffer$1(arg, encodingOrOffset, length);
-    // Common case.
+     // Common case.
     if (typeof arg === "number") {
         if (typeof encodingOrOffset === "string") throw new Error("If encoding is specified then the first argument must be a string");
         return $a4be068310fbf330$var$allocUnsafe(this, arg);
@@ -33484,8 +33509,7 @@ function $a4be068310fbf330$var$byteLength(string, encoding) {
     if (typeof ArrayBuffer !== "undefined" && typeof ArrayBuffer.isView === "function" && (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)) return string.byteLength;
     if (typeof string !== "string") string = "" + string;
     var len = string.length;
-    if (len === 0) return 0;
-    // Use a for loop to avoid recursion
+    if (len === 0) return 0; // Use a for loop to avoid recursion
     var loweredCase = false;
     for(;;)switch(encoding){
         case "ascii":
@@ -33513,20 +33537,19 @@ function $a4be068310fbf330$var$byteLength(string, encoding) {
 }
 $a4be068310fbf330$var$Buffer$1.byteLength = $a4be068310fbf330$var$byteLength;
 function $a4be068310fbf330$var$slowToString(encoding, start, end) {
-    var loweredCase = false;
-    // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
+    var loweredCase = false; // No need to verify that "this.length <= MAX_UINT32" since it's a read-only
     // property of a typed array.
     // This behaves neither like String nor Uint8Array in that we set start/end
     // to their upper/lower bounds if the value passed is out of range.
     // undefined is handled specially as per ECMA-262 6th Edition,
     // Section 13.3.3.7 Runtime Semantics: KeyedBindingInitialization.
     if (start === undefined || start < 0) start = 0;
-    // Return early if start > this.length. Done here to prevent potential uint32
+     // Return early if start > this.length. Done here to prevent potential uint32
     // coercion fail below.
     if (start > this.length) return "";
     if (end === undefined || end > this.length) end = this.length;
     if (end <= 0) return "";
-    // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
+     // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
     end >>>= 0;
     start >>>= 0;
     if (end <= start) return "";
@@ -33554,8 +33577,7 @@ function $a4be068310fbf330$var$slowToString(encoding, start, end) {
             encoding = (encoding + "").toLowerCase();
             loweredCase = true;
     }
-}
-// The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
+} // The property is used by `Buffer.isBuffer` and `is-buffer` (in Safari 5-7) to detect
 // Buffer instances.
 $a4be068310fbf330$var$Buffer$1.prototype._isBuffer = true;
 function $a4be068310fbf330$var$swap(b, n, m3) {
@@ -33637,8 +33659,7 @@ $a4be068310fbf330$var$Buffer$1.prototype.compare = function compare(target, star
     if (x < y2) return -1;
     if (y2 < x) return 1;
     return 0;
-};
-// Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
+}; // Finds either the first index of `val` in `buffer` at offset >= `byteOffset`,
 // OR the last index of `val` in `buffer` at offset <= `byteOffset`.
 //
 // Arguments:
@@ -33649,8 +33670,7 @@ $a4be068310fbf330$var$Buffer$1.prototype.compare = function compare(target, star
 // - dir - true for indexOf, false for lastIndexOf
 function $a4be068310fbf330$var$bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
     // Empty buffer means no match
-    if (buffer.length === 0) return -1;
-    // Normalize byteOffset
+    if (buffer.length === 0) return -1; // Normalize byteOffset
     if (typeof byteOffset === "string") {
         encoding = byteOffset;
         byteOffset = 0;
@@ -33659,7 +33679,7 @@ function $a4be068310fbf330$var$bidirectionalIndexOf(buffer, val, byteOffset, enc
     byteOffset = +byteOffset; // Coerce to Number.
     if (isNaN(byteOffset)) // byteOffset: it it's undefined, null, NaN, "foo", etc, search whole buffer
     byteOffset = dir ? 0 : buffer.length - 1;
-    // Normalize byteOffset: negative offsets start from the end of the buffer
+     // Normalize byteOffset: negative offsets start from the end of the buffer
     if (byteOffset < 0) byteOffset = buffer.length + byteOffset;
     if (byteOffset >= buffer.length) {
         if (dir) return -1;
@@ -33667,10 +33687,9 @@ function $a4be068310fbf330$var$bidirectionalIndexOf(buffer, val, byteOffset, enc
     } else if (byteOffset < 0) {
         if (dir) byteOffset = 0;
         else return -1;
-    }
-    // Normalize val
+    } // Normalize val
     if (typeof val === "string") val = $a4be068310fbf330$var$Buffer$1.from(val, encoding);
-    // Finally, search either indexOf (if dir is true) or lastIndexOf
+     // Finally, search either indexOf (if dir is true) or lastIndexOf
     if ($a4be068310fbf330$var$internalIsBuffer(val)) {
         // Special case: looking for empty string/buffer always fails
         if (val.length === 0) return -1;
@@ -33744,8 +33763,7 @@ function $a4be068310fbf330$var$hexWrite(buf, string, offset, length) {
     else {
         length = Number(length);
         if (length > remaining) length = remaining;
-    }
-    // must be an even number of digits
+    } // must be an even number of digits
     var strLen = string.length;
     if (strLen % 2 !== 0) throw new TypeError("Invalid hex string");
     if (length > strLen / 2) length = strLen / 2;
@@ -33776,13 +33794,11 @@ $a4be068310fbf330$var$Buffer$1.prototype.write = function write(string, offset, 
     if (offset === undefined) {
         encoding = "utf8";
         length = this.length;
-        offset = 0;
-    // Buffer#write(string, encoding)
+        offset = 0; // Buffer#write(string, encoding)
     } else if (length === undefined && typeof offset === "string") {
         encoding = offset;
         length = this.length;
-        offset = 0;
-    // Buffer#write(string, offset[, length][, encoding])
+        offset = 0; // Buffer#write(string, offset[, length][, encoding])
     } else if (isFinite(offset)) {
         offset = offset | 0;
         if (isFinite(length)) {
@@ -33791,8 +33807,7 @@ $a4be068310fbf330$var$Buffer$1.prototype.write = function write(string, offset, 
         } else {
             encoding = length;
             length = undefined;
-        }
-    // legacy write(string, encoding, offset, length) - remove in v0.13
+        } // legacy write(string, encoding, offset, length) - remove in v0.13
     } else throw new Error("Buffer.write(string, encoding, offset[, length]) is no longer supported");
     var remaining = this.length - offset;
     if (length === undefined || length > remaining) length = remaining;
@@ -33888,15 +33903,14 @@ function $a4be068310fbf330$var$utf8Slice(buf, start, end) {
         i += bytesPerSequence;
     }
     return $a4be068310fbf330$var$decodeCodePointsArray(res);
-}
-// Based on http://stackoverflow.com/a/22747272/680742, the browser with
+} // Based on http://stackoverflow.com/a/22747272/680742, the browser with
 // the lowest limit is Chrome, with 0x10000 args.
 // We go 1 magnitude less, for safety
 var $a4be068310fbf330$var$MAX_ARGUMENTS_LENGTH = 0x1000;
 function $a4be068310fbf330$var$decodeCodePointsArray(codePoints) {
     var len = codePoints.length;
     if (len <= $a4be068310fbf330$var$MAX_ARGUMENTS_LENGTH) return String.fromCharCode.apply(String, codePoints); // avoid extra slice()
-    // Decode in chunks to avoid "call stack size exceeded".
+     // Decode in chunks to avoid "call stack size exceeded".
     var res = "";
     var i = 0;
     while(i < len)res += String.fromCharCode.apply(String, codePoints.slice(i, i += $a4be068310fbf330$var$MAX_ARGUMENTS_LENGTH));
@@ -34266,22 +34280,18 @@ $a4be068310fbf330$var$Buffer$1.prototype.writeDoubleLE = function writeDoubleLE(
 };
 $a4be068310fbf330$var$Buffer$1.prototype.writeDoubleBE = function writeDoubleBE(value, offset, noAssert) {
     return $a4be068310fbf330$var$writeDouble(this, value, offset, false, noAssert);
-};
-// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+}; // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
 $a4be068310fbf330$var$Buffer$1.prototype.copy = function copy(target, targetStart, start, end) {
     if (!start) start = 0;
     if (!end && end !== 0) end = this.length;
     if (targetStart >= target.length) targetStart = target.length;
     if (!targetStart) targetStart = 0;
-    if (end > 0 && end < start) end = start;
-    // Copy 0 bytes; we're done
+    if (end > 0 && end < start) end = start; // Copy 0 bytes; we're done
     if (end === start) return 0;
-    if (target.length === 0 || this.length === 0) return 0;
-    // Fatal error conditions
+    if (target.length === 0 || this.length === 0) return 0; // Fatal error conditions
     if (targetStart < 0) throw new RangeError("targetStart out of bounds");
     if (start < 0 || start >= this.length) throw new RangeError("sourceStart out of bounds");
-    if (end < 0) throw new RangeError("sourceEnd out of bounds");
-    // Are we oob?
+    if (end < 0) throw new RangeError("sourceEnd out of bounds"); // Are we oob?
     if (end > this.length) end = this.length;
     if (target.length - targetStart < end - start) end = target.length - targetStart + start;
     var len = end - start;
@@ -34292,8 +34302,7 @@ $a4be068310fbf330$var$Buffer$1.prototype.copy = function copy(target, targetStar
     for(i = 0; i < len; ++i)target[i + targetStart] = this[i + start];
     else Uint8Array.prototype.set.call(target, this.subarray(start, start + len), targetStart);
     return len;
-};
-// Usage:
+}; // Usage:
 //    buffer.fill(number[, offset[, end]])
 //    buffer.fill(buffer[, offset[, end]])
 //    buffer.fill(string[, offset[, end]][, encoding])
@@ -34315,7 +34324,7 @@ $a4be068310fbf330$var$Buffer$1.prototype.fill = function fill(val, start, end, e
         if (encoding !== undefined && typeof encoding !== "string") throw new TypeError("encoding must be a string");
         if (typeof encoding === "string" && !$a4be068310fbf330$var$Buffer$1.isEncoding(encoding)) throw new TypeError("Unknown encoding: " + encoding);
     } else if (typeof val === "number") val = val & 255;
-    // Invalid ranges are not set to a default, so can range check early.
+     // Invalid ranges are not set to a default, so can range check early.
     if (start < 0 || this.length < start || this.length < end) throw new RangeError("Out of range index");
     if (end <= start) return this;
     start = start >>> 0;
@@ -34329,16 +34338,13 @@ $a4be068310fbf330$var$Buffer$1.prototype.fill = function fill(val, start, end, e
         for(i = 0; i < end - start; ++i)this[i + start] = bytes[i % len];
     }
     return this;
-};
-// HELPER FUNCTIONS
+}; // HELPER FUNCTIONS
 // ================
 var $a4be068310fbf330$var$INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
 function $a4be068310fbf330$var$base64clean(str) {
     // Node strips out invalid characters like \n and \t from the string, base64-js does not
-    str = $a4be068310fbf330$var$stringtrim(str).replace($a4be068310fbf330$var$INVALID_BASE64_RE, "");
-    // Node converts strings with length < 2 to ''
-    if (str.length < 2) return "";
-    // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+    str = $a4be068310fbf330$var$stringtrim(str).replace($a4be068310fbf330$var$INVALID_BASE64_RE, ""); // Node converts strings with length < 2 to ''
+    if (str.length < 2) return ""; // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
     while(str.length % 4 !== 0)str = str + "=";
     return str;
 }
@@ -34357,8 +34363,7 @@ function $a4be068310fbf330$var$utf8ToBytes(string, units) {
     var leadSurrogate = null;
     var bytes = [];
     for(var i = 0; i < length; ++i){
-        codePoint = string.charCodeAt(i);
-        // is surrogate component
+        codePoint = string.charCodeAt(i); // is surrogate component
         if (codePoint > 0xd7ff && codePoint < 0xe000) {
             // last char was a lead
             if (!leadSurrogate) {
@@ -34371,25 +34376,21 @@ function $a4be068310fbf330$var$utf8ToBytes(string, units) {
                     // unpaired lead
                     if ((units -= 3) > -1) bytes.push(0xef, 0xbf, 0xbd);
                     continue;
-                }
-                // valid lead
+                } // valid lead
                 leadSurrogate = codePoint;
                 continue;
-            }
-            // 2 leads in a row
+            } // 2 leads in a row
             if (codePoint < 0xdc00) {
                 if ((units -= 3) > -1) bytes.push(0xef, 0xbf, 0xbd);
                 leadSurrogate = codePoint;
                 continue;
-            }
-            // valid surrogate pair
+            } // valid surrogate pair
             codePoint = (leadSurrogate - 0xd800 << 10 | codePoint - 0xdc00) + 0x10000;
         } else if (leadSurrogate) // valid bmp char, but last char was a lead
         {
             if ((units -= 3) > -1) bytes.push(0xef, 0xbf, 0xbd);
         }
-        leadSurrogate = null;
-        // encode utf8
+        leadSurrogate = null; // encode utf8
         if (codePoint < 0x80) {
             if ((units -= 1) < 0) break;
             bytes.push(codePoint);
@@ -34437,8 +34438,7 @@ function $a4be068310fbf330$var$blitBuffer(src, dst, offset, length) {
 }
 function $a4be068310fbf330$var$isnan(val) {
     return val !== val; // eslint-disable-line no-self-compare
-}
-// the following is from is-buffer, also by Feross Aboukhadijeh and with same lisence
+} // the following is from is-buffer, also by Feross Aboukhadijeh and with same lisence
 // The _isBuffer check is for Safari 5-7 support, because it's missing
 // Object.prototype.constructor. Remove this eventually
 function $a4be068310fbf330$var$isBuffer(obj) {
@@ -34446,8 +34446,7 @@ function $a4be068310fbf330$var$isBuffer(obj) {
 }
 function $a4be068310fbf330$var$isFastBuffer(obj) {
     return !!obj.constructor && typeof obj.constructor.isBuffer === "function" && obj.constructor.isBuffer(obj);
-}
-// For Node v0.10 support. Remove this eventually.
+} // For Node v0.10 support. Remove this eventually.
 function $a4be068310fbf330$var$isSlowBuffer(obj) {
     return typeof obj.readFloatLE === "function" && typeof obj.slice === "function" && $a4be068310fbf330$var$isFastBuffer(obj.slice(0, 0));
 }
@@ -34461,8 +34460,7 @@ var $a4be068310fbf330$var$_polyfillNode_buffer = /*#__PURE__*/ Object.freeze({
 });
 var $a4be068310fbf330$var$sax$1 = {};
 var $a4be068310fbf330$var$string_decoder = {};
-var $a4be068310fbf330$var$require$$0 = /*@__PURE__*/ $a4be068310fbf330$var$getAugmentedNamespace($a4be068310fbf330$var$_polyfillNode_buffer);
-// Copyright Joyent, Inc. and other Node contributors.
+var $a4be068310fbf330$var$require$$0 = /*@__PURE__*/ $a4be068310fbf330$var$getAugmentedNamespace($a4be068310fbf330$var$_polyfillNode_buffer); // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
 // copy of this software and associated documentation files (the
@@ -34503,8 +34501,7 @@ var $a4be068310fbf330$var$isBufferEncoding = $a4be068310fbf330$var$Buffer.isEnco
 };
 function $a4be068310fbf330$var$assertEncoding(encoding) {
     if (encoding && !$a4be068310fbf330$var$isBufferEncoding(encoding)) throw new Error("Unknown encoding: " + encoding);
-}
-// StringDecoder provides an interface for efficiently splitting a series of
+} // StringDecoder provides an interface for efficiently splitting a series of
 // buffers into a series of JS strings without breaking apart multi-byte
 // characters. CESU-8 is handled as part of the UTF-8 encoding.
 //
@@ -34534,16 +34531,12 @@ var $a4be068310fbf330$var$StringDecoder = $a4be068310fbf330$var$string_decoder.S
         default:
             this.write = $a4be068310fbf330$var$passThroughWrite;
             return;
-    }
-    // Enough space to store all bytes of a single character. UTF-8 needs 4
+    } // Enough space to store all bytes of a single character. UTF-8 needs 4
     // bytes, but CESU-8 may require up to 6 (3 bytes per surrogate).
-    this.charBuffer = new $a4be068310fbf330$var$Buffer(6);
-    // Number of bytes received for the current incomplete multi-byte character.
-    this.charReceived = 0;
-    // Number of bytes expected for the current incomplete multi-byte character.
+    this.charBuffer = new $a4be068310fbf330$var$Buffer(6); // Number of bytes received for the current incomplete multi-byte character.
+    this.charReceived = 0; // Number of bytes expected for the current incomplete multi-byte character.
     this.charLength = 0;
-};
-// write decodes the given buffer and returns it as JS string that is
+}; // write decodes the given buffer and returns it as JS string that is
 // guaranteed to not contain any partial multi-byte characters. Any partial
 // character found at the end of the buffer is buffered up, and will be
 // returned when calling write again with the remaining bytes.
@@ -34553,33 +34546,27 @@ var $a4be068310fbf330$var$StringDecoder = $a4be068310fbf330$var$string_decoder.S
 // Buffer#write) will replace incomplete surrogates with the unicode
 // replacement character. See https://codereview.chromium.org/121173009/ .
 $a4be068310fbf330$var$StringDecoder.prototype.write = function(buffer) {
-    var charStr = "";
-    // if our last write ended with an incomplete multibyte character
+    var charStr = ""; // if our last write ended with an incomplete multibyte character
     while(this.charLength){
         // determine how many remaining bytes this buffer has to offer for this char
-        var available = buffer.length >= this.charLength - this.charReceived ? this.charLength - this.charReceived : buffer.length;
-        // add the new bytes to the char buffer
+        var available = buffer.length >= this.charLength - this.charReceived ? this.charLength - this.charReceived : buffer.length; // add the new bytes to the char buffer
         buffer.copy(this.charBuffer, this.charReceived, 0, available);
         this.charReceived += available;
         if (this.charReceived < this.charLength) // still not enough chars in this buffer? wait for more ...
         return "";
-        // remove bytes belonging to the current character from the buffer
-        buffer = buffer.slice(available, buffer.length);
-        // get the character that was split
-        charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
-        // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
+         // remove bytes belonging to the current character from the buffer
+        buffer = buffer.slice(available, buffer.length); // get the character that was split
+        charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding); // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
         var charCode = charStr.charCodeAt(charStr.length - 1);
         if (charCode >= 0xd800 && charCode <= 0xdbff) {
             this.charLength += this.surrogateSize;
             charStr = "";
             continue;
         }
-        this.charReceived = this.charLength = 0;
-        // if there are no more bytes in this buffer, just emit our char
+        this.charReceived = this.charLength = 0; // if there are no more bytes in this buffer, just emit our char
         if (buffer.length === 0) return charStr;
         break;
-    }
-    // determine and set charLength / charReceived
+    } // determine and set charLength / charReceived
     this.detectIncompleteChar(buffer);
     var end = buffer.length;
     if (this.charLength) {
@@ -34589,8 +34576,7 @@ $a4be068310fbf330$var$StringDecoder.prototype.write = function(buffer) {
     }
     charStr += buffer.toString(this.encoding, 0, end);
     var end = charStr.length - 1;
-    var charCode = charStr.charCodeAt(end);
-    // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
+    var charCode = charStr.charCodeAt(end); // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
     if (charCode >= 0xd800 && charCode <= 0xdbff) {
         var size = this.surrogateSize;
         this.charLength += size;
@@ -34598,33 +34584,27 @@ $a4be068310fbf330$var$StringDecoder.prototype.write = function(buffer) {
         this.charBuffer.copy(this.charBuffer, size, 0, size);
         buffer.copy(this.charBuffer, 0, 0, size);
         return charStr.substring(0, end);
-    }
-    // or just emit the charStr
+    } // or just emit the charStr
     return charStr;
-};
-// detectIncompleteChar determines if there is an incomplete UTF-8 character at
+}; // detectIncompleteChar determines if there is an incomplete UTF-8 character at
 // the end of the given buffer. If so, it sets this.charLength to the byte
 // length that character, and sets this.charReceived to the number of bytes
 // that are available for this character.
 $a4be068310fbf330$var$StringDecoder.prototype.detectIncompleteChar = function(buffer) {
     // determine how many bytes we have to check at the end of this buffer
-    var i = buffer.length >= 3 ? 3 : buffer.length;
-    // Figure out if one of the last i bytes of our buffer announces an
+    var i = buffer.length >= 3 ? 3 : buffer.length; // Figure out if one of the last i bytes of our buffer announces an
     // incomplete char.
     for(; i > 0; i--){
-        var c = buffer[buffer.length - i];
-        // See http://en.wikipedia.org/wiki/UTF-8#Description
+        var c = buffer[buffer.length - i]; // See http://en.wikipedia.org/wiki/UTF-8#Description
         // 110XXXXX
         if (i == 1 && c >> 5 == 0x06) {
             this.charLength = 2;
             break;
-        }
-        // 1110XXXX
+        } // 1110XXXX
         if (i <= 2 && c >> 4 == 0x0e) {
             this.charLength = 3;
             break;
-        }
-        // 11110XXX
+        } // 11110XXX
         if (i <= 3 && c >> 3 == 0x1e) {
             this.charLength = 4;
             break;
@@ -34682,8 +34662,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                         error(parser, "Max buffer length exceeded: " + buffers[i]);
                 }
                 maxActual = Math.max(maxActual, len);
-            }
-            // schedule the next check for the earliest possible buffer overrun.
+            } // schedule the next check for the earliest possible buffer overrun.
             var m4 = sax1.MAX_BUFFER_LENGTH - maxActual;
             parser.bufferCheckPosition = m4 + parser.position;
         };
@@ -34764,8 +34743,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
             var tag = parser.tag = {
                 name: parser.tagName,
                 attributes: {}
-            };
-            // will be overridden if tag contails an xmlns="foo" or xmlns:foo="bar"
+            }; // will be overridden if tag contails an xmlns="foo" or xmlns:foo="bar"
             if (parser.opt.xmlns) tag.ns = parent.ns;
             parser.attribList.length = 0;
             emitNode(parser, "onopentagstart", tag);
@@ -34777,8 +34755,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 name
             ] : name.split(":");
             var prefix = qualName[0];
-            var local = qualName[1];
-            // <x "xmlns"="http://foo">
+            var local = qualName[1]; // <x "xmlns"="http://foo">
             if (attribute && name === "xmlns") {
                 prefix = "xmlns";
                 local = "";
@@ -34808,8 +34785,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                         if (tag.ns === parent.ns) tag.ns = Object.create(parent.ns);
                         tag.ns[local] = parser.attribValue;
                     }
-                }
-                // defer onattribute events until all attributes have been seen
+                } // defer onattribute events until all attributes have been seen
                 // so any new bindings can take effect. preserve attribute order
                 // so deferred events can be emitted in document order
                 parser.attribList.push([
@@ -34829,8 +34805,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
         var openTag = function openTag(parser, selfClosing) {
             if (parser.opt.xmlns) {
                 // emit namespace binding events
-                var tag = parser.tag;
-                // add namespace info to tag
+                var tag = parser.tag; // add namespace info to tag
                 var qn = qname(parser.tagName);
                 tag.prefix = qn.prefix;
                 tag.local = qn.local;
@@ -34846,7 +34821,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                         uri: tag.ns[p]
                     });
                 });
-                // handle deferred onattribute events
+                 // handle deferred onattribute events
                 // Note: do not apply default ns to attributes:
                 //   http://www.w3.org/TR/REC-xml-names/#defaulting
                 for(var i = 0, l = parser.attribList.length; i < l; i++){
@@ -34863,8 +34838,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                         prefix: prefix,
                         local: local,
                         uri: uri
-                    };
-                    // if there's any attributes with an undefined namespace,
+                    }; // if there's any attributes with an undefined namespace,
                     // then fail on them now.
                     if (prefix && prefix !== "xmlns" && !uri) {
                         strictFail(parser, "Unbound namespace prefix: " + JSON.stringify(prefix));
@@ -34875,8 +34849,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 }
                 parser.attribList.length = 0;
             }
-            parser.tag.isSelfClosing = !!selfClosing;
-            // process the tag
+            parser.tag.isSelfClosing = !!selfClosing; // process the tag
             parser.sawRoot = true;
             parser.tags.push(parser.tag);
             emitNode(parser, "onopentag", parser.tag);
@@ -34906,8 +34879,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 }
                 emitNode(parser, "onscript", parser.script);
                 parser.script = "";
-            }
-            // first make sure that the closing tag actually exists.
+            } // first make sure that the closing tag actually exists.
             // <a><b></c></b></a> will close everything, otherwise.
             var t = parser.tags.length;
             var tagName = parser.tagName;
@@ -34918,8 +34890,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 if (close.name !== closeTo) // fail the first time in strict mode
                 strictFail(parser, "Unexpected close tag");
                 else break;
-            }
-            // didn't find it.  we already failed for strict, so just abort.
+            } // didn't find it.  we already failed for strict, so just abort.
             if (t < 0) {
                 strictFail(parser, "Unmatched closing tag: " + parser.tagName);
                 parser.textNode += "</" + parser.tagName + ">";
@@ -35072,8 +35043,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                             parser.state = S.PROC_INST;
                             parser.procInstName = parser.procInstBody = "";
                         } else {
-                            strictFail(parser, "Unencoded <");
-                            // if there was some whitespace, then add that in.
+                            strictFail(parser, "Unencoded <"); // if there was some whitespace, then add that in.
                             if (parser.startTagPosition + 1 < parser.position) {
                                 var pad = parser.position - parser.startTagPosition;
                                 c = new Array(pad).join(" ") + c;
@@ -35166,8 +35136,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                         continue;
                     case S.COMMENT_ENDED:
                         if (c !== ">") {
-                            strictFail(parser, "Malformed comment");
-                            // allow <!-- blah -- bloo --> in non-strict mode,
+                            strictFail(parser, "Malformed comment"); // allow <!-- blah -- bloo --> in non-strict mode,
                             // which is a comment of " blah -- bloo "
                             parser.comment += "--" + c;
                             parser.state = S.COMMENT;
@@ -35395,8 +35364,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
         };
         sax1.SAXParser = SAXParser;
         sax1.SAXStream = SAXStream;
-        sax1.createStream = createStream;
-        // When we pass the MAX_BUFFER_LENGTH position, start checking for buffer overruns.
+        sax1.createStream = createStream; // When we pass the MAX_BUFFER_LENGTH position, start checking for buffer overruns.
         // When we check, schedule the next check for MAX_BUFFER_LENGTH - (max(buffer lengths)),
         // since that's the earliest that a buffer overrun could occur.  This way, checks are
         // as rare as required, but as often as necessary to ensure never crossing this bound.
@@ -35418,7 +35386,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
             "attribName",
             "attribValue",
             "cdata",
-            "script", 
+            "script"
         ];
         sax1.EVENTS = [
             "text",
@@ -35438,7 +35406,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
             "ready",
             "script",
             "opennamespace",
-            "closenamespace", 
+            "closenamespace"
         ];
         function SAXParser(strict, opt) {
             if (!(this instanceof SAXParser)) return new SAXParser(strict, opt);
@@ -35457,12 +35425,11 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
             parser.state = S.BEGIN;
             parser.strictEntities = parser.opt.strictEntities;
             parser.ENTITIES = parser.strictEntities ? Object.create(sax1.XML_ENTITIES) : Object.create(sax1.ENTITIES);
-            parser.attribList = [];
-            // namespaces form a prototype chain.
+            parser.attribList = []; // namespaces form a prototype chain.
             // it always points at the current tag,
             // which protos to its parent tag.
             if (parser.opt.xmlns) parser.ns = Object.create(rootNS);
-            // mostly just for error reporting
+             // mostly just for error reporting
             parser.trackPosition = parser.opt.position !== false;
             if (parser.trackPosition) parser.position = parser.line = parser.column = 0;
             emit(parser, "onready");
@@ -35514,8 +35481,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 me.emit("end");
             };
             this._parser.onerror = function(er) {
-                me.emit("error", er);
-                // if didn't throw, then means error was handled.
+                me.emit("error", er); // if didn't throw, then means error was handled.
                 // go ahead and clear error, so we can write again.
                 me._parser.error = null;
             };
@@ -35570,8 +35536,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
                 me.emit.apply(me, args);
             };
             return Stream.prototype.on.call(me, ev, handler);
-        };
-        // this really needs to be replaced with character classes.
+        }; // this really needs to be replaced with character classes.
         // XML allows all manner of ridiculous numbers and digits.
         var CDATA = "[CDATA[";
         var DOCTYPE = "DOCTYPE";
@@ -35580,8 +35545,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
         var rootNS = {
             xml: XML_NAMESPACE,
             xmlns: XMLNS_NAMESPACE
-        };
-        // http://www.w3.org/TR/REC-xml/#NT-NameStartChar
+        }; // http://www.w3.org/TR/REC-xml/#NT-NameStartChar
         // This implementation works on strings, a single character at a time
         // as such, it cannot ever support astral-plane characters (10000-EFFFF)
         // without a significant breaking change to either this  parser, or the
@@ -35594,41 +35558,76 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
         var S = 0;
         sax1.STATE = {
             BEGIN: S++,
+            // leading byte order mark or whitespace
             BEGIN_WHITESPACE: S++,
+            // leading whitespace
             TEXT: S++,
+            // general stuff
             TEXT_ENTITY: S++,
+            // &amp and such.
             OPEN_WAKA: S++,
+            // <
             SGML_DECL: S++,
+            // <!BLARG
             SGML_DECL_QUOTED: S++,
+            // <!BLARG foo "bar
             DOCTYPE: S++,
+            // <!DOCTYPE
             DOCTYPE_QUOTED: S++,
+            // <!DOCTYPE "//blah
             DOCTYPE_DTD: S++,
+            // <!DOCTYPE "//blah" [ ...
             DOCTYPE_DTD_QUOTED: S++,
+            // <!DOCTYPE "//blah" [ "foo
             COMMENT_STARTING: S++,
+            // <!-
             COMMENT: S++,
+            // <!--
             COMMENT_ENDING: S++,
+            // <!-- blah -
             COMMENT_ENDED: S++,
+            // <!-- blah --
             CDATA: S++,
+            // <![CDATA[ something
             CDATA_ENDING: S++,
+            // ]
             CDATA_ENDING_2: S++,
+            // ]]
             PROC_INST: S++,
+            // <?hi
             PROC_INST_BODY: S++,
+            // <?hi there
             PROC_INST_ENDING: S++,
+            // <?hi "there" ?
             OPEN_TAG: S++,
+            // <strong
             OPEN_TAG_SLASH: S++,
+            // <strong /
             ATTRIB: S++,
+            // <a
             ATTRIB_NAME: S++,
+            // <a foo
             ATTRIB_NAME_SAW_WHITE: S++,
+            // <a foo _
             ATTRIB_VALUE: S++,
+            // <a foo=
             ATTRIB_VALUE_QUOTED: S++,
+            // <a foo="bar
             ATTRIB_VALUE_CLOSED: S++,
+            // <a foo="bar"
             ATTRIB_VALUE_UNQUOTED: S++,
+            // <a foo=bar
             ATTRIB_VALUE_ENTITY_Q: S++,
+            // <foo bar="&quot;"
             ATTRIB_VALUE_ENTITY_U: S++,
+            // <foo bar=&quot
             CLOSE_TAG: S++,
+            // </a
             CLOSE_TAG_SAW_WHITE: S++,
+            // </a   >
             SCRIPT: S++,
-            SCRIPT_ENDING: S++
+            // <script> ...
+            SCRIPT_ENDING: S++ // <script> ... <
         };
         sax1.XML_ENTITIES = {
             "amp": "&",
@@ -35898,7 +35897,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
             sax1.ENTITIES[key] = s6;
         });
         for(var s4 in sax1.STATE)sax1.STATE[sax1.STATE[s4]] = s4;
-        // shorthand
+         // shorthand
         S = sax1.STATE;
         /*! http://mths.be/fromcodepoint v0.1.0 by @mathias */ /* istanbul ignore next */ if (!String.fromCodePoint) (function() {
             var stringFromCharCode = String.fromCharCode;
@@ -35945,7 +35944,7 @@ function $a4be068310fbf330$var$base64DetectIncompleteChar(buffer) {
 var $a4be068310fbf330$var$arrayHelper = {
     isArray: function isArray(value) {
         if (Array.isArray) return Array.isArray(value);
-        // fallback for older browsers like  IE 8
+         // fallback for older browsers like  IE 8
         return Object.prototype.toString.call(value) === "[object Array]";
     }
 };
@@ -36022,7 +36021,7 @@ function $a4be068310fbf330$var$addField(type, value) {
     if ($a4be068310fbf330$var$options.compact) {
         if (!$a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]] && ($a4be068310fbf330$var$isArray$1($a4be068310fbf330$var$options.alwaysArray) ? $a4be068310fbf330$var$options.alwaysArray.indexOf($a4be068310fbf330$var$options[type + "Key"]) !== -1 : $a4be068310fbf330$var$options.alwaysArray)) $a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]] = [];
         if ($a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]] && !$a4be068310fbf330$var$isArray$1($a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]])) $a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]] = [
-            $a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]], 
+            $a4be068310fbf330$var$currentElement$1[$a4be068310fbf330$var$options[type + "Key"]]
         ];
         if (type + "Fn" in $a4be068310fbf330$var$options && typeof value === "string") value = $a4be068310fbf330$var$options[type + "Fn"](value, $a4be068310fbf330$var$currentElement$1);
         if (type === "instruction" && ("instructionFn" in $a4be068310fbf330$var$options || "instructionNameFn" in $a4be068310fbf330$var$options)) {
@@ -36203,8 +36202,7 @@ var $a4be068310fbf330$var$xml2json$1 = function xml2json$1(xml, userOptions) {
     var options12, js, json, parentKey;
     options12 = $a4be068310fbf330$var$validateOptions$1(userOptions);
     js = $a4be068310fbf330$var$xml2js$1(xml, options12);
-    parentKey = "compact" in options12 && options12.compact ? "_parent" : "parent";
-    // parentKey = ptions.compact ? '_parent' : 'parent'; // consider this
+    parentKey = "compact" in options12 && options12.compact ? "_parent" : "parent"; // parentKey = ptions.compact ? '_parent' : 'parent'; // consider this
     if ("addParent" in options12 && options12.addParent) json = JSON.stringify(js, function(k, v) {
         return k === parentKey ? "_" : v;
     }, options12.spaces);
@@ -36305,13 +36303,16 @@ function $a4be068310fbf330$var$hasContent(element, options22) {
     if (element.elements && element.elements.length) for(i = 0; i < element.elements.length; ++i)switch(element.elements[i][options22.typeKey]){
         case "text":
             if (options22.indentText) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case "cdata":
             if (options22.indentCdata) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case "instruction":
             if (options22.indentInstruction) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case "doctype":
         case "comment":
         case "element":
@@ -36370,16 +36371,20 @@ function $a4be068310fbf330$var$hasContentCompact(element, options25, anyContent)
     for(key in element)if (element.hasOwnProperty(key)) switch(key){
         case options25.parentKey:
         case options25.attributesKey:
-            break; // skip to next key
+            break;
+        // skip to next key
         case options25.textKey:
             if (options25.indentText || anyContent) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case options25.cdataKey:
             if (options25.indentCdata || anyContent) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case options25.instructionKey:
             if (options25.indentInstruction || anyContent) return true;
-            break; // skip to next key
+            break;
+        // skip to next key
         case options25.doctypeKey:
         case options25.commentKey:
             return true;
@@ -36434,7 +36439,8 @@ function $a4be068310fbf330$var$writeElementsCompact(element, options27, depth, f
                     break;
                 case options27.attributesKey:
                 case options27.parentKey:
-                    break; // skip
+                    break;
+                // skip
                 case options27.textKey:
                     xml.push((options27.indentText ? $a4be068310fbf330$var$writeIndentation(options27, depth, firstLine) : "") + $a4be068310fbf330$var$writeText(nodes[i], options27));
                     break;
@@ -36567,7 +36573,7 @@ var $a4be068310fbf330$export$4e1d1b38eb8e0dd4 = function(params) {
                             if (namespace && !/^.+:.+/.test(name)) return "".concat(namespace, ":").concat(name);
                             return name;
                         }
-                    }) : body;
+                    }) : body; // debug('outgoing xml:');
                     _ctx.next = 6;
                     return $a4be068310fbf330$var$browserPonyfill.exports.fetch(url, {
                         headers: Object.assign({
@@ -36593,7 +36599,7 @@ var $a4be068310fbf330$export$4e1d1b38eb8e0dd4 = function(params) {
                             status: davResponse.status,
                             statusText: davResponse.statusText,
                             raw: resText
-                        }, 
+                        }
                     ]);
                 case 12:
                     result = $a4be068310fbf330$var$lib.xml2js(resText, {
@@ -36634,7 +36640,10 @@ var $a4be068310fbf330$export$4e1d1b38eb8e0dd4 = function(params) {
                     ];
                     return _ctx.abrupt("return", responseBodies.map(function(responseBody) {
                         var _a, _b;
-                        var statusRegex = RegExp("^\\S+\\s(?<status>\\d+)\\s(?<statusText>.+)$");
+                        var statusRegex = /*#__PURE__*/ $a4be068310fbf330$var$_wrapRegExp(/^\S+\s(\d+)\s(.+)$/, {
+                            status: 1,
+                            statusText: 2
+                        });
                         if (!responseBody) return {
                             status: davResponse.status,
                             statusText: davResponse.statusText,
@@ -36685,7 +36694,7 @@ var $a4be068310fbf330$export$48a656987706fe46 = function(params) {
                                         $a4be068310fbf330$export$e8125772232f97a0.CALDAV_APPLE,
                                         $a4be068310fbf330$export$e8125772232f97a0.CALENDAR_SERVER,
                                         $a4be068310fbf330$export$e8125772232f97a0.CARDDAV,
-                                        $a4be068310fbf330$export$e8125772232f97a0.DAV, 
+                                        $a4be068310fbf330$export$e8125772232f97a0.DAV
                                     ]),
                                     prop: props
                                 }
@@ -36929,7 +36938,7 @@ var $a4be068310fbf330$export$bbf3aaeaf4658ce7 = function(params) {
                     _attributes: $a4be068310fbf330$export$c83abd8be1eac1cc([
                         $a4be068310fbf330$export$e8125772232f97a0.CALDAV,
                         $a4be068310fbf330$export$e8125772232f97a0.CARDDAV,
-                        $a4be068310fbf330$export$e8125772232f97a0.DAV, 
+                        $a4be068310fbf330$export$e8125772232f97a0.DAV
                     ]),
                     "sync-level": syncLevel,
                     "sync-token": syncToken
@@ -37041,12 +37050,12 @@ var $a4be068310fbf330$export$bbf3aaeaf4658ce7 = function(params) {
                             data: (account1 === null || account1 === void 0 ? void 0 : account1.accountType) === "caldav" ? (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData : (_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData
                         };
                     });
-                    localObjects = (_m = collection3.objects) !== null && _m !== void 0 ? _m : [];
+                    localObjects = (_m = collection3.objects) !== null && _m !== void 0 ? _m : []; // no existing url
                     created = remoteObjects.filter(function(o) {
                         return localObjects.every(function(lo) {
                             return !$a4be068310fbf330$export$8b82e55f472f37f2(lo.url, o.url);
                         });
-                    });
+                    }); // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
                     updated = localObjects.reduce(function(prev, curr) {
                         var found = remoteObjects.find(function(ro) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(ro.url, curr.url);
@@ -37055,13 +37064,13 @@ var $a4be068310fbf330$export$bbf3aaeaf4658ce7 = function(params) {
                             found
                         ]);
                         return prev;
-                    }, []);
+                    }, []); // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
                     deleted = deletedObjectUrls.map(function(o) {
                         return {
                             url: o,
                             etag: ""
                         };
-                    });
+                    }); // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
                     unchanged = localObjects.filter(function(lo) {
                         return remoteObjects.some(function(ro) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(lo.url, ro.url) && ro.etag === lo.etag;
@@ -37120,7 +37129,7 @@ var $a4be068310fbf330$export$bbf3aaeaf4658ce7 = function(params) {
                         return localObjects1.every(function(lo) {
                             return !$a4be068310fbf330$export$8b82e55f472f37f2(lo.url, ro.url);
                         });
-                    });
+                    }); // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
                     updated1 = localObjects1.reduce(function(prev, curr) {
                         var found = remoteObjects1.find(function(ro) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(ro.url, curr.url);
@@ -37129,12 +37138,12 @@ var $a4be068310fbf330$export$bbf3aaeaf4658ce7 = function(params) {
                             found
                         ]);
                         return prev;
-                    }, []);
+                    }, []); // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
                     deleted1 = localObjects1.filter(function(cal) {
                         return remoteObjects1.every(function(ro) {
                             return !$a4be068310fbf330$export$8b82e55f472f37f2(ro.url, cal.url);
                         });
-                    });
+                    }); // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
                     unchanged1 = localObjects1.filter(function(lo) {
                         return remoteObjects1.some(function(ro) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(lo.url, ro.url) && ro.etag === lo.etag;
@@ -37191,7 +37200,7 @@ var $a4be068310fbf330$export$7872ed357594bcbb = function(params) {
                             "addressbook-query": (_obj3 = {
                                 _attributes: $a4be068310fbf330$export$c83abd8be1eac1cc([
                                     $a4be068310fbf330$export$e8125772232f97a0.CARDDAV,
-                                    $a4be068310fbf330$export$e8125772232f97a0.DAV, 
+                                    $a4be068310fbf330$export$e8125772232f97a0.DAV
                                 ])
                             }, (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj3, "".concat($a4be068310fbf330$export$60e764203870007f.DAV, ":prop"), props), (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj3, "filter", filters !== null && filters !== void 0 ? filters : {
                                 "prop-filter": {
@@ -37226,7 +37235,7 @@ var $a4be068310fbf330$var$addressBookMultiGet = function(params) {
                             "addressbook-multiget": (_obj4 = {
                                 _attributes: $a4be068310fbf330$export$c83abd8be1eac1cc([
                                     $a4be068310fbf330$export$e8125772232f97a0.DAV,
-                                    $a4be068310fbf330$export$e8125772232f97a0.CARDDAV, 
+                                    $a4be068310fbf330$export$e8125772232f97a0.CARDDAV
                                 ])
                             }, (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj4, "".concat($a4be068310fbf330$export$60e764203870007f.DAV, ":prop"), props), (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj4, "".concat($a4be068310fbf330$export$60e764203870007f.DAV, ":href"), objectUrls), _obj4)
                         },
@@ -37497,7 +37506,7 @@ var $a4be068310fbf330$export$dfe8beb42191d07e = function(params) {
                                     $a4be068310fbf330$export$e8125772232f97a0.CALDAV,
                                     $a4be068310fbf330$export$e8125772232f97a0.CALENDAR_SERVER,
                                     $a4be068310fbf330$export$e8125772232f97a0.CALDAV_APPLE,
-                                    $a4be068310fbf330$export$e8125772232f97a0.DAV, 
+                                    $a4be068310fbf330$export$e8125772232f97a0.DAV
                                 ])
                             }, (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj7, "".concat($a4be068310fbf330$export$60e764203870007f.DAV, ":prop"), props), (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj7, "filter", filters), (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)(_obj7, "timezone", timezone), _obj7))
                         },
@@ -37560,7 +37569,7 @@ var $a4be068310fbf330$export$d2e07eeca12d66fe = function(params) {
                                 _attributes: $a4be068310fbf330$export$c83abd8be1eac1cc([
                                     $a4be068310fbf330$export$e8125772232f97a0.DAV,
                                     $a4be068310fbf330$export$e8125772232f97a0.CALDAV,
-                                    $a4be068310fbf330$export$e8125772232f97a0.CALDAV_APPLE, 
+                                    $a4be068310fbf330$export$e8125772232f97a0.CALDAV_APPLE
                                 ]),
                                 set: {
                                     prop: props
@@ -37612,19 +37621,17 @@ var $a4be068310fbf330$export$f3de1a4d17b8ef1f = function(params) {
                         var _a, _b;
                         return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes("calendar");
                     }).filter(function(rc) {
-                        var _a, _b, _c;
-                        // filter out none iCal format calendars.
+                        var _a, _b, _c; // filter out none iCal format calendars.
                         var components = Array.isArray((_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet.comp) ? (_b = rc.props) === null || _b === void 0 ? void 0 : _b.supportedCalendarComponentSet.comp.map(function(sc) {
                             return sc._attributes.name;
                         }) : [
-                            (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp._attributes.name, 
+                            (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp._attributes.name
                         ];
                         return components.some(function(c) {
                             return Object.values($a4be068310fbf330$var$ICALObjects).includes(c);
                         });
                     }).map(function(rs) {
-                        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
-                        // debug(`Found calendar ${rs.props?.displayname}`);
+                        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p; // debug(`Found calendar ${rs.props?.displayname}`);
                         var description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
                         var timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
                         return {
@@ -37637,7 +37644,7 @@ var $a4be068310fbf330$export$f3de1a4d17b8ef1f = function(params) {
                             components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp) ? (_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp.map(function(sc) {
                                 return sc._attributes.name;
                             }) : [
-                                (_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name, 
+                                (_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name
                             ],
                             resourcetype: Object.keys((_o = rs.props) === null || _o === void 0 ? void 0 : _o.resourcetype),
                             syncToken: (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken
@@ -37728,7 +37735,7 @@ var $a4be068310fbf330$export$35b73ce31e4a36e = function(params) {
                                     }
                                 } : {})
                             }
-                        }, 
+                        }
                     ];
                     if (!(objectUrls !== null && objectUrls !== void 0)) {
                         _ctx.next = 17;
@@ -37896,7 +37903,7 @@ var $a4be068310fbf330$export$c79d7edb54877b62 = function(params) {
                     });
                     $a4be068310fbf330$var$debug$2("new calendars: ".concat(created.map(function(cc) {
                         return cc.displayName;
-                    })));
+                    }))); // have same url, but syncToken/ctag different
                     updated = localCalendars.reduce(function(prev, curr) {
                         var found = remoteCalendars.find(function(rc) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(rc.url, curr.url);
@@ -37949,7 +37956,7 @@ var $a4be068310fbf330$export$c79d7edb54877b62 = function(params) {
                         return remoteCalendars.some(function(rc) {
                             return $a4be068310fbf330$export$8b82e55f472f37f2(rc.url, cal.url) && (rc.syncToken && rc.syncToken !== cal.syncToken || rc.ctag && rc.ctag !== cal.ctag);
                         });
-                    });
+                    }); // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
                     return _ctx3.abrupt("return", detailedResult ? {
                         created: created,
                         updated: updated,
@@ -38334,10 +38341,8 @@ var $a4be068310fbf330$var$base64 = {
 /*! https://mths.be/base64 v1.0.0 by @mathias | MIT license */ (function(module, exports) {
     (function(root) {
         // Detect free variables `exports`.
-        var freeExports = exports;
-        // Detect free variable `module`.
-        var freeModule = module && module.exports == freeExports && module;
-        // Detect free variable `global`, from Node.js or Browserified code, and use
+        var freeExports = exports; // Detect free variable `module`.
+        var freeModule = module && module.exports == freeExports && module; // Detect free variable `global`, from Node.js or Browserified code, and use
         // it as `root`.
         var freeGlobal = typeof $a4be068310fbf330$var$commonjsGlobal == "object" && $a4be068310fbf330$var$commonjsGlobal;
         if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) root = freeGlobal;
@@ -38351,10 +38356,8 @@ var $a4be068310fbf330$var$base64 = {
             // the native `atob`/`btoa` implementation in Chromium.
             throw new InvalidCharacterError(message);
         };
-        var TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        // http://whatwg.org/html/common-microsyntaxes.html#space-character
-        var REGEX_SPACE_CHARACTERS = /[\t\n\f\r ]/g;
-        // `decode` is designed to be fully compatible with `atob` as described in the
+        var TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"; // http://whatwg.org/html/common-microsyntaxes.html#space-character
+        var REGEX_SPACE_CHARACTERS = /[\t\n\f\r ]/g; // `decode` is designed to be fully compatible with `atob` as described in the
         // HTML Standard. http://whatwg.org/html/webappapis.html#dom-windowbase64-atob
         // The optimized base64-decoding algorithm used is based on @atk’s excellent
         // implementation. https://gist.github.com/atk/1020396
@@ -38365,8 +38368,7 @@ var $a4be068310fbf330$var$base64 = {
                 input = input.replace(/==?$/, "");
                 length = input.length;
             }
-            if (length % 4 == 1 || // http://whatwg.org/C#alphanumeric-ascii-characters
-            /[^+a-zA-Z0-9/]/.test(input)) error("Invalid character: the string to be decoded is not correctly encoded.");
+            if (length % 4 == 1 || /[^+a-zA-Z0-9/]/.test(input)) error("Invalid character: the string to be decoded is not correctly encoded.");
             var bitCounter = 0;
             var bitStorage;
             var buffer;
@@ -38374,14 +38376,12 @@ var $a4be068310fbf330$var$base64 = {
             var position = -1;
             while(++position < length){
                 buffer = TABLE.indexOf(input.charAt(position));
-                bitStorage = bitCounter % 4 ? bitStorage * 64 + buffer : buffer;
-                // Unless this is the first of a group of 4 characters…
+                bitStorage = bitCounter % 4 ? bitStorage * 64 + buffer : buffer; // Unless this is the first of a group of 4 characters…
                 if ((bitCounter++) % 4) // …convert the first 8 bits to a single ASCII character.
                 output += String.fromCharCode(0xff & bitStorage >> (-2 * bitCounter & 6));
             }
             return output;
-        };
-        // `encode` is designed to be fully compatible with `btoa` as described in the
+        }; // `encode` is designed to be fully compatible with `btoa` as described in the
         // HTML Standard: http://whatwg.org/html/webappapis.html#dom-windowbase64-btoa
         var encode = function encode(input) {
             input = String(input);
@@ -38394,16 +38394,14 @@ var $a4be068310fbf330$var$base64 = {
             var a;
             var b;
             var c;
-            var buffer;
-            // Make sure any padding is handled outside of the loop.
+            var buffer; // Make sure any padding is handled outside of the loop.
             var length = input.length - padding;
             while(++position < length){
                 // Read three bytes, i.e. 24 bits.
                 a = input.charCodeAt(position) << 16;
                 b = input.charCodeAt(++position) << 8;
                 c = input.charCodeAt(++position);
-                buffer = a + b + c;
-                // Turn the 24 bits into four chunks of 6 bits each, and append the
+                buffer = a + b + c; // Turn the 24 bits into four chunks of 6 bits each, and append the
                 // matching character for each of them to the output.
                 output += TABLE.charAt(buffer >> 18 & 0x3f) + TABLE.charAt(buffer >> 12 & 0x3f) + TABLE.charAt(buffer >> 6 & 0x3f) + TABLE.charAt(buffer & 0x3f);
             }
@@ -38422,8 +38420,7 @@ var $a4be068310fbf330$var$base64 = {
             "encode": encode,
             "decode": decode,
             "version": "1.0.0"
-        };
-        // Some AMD build optimizers, like r.js, check for specific condition patterns
+        }; // Some AMD build optimizers, like r.js, check for specific condition patterns
         // like the following:
         if (freeExports && !freeExports.nodeType) {
             if (freeModule) // in Node.js or RingoJS v0.8.0+
@@ -38465,7 +38462,7 @@ var $a4be068310fbf330$export$c864650751575b23 = function(credentials) {
                         "redirectUrl",
                         "clientId",
                         "clientSecret",
-                        "tokenUrl", 
+                        "tokenUrl"
                     ];
                     if ($a4be068310fbf330$var$hasFields(credentials, requireFields)) {
                         _ctx.next = 3;
@@ -38529,7 +38526,7 @@ var $a4be068310fbf330$export$f8f36faf9a051362 = function(credentials) {
                         "refreshToken",
                         "clientId",
                         "clientSecret",
-                        "tokenUrl", 
+                        "tokenUrl"
                     ];
                     if ($a4be068310fbf330$var$hasFields(credentials, requireFields)) {
                         _ctx.next = 3;
@@ -38611,7 +38608,6 @@ var $a4be068310fbf330$export$8eafa2eadca5f324 = function(credentials) {
                     // or have both, but accessToken was expired
                     tokens = _ctx.sent;
                 case 13:
-                    // now we should have valid access token
                     $a4be068310fbf330$var$debug("Oauth tokens fetched: ".concat(tokens.access_token));
                     return _ctx.abrupt("return", {
                         tokens: tokens,
@@ -38633,8 +38629,7 @@ var $a4be068310fbf330$var$authHelpers = /*#__PURE__*/ Object.freeze({
     fetchOauthTokens: $a4be068310fbf330$export$c864650751575b23,
     refreshAccessToken: $a4be068310fbf330$export$f8f36faf9a051362,
     getOauthHeaders: $a4be068310fbf330$export$8eafa2eadca5f324
-});
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+}); // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 var $a4be068310fbf330$export$52fd04471776123c = function(params) {
     return $a4be068310fbf330$var$__awaiter(void 0, void 0, void 0, (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).mark(function _callee5() {
         var serverUrl, credentials, authMethod, defaultAccountType, authHeaders, defaultAccount, davRequest$1, createObject$1, updateObject$1, deleteObject$1, propfind$1, createAccount$1, collectionQuery$1, makeCollection$1, syncCollection$1, supportedReportSet$1, isCollectionDirty$1, smartCollectionSync$1, calendarQuery$1, calendarMultiGet$1, makeCalendar$1, fetchCalendars$1, fetchCalendarObjects$1, createCalendarObject$1, updateCalendarObject$1, deleteCalendarObject$1, syncCalendars$1, addressBookQuery$1, addressBookMultiGet$1, fetchAddressBooks$1, fetchVCards$1, createVCard$1, updateVCard$1, deleteVCard$1;
@@ -38642,8 +38637,7 @@ var $a4be068310fbf330$export$52fd04471776123c = function(params) {
             while(1)switch(_ctx5.prev = _ctx5.next){
                 case 0:
                     serverUrl = params.serverUrl, credentials = params.credentials, authMethod = params.authMethod, defaultAccountType = params.defaultAccountType;
-                    if (// eslint-disable-next-line no-nested-ternary
-                    !(authMethod === "Basic")) {
+                    if (!(authMethod === "Basic")) {
                         _ctx5.next = 5;
                         break;
                     }
@@ -38726,7 +38720,7 @@ var $a4be068310fbf330$export$52fd04471776123c = function(params) {
                     });
                     propfind$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$48a656987706fe46, {
                         headers: authHeaders
-                    });
+                    }); // account
                     createAccount$1 = function(params0) {
                         return $a4be068310fbf330$var$__awaiter(void 0, void 0, void 0, (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).mark(function _callee() {
                             var account9, headers, loadCollections, loadObjects;
@@ -38749,7 +38743,7 @@ var $a4be068310fbf330$export$52fd04471776123c = function(params) {
                                 }
                             }, _callee);
                         }));
-                    };
+                    }; // collection
                     collectionQuery$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$47b0282d5203445f, {
                         headers: authHeaders
                     });
@@ -38768,7 +38762,7 @@ var $a4be068310fbf330$export$52fd04471776123c = function(params) {
                     smartCollectionSync$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$af10c7b37150391, {
                         headers: authHeaders,
                         account: defaultAccount
-                    });
+                    }); // calendar
                     calendarQuery$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$dfe8beb42191d07e, {
                         headers: authHeaders
                     });
@@ -38797,7 +38791,7 @@ var $a4be068310fbf330$export$52fd04471776123c = function(params) {
                     syncCalendars$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$3c5980b7db34ac36, {
                         account: defaultAccount,
                         headers: authHeaders
-                    });
+                    }); // addressBook
                     addressBookQuery$1 = $a4be068310fbf330$var$defaultParam($a4be068310fbf330$export$7872ed357594bcbb, {
                         headers: authHeaders
                     });
@@ -38875,8 +38869,7 @@ var $a4be068310fbf330$export$6a49dbd7f4f10e35 = /*#__PURE__*/ function() {
                     return (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).wrap(function _callee$(_ctx) {
                         while(1)switch(_ctx.prev = _ctx.next){
                             case 0:
-                                if (// eslint-disable-next-line no-nested-ternary
-                                !(this.authMethod === "Basic")) {
+                                if (!(this.authMethod === "Basic")) {
                                     _ctx.next = 4;
                                     break;
                                 }
@@ -39551,88 +39544,61 @@ var $a4be068310fbf330$export$2e2bcd8739ae039 = Object.assign(Object.assign(Objec
 
 
 "use strict";
-//import { DAVClient } from "tsdav";
-window.addEventListener("load", (0, $12b7d44107d0fa21$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).mark(function _callee1() {
-    var client;
-    return (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).wrap(function _callee$(_ctx1) {
-        while(1)switch(_ctx1.prev = _ctx1.next){
-            case 0:
-                client = new (0, $a4be068310fbf330$export$6a49dbd7f4f10e35)({
-                    serverUrl: "https://efss.qloud.my/remote.php/dav/principals/users/ahmadmuhamad101@gmail.com/",
-                    credentials: {
-                        username: "ahmadmuhamad101@gmail.com",
-                        password: "cKRCM-53KYz-Z9zNi-X5jkS-BLeSt"
-                    },
-                    authMethod: "Basic",
-                    defaultAccountType: "caldav"
-                });
-                (0, $12b7d44107d0fa21$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).mark(function _callee() {
-                    var calendar;
-                    return (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).wrap(function _callee$(_ctx) {
-                        while(1)switch(_ctx.prev = _ctx.next){
-                            case 0:
-                                _ctx.next = 2;
-                                return client.login();
-                            case 2:
-                                _ctx.next = 4;
-                                return client.fetchCalendars({
-                                    calendar: calendar[0]
-                                });
-                            case 4:
-                                calendar = _ctx.sent;
-                                console.log(calendar);
-                            case 6:
-                            case "end":
-                                return _ctx.stop();
+var $5535d7a9ff238efe$var$callback_caldata_loaded = function callback_caldata_loaded() {
+    $5535d7a9ff238efe$var$showCalendar($5535d7a9ff238efe$var$currentMonth, $5535d7a9ff238efe$var$currentYear);
+};
+var $5535d7a9ff238efe$var$load_caldav = function load_caldav() {
+    $5535d7a9ff238efe$export$c5541db89994d14.forEach(function(item1) {
+        var client = new (0, $a4be068310fbf330$export$6a49dbd7f4f10e35)({
+            serverUrl: item1.server_url,
+            credentials: {
+                username: item1.user,
+                password: item1.password
+            },
+            authMethod: "Basic",
+            defaultAccountType: "caldav"
+        });
+        (0, $12b7d44107d0fa21$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).mark(function _callee() {
+            var calendars, i, objects;
+            return (0, (/*@__PURE__*/$parcel$interopDefault($1Kkv1))).wrap(function _callee$(_ctx) {
+                while(1)switch(_ctx.prev = _ctx.next){
+                    case 0:
+                        _ctx.next = 2;
+                        return client.login();
+                    case 2:
+                        _ctx.next = 4;
+                        return client.fetchCalendars();
+                    case 4:
+                        calendars = _ctx.sent;
+                        console.log("cal" + JSON.stringify(calendars));
+                        i = 0;
+                    case 7:
+                        if (!(i < calendars.length)) {
+                            _ctx.next = 15;
+                            break;
                         }
-                    }, _callee);
-                }))();
-            case 2:
-            case "end":
-                return _ctx1.stop();
-        }
-    }, _callee1);
-})));
-/*
-
-const client = new DAVClient({
-  serverUrl: "https://shared02.opsone-cloud.ch/remote.php/dav",
-  credentials: {
-    username: "",
-    password: "",
-
-    timezone: "America/Chicago",
-  },
-  authMethod: "Basic",
-  defaultAccountType: "caldav",
-});
-
-async function test() {
-  const headers = {
-    authorization: "Basic",
-    mozSystem: true,
-  };
-
-  try {
-    const calendars = await client.fetchCalendars({
-      account: {
-        username: "",
-        password: "",
-        homeUrl: "/remote.php/dav/principals/users/",
-        rootUrl: "https://shared02.opsone-cloud.ch",
-      },
-      headers,
+                        _ctx.next = 10;
+                        return client.fetchCalendarObjects({
+                            calendar: calendars[i]
+                        });
+                    case 10:
+                        objects = _ctx.sent;
+                        objects.forEach(function(item) {
+                            (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(item.data, $5535d7a9ff238efe$var$callback_caldata_loaded, false, true);
+                        });
+                    case 12:
+                        i++;
+                        _ctx.next = 7;
+                        break;
+                    case 15:
+                    case "end":
+                        return _ctx.stop();
+                }
+            }, _callee);
+        }))();
     });
-    console.log("n" + calendars[0]);
-  } catch (e) {
-    console.error(e);
-  }
-}
-setTimeout(function () {
-  test();
-}, 5000);
-
-*/ var $5535d7a9ff238efe$var$load_settings = function load_settings() {
+};
+var $5535d7a9ff238efe$var$load_settings = function load_settings() {
     (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("settings").then(function(value) {
         if (value == null) return false;
         $5535d7a9ff238efe$var$settings = value;
@@ -39654,7 +39620,7 @@ var $5535d7a9ff238efe$var$months = [
     "Sep",
     "Oct",
     "Nov",
-    "Dec", 
+    "Dec"
 ];
 var $5535d7a9ff238efe$var$weekday = [
     "Sun",
@@ -39665,12 +39631,7 @@ var $5535d7a9ff238efe$var$weekday = [
     "Fri",
     "Sat"
 ];
-var $5535d7a9ff238efe$var$subscriptions = [
-    {
-        name: "test",
-        url: "test"
-    }
-];
+var $5535d7a9ff238efe$var$subscriptions = [];
 var $5535d7a9ff238efe$var$today = new Date();
 var $5535d7a9ff238efe$var$currentMonth = $5535d7a9ff238efe$var$today.getMonth();
 var $5535d7a9ff238efe$var$currentYear = $5535d7a9ff238efe$var$today.getFullYear();
@@ -39684,7 +39645,17 @@ var $5535d7a9ff238efe$export$471f7ae5c4103ae1 = {
 var $5535d7a9ff238efe$var$settings = {};
 var $5535d7a9ff238efe$var$blob = "";
 var $5535d7a9ff238efe$export$4bf9923669ad6c63 = [];
-//ads || ads free
+var $5535d7a9ff238efe$export$c5541db89994d14 = [];
+(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("accounts").then(function(value) {
+    if (value == null) {
+        $5535d7a9ff238efe$export$c5541db89994d14 = [];
+        return false;
+    }
+    $5535d7a9ff238efe$export$c5541db89994d14 = value;
+    $5535d7a9ff238efe$var$load_caldav();
+}).catch(function(err) {
+    console.log(err);
+}); //ads || ads free
 //KaioOs ads
 var $5535d7a9ff238efe$var$getManifest = function getManifest(callback) {
     if (!navigator.mozApps) return false;
@@ -39694,8 +39665,7 @@ var $5535d7a9ff238efe$var$getManifest = function getManifest(callback) {
     };
     self1.onerror = function() {};
 };
-var $5535d7a9ff238efe$var$self;
-//KaiOs store true||false
+var $5535d7a9ff238efe$var$self; //KaiOs store true||false
 function $5535d7a9ff238efe$var$manifest(a) {
     console.log(a.manifest.version);
     $5535d7a9ff238efe$var$self = a.origin;
@@ -39707,37 +39677,32 @@ function $5535d7a9ff238efe$var$manifest(a) {
         $5535d7a9ff238efe$var$settings.ads = false;
     }
 }
-$5535d7a9ff238efe$var$getManifest($5535d7a9ff238efe$var$manifest);
-// ////////
+$5535d7a9ff238efe$var$getManifest($5535d7a9ff238efe$var$manifest); // ////////
 // finde closest event to selected date in list view
 // ////////
 var $5535d7a9ff238efe$var$find_closest_date = function find_closest_date(search_term) {
-    var search = new Date($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day).getTime();
-    //equal
+    var search = new Date($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day).getTime(); //equal
     for(var i = 0; i < $5535d7a9ff238efe$export$4bf9923669ad6c63.length; i++){
         var item = new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[i].dateStart).getTime();
         if (search == item) {
             $5535d7a9ff238efe$var$t = $5535d7a9ff238efe$export$4bf9923669ad6c63[i].dateStart;
             i = $5535d7a9ff238efe$export$4bf9923669ad6c63.length;
         }
-    }
-    //between
+    } //between
     if ($5535d7a9ff238efe$var$t == 0) {
         for(var i1 = 0; i1 < $5535d7a9ff238efe$export$4bf9923669ad6c63.length - 1; i1++)if (search > new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[i1].dateStart).getTime()) {
             $5535d7a9ff238efe$var$t = $5535d7a9ff238efe$export$4bf9923669ad6c63[i1].dateStart;
             i1 = $5535d7a9ff238efe$export$4bf9923669ad6c63.length;
             console.log("result" + $5535d7a9ff238efe$var$t);
         }
-    }
-    //default
+    } //default
     if ($5535d7a9ff238efe$var$t == 0) {
         console.log("no match");
         $5535d7a9ff238efe$var$t = $5535d7a9ff238efe$export$4bf9923669ad6c63[0].dateStart;
     }
     document.querySelectorAll("article[data-date='" + $5535d7a9ff238efe$var$t + "']")[0].focus();
     return $5535d7a9ff238efe$var$t;
-};
-// check if has event
+}; // check if has event
 var $5535d7a9ff238efe$var$event_check = function event_check(date) {
     var feedback = {
         date: "",
@@ -39774,8 +39739,7 @@ var $5535d7a9ff238efe$var$event_check = function event_check(date) {
         }
     }
     return feedback;
-};
-// check if has recur event
+}; // check if has recur event
 var $5535d7a9ff238efe$var$rrule_check = function rrule_check(date) {
     var feedback = {
         date: "",
@@ -39793,11 +39757,9 @@ var $5535d7a9ff238efe$var$rrule_check = function rrule_check(date) {
         var a = new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[t2].dateStart).getTime();
         var b = new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[t2].dateEnd).getTime();
         var c = new Date(date).getTime();
-        var d = $5535d7a9ff238efe$export$4bf9923669ad6c63[t2].rrule_;
-        //recurrences
+        var d = $5535d7a9ff238efe$export$4bf9923669ad6c63[t2].rrule_; //recurrences
         if (typeof $5535d7a9ff238efe$export$4bf9923669ad6c63[t2]["rrule_"] !== "undefined" && $5535d7a9ff238efe$export$4bf9923669ad6c63[t2]["rrule_"] !== undefined) {
             if (a === c || b === c || a < c && b > c) {
-                console.log($5535d7a9ff238efe$export$4bf9923669ad6c63[t2]["rrule_"]);
                 //return false;
                 if ($5535d7a9ff238efe$export$4bf9923669ad6c63[t2].rrule_ == "MONTHLY") {
                     if (new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[t2].dateStart).getDate() === new Date(date).getDate()) {
@@ -39836,8 +39798,7 @@ var $5535d7a9ff238efe$var$rrule_check = function rrule_check(date) {
         }
     }
     return feedback;
-};
-//////////////////
+}; //////////////////
 //event slider
 ///////////
 var $5535d7a9ff238efe$var$slider = [];
@@ -39855,8 +39816,7 @@ var $5535d7a9ff238efe$var$slider_navigation = function slider_navigation() {
         item.classList.remove("active");
     });
     p[$5535d7a9ff238efe$var$slider_index].classList.add("active");
-};
-////
+}; ////
 var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
     $5535d7a9ff238efe$var$slider = [];
     var k = document.querySelector("div#event-slider-indicator div");
@@ -39886,15 +39846,13 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
                     $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
-            }
-            //WEEK
+            } //WEEK
             if (d2 == "WEEKLY") {
                 if (new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[i].dateStart).getDay() == new Date(date).getDay()) {
                     $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
-            }
-            //MONTH
+            } //MONTH
             if (d2 == "MONTHLY") {
                 if (new Date(item[i].item.dateStart).getDate() == new Date(date).getDate()) {
                     $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
@@ -39916,8 +39874,7 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
     }
-};
-////
+}; ////
 // JUMP TO TODAY
 ////
 var $5535d7a9ff238efe$var$jump_to_today = function jump_to_today() {
@@ -39938,39 +39895,31 @@ function $5535d7a9ff238efe$var$previous() {
     $5535d7a9ff238efe$var$currentMonth = $5535d7a9ff238efe$var$currentMonth === 0 ? 11 : $5535d7a9ff238efe$var$currentMonth - 1;
     $5535d7a9ff238efe$var$showCalendar($5535d7a9ff238efe$var$currentMonth, $5535d7a9ff238efe$var$currentYear);
     $5535d7a9ff238efe$var$event_slider($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day);
-}
-//////////////
+} //////////////
 //BUILD CALENDAR
 //////////////
 // get weeknumber
 Date.prototype.getWeek = function() {
     var date = new Date(this.getTime());
-    date.setHours(0, 0, 0, 0);
-    // Thursday in current week decides the year.
-    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-    // January 4 is always in week 1.
-    var week1 = new Date(date.getFullYear(), 0, 4);
-    // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+    date.setHours(0, 0, 0, 0); // Thursday in current week decides the year.
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7); // January 4 is always in week 1.
+    var week1 = new Date(date.getFullYear(), 0, 4); // Adjust to Thursday in week 1 and count number of weeks from date to week1.
     return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
 };
 var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
     (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("add", "events", "options");
     var firstDay = new Date(year, month).getDay();
     var daysInMonth = 32 - new Date(year, month, 32).getDate();
-    var tbl = document.getElementById("calendar-body");
-    // clearing all previous cells
-    tbl.innerHTML = "";
-    // filing data about month and in the page via DOM.
-    document.getElementById("monthAndYear").innerHTML = $5535d7a9ff238efe$var$months[month] + " " + year;
-    // creating all cells
+    var tbl = document.getElementById("calendar-body"); // clearing all previous cells
+    tbl.innerHTML = ""; // filing data about month and in the page via DOM.
+    document.getElementById("monthAndYear").innerHTML = $5535d7a9ff238efe$var$months[month] + " " + year; // creating all cells
     var date = 1;
     for(var i = 0; i < 6; i++){
         // creates a table row
         var row = document.createElement("div");
         row.classList.add("flex");
         row.classList.add("row");
-        row.classList.add("width-100");
-        // creating individual cells, filing them up with data.
+        row.classList.add("width-100"); // creating individual cells, filing them up with data.
         for(var j = 0; j < 7; j++){
             if (i === 0 && j < firstDay) {
                 var cell = document.createElement("div");
@@ -39984,10 +39933,8 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
                 var moon = document.createElement("div");
                 var cellText1 = document.createTextNode(date);
                 cell1.appendChild(cellText1);
-                cell1.appendChild(span);
-                // set tabindex
-                cell1.setAttribute("tabindex", date - 1);
-                // store date with leading 0
+                cell1.appendChild(span); // set tabindex
+                cell1.setAttribute("tabindex", date - 1); // store date with leading 0
                 // because input type date
                 // accept only day month with leading zero
                 var mmonth = "0".concat(month + 1).slice(-2);
@@ -39996,8 +39943,7 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
                 moon.classList.add("moon-phase-" + (0, $9f0e935a15ef5a93$export$69e63ab66e4cb4c7)(year, month, date));
                 cell1.appendChild(moon);
                 cell1.setAttribute("data-date", p);
-                cell1.setAttribute("data-index", new Date(p).toISOString());
-                // check if has event
+                cell1.setAttribute("data-index", new Date(p).toISOString()); // check if has event
                 if ($5535d7a9ff238efe$export$4bf9923669ad6c63.length > 0) {
                     if ($5535d7a9ff238efe$var$event_check(p).event == true) cell1.classList.add("event");
                     if ($5535d7a9ff238efe$var$rrule_check(p).rrule) cell1.classList.add("event");
@@ -40006,19 +39952,16 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
                 row.appendChild(cell1);
                 date++;
             }
-        }
-        // add weeknumbers
+        } // add weeknumbers
         var week = document.createElement("span");
         week.classList.add("weeknumber");
         var weekText = document.createTextNode(new Date(year, month, date).getWeek());
         week.appendChild(weekText);
-        row.appendChild(week);
-        //add row
+        row.appendChild(week); //add row
         tbl.appendChild(row);
     }
     document.querySelectorAll(".item")[0].focus();
-    $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date");
-    // highlight current day
+    $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date"); // highlight current day
     if ($5535d7a9ff238efe$var$today.getMonth() == month && $5535d7a9ff238efe$var$today.getFullYear() == year) {
         document.querySelectorAll(".item")[$5535d7a9ff238efe$var$currentDay - 1].focus();
         document.querySelectorAll(".item")[$5535d7a9ff238efe$var$currentDay - 1].classList.add("today");
@@ -40055,7 +39998,7 @@ var $5535d7a9ff238efe$var$page_calendar = {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", "Wed"),
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", "Thu"),
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", "Fri"),
-                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", "Sat"), 
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", "Sat")
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 id: "calendar-body"
@@ -40076,7 +40019,7 @@ var $5535d7a9ff238efe$var$page_calendar = {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                     class: "flex justify-content-spacearound"
                 })
-            ]), 
+            ])
         ]);
     },
     oncreate: function(param) {
@@ -40110,8 +40053,7 @@ var $5535d7a9ff238efe$var$page_calendar = {
                     $5535d7a9ff238efe$var$event_slider(k);
                 }
             });
-            $5535d7a9ff238efe$var$clear_form();
-        //document.querySelectorAll("div#event-slider").style.opacity = "100";
+            $5535d7a9ff238efe$var$clear_form(); //document.querySelectorAll("div#event-slider").style.opacity = "100";
         }, 500);
     }
 };
@@ -40159,10 +40101,10 @@ var $5535d7a9ff238efe$var$page_events = {
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", item.LOCATION),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                             class: "description"
-                        }, item.DESCRIPTION), 
-                    ]), 
+                        }, item.DESCRIPTION)
+                    ])
                 ]);
-            }), 
+            })
         ]);
     }
 };
@@ -40205,7 +40147,7 @@ var $5535d7a9ff238efe$var$page_options = {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("span", {
                         class: "keys-day-event"
                     }, "")
-                ], "day with event"), 
+                ], "day with event")
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "settings"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -40239,8 +40181,8 @@ var $5535d7a9ff238efe$var$page_options = {
                     }, "30 minutes"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "1440"
-                    }, "1 Day"), 
-                ]), 
+                    }, "1 Day")
+                ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
@@ -40273,9 +40215,33 @@ var $5535d7a9ff238efe$var$page_options = {
                     }
                 }, item.name);
             }),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Accounts"),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
+                class: "item",
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 4,
+                onclick: function onclick() {
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_accounts");
+                }
+            }, "add account"),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                id: "accounts-text"
+            }, "Your accounts"),
+            $5535d7a9ff238efe$export$c5541db89994d14.map(function(item, index) {
+                return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
+                    class: "item subscriptions-item",
+                    "data-id": item.url,
+                    tabindex: index + $5535d7a9ff238efe$var$subscriptions.length + 5,
+                    onblur: function onblur() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    },
+                    onfocus: function onfocus() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("delete", "", "");
+                    }
+                }, item.name);
+            }),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 id: "KaiOsAds-Wrapper",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 4,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + $5535d7a9ff238efe$export$c5541db89994d14.length + 4,
                 class: "item",
                 onfocus: function onfocus() {
                     (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "open", "");
@@ -40293,8 +40259,8 @@ var $5535d7a9ff238efe$var$page_options = {
                         if ($5535d7a9ff238efe$var$settings.ads == true) document.querySelector("#KaiOsAds-Wrapper iframe").src = "./ads.html";
                         else document.querySelector("#KaiOsAds-Wrapper").remove();
                     }
-                }), 
-            ]), 
+                })
+            ])
         ]);
     },
     oncreate: function oncreate() {
@@ -40321,7 +40287,7 @@ var $5535d7a9ff238efe$var$page_subscriptions = {
                     placeholder: "Name",
                     type: "text",
                     id: "cal-subs-name"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40337,13 +40303,14 @@ var $5535d7a9ff238efe$var$page_subscriptions = {
                     placeholder: "URL",
                     type: "text",
                     id: "cal-subs-url",
+                    "data-scan-action": "true",
                     onfocus: function onfocus() {
                         (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("qr-scan", "", "");
                     },
                     onblur: function onblur() {
                         (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
                     }
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
@@ -40351,7 +40318,108 @@ var $5535d7a9ff238efe$var$page_subscriptions = {
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$store_subscription();
                 }
-            }, "save"), 
+            }, "save")
+        ]);
+    }
+};
+var $5535d7a9ff238efe$var$page_accounts = {
+    view: function view() {
+        return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+            id: "account-form"
+        }, [
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                class: "item input-parent",
+                tabindex: "0",
+                oncreate: function oncreate(param) {
+                    var dom = param.dom;
+                    dom.focus();
+                }
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
+                    for: "description"
+                }, "account name"),
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
+                    placeholder: "Name",
+                    type: "text",
+                    id: "account-name"
+                })
+            ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                class: "item input-parent",
+                tabindex: "1",
+                onblur: function onblur() {
+                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                }
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
+                    for: "description"
+                }, "server"),
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
+                    placeholder: "URL",
+                    type: "text",
+                    id: "account-url",
+                    "data-scan-action": "true",
+                    onfocus: function onfocus() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("qr-scan", "", "");
+                    },
+                    onblur: function onblur() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    }
+                })
+            ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                class: "item input-parent",
+                tabindex: "2",
+                onblur: function onblur() {
+                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                }
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
+                    for: "description"
+                }, "username"),
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
+                    placeholder: "username",
+                    type: "url",
+                    id: "account-username",
+                    "data-scan-action": "true",
+                    onfocus: function onfocus() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    },
+                    onblur: function onblur() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    }
+                })
+            ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                class: "item input-parent",
+                tabindex: "3",
+                onblur: function onblur() {
+                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                }
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
+                    for: "description"
+                }, "password"),
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
+                    placeholder: "password",
+                    type: "password",
+                    id: "account-password",
+                    "data-scan-action": "true",
+                    onfocus: function onfocus() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("qr-scan", "", "");
+                    },
+                    onblur: function onblur() {
+                        (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    }
+                })
+            ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
+                class: "item",
+                tabindex: "4",
+                onclick: function onclick() {
+                    $5535d7a9ff238efe$var$store_account();
+                }
+            }, "save")
         ]);
     }
 };
@@ -40378,7 +40446,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-title"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40391,7 +40459,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-location"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40405,7 +40473,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     type: "date",
                     id: "event-date",
                     value: $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40418,7 +40486,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     placeholder: "YYYY-MM-DD",
                     type: "date",
                     id: "event-date-end"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40432,7 +40500,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     type: "time",
                     id: "event-time-start",
                     value: new Date().getHours() + ":" + new Date().getMinutes() + ":" + new Date().getSeconds()
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40445,7 +40513,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     placeholder: "hh:mm:ss",
                     type: "time",
                     id: "event-time-end"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40458,7 +40526,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-description"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40488,8 +40556,8 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     }, "30 minutes"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "1440"
-                    }, "1 Day"), 
-                ]), 
+                    }, "1 Day")
+                ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40516,8 +40584,8 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     }, "Monthly"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "YEARLY"
-                    }, "Yearly"), 
-                ]), 
+                    }, "Yearly")
+                ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)({
                 class: "item",
@@ -40530,7 +40598,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("img", {
                     id: "form-image",
                     "data-blob": ""
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 tabindex: "10",
@@ -40539,7 +40607,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$store_event();
                 }
-            }, "save"), 
+            }, "save")
         ]);
     },
     oncreate: function oncreate() {
@@ -40569,7 +40637,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "text",
                     id: "event-title",
                     value: $5535d7a9ff238efe$var$update_event_date.SUMMARY
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40582,7 +40650,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     placeholder: "",
                     type: "text",
                     id: "event-location"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40596,7 +40664,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "date",
                     id: "event-date",
                     value: $5535d7a9ff238efe$var$update_event_date.dateStart
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40610,7 +40678,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "date",
                     id: "event-date-end",
                     value: $5535d7a9ff238efe$var$update_event_date.dateEnd
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40623,7 +40691,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     placeholder: "hh:mm:ss",
                     type: "time",
                     id: "event-time-start"
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40637,7 +40705,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "time",
                     id: "event-time-end",
                     value: $5535d7a9ff238efe$var$update_event_date.time_end
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40651,7 +40719,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "text",
                     id: "event-description",
                     value: $5535d7a9ff238efe$var$update_event_date.DESCRIPTION
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40678,8 +40746,8 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     }, "30 minutes"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "1440"
-                    }, "1 Day"), 
-                ]), 
+                    }, "1 Day")
+                ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
@@ -40707,8 +40775,8 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     }, "Monthly"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "YEARLY"
-                    }, "Yearly"), 
-                ]), 
+                    }, "Yearly")
+                ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)({
                 class: "item",
@@ -40721,7 +40789,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("img", {
                     id: "form-image",
                     "src": $5535d7a9ff238efe$var$update_event_date.ATTACH
-                }), 
+                })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 tabindex: "10",
@@ -40738,7 +40806,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$update_event();
                 }
-            }, "update"), 
+            }, "update")
         ]);
     }
 };
@@ -40748,7 +40816,8 @@ var $5535d7a9ff238efe$var$page_edit_event = {
     "/page_options": $5535d7a9ff238efe$var$page_options,
     "/page_add_event": $5535d7a9ff238efe$var$page_add_event,
     "/page_edit_event": $5535d7a9ff238efe$var$page_edit_event,
-    "/page_subscriptions": $5535d7a9ff238efe$var$page_subscriptions
+    "/page_subscriptions": $5535d7a9ff238efe$var$page_subscriptions,
+    "/page_accounts": $5535d7a9ff238efe$var$page_accounts
 });
 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.prefix = "#";
 var $5535d7a9ff238efe$var$store_settings = function store_settings() {
@@ -40759,23 +40828,21 @@ var $5535d7a9ff238efe$var$store_settings = function store_settings() {
         console.log(err);
     });
 };
-var $5535d7a9ff238efe$var$lp = 0;
 var $5535d7a9ff238efe$var$load_subscriptions = function() {
-    if ($5535d7a9ff238efe$var$subscriptions == null || $5535d7a9ff238efe$var$subscriptions.lenght == -1 || $5535d7a9ff238efe$var$subscriptions.lenght == "undefined") return false;
-    if ($5535d7a9ff238efe$var$lp < $5535d7a9ff238efe$var$subscriptions.length) {
-        (0, $78c31c2a3de015ee$export$730c80d46f5e5f34)($5535d7a9ff238efe$var$subscriptions[$5535d7a9ff238efe$var$lp].url, $5535d7a9ff238efe$var$load_subscriptions);
-        $5535d7a9ff238efe$var$lp++;
-    }
+    if ($5535d7a9ff238efe$var$subscriptions == null || $5535d7a9ff238efe$var$subscriptions.lenght == -1 || $5535d7a9ff238efe$var$subscriptions == "undefined") return false;
+    if ($5535d7a9ff238efe$var$subscriptions.length) $5535d7a9ff238efe$var$subscriptions.forEach(function(item) {
+        (0, $78c31c2a3de015ee$export$730c80d46f5e5f34)(item.url, $5535d7a9ff238efe$var$load_subscriptions);
+    });
     $5535d7a9ff238efe$var$jump_to_today();
     $5535d7a9ff238efe$var$event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date");
 };
 var $5535d7a9ff238efe$var$callback_scan = function callback_scan(url) {
-    document.querySelector("div#subscription-form input#cal-subs-url").value = url;
+    document.activeElement.value = url;
 };
 var $5535d7a9ff238efe$var$store_subscription = function store_subscription() {
     if ((0, $162001cafa2b40fd$export$a22775fa5e2eebd9)(document.getElementById("cal-subs-url").value) && document.getElementById("cal-subs-name").value != "") {
-        $5535d7a9ff238efe$var$subscriptions = [];
+        //subscriptions = [];
         $5535d7a9ff238efe$var$subscriptions.push({
             url: document.getElementById("cal-subs-url").value,
             name: document.getElementById("cal-subs-name").value
@@ -40792,6 +40859,24 @@ var $5535d7a9ff238efe$var$store_subscription = function store_subscription() {
         });
         $5535d7a9ff238efe$var$load_subscriptions();
         list_subscriptions();
+    } else (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("Please enter a name and a valid url", 2000);
+};
+var $5535d7a9ff238efe$var$store_account = function store_account() {
+    if ((0, $162001cafa2b40fd$export$a22775fa5e2eebd9)(document.getElementById("account-url").value) && document.getElementById("account-name").value != "" && document.getElementById("account-username").value != "" && document.getElementById("account-password").value != "") {
+        $5535d7a9ff238efe$export$c5541db89994d14.push({
+            server_url: document.getElementById("account-url").value,
+            user: document.getElementById("account-username").value,
+            password: document.getElementById("account-password").value,
+            name: document.getElementById("account-name").value
+        });
+        console.log(JSON.stringify($5535d7a9ff238efe$export$c5541db89994d14));
+        (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("accounts", $5535d7a9ff238efe$export$c5541db89994d14).then(function(value) {
+            (0, $162001cafa2b40fd$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_options");
+        }).catch(function(err) {
+            // This code runs if there were any errors
+            console.log(err);
+        });
     } else (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("Please enter a name and a valid url", 2000);
 };
 var $5535d7a9ff238efe$var$delete_subscription = function delete_subscription() {
@@ -40821,7 +40906,6 @@ var $5535d7a9ff238efe$var$delete_subscription = function delete_subscription() {
             return false;
         }
         $5535d7a9ff238efe$var$load_subscriptions();
-        console.log($5535d7a9ff238efe$var$subscriptions);
     }, 2000);
 }).catch(function(err) {
     // This code runs if there were any errors
@@ -40833,8 +40917,7 @@ function $5535d7a9ff238efe$var$handleVisibilityChange() {
         $5535d7a9ff238efe$export$471f7ae5c4103ae1.visible = true;
     }, 1000);
 }
-$5535d7a9ff238efe$var$handleVisibilityChange();
-/////////////////
+$5535d7a9ff238efe$var$handleVisibilityChange(); /////////////////
 ///NAVIGATION
 /////////////////
 var $5535d7a9ff238efe$var$nav = function nav(move) {
@@ -40846,7 +40929,7 @@ var $5535d7a9ff238efe$var$nav = function nav(move) {
         var b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
     }
-    if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions") {
+    if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts") {
         var b1 = document.activeElement.parentNode.parentNode;
         items = b1.querySelectorAll(".item");
     }
@@ -40879,11 +40962,9 @@ var $5535d7a9ff238efe$var$nav = function nav(move) {
             $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day = targetElement.getAttribute("data-date");
             $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day_id = targetElement.getAttribute("data-id");
             $5535d7a9ff238efe$var$event_slider($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day);
-            console.log($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day);
         }
     }
-};
-// may better to compare all alarms
+}; // may better to compare all alarms
 // with all events
 // to clean
 var $5535d7a9ff238efe$var$add_alarm = function add_alarm(date, message_text, id) {
@@ -40893,12 +40974,9 @@ var $5535d7a9ff238efe$var$add_alarm = function add_alarm(date, message_text, id)
         var data = {
             foo: message_text,
             event_id: id
-        };
-        // The "honorTimezone" string is what make the alarm honoring it
+        }; // The "honorTimezone" string is what make the alarm honoring it
         var request = navigator.mozAlarms.add(date, "honorTimezone", data);
-        request.onsuccess = function() {
-        // console.log(this.result);
-        };
+        request.onsuccess = function() {};
         request.onerror = function() {
             console.log("An error occurred: " + this.error.name);
         };
@@ -40925,8 +41003,7 @@ var $5535d7a9ff238efe$var$remove_alarm = function remove_alarm(id) {
             console.log("An error occurred:", this.error.name);
         };
     }
-};
-// //////////////////
+}; // //////////////////
 // //BUILD EVENT-LIST
 // /////////////////
 // /////////////
@@ -40960,8 +41037,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event() {
     if (document.getElementById("event-time-end").value != "") end_time = document.getElementById("event-time-end").value;
     var convert_dt_start = document.getElementById("event-date").value + " " + start_time;
     if (document.getElementById("event-date-end").value == "") document.getElementById("event-date-end").value = document.getElementById("event-date").value;
-    var convert_dt_end = document.getElementById("event-date-end").value + " " + end_time;
-    // notification before event
+    var convert_dt_end = document.getElementById("event-date-end").value + " " + end_time; // notification before event
     var notification_time = document.getElementById("event-notification-time").value;
     var calc_notification;
     if (notification_time != "none") {
@@ -41024,8 +41100,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event() {
     }).catch(function(err) {
         console.log(err);
     });
-};
-// ////////////
+}; // ////////////
 // UPDATE EVENT
 // /////////
 var $5535d7a9ff238efe$var$update_event = function update_event() {
@@ -41051,8 +41126,7 @@ var $5535d7a9ff238efe$var$update_event = function update_event() {
             var end_time = "00:00:00";
             if (document.getElementById("event-time-end").value != "") end_time = document.getElementById("event-time-end").value;
             var convert_dt_start = document.getElementById("event-date").value + " " + start_time;
-            var convert_dt_end = document.getElementById("event-date").value + " " + end_time;
-            // notification before event
+            var convert_dt_end = document.getElementById("event-date").value + " " + end_time; // notification before event
             var notification_time = document.getElementById("event-notification-time").value;
             var calc_notification = "";
             if (notification_time != "none") {
@@ -41103,8 +41177,7 @@ var $5535d7a9ff238efe$var$update_event = function update_event() {
         (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", value);
         $5535d7a9ff238efe$var$clear_form();
     }).catch(function(err) {});
-};
-//////////////
+}; //////////////
 //DELETE EVENT
 ///////////
 var $5535d7a9ff238efe$var$delete_event = function delete_event() {
@@ -41125,13 +41198,11 @@ var $5535d7a9ff238efe$var$delete_event = function delete_event() {
         console.log(err);
     });
     return f;
-};
-// event slider
+}; // event slider
 var $5535d7a9ff238efe$var$t = new Date();
 var $5535d7a9ff238efe$var$mm = "0".concat($5535d7a9ff238efe$var$t.getMonth() + 1).slice(-2);
 var $5535d7a9ff238efe$var$d = "0".concat($5535d7a9ff238efe$var$t.getDate()).slice(-2);
-var $5535d7a9ff238efe$var$y = $5535d7a9ff238efe$var$t.getFullYear();
-// callback import event
+var $5535d7a9ff238efe$var$y = $5535d7a9ff238efe$var$t.getFullYear(); // callback import event
 var $5535d7a9ff238efe$var$import_event_callback = function import_event_callback(id, date) {
     (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("done", 2000);
     (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("edit", "", "");
@@ -41167,8 +41238,7 @@ var $5535d7a9ff238efe$var$pick_image_callback = function pick_image_callback(res
         console.log("blob" + $5535d7a9ff238efe$var$blob);
     };
     fr.readAsDataURL(resultBlob);
-};
-// ////////////////////////////
+}; // ////////////////////////////
 // //KEYPAD HANDLER////////////
 // ////////////////////////////
 var $5535d7a9ff238efe$var$longpress = false;
@@ -41176,8 +41246,7 @@ var $5535d7a9ff238efe$var$longpress_timespan = 1000;
 var $5535d7a9ff238efe$var$timeout;
 function $5535d7a9ff238efe$var$repeat_action(param) {
     param.key;
-}
-// ////////////
+} // ////////////
 // //LONGPRESS
 // ///////////
 function $5535d7a9ff238efe$var$longpress_action(param) {
@@ -41202,9 +41271,9 @@ var $5535d7a9ff238efe$var$import_event = function import_event() {
     (0, $78c31c2a3de015ee$export$7430511ad5970e27)(document.activeElement.getAttribute("data-filename"), $5535d7a9ff238efe$var$import_event_callback);
 };
 var $5535d7a9ff238efe$var$stop_scan_callback = function stop_scan_callback() {
-    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_subscriptions");
-};
-// /////////////
+    // m.route.set("/page_subscriptions");
+    document.getElementById("qr-screen").style.display = "none";
+}; // /////////////
 // //SHORTPRESS
 // ////////////
 function $5535d7a9ff238efe$var$shortpress_action(param) {
@@ -41214,11 +41283,11 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
             break;
         case "ArrowUp":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$nav(-7);
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event") $5535d7a9ff238efe$var$nav(-1);
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event") $5535d7a9ff238efe$var$nav(-1);
             break;
         case "ArrowDown":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$nav(7);
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event") $5535d7a9ff238efe$var$nav(1);
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event") $5535d7a9ff238efe$var$nav(1);
             break;
         case "ArrowRight":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() != "/page_calendar") return true;
@@ -41248,11 +41317,6 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_options");
                 return true;
             }
-            if ($5535d7a9ff238efe$export$471f7ae5c4103ae1.view == "subscription") {
-                // store subscription
-                $5535d7a9ff238efe$var$store_subscription();
-                return true;
-            }
             break;
         case "SoftLeft":
         case "Control":
@@ -41266,14 +41330,12 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
                     return arr.UID == $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day_id;
                 })[0];
                 setTimeout(function() {
-                    console.log($5535d7a9ff238efe$var$update_event_date.ATTACH);
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_edit_event");
                 }, 1000);
                 return true;
             }
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions") {
-                console.log(document.activeElement.id);
-                if (document.activeElement.id == "cal-subs-url") (0, $2b0cc46421a6d3fe$export$be96fe42679d1b7e)($5535d7a9ff238efe$var$callback_scan);
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts") {
+                if (document.activeElement.getAttribute("data-scan-action") == "true") (0, $2b0cc46421a6d3fe$export$be96fe42679d1b7e)($5535d7a9ff238efe$var$callback_scan);
                 return true;
             }
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options") {
@@ -41281,8 +41343,7 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
                 return true;
             }
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") {
-                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_add_event");
-                // when new event
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_add_event"); // when new event
                 // set time
                 // set_datetime_form();
                 return true;
@@ -41310,22 +41371,21 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
                 document.getElementById("form-image").src = "";
                 $5535d7a9ff238efe$var$blob = "";
                 return true;
-            }
-            //toggle month/events
+            } //toggle month/events
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar" ? (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_events") : (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             break;
         case "Backspace":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" && document.activeElement.tagName != "INPUT") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" && document.activeElement.tagName != "INPUT") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions") {
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts") {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_options");
-                if (document.getElementById("qr-screen").style == "block") (0, $2b0cc46421a6d3fe$export$55e6c60a43cc74e2)($5535d7a9ff238efe$var$stop_scan_callback);
+                if (document.getElementById("qr-screen").style == "block") document.getElementById("qr-screen").style = "none";
+                (0, $2b0cc46421a6d3fe$export$55e6c60a43cc74e2)($5535d7a9ff238efe$var$stop_scan_callback);
             }
             break;
     }
-}
-// ///////////////////////////////
+} // ///////////////////////////////
 // //shortpress / longpress logic
 // //////////////////////////////
 function $5535d7a9ff238efe$var$handleKeyDown(evt) {
