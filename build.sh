@@ -2,16 +2,22 @@
 
 rm -rf ./dist
 mkdir ./dist
+mkdir ./dist/assets
+
 
 rm -rf ./build
 mkdir ./build
 
-mkdir ./dist/assets
+
+
+
+npm run  build --no-source-maps --no-optimize  ./ application/index.html 
+
+cp -r ./application/assets/icons ./dist/assets/icons
+cp -r ./application/assets/image ./dist/assets/image
+
 cp ./application/manifest.webapp ./dist/
 cp ./application/ads.html ./dist/
-
-cp -r ./application/assets/ ./dist/
-npm run  build --no-source-maps --no-optimize  ./ application/index.html 
 
 #!/bin/bash
 #create default app zip

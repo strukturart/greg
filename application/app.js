@@ -19,7 +19,8 @@ import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
 
 let callback_caldata_loaded = function () {
-  showCalendar(currentMonth, currentYear);
+  console.log("hey");
+  //showCalendar(currentMonth, currentYear);
 };
 
 let load_caldav = function () {
@@ -34,15 +35,26 @@ let load_caldav = function () {
       defaultAccountType: "caldav",
     });
     (async () => {
-      await client.login();
+      try {
+        await client.login();
+      } catch (e) {
+        if (e.message == "Invalid credentials")
+          toaster(
+            "there was a problem logging into your account " +
+              item.name +
+              " please check your account details",
+            5000
+          );
+      }
 
       const calendars = await client.fetchCalendars();
-      console.log("cal" + JSON.stringify(calendars));
 
       for (let i = 0; i < calendars.length; i++) {
         const objects = await client.fetchCalendarObjects({
           calendar: calendars[i],
         });
+        //console.log("cal" + JSON.stringify(calendars[i]));
+
         objects.forEach(function (item) {
           parse_ics(item.data, callback_caldata_loaded, false, true);
         });
@@ -51,20 +63,41 @@ let load_caldav = function () {
   });
 };
 
-let load_settings = function () {
-  localforage
-    .getItem("settings")
-    .then(function (value) {
-      if (value == null) return false;
-      settings = value;
-      document.getElementById("default-notification-time").value =
-        settings.default_notification;
-    })
-    .catch(function (err) {
-      // This code runs if there were any errors
-      console.log(err);
-    });
+let load_subscriptions = function () {
+  if (
+    subscriptions == null ||
+    subscriptions.lenght == -1 ||
+    subscriptions == "undefined"
+  )
+    return false;
+
+  for (let i = 0; i < subscriptions.length; i++) {
+    fetch_ics(subscriptions[i].url, "");
+  }
+  setTimeout(() => {
+    jump_to_today();
+    sort_array(events, "dateStart", "date");
+  }, 1000);
+
+  event_slider(document.activeElement.getAttribute("data-date"));
+  if (document.activeElement.hasAttribute("data-date"))
+    status.selected_day = document.activeElement.getAttribute("data-date");
 };
+
+localforage
+  .getItem("accounts")
+  .then(function (value) {
+    if (value == null) {
+      accounts = [];
+      return false;
+    }
+    accounts = value;
+
+    load_caldav();
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
 
 let months = [
   "Jan",
@@ -103,20 +136,19 @@ let blob = "";
 export let events = [];
 export let accounts = [];
 
-localforage
-  .getItem("accounts")
-  .then(function (value) {
-    if (value == null) {
-      accounts = [];
-      return false;
-    }
-    accounts = value;
-
-    load_caldav();
-  })
-  .catch(function (err) {
-    console.log(err);
-  });
+let load_settings = function () {
+  localforage
+    .getItem("settings")
+    .then(function (value) {
+      if (value == null) return false;
+      settings = value;
+      document.getElementById("default-notification-time").value =
+        settings.default_notification;
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+};
 
 //ads || ads free
 
@@ -135,15 +167,12 @@ let getManifest = function (callback) {
 let self;
 //KaiOs store true||false
 function manifest(a) {
-  console.log(a.manifest.version);
   self = a.origin;
-  let t = document.getElementById("KaiOsAds-Wrapper");
   document.getElementById("version").innerText =
-    "Verson: " + a.manifest.version;
+    "Version: " + a.manifest.version;
   if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
     settings.ads = true;
   } else {
-    console.log("Ads free");
     settings.ads = false;
   }
 }
@@ -391,6 +420,7 @@ let event_slider = function (date) {
         //recurrences
         //YEAR
         if (d == "YEARLY") {
+          console.log("year");
           let tt = new Date(events[i].getAttribute("data-date"));
           let pp = new Date(date);
 
@@ -513,7 +543,7 @@ Date.prototype.getWeek = function () {
 };
 
 let showCalendar = function (month, year) {
-  bottom_bar("add", "events", "options");
+  //bottom_bar("add", "events", "options");
 
   let firstDay = new Date(year, month).getDay();
   let daysInMonth = 32 - new Date(year, month, 32).getDate();
@@ -867,6 +897,7 @@ var page_options = {
           {
             class: "item subscriptions-item",
             "data-id": item.url,
+            "data-action": "delete-subscription",
 
             tabindex: index + 4,
             onblur: function () {
@@ -893,14 +924,15 @@ var page_options = {
         },
         "add account"
       ),
-      m("div", { id: "accounts-text" }, "Your accounts"),
+      m("div", { id: "subscription-text" }, "Your accounts"),
 
       accounts.map(function (item, index) {
         return m(
           "button",
           {
             class: "item subscriptions-item",
-            "data-id": item.url,
+            "data-id": item.name,
+            "data-action": "delete-account",
 
             tabindex: index + subscriptions.length + 5,
             onblur: function () {
@@ -1078,7 +1110,7 @@ var page_accounts = {
             id: "account-username",
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("", "", "");
+              bottom_bar("qr-scan", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1459,26 +1491,6 @@ let store_settings = function () {
     });
 };
 
-let load_subscriptions = function () {
-  if (
-    subscriptions == null ||
-    subscriptions.lenght == -1 ||
-    subscriptions == "undefined"
-  )
-    return false;
-
-  if (subscriptions.length) {
-    subscriptions.forEach(function (item) {
-      fetch_ics(item.url, load_subscriptions);
-    });
-  }
-  jump_to_today();
-
-  event_slider(document.activeElement.getAttribute("data-date"));
-  if (document.activeElement.hasAttribute("data-date"))
-    status.selected_day = document.activeElement.getAttribute("data-date");
-};
-
 let callback_scan = function (url) {
   document.activeElement.value = url;
 };
@@ -1488,7 +1500,6 @@ let store_subscription = function () {
     validate(document.getElementById("cal-subs-url").value) &&
     document.getElementById("cal-subs-name").value != ""
   ) {
-    //subscriptions = [];
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
@@ -1500,7 +1511,7 @@ let store_subscription = function () {
     localforage
       .setItem("subscriptions", subscriptions)
       .then(function (value) {
-        document.getElementById("<subscription-form").style.display = "none";
+        //document.getElementById("subscription-form").style.display = "none";
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         m.route.set("/page_options");
       })
@@ -1548,7 +1559,7 @@ let store_account = function () {
 
 let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
-    (e) => e.name != document.activeElement.getAttribute("data-id")
+    (e) => e.url != document.activeElement.getAttribute("data-id")
   );
 
   localforage
@@ -1565,6 +1576,24 @@ let delete_subscription = function () {
   document.activeElement.remove();
 };
 
+let delete_account = function () {
+  let updated_subscriptions = accounts.filter(
+    (e) => e.name != document.activeElement.getAttribute("data-id")
+  );
+
+  localforage
+    .setItem("accounts", updated_subscriptions)
+    .then(function (value) {
+      //Do other things once the value has been saved.
+      side_toaster("subscription deleted", 2000);
+      document.activeElement.remove();
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      toaster(err, 2000);
+    });
+};
+
 localforage
   .getItem("events")
   .then(function (value) {
@@ -1578,13 +1607,11 @@ localforage
   .then(function (value) {
     subscriptions = value;
 
-    setTimeout(function () {
-      if (subscriptions == null) {
-        subscriptions = [{}];
-        return false;
-      }
-      load_subscriptions();
-    }, 2000);
+    if (subscriptions == null) {
+      subscriptions = [{}];
+      return false;
+    }
+    load_subscriptions();
   })
   .catch(function (err) {
     // This code runs if there were any errors
@@ -2261,9 +2288,18 @@ function shortpress_action(param) {
       }
 
       if (m.route.get() == "/page_options") {
-        if (document.activeElement.classList.contains("subscriptions-item"))
+        if (
+          document.activeElement.getAttribute("data-action") ==
+          "delete-subscription"
+        ) {
           delete_subscription();
-        return true;
+        }
+
+        if (
+          document.activeElement.getAttribute("data-action") == "delete-account"
+        ) {
+          delete_account();
+        }
       }
 
       if (m.route.get() == "/page_calendar") {

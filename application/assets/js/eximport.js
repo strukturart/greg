@@ -1,9 +1,10 @@
 import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
-import { sort_array } from "./helper.js";
 
 import { events } from "../../app.js";
+
+import ICAL from "ical.js";
 
 export let export_ical = function (filename, event_data) {
   if (!navigator.getDeviceStorage) return false;
@@ -96,9 +97,11 @@ export let list_ics = function () {
 // /////////////
 // /PARSE ICS
 // /////////////
+const ical = require("ical");
 
 export let parse_ics = function (data, callback, saveOnDevice, subscription) {
-  const ical = require("ical");
+  //var jcalData = ICAL.parse(data);
+  //console.log(jcalData);
 
   const datas = ical.parseICS(data);
 
@@ -110,7 +113,6 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
   for (let k in datas) {
     if (datas.hasOwnProperty(k)) {
       var ev = datas[k];
-
       if (datas[k].type == "VEVENT") {
         //date start
         let dateStart, timeStart;
@@ -202,17 +204,19 @@ export let parse_ics = function (data, callback, saveOnDevice, subscription) {
           time_end: timeEnd,
           notification: " ",
           alarm: "none",
+
           rrule_: parse_rrule(),
         };
 
         events.push(imp);
+
         last_uid = imp.UID;
         last_date = imp.DTSTART;
       }
     }
   }
 
-  callback(last_uid, last_date);
+  //callback(last_uid, last_date);
 
   if (saveOnDevice) {
     let without_subscription = events.filter(
