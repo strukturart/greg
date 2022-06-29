@@ -4,7 +4,6 @@ import localforage from "localforage";
 import { side_toaster, sort_array } from "./assets/js/helper.js";
 import { toaster } from "./assets/js/helper.js";
 import { validate } from "./assets/js/helper.js";
-import { uid } from "./assets/js/helper.js";
 import { pick_image } from "./assets/js/helper.js";
 import { bottom_bar } from "./assets/js/helper.js";
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
@@ -17,6 +16,7 @@ import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
+import { uid } from "uid";
 
 let callback_caldata_loaded = function () {
   console.log("hey");
@@ -72,7 +72,7 @@ let load_subscriptions = function () {
     return false;
 
   for (let i = 0; i < subscriptions.length; i++) {
-    fetch_ics(subscriptions[i].url, "");
+    fetch_ics(subscriptions[i].url, "", subscriptions[i].id);
   }
   setTimeout(() => {
     jump_to_today();
@@ -216,11 +216,7 @@ let find_closest_date = function (search_term) {
 // check if has event
 let event_check = function (date) {
   let feedback = {
-    date: "",
     event: false,
-    subscription: false,
-    multidayevent: false,
-    rrule: "none",
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -237,26 +233,23 @@ let event_check = function (date) {
 
       if (a === c) {
         feedback.event = true;
+        t = events.length;
         return feedback;
       }
 
       if (d === "none" || d === "" || d === undefined || d === "DAILY") {
-        if (a === c || b === c || (a < c && b > c)) {
+        if (a === c || (a < c && b > c)) {
           feedback.event = true;
-          if (events[t].isSubscription === true) {
-            feedback.subscription = true;
-          }
 
-          if (events[t].multidayevent === true) {
-            feedback.multidayevent = true;
-          }
-
-          if (events[t].time_end == "00:00:00" && events[t].dateEnd == date) {
-            feedback.subscription = false;
+          if (events[t].allDay && events[t].dateEnd == date) {
             feedback.event = false;
           }
 
-          t = events.length;
+          if (events[t].time_end == "00:00:00" && events[t].allDay) {
+            feedback.event = false;
+          }
+
+          // t = events.length;
           return feedback;
         }
       }
@@ -287,16 +280,15 @@ let rrule_check = function (date) {
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
       let d = events[t].rrule_;
+      let e = events[t].RRULE;
 
       //recurrences
 
-      if (
-        typeof events[t]["rrule_"] !== "undefined" &&
-        events[t]["rrule_"] !== undefined
-      ) {
+      if (typeof e !== "undefined" && e !== undefined && e != null) {
         if (a === c || b === c || (a < c && b > c)) {
-          //return false;
-          if (events[t].rrule_ == "MONTHLY") {
+          if (e) console.log(e.freq);
+
+          if (d == "MONTHLY") {
             if (
               new Date(events[t].dateStart).getDate() ===
               new Date(date).getDate()
@@ -308,14 +300,14 @@ let rrule_check = function (date) {
             }
           }
 
-          if (events[t]["rrule_"] == "DAILY") {
+          if (d == "DAILY") {
             feedback.rrule = true;
             feedback.event = true;
             t = events.length;
-            return false;
+            return feedback;
           }
 
-          if (events[t].rrule_ == "WEEKLY") {
+          if (d == "WEEKLY") {
             if (
               new Date(events[t].dateStart).getDay() === new Date(date).getDay()
             ) {
@@ -323,15 +315,13 @@ let rrule_check = function (date) {
               feedback.event = true;
               t = events.length;
 
-              return false;
+              return feedback;
             }
           }
 
-          if (events[t].rrule_ == "YEARLY") {
-            console.log("yearly");
+          if (d == "YEARLY") {
             let tt = new Date(events[t].dateStart);
             let pp = new Date(date);
-
             if (
               tt.getDate() + "-" + tt.getMonth() ===
               pp.getDate() + "-" + pp.getMonth()
@@ -339,7 +329,7 @@ let rrule_check = function (date) {
               feedback.rrule = true;
               feedback.event = true;
               t = events.length;
-              return false;
+              return feedback;
             }
           }
         }
@@ -394,7 +384,7 @@ let slider_navigation = function () {
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector("div#event-slider-indicator div");
-  if (k.innerHTML != "") k.innerHTML = "";
+  k.innerHTML = "";
 
   document.querySelector("div#event-slider").innerHTML = "";
 
@@ -405,12 +395,12 @@ let event_slider = function (date) {
     let d = events[i].rrule_;
 
     if (d === "none" || d === "" || d === undefined) {
-      if (a === c || b === c || (a < c && b > c)) {
+      if (a === c || (a < c && b > c)) {
         //if multiday event
         //the end date is next day
         //time is 00:00:00
         if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) {
-          return false;
+          //return false;
         }
         slider.push(events[i]);
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -420,8 +410,7 @@ let event_slider = function (date) {
         //recurrences
         //YEAR
         if (d == "YEARLY") {
-          console.log("year");
-          let tt = new Date(events[i].getAttribute("data-date"));
+          let tt = new Date(events[i].dateStart);
           let pp = new Date(date);
 
           if (
@@ -896,7 +885,7 @@ var page_options = {
           "button",
           {
             class: "item subscriptions-item",
-            "data-id": item.url,
+            "data-id": item.id,
             "data-action": "delete-subscription",
 
             tabindex: index + 4,
@@ -1500,20 +1489,25 @@ let store_subscription = function () {
     validate(document.getElementById("cal-subs-url").value) &&
     document.getElementById("cal-subs-name").value != ""
   ) {
+    let id = uid(32);
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
+      id: id,
     });
 
     document.querySelector("input#cal-subs-name").val = "";
     document.querySelector("input#cal-subs-url").val = "";
 
+    localforage.setItem("subscriptions", subscriptions).then(function (value) {
+      side_toaster("<img src='assets/image/E25C.svg'", 2000);
+      m.route.set("/page_options");
+    });
+    //creat db to store data
     localforage
-      .setItem("subscriptions", subscriptions)
+      .setItem(id, "")
       .then(function (value) {
-        //document.getElementById("subscription-form").style.display = "none";
-        side_toaster("<img src='assets/image/E25C.svg'", 2000);
-        m.route.set("/page_options");
+        toaster("done", 2000);
       })
       .catch(function (err) {
         // This code runs if there were any errors
@@ -1559,8 +1553,17 @@ let store_account = function () {
 
 let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
-    (e) => e.url != document.activeElement.getAttribute("data-id")
+    (e) => e.id != document.activeElement.getAttribute("data-id")
   );
+
+  localforage
+    .removeItem(document.activeElement.getAttribute("data-id"))
+    .then(function () {
+      toaster("subscription removed", 4000);
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
 
   localforage
     .setItem("subscriptions", updated_subscriptions)
@@ -1608,7 +1611,7 @@ localforage
     subscriptions = value;
 
     if (subscriptions == null) {
-      subscriptions = [{}];
+      subscriptions = [];
       return false;
     }
     load_subscriptions();
@@ -1857,7 +1860,7 @@ let store_event = function () {
   if (validation == false) return false;
 
   let event = {
-    UID: uid(),
+    UID: uid(32),
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
