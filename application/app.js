@@ -18,12 +18,98 @@ import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
 import { uid } from "uid";
 
+export let events = [];
+export let accounts = [];
+
 let callback_caldata_loaded = function () {
-  console.log("hey");
   //showCalendar(currentMonth, currentYear);
 };
 
-let load_caldav = function () {
+let calendar_names = [
+  {
+    name: "local",
+    id: "local-id",
+  },
+];
+
+let load_caldav = function (action) {
+  accounts.forEach(function (item) {
+    const client = new DAVClient({
+      serverUrl: item.server_url,
+      credentials: {
+        username: item.user,
+        password: item.password,
+      },
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
+    });
+    (async () => {
+      try {
+        await client.login();
+      } catch (e) {
+        //load cached data
+        localforage
+          .getItem(accounts.id)
+          .then(function (w) {
+            w.forEach((b) => {
+              b.objects.forEach((m) => {
+                parse_ics(m.data, callback_caldata_loaded, false, true);
+              });
+            });
+            toaster("load cached data", 5000);
+          })
+          .catch(function (err) {
+            console.log(err);
+          });
+
+        if (e.message == "Invalid credentials")
+          toaster(
+            "there was a problem logging into your account " +
+              item.name +
+              " please check your account details",
+            5000
+          );
+      }
+      const calendars = await client.fetchCalendars();
+      let k = [];
+
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+
+        let data_to_store = {
+          "displayName": calendars[i].displayName,
+          "syncToken": calendars[i].syncToken,
+          "ctag": calendars[i].ctag,
+          "url": calendars[i].url,
+          "objects": objects,
+        };
+
+        k.push(data_to_store);
+        //add cal name to list
+        calendar_names.push({
+          name: calendars[i].displayName,
+          id: item.id,
+        });
+
+        //cache caldata
+        localforage
+          .setItem(item.id, k)
+          .then(function () {})
+          .catch(function (err) {
+            console.log(err);
+          });
+        //parse data
+        objects.forEach(function (item) {
+          parse_ics(item.data, callback_caldata_loaded, false, true);
+        });
+      }
+    })();
+  });
+};
+
+let sync_caldav = function () {
   accounts.forEach(function (item) {
     const client = new DAVClient({
       serverUrl: item.server_url,
@@ -47,17 +133,19 @@ let load_caldav = function () {
           );
       }
 
-      const calendars = await client.fetchCalendars();
+      try {
+        const value = await localforage.getItem(accounts.id);
 
-      for (let i = 0; i < calendars.length; i++) {
-        const objects = await client.fetchCalendarObjects({
-          calendar: calendars[i],
-        });
-        //console.log("cal" + JSON.stringify(calendars[i]));
-
-        objects.forEach(function (item) {
-          parse_ics(item.data, callback_caldata_loaded, false, true);
-        });
+        for (let i = 0; i < value.length; i++) {
+          let s = {
+            oldCalendars: [value[i].objects],
+            detailedResult: true,
+          };
+          const ma = await client.syncCalendars(s);
+          console.log(ma);
+        }
+      } catch (err) {
+        console.log(err);
       }
     })();
   });
@@ -84,6 +172,7 @@ let load_subscriptions = function () {
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 
+//load accounts data
 localforage
   .getItem("accounts")
   .then(function (value) {
@@ -94,6 +183,7 @@ localforage
     accounts = value;
 
     load_caldav();
+    sync_caldav();
   })
   .catch(function (err) {
     console.log(err);
@@ -133,8 +223,6 @@ export let status = {
 let settings = {};
 
 let blob = "";
-export let events = [];
-export let accounts = [];
 
 let load_settings = function () {
   localforage
@@ -286,8 +374,6 @@ let rrule_check = function (date) {
 
       if (typeof e !== "undefined" && e !== undefined && e != null) {
         if (a === c || b === c || (a < c && b > c)) {
-          if (e) console.log(e.freq);
-
           if (d == "MONTHLY") {
             if (
               new Date(events[t].dateStart).getDate() ===
@@ -920,7 +1006,7 @@ var page_options = {
           "button",
           {
             class: "item subscriptions-item",
-            "data-id": item.name,
+            "data-id": item.id,
             "data-action": "delete-account",
 
             tabindex: index + subscriptions.length + 5,
@@ -1274,13 +1360,41 @@ var page_add_event = {
       ]),
 
       m(
+        "div",
+        {
+          class: "item input-parent",
+          id: "event-calendar-wrapper",
+          tabindex: "10",
+        },
+        [
+          m("label", { for: "notification" }, "Calendars"),
+          m("select", { id: "event-calendar" }, [
+            calendar_names.map(function (item, index) {
+              return m(
+                "option",
+                {
+                  value: item.id,
+                },
+                item.name
+              );
+            }),
+          ]),
+        ]
+      ),
+
+      m(
         "button",
         {
-          tabindex: "10",
+          tabindex: "11",
           id: "save-event",
           class: "item",
           onclick: function () {
-            store_event();
+            let n = document.getElementById("event-calendar");
+            console.log(n.options[n.selectedIndex].value);
+            store_event(
+              n.options[n.selectedIndex].value,
+              n.options[n.selectedIndex].text
+            );
           },
         },
         "save"
@@ -1532,6 +1646,7 @@ let store_account = function () {
       user: document.getElementById("account-username").value,
       password: document.getElementById("account-password").value,
       name: document.getElementById("account-name").value,
+      id: uid(32),
     });
 
     console.log(JSON.stringify(accounts));
@@ -1581,7 +1696,7 @@ let delete_subscription = function () {
 
 let delete_account = function () {
   let updated_subscriptions = accounts.filter(
-    (e) => e.name != document.activeElement.getAttribute("data-id")
+    (e) => e.id != document.activeElement.getAttribute("data-id")
   );
 
   localforage
@@ -1595,7 +1710,20 @@ let delete_account = function () {
       // This code runs if there were any errors
       toaster(err, 2000);
     });
+
+  localforage
+    .removeItem(document.activeElement.getAttribute("data-id"))
+    .then(function () {
+      toaster("subscription removed", 4000);
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+
+  document.activeElement.remove();
 };
+
+//load indexedDB
 
 localforage
   .getItem("events")
@@ -1787,7 +1915,7 @@ let convert_ics_date = function (t) {
 
 let export_data = [];
 
-let store_event = function () {
+let store_event = function (db_id, cal_name) {
   let validation = true;
   if (document.getElementById("event-title").value == "") {
     toaster("Title can't be empty", 2000);
@@ -1889,28 +2017,74 @@ let store_event = function () {
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
 
-  events.push(event);
+  if (db_id == "local-id" && cal_name == "local") {
+    events.push(event);
 
-  console.log(JSON.stringify(event));
+    //console.log(JSON.stringify(event));
 
-  let without_subscription = events.filter(
-    (events) => events.isSubscription === false
-  );
+    let without_subscription = events.filter(
+      (events) => events.isSubscription === false
+    );
 
-  localforage
-    .setItem("events", without_subscription)
-    .then(function (value) {
-      clear_form();
-      export_ical("greg.ics", without_subscription);
-      side_toaster("<img src='assets/image/E25C.svg'", 2000);
-      setTimeout(function () {
-        m.route.set("/page_calendar");
-        sort_array(events, "dateStart", "date");
-      }, 200);
-    })
-    .catch(function (err) {
-      console.log(err);
-    });
+    localforage
+      .setItem("events", without_subscription)
+      .then(function (value) {
+        clear_form();
+        export_ical("greg.ics", without_subscription);
+        side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        setTimeout(function () {
+          m.route.set("/page_calendar");
+          sort_array(events, "dateStart", "date");
+        }, 200);
+      })
+      .catch(function (err) {
+        console.log(err);
+      });
+  } else {
+    localforage
+      .getItem(db_id)
+      .then(function (value) {
+        value.forEach(function (n) {
+          if (n.displayName == cal_name) {
+            event = {
+              "url":
+                "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/personal/" +
+                uid(32) +
+                ".ics",
+              "etag": uid(32),
+              "data":
+                "BEGIN:VCALENDAR\nPRODID:-//IDN nextcloud.com//Calendar app 3.2.2//EN\nCALSCALE:GREGORIAN\nVERSION:2.0\nBEGIN:VEVENT\nCREATED:20220704T073951Z\nDTSTAMP:20220704T073955Z\nLAST-MODIFIED:20220704T073955Z\nSEQUENCE:2\nUID:828f8b46-3ce2-49c7-a55e-4183b02a3d7d\nDTSTART;VALUE=DATE:20220706\nDTEND;VALUE=DATE:20220707\nSTATUS:CONFIRMED\nSUMMARY:hellotest\nDESCRIPTION:willi\nEND:VEVENT\nEND:VCALENDAR",
+            };
+            n.objects.push(event);
+            //console.log(JSON.stringify(value));
+            localforage
+              .setItem(db_id, value)
+              .then(function (value) {
+                console.log(JSON.stringify(value));
+
+                clear_form();
+                sync_caldav();
+
+                n.objects.forEach(function (item) {
+                  parse_ics(item.data, callback_caldata_loaded, false, true);
+                });
+
+                side_toaster("<img src='assets/image/E25C.svg'", 2000);
+                setTimeout(function () {
+                  m.route.set("/page_calendar");
+                  sort_array(events, "dateStart", "date");
+                }, 200);
+              })
+              .catch(function (err) {
+                console.log(err);
+              });
+          }
+        });
+      })
+      .catch(function (err) {
+        console.log(err);
+      });
+  }
 };
 
 // ////////////

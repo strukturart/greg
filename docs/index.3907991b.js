@@ -534,9 +534,9 @@ function hmrAcceptRun(bundle, id) {
 },{}],"20BJq":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "status", ()=>status);
 parcelHelpers.export(exports, "events", ()=>events);
 parcelHelpers.export(exports, "accounts", ()=>accounts);
+parcelHelpers.export(exports, "status", ()=>status);
 var _localforage = require("localforage");
 var _localforageDefault = parcelHelpers.interopDefault(_localforage);
 var _helperJs = require("./assets/js/helper.js");
@@ -548,10 +548,16 @@ var _mithrilDefault = parcelHelpers.interopDefault(_mithril);
 var _tsdavJs = require("./assets/js/tsdav.js");
 var _uid = require("uid");
 "use strict";
-let callback_caldata_loaded = function() {
-    console.log("hey"); //showCalendar(currentMonth, currentYear);
-};
-let load_caldav = function() {
+let events = [];
+let accounts = [];
+let callback_caldata_loaded = function() {};
+let calendar_names = [
+    {
+        name: "local",
+        id: "local-id"
+    }
+];
+let load_caldav = function(action) {
     accounts.forEach(function(item1) {
         const client = new (0, _tsdavJs.DAVClient)({
             serverUrl: item1.server_url,
@@ -566,16 +572,78 @@ let load_caldav = function() {
             try {
                 await client.login();
             } catch (e) {
+                //load cached data
+                (0, _localforageDefault.default).getItem(accounts.id).then(function(w) {
+                    w.forEach((b)=>{
+                        b.objects.forEach((m)=>{
+                            (0, _eximportJs.parse_ics)(m.data, callback_caldata_loaded, false, true);
+                        });
+                    });
+                    (0, _helperJs.toaster)("load cached data", 5000);
+                }).catch(function(err) {
+                    console.log(err);
+                });
                 if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item1.name + " please check your account details", 5000);
             }
             const calendars = await client.fetchCalendars();
+            let k = [];
             for(let i = 0; i < calendars.length; i++){
                 const objects = await client.fetchCalendarObjects({
                     calendar: calendars[i]
-                }); //console.log("cal" + JSON.stringify(calendars[i]));
+                });
+                let data_to_store = {
+                    "displayName": calendars[i].displayName,
+                    "syncToken": calendars[i].syncToken,
+                    "ctag": calendars[i].ctag,
+                    "url": calendars[i].url,
+                    "objects": objects
+                };
+                k.push(data_to_store); //add cal name to list
+                calendar_names.push({
+                    name: calendars[i].displayName,
+                    id: item1.id
+                }); //cache caldata
+                (0, _localforageDefault.default).setItem(item1.id, k).then(function() {}).catch(function(err) {
+                    console.log(err);
+                }); //parse data
                 objects.forEach(function(item) {
                     (0, _eximportJs.parse_ics)(item.data, callback_caldata_loaded, false, true);
                 });
+            }
+        })();
+    });
+};
+let sync_caldav = function() {
+    accounts.forEach(function(item, index) {
+        const client = new (0, _tsdavJs.DAVClient)({
+            serverUrl: item.server_url,
+            credentials: {
+                username: item.user,
+                password: item.password
+            },
+            authMethod: "Basic",
+            defaultAccountType: "caldav"
+        });
+        (async ()=>{
+            try {
+                await client.login();
+            } catch (e) {
+                if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+            }
+            try {
+                const value = await (0, _localforageDefault.default).getItem(accounts.id);
+                for(let i = 0; i < value.length; i++){
+                    let s = {
+                        oldCalendars: [
+                            value[i].objects
+                        ],
+                        detailedResult: true
+                    };
+                    const ma = await client.syncCalendars(s);
+                    console.log(ma);
+                }
+            } catch (err) {
+                console.log(err);
             }
         })();
     });
@@ -589,7 +657,7 @@ let load_subscriptions = function() {
     }, 1000);
     event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-};
+}; //load accounts data
 (0, _localforageDefault.default).getItem("accounts").then(function(value) {
     if (value == null) {
         accounts = [];
@@ -597,6 +665,7 @@ let load_subscriptions = function() {
     }
     accounts = value;
     load_caldav();
+    sync_caldav();
 }).catch(function(err) {
     console.log(err);
 });
@@ -636,8 +705,6 @@ let status = {
 };
 let settings = {};
 let blob = "";
-let events = [];
-let accounts = [];
 let load_settings = function() {
     (0, _localforageDefault.default).getItem("settings").then(function(value) {
         if (value == null) return false;
@@ -740,7 +807,6 @@ let rrule_check = function(date) {
         let e = events[t2].RRULE; //recurrences
         if (typeof e !== "undefined" && e !== undefined && e != null) {
             if (a === c || b === c || a < c && b > c) {
-                if (e) console.log(e.freq);
                 if (d2 == "MONTHLY") {
                     if (new Date(events[t2].dateStart).getDate() === new Date(date).getDate()) {
                         feedback.event = true;
@@ -1200,7 +1266,7 @@ var page_options = {
             accounts.map(function(item, index) {
                 return (0, _mithrilDefault.default)("button", {
                     class: "item subscriptions-item",
-                    "data-id": item.name,
+                    "data-id": item.id,
                     "data-action": "delete-account",
                     tabindex: index + subscriptions.length + 5,
                     onblur: function() {
@@ -1568,12 +1634,32 @@ var page_add_event = {
                     "data-blob": ""
                 })
             ]),
+            (0, _mithrilDefault.default)("div", {
+                class: "item input-parent",
+                id: "event-calendar-wrapper",
+                tabindex: "10"
+            }, [
+                (0, _mithrilDefault.default)("label", {
+                    for: "notification"
+                }, "Calendars"),
+                (0, _mithrilDefault.default)("select", {
+                    id: "event-calendar"
+                }, [
+                    calendar_names.map(function(item, index) {
+                        return (0, _mithrilDefault.default)("option", {
+                            value: item.id
+                        }, item.name);
+                    })
+                ])
+            ]),
             (0, _mithrilDefault.default)("button", {
-                tabindex: "10",
+                tabindex: "11",
                 id: "save-event",
                 class: "item",
                 onclick: function() {
-                    store_event();
+                    let n = document.getElementById("event-calendar");
+                    console.log(n.options[n.selectedIndex].value);
+                    store_event(n.options[n.selectedIndex].value, n.options[n.selectedIndex].text);
                 }
             }, "save")
         ]);
@@ -1827,7 +1913,8 @@ let store_account = function() {
             server_url: document.getElementById("account-url").value,
             user: document.getElementById("account-username").value,
             password: document.getElementById("account-password").value,
-            name: document.getElementById("account-name").value
+            name: document.getElementById("account-name").value,
+            id: (0, _uid.uid)(32)
         });
         console.log(JSON.stringify(accounts));
         (0, _localforageDefault.default).setItem("accounts", accounts).then(function(value) {
@@ -1856,7 +1943,7 @@ let delete_subscription = function() {
     document.activeElement.remove();
 };
 let delete_account = function() {
-    let updated_subscriptions = accounts.filter((e)=>e.name != document.activeElement.getAttribute("data-id"));
+    let updated_subscriptions = accounts.filter((e)=>e.id != document.activeElement.getAttribute("data-id"));
     (0, _localforageDefault.default).setItem("accounts", updated_subscriptions).then(function(value) {
         //Do other things once the value has been saved.
         (0, _helperJs.side_toaster)("subscription deleted", 2000);
@@ -1865,7 +1952,13 @@ let delete_account = function() {
         // This code runs if there were any errors
         (0, _helperJs.toaster)(err, 2000);
     });
-};
+    (0, _localforageDefault.default).removeItem(document.activeElement.getAttribute("data-id")).then(function() {
+        (0, _helperJs.toaster)("subscription removed", 4000);
+    }).catch(function(err) {
+        console.log(err);
+    });
+    document.activeElement.remove();
+}; //load indexedDB
 (0, _localforageDefault.default).getItem("events").then(function(value) {
     if (value != null) events = value;
     (0, _helperJs.sort_array)(events, "dateStart", "date");
@@ -1989,7 +2082,7 @@ let convert_ics_date = function(t5) {
     return nn;
 };
 let export_data = [];
-let store_event = function() {
+let store_event = function(db_id, cal_name) {
     let validation = true;
     if (document.getElementById("event-title").value == "") {
         (0, _helperJs.toaster)("Title can't be empty", 2000);
@@ -2054,17 +2147,46 @@ let store_event = function() {
         event.END = "VALARM";
         add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
-    events.push(event);
-    console.log(JSON.stringify(event));
-    let without_subscription = events.filter((events1)=>events1.isSubscription === false);
-    (0, _localforageDefault.default).setItem("events", without_subscription).then(function(value) {
-        clear_form();
-        (0, _eximportJs.export_ical)("greg.ics", without_subscription);
-        (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
-        setTimeout(function() {
-            (0, _mithrilDefault.default).route.set("/page_calendar");
-            (0, _helperJs.sort_array)(events, "dateStart", "date");
-        }, 200);
+    if (db_id == "local-id" && cal_name == "local") {
+        events.push(event); //console.log(JSON.stringify(event));
+        let without_subscription = events.filter((events1)=>events1.isSubscription === false);
+        (0, _localforageDefault.default).setItem("events", without_subscription).then(function(value) {
+            clear_form();
+            (0, _eximportJs.export_ical)("greg.ics", without_subscription);
+            (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
+            setTimeout(function() {
+                (0, _mithrilDefault.default).route.set("/page_calendar");
+                (0, _helperJs.sort_array)(events, "dateStart", "date");
+            }, 200);
+        }).catch(function(err) {
+            console.log(err);
+        });
+    } else (0, _localforageDefault.default).getItem(db_id).then(function(value1) {
+        value1.forEach(function(n) {
+            if (n.displayName == cal_name) {
+                event = {
+                    "url": "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/personal/" + (0, _uid.uid)(32) + ".ics",
+                    "etag": (0, _uid.uid)(32),
+                    "data": "BEGIN:VCALENDAR\nPRODID:-//IDN nextcloud.com//Calendar app 3.2.2//EN\nCALSCALE:GREGORIAN\nVERSION:2.0\nBEGIN:VEVENT\nCREATED:20220704T073951Z\nDTSTAMP:20220704T073955Z\nLAST-MODIFIED:20220704T073955Z\nSEQUENCE:2\nUID:828f8b46-3ce2-49c7-a55e-4183b02a3d7d\nDTSTART;VALUE=DATE:20220706\nDTEND;VALUE=DATE:20220707\nSTATUS:CONFIRMED\nSUMMARY:hellotest\nDESCRIPTION:willi\nEND:VEVENT\nEND:VCALENDAR"
+                };
+                n.objects.push(event); //console.log(JSON.stringify(value));
+                (0, _localforageDefault.default).setItem(db_id, value1).then(function(value) {
+                    console.log(JSON.stringify(value));
+                    clear_form();
+                    sync_caldav();
+                    n.objects.forEach(function(item) {
+                        (0, _eximportJs.parse_ics)(item.data, callback_caldata_loaded, false, true);
+                    });
+                    (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
+                    setTimeout(function() {
+                        (0, _mithrilDefault.default).route.set("/page_calendar");
+                        (0, _helperJs.sort_array)(events, "dateStart", "date");
+                    }, 200);
+                }).catch(function(err) {
+                    console.log(err);
+                });
+            }
+        });
     }).catch(function(err) {
         console.log(err);
     });
@@ -5150,7 +5272,7 @@ function loadICS(filename, callback) {
     };
 }
 
-},{"./helper.js":"db1Xp","../../app.js":"20BJq","ical.js":"b17JL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh","localforage":"8ZRFG"}],"b17JL":[function(require,module,exports) {
+},{"./helper.js":"db1Xp","localforage":"8ZRFG","../../app.js":"20BJq","ical.js":"b17JL","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"b17JL":[function(require,module,exports) {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -35525,8 +35647,8 @@ Object.defineProperty(Duplex.prototype, "destroyed", {
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Writable;
 /* <replacement> */ function WriteReq(chunk, encoding, cb) {
     this.chunk = chunk;
