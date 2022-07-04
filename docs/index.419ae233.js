@@ -29159,9 +29159,13 @@ var $ba501d359f0081e2$exports = {};
 });
 
 
-var $da5c51e5866985e6$var$video;
+var $da5c51e5866985e6$var$video = document.querySelector("video");
 var $da5c51e5866985e6$var$intv;
+var $da5c51e5866985e6$var$mediaStream;
 var $da5c51e5866985e6$export$55e6c60a43cc74e2 = function stop_scan(callback) {
+    $da5c51e5866985e6$var$mediaStream.getTracks().map(function(val) {
+        val.stop();
+    });
     document.getElementById("qr-screen").style.display = "none";
     callback();
 };
@@ -29175,8 +29179,9 @@ var $da5c51e5866985e6$export$be96fe42679d1b7e = function start_scan(callback) {
             height: 200
         }
     }, function(stream) {
-        $da5c51e5866985e6$var$video = document.querySelector("video");
         $da5c51e5866985e6$var$video.srcObject = stream;
+        console.log(stream);
+        $da5c51e5866985e6$var$mediaStream = stream;
         $da5c51e5866985e6$var$video.onloadedmetadata = function(e) {
             $da5c51e5866985e6$var$video.play();
             var barcodeCanvas = document.createElement("canvas");
@@ -29190,9 +29195,9 @@ var $da5c51e5866985e6$export$be96fe42679d1b7e = function start_scan(callback) {
                 var idd = imageData.data;
                 var code = (0, (/*@__PURE__*/$parcel$interopDefault($ba501d359f0081e2$exports)))(idd, imageWidth, imageHeight);
                 if (code) {
+                    clearInterval($da5c51e5866985e6$var$intv);
                     callback(code.data);
                     $da5c51e5866985e6$export$55e6c60a43cc74e2();
-                    clearInterval($da5c51e5866985e6$var$intv);
                 }
             }, 1000);
         };
@@ -37034,6 +37039,7 @@ var $124e898a1ee7bd9a$export$2e2bcd8739ae039 = Object.assign(Object.assign(Objec
 }, $124e898a1ee7bd9a$var$client), $124e898a1ee7bd9a$var$request), $124e898a1ee7bd9a$var$collection), $124e898a1ee7bd9a$var$account), $124e898a1ee7bd9a$var$addressBook), $124e898a1ee7bd9a$var$calendar), $124e898a1ee7bd9a$var$authHelpers), $124e898a1ee7bd9a$var$requestHelpers);
 
 
+
 var $31f691ef2c3fae71$var$IDX = 256, $31f691ef2c3fae71$var$HEX = [], $31f691ef2c3fae71$var$SIZE = 256, $31f691ef2c3fae71$var$BUFFER;
 while($31f691ef2c3fae71$var$IDX--)$31f691ef2c3fae71$var$HEX[$31f691ef2c3fae71$var$IDX] = ($31f691ef2c3fae71$var$IDX + 256).toString(16).substring(1);
 function $31f691ef2c3fae71$export$e2a22331486dcca0(len) {
@@ -37046,6 +37052,7 @@ function $31f691ef2c3fae71$export$e2a22331486dcca0(len) {
 "use strict";
 var $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = [];
 var $3e4edb8379ebf8a3$export$c5541db89994d14 = [];
+(0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).LOCALSTORAGE);
 var $3e4edb8379ebf8a3$var$callback_caldata_loaded = function callback_caldata_loaded() {};
 var $3e4edb8379ebf8a3$var$calendar_names = [
     {
@@ -37144,7 +37151,7 @@ var $3e4edb8379ebf8a3$var$load_caldav = function load_caldav(action) {
     });
 };
 var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
-    $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item, index) {
+    $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
         var client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
             serverUrl: item.server_url,
             credentials: {
@@ -37178,32 +37185,40 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
                         i = 0;
                     case 13:
                         if (!(i < value.length)) {
-                            _ctx.next = 22;
+                            _ctx.next = 28;
                             break;
                         }
                         s = {
                             oldCalendars: [
                                 value[i].objects
                             ],
-                            detailedResult: true
+                            detailedResult: true,
+                            headers: client.authHeaders
                         };
-                        _ctx.next = 17;
+                        _ctx.prev = 15;
+                        _ctx.next = 18;
                         return client.syncCalendars(s);
-                    case 17:
+                    case 18:
                         ma = _ctx.sent;
-                        console.log(ma);
-                    case 19:
+                        console.log(JSON.stringify(ma));
+                        _ctx.next = 25;
+                        break;
+                    case 22:
+                        _ctx.prev = 22;
+                        _ctx.t1 = _ctx["catch"](15);
+                        console.log(_ctx.t1);
+                    case 25:
                         i++;
                         _ctx.next = 13;
                         break;
-                    case 22:
-                        _ctx.next = 27;
+                    case 28:
+                        _ctx.next = 33;
                         break;
-                    case 24:
-                        _ctx.prev = 24;
-                        _ctx.t1 = _ctx["catch"](8);
-                        console.log(_ctx.t1);
-                    case 27:
+                    case 30:
+                        _ctx.prev = 30;
+                        _ctx.t2 = _ctx["catch"](8);
+                        console.log(_ctx.t2);
+                    case 33:
                     case "end":
                         return _ctx.stop();
                 }
@@ -37214,7 +37229,73 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
                 ],
                 [
                     8,
-                    24
+                    30
+                ],
+                [
+                    15,
+                    22
+                ]
+            ]);
+        }))();
+    });
+};
+var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav() {
+    $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
+        var client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
+            serverUrl: item.server_url,
+            credentials: {
+                username: item.user,
+                password: item.password
+            },
+            authMethod: "Basic",
+            defaultAccountType: "caldav"
+        });
+        (0, $34670b6097bfdcc2$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).mark(function _callee() {
+            var n, result;
+            return (0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).wrap(function _callee$(_ctx) {
+                while(1)switch(_ctx.prev = _ctx.next){
+                    case 0:
+                        _ctx.prev = 0;
+                        _ctx.next = 3;
+                        return client.login();
+                    case 3:
+                        n = _ctx.sent;
+                        console.log(item.server_url + "test.ics");
+                        _ctx.next = 10;
+                        break;
+                    case 7:
+                        _ctx.prev = 7;
+                        _ctx.t0 = _ctx["catch"](0);
+                        if (_ctx.t0.message == "Invalid credentials") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                    case 10:
+                        _ctx.prev = 10;
+                        _ctx.next = 13;
+                        return client.createCalendarObject({
+                            headers: client.authHeaders,
+                            calendar: "test",
+                            filename: item.server_url + "test.ics",
+                            iCalString: "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Zap Calendar 1.0//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nBEGIN:VEVENT\nSUMMARY:Abraham Lincoln\nUID:c7614cff-3549-4a00-9152-d25cc1fe077d\nSEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nRRULE:FREQ=YEARLY;INTERVAL=1;BYMONTH=2;BYMONTHDAY=12\nDTSTART:20080212\nDTEND:20080213\nDTSTAMP:20150421T141403\nCATEGORIES:U.S. Presidents,Civil War People\nLOCATION:Hodgenville, Kentucky\nGEO:37.5739497;-85.7399606\nDESCRIPTION:Born February 12, 1809\nSixteenth President (1861-1865)\n\n\n\n \nhttp://AmericanHistoryCalendar.com\nURL:http://americanhistorycalendar.com/peoplecalendar/1,328-abraham-lincol\n n\nEND:VEVENT\nEND:VCALENDAR"
+                        });
+                    case 13:
+                        result = _ctx.sent;
+                        _ctx.next = 19;
+                        break;
+                    case 16:
+                        _ctx.prev = 16;
+                        _ctx.t1 = _ctx["catch"](10);
+                        console.log(_ctx.t1);
+                    case 19:
+                    case "end":
+                        return _ctx.stop();
+                }
+            }, _callee, null, [
+                [
+                    0,
+                    7
+                ],
+                [
+                    10,
+                    16
                 ]
             ]);
         }))();
@@ -37237,7 +37318,7 @@ var $3e4edb8379ebf8a3$var$load_subscriptions = function load_subscriptions() {
     }
     $3e4edb8379ebf8a3$export$c5541db89994d14 = value;
     $3e4edb8379ebf8a3$var$load_caldav();
-    $3e4edb8379ebf8a3$var$sync_caldav();
+    $3e4edb8379ebf8a3$var$sync_caldav(); //create_caldav();
 })["catch"](function(err) {
     console.log(err);
 });
@@ -38239,8 +38320,7 @@ var $3e4edb8379ebf8a3$var$page_add_event = {
                 id: "save-event",
                 "class": "item",
                 onclick: function onclick() {
-                    var n = document.getElementById("event-calendar");
-                    console.log(n.options[n.selectedIndex].value);
+                    var n = document.getElementById("event-calendar"); // console.log(n.options[n.selectedIndex].value);
                     $3e4edb8379ebf8a3$var$store_event(n.options[n.selectedIndex].value, n.options[n.selectedIndex].text);
                 }
             }, "save")
@@ -38751,22 +38831,24 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
         })["catch"](function(err) {
             console.log(err);
         });
-    } else (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(db_id).then(function(value1) {
-        value1.forEach(function(n) {
+    } else (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(db_id).then(function(value) {
+        value.forEach(function(n) {
             if (n.displayName == cal_name) {
                 event = {
-                    url: "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/personal/" + (0, $31f691ef2c3fae71$export$e2a22331486dcca0)(32) + ".ics",
+                    url: "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/test/" + (0, $31f691ef2c3fae71$export$e2a22331486dcca0)(32) + ".ics",
                     etag: (0, $31f691ef2c3fae71$export$e2a22331486dcca0)(32),
                     data: "BEGIN:VCALENDAR\nPRODID:-//IDN nextcloud.com//Calendar app 3.2.2//EN\nCALSCALE:GREGORIAN\nVERSION:2.0\nBEGIN:VEVENT\nCREATED:20220704T073951Z\nDTSTAMP:20220704T073955Z\nLAST-MODIFIED:20220704T073955Z\nSEQUENCE:2\nUID:828f8b46-3ce2-49c7-a55e-4183b02a3d7d\nDTSTART;VALUE=DATE:20220706\nDTEND;VALUE=DATE:20220707\nSTATUS:CONFIRMED\nSUMMARY:hellotest\nDESCRIPTION:willi\nEND:VEVENT\nEND:VCALENDAR"
                 };
                 n.objects.push(event); //console.log(JSON.stringify(value));
-                (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(db_id, value1).then(function(value) {
-                    console.log(JSON.stringify(value));
-                    $3e4edb8379ebf8a3$var$clear_form();
-                    $3e4edb8379ebf8a3$var$sync_caldav();
+                (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(db_id, value).then(function(value) {
+                    // console.log(JSON.stringify(value));
+                    setTimeout(function() {
+                        $3e4edb8379ebf8a3$var$sync_caldav();
+                    }, 2000);
                     n.objects.forEach(function(item) {
                         (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(item.data, $3e4edb8379ebf8a3$var$callback_caldata_loaded, false, true);
                     });
+                    $3e4edb8379ebf8a3$var$clear_form();
                     (0, $6d3f4b507512327e$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
                     setTimeout(function() {
                         (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar");

@@ -550,6 +550,7 @@ var _uid = require("uid");
 "use strict";
 let events = [];
 let accounts = [];
+(0, _localforageDefault.default).setDriver((0, _localforageDefault.default).LOCALSTORAGE);
 let callback_caldata_loaded = function() {};
 let calendar_names = [
     {
@@ -637,13 +638,49 @@ let sync_caldav = function() {
                         oldCalendars: [
                             value[i].objects
                         ],
-                        detailedResult: true
+                        detailedResult: true,
+                        headers: client.authHeaders
                     };
-                    const ma = await client.syncCalendars(s);
-                    console.log(ma);
+                    try {
+                        const ma = await client.syncCalendars(s);
+                        console.log(JSON.stringify(ma));
+                    } catch (e) {
+                        console.log(e);
+                    }
                 }
             } catch (err) {
                 console.log(err);
+            }
+        })();
+    });
+};
+let create_caldav = function() {
+    accounts.forEach(function(item) {
+        const client = new (0, _tsdavJs.DAVClient)({
+            serverUrl: item.server_url,
+            credentials: {
+                username: item.user,
+                password: item.password
+            },
+            authMethod: "Basic",
+            defaultAccountType: "caldav"
+        });
+        (async ()=>{
+            try {
+                let n = await client.login();
+                console.log(item.server_url + "test.ics");
+            } catch (e) {
+                if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+            }
+            try {
+                const result = await client.createCalendarObject({
+                    headers: client.authHeaders,
+                    calendar: "test",
+                    filename: item.server_url + "test.ics",
+                    iCalString: "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Zap Calendar 1.0//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nBEGIN:VEVENT\nSUMMARY:Abraham Lincoln\nUID:c7614cff-3549-4a00-9152-d25cc1fe077d\nSEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nRRULE:FREQ=YEARLY;INTERVAL=1;BYMONTH=2;BYMONTHDAY=12\nDTSTART:20080212\nDTEND:20080213\nDTSTAMP:20150421T141403\nCATEGORIES:U.S. Presidents,Civil War People\nLOCATION:Hodgenville, Kentucky\nGEO:37.5739497;-85.7399606\nDESCRIPTION:Born February 12, 1809\nSixteenth President (1861-1865)\n\n\n\n \nhttp://AmericanHistoryCalendar.com\nURL:http://americanhistorycalendar.com/peoplecalendar/1,328-abraham-lincol\n n\nEND:VEVENT\nEND:VCALENDAR"
+                });
+            } catch (e1) {
+                console.log(e1);
             }
         })();
     });
@@ -665,7 +702,7 @@ let load_subscriptions = function() {
     }
     accounts = value;
     load_caldav();
-    sync_caldav();
+    sync_caldav(); //create_caldav();
 }).catch(function(err) {
     console.log(err);
 });
@@ -1657,8 +1694,7 @@ var page_add_event = {
                 id: "save-event",
                 class: "item",
                 onclick: function() {
-                    let n = document.getElementById("event-calendar");
-                    console.log(n.options[n.selectedIndex].value);
+                    let n = document.getElementById("event-calendar"); // console.log(n.options[n.selectedIndex].value);
                     store_event(n.options[n.selectedIndex].value, n.options[n.selectedIndex].text);
                 }
             }, "save")
@@ -2161,22 +2197,24 @@ let store_event = function(db_id, cal_name) {
         }).catch(function(err) {
             console.log(err);
         });
-    } else (0, _localforageDefault.default).getItem(db_id).then(function(value1) {
-        value1.forEach(function(n) {
+    } else (0, _localforageDefault.default).getItem(db_id).then(function(value) {
+        value.forEach(function(n) {
             if (n.displayName == cal_name) {
                 event = {
-                    "url": "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/personal/" + (0, _uid.uid)(32) + ".ics",
+                    "url": "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/test/" + (0, _uid.uid)(32) + ".ics",
                     "etag": (0, _uid.uid)(32),
                     "data": "BEGIN:VCALENDAR\nPRODID:-//IDN nextcloud.com//Calendar app 3.2.2//EN\nCALSCALE:GREGORIAN\nVERSION:2.0\nBEGIN:VEVENT\nCREATED:20220704T073951Z\nDTSTAMP:20220704T073955Z\nLAST-MODIFIED:20220704T073955Z\nSEQUENCE:2\nUID:828f8b46-3ce2-49c7-a55e-4183b02a3d7d\nDTSTART;VALUE=DATE:20220706\nDTEND;VALUE=DATE:20220707\nSTATUS:CONFIRMED\nSUMMARY:hellotest\nDESCRIPTION:willi\nEND:VEVENT\nEND:VCALENDAR"
                 };
                 n.objects.push(event); //console.log(JSON.stringify(value));
-                (0, _localforageDefault.default).setItem(db_id, value1).then(function(value) {
-                    console.log(JSON.stringify(value));
-                    clear_form();
-                    sync_caldav();
+                (0, _localforageDefault.default).setItem(db_id, value).then(function(value) {
+                    // console.log(JSON.stringify(value));
+                    setTimeout(function() {
+                        sync_caldav();
+                    }, 2000);
                     n.objects.forEach(function(item) {
                         (0, _eximportJs.parse_ics)(item.data, callback_caldata_loaded, false, true);
                     });
+                    clear_form();
                     (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
                     setTimeout(function() {
                         (0, _mithrilDefault.default).route.set("/page_calendar");
@@ -12439,9 +12477,13 @@ parcelHelpers.export(exports, "stop_scan", ()=>stop_scan);
 parcelHelpers.export(exports, "start_scan", ()=>start_scan);
 var _jsqr = require("jsqr");
 var _jsqrDefault = parcelHelpers.interopDefault(_jsqr);
-let video;
+let video = document.querySelector("video");
 let intv;
+let mediaStream;
 let stop_scan = function(callback) {
+    mediaStream.getTracks().map(function(val) {
+        val.stop();
+    });
     document.getElementById("qr-screen").style.display = "none";
     callback();
 };
@@ -12455,8 +12497,9 @@ let start_scan = function(callback) {
             height: 200
         }
     }, function(stream) {
-        video = document.querySelector("video");
         video.srcObject = stream;
+        console.log(stream);
+        mediaStream = stream;
         video.onloadedmetadata = function(e) {
             video.play();
             var barcodeCanvas = document.createElement("canvas");
@@ -12470,9 +12513,9 @@ let start_scan = function(callback) {
                 var idd = imageData.data;
                 let code = (0, _jsqrDefault.default)(idd, imageWidth, imageHeight);
                 if (code) {
+                    clearInterval(intv);
                     callback(code.data);
                     stop_scan();
-                    clearInterval(intv);
                 }
             }, 1000);
         };

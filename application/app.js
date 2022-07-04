@@ -16,10 +16,13 @@ import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
+import { createCalendarObject } from "./assets/js/tsdav.js";
 import { uid } from "uid";
 
 export let events = [];
 export let accounts = [];
+
+localforage.setDriver(localforage.LOCALSTORAGE);
 
 let callback_caldata_loaded = function () {
   //showCalendar(currentMonth, currentYear);
@@ -140,12 +143,56 @@ let sync_caldav = function () {
           let s = {
             oldCalendars: [value[i].objects],
             detailedResult: true,
+            headers: client.authHeaders,
           };
-          const ma = await client.syncCalendars(s);
-          console.log(ma);
+          try {
+            const ma = await client.syncCalendars(s);
+            console.log(JSON.stringify(ma));
+          } catch (e) {
+            console.log(e);
+          }
         }
       } catch (err) {
         console.log(err);
+      }
+    })();
+  });
+};
+
+let create_caldav = function () {
+  accounts.forEach(function (item) {
+    const client = new DAVClient({
+      serverUrl: item.server_url,
+      credentials: {
+        username: item.user,
+        password: item.password,
+      },
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
+    });
+    (async () => {
+      try {
+        let n = await client.login();
+        console.log(item.server_url + "test.ics");
+      } catch (e) {
+        if (e.message == "Invalid credentials")
+          toaster(
+            "there was a problem logging into your account " +
+              item.name +
+              " please check your account details",
+            5000
+          );
+      }
+      try {
+        const result = await client.createCalendarObject({
+          headers: client.authHeaders,
+          calendar: "test",
+          filename: item.server_url + "test.ics",
+          iCalString:
+            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Zap Calendar 1.0//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nBEGIN:VEVENT\nSUMMARY:Abraham Lincoln\nUID:c7614cff-3549-4a00-9152-d25cc1fe077d\nSEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nRRULE:FREQ=YEARLY;INTERVAL=1;BYMONTH=2;BYMONTHDAY=12\nDTSTART:20080212\nDTEND:20080213\nDTSTAMP:20150421T141403\nCATEGORIES:U.S. Presidents,Civil War People\nLOCATION:Hodgenville, Kentucky\nGEO:37.5739497;-85.7399606\nDESCRIPTION:Born February 12, 1809\nSixteenth President (1861-1865)\n\n\n\n \nhttp://AmericanHistoryCalendar.com\nURL:http://americanhistorycalendar.com/peoplecalendar/1,328-abraham-lincol\n n\nEND:VEVENT\nEND:VCALENDAR",
+        });
+      } catch (e) {
+        console.log(e);
       }
     })();
   });
@@ -184,6 +231,8 @@ localforage
 
     load_caldav();
     sync_caldav();
+
+    //create_caldav();
   })
   .catch(function (err) {
     console.log(err);
@@ -1390,7 +1439,7 @@ var page_add_event = {
           class: "item",
           onclick: function () {
             let n = document.getElementById("event-calendar");
-            console.log(n.options[n.selectedIndex].value);
+            // console.log(n.options[n.selectedIndex].value);
             store_event(
               n.options[n.selectedIndex].value,
               n.options[n.selectedIndex].text
@@ -2048,7 +2097,7 @@ let store_event = function (db_id, cal_name) {
           if (n.displayName == cal_name) {
             event = {
               "url":
-                "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/personal/" +
+                "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/test/" +
                 uid(32) +
                 ".ics",
               "etag": uid(32),
@@ -2060,14 +2109,16 @@ let store_event = function (db_id, cal_name) {
             localforage
               .setItem(db_id, value)
               .then(function (value) {
-                console.log(JSON.stringify(value));
-
-                clear_form();
-                sync_caldav();
+                // console.log(JSON.stringify(value));
+                setTimeout(function () {
+                  sync_caldav();
+                }, 2000);
 
                 n.objects.forEach(function (item) {
                   parse_ics(item.data, callback_caldata_loaded, false, true);
                 });
+
+                clear_form();
 
                 side_toaster("<img src='assets/image/E25C.svg'", 2000);
                 setTimeout(function () {
