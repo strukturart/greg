@@ -32,6 +32,7 @@ let calendar_names = [
   {
     name: "local",
     id: "local-id",
+    data: "",
   },
 ];
 
@@ -147,7 +148,6 @@ let sync_caldav = function () {
           };
           try {
             const ma = await client.syncCalendars(s);
-            console.log(JSON.stringify(ma));
           } catch (e) {
             console.log(e);
           }
@@ -159,43 +159,53 @@ let sync_caldav = function () {
   });
 };
 
-let create_caldav = function () {
-  accounts.forEach(function (item) {
-    const client = new DAVClient({
-      serverUrl: item.server_url,
-      credentials: {
-        username: item.user,
-        password: item.password,
-      },
-      authMethod: "Basic",
-      defaultAccountType: "caldav",
-    });
-    (async () => {
-      try {
-        let n = await client.login();
-        console.log(item.server_url + "test.ics");
-      } catch (e) {
-        if (e.message == "Invalid credentials")
-          toaster(
-            "there was a problem logging into your account " +
-              item.name +
-              " please check your account details",
-            5000
-          );
-      }
-      try {
-        const result = await client.createCalendarObject({
-          headers: client.authHeaders,
-          calendar: "test",
-          filename: item.server_url + "test.ics",
-          iCalString:
-            "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Zap Calendar 1.0//EN\nCALSCALE:GREGORIAN\nMETHOD:PUBLISH\nBEGIN:VEVENT\nSUMMARY:Abraham Lincoln\nUID:c7614cff-3549-4a00-9152-d25cc1fe077d\nSEQUENCE:0\nSTATUS:CONFIRMED\nTRANSP:TRANSPARENT\nRRULE:FREQ=YEARLY;INTERVAL=1;BYMONTH=2;BYMONTHDAY=12\nDTSTART:20080212\nDTEND:20080213\nDTSTAMP:20150421T141403\nCATEGORIES:U.S. Presidents,Civil War People\nLOCATION:Hodgenville, Kentucky\nGEO:37.5739497;-85.7399606\nDESCRIPTION:Born February 12, 1809\nSixteenth President (1861-1865)\n\n\n\n \nhttp://AmericanHistoryCalendar.com\nURL:http://americanhistorycalendar.com/peoplecalendar/1,328-abraham-lincol\n n\nEND:VEVENT\nEND:VCALENDAR",
-        });
-      } catch (e) {
-        console.log(e);
-      }
-    })();
+let create_caldav = function (event_data, calendar_id, calendar_name) {
+  const client = new DAVClient({
+    serverUrl: accounts[calendar_id].server_url,
+    credentials: {
+      username: accounts[calendar_id].user,
+      password: accounts[calendar_id].password,
+    },
+    authMethod: "Basic",
+    defaultAccountType: "caldav",
   });
+  (async () => {
+    try {
+      let n = await client.login();
+    } catch (e) {
+      if (e.message == "Invalid credentials")
+        toaster(
+          "there was a problem logging into your account " +
+            item.name +
+            " please check your account details",
+          5000
+        );
+    }
+    try {
+      const calendars = await client.fetchCalendars();
+      console.log(JSON.stringify(calendars));
+
+      console.log("caldata" + JSON.stringify(calendar));
+
+      const result = await client.createCalendarObject({
+        headers: client.authHeaders,
+        calendar: calendar[0],
+        filename: uid(16) + ".ics",
+        iCalString: event_data,
+      });
+
+      if (result.ok) {
+        m.route.set("/page_calendar");
+      } else {
+        toaster(
+          "the event could not be saved, please try again later or save it in the local calendar.",
+          5000
+        );
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  })();
 };
 
 let load_subscriptions = function () {
@@ -229,8 +239,10 @@ localforage
     }
     accounts = value;
 
+    console.log(JSON.stringify(accounts));
+
     load_caldav();
-    sync_caldav();
+    //sync_caldav();
 
     //create_caldav();
   })
@@ -1423,6 +1435,7 @@ var page_add_event = {
                 "option",
                 {
                   value: item.id,
+                  "data-calendar-data": item.data,
                 },
                 item.name
               );
@@ -1439,7 +1452,6 @@ var page_add_event = {
           class: "item",
           onclick: function () {
             let n = document.getElementById("event-calendar");
-            // console.log(n.options[n.selectedIndex].value);
             store_event(
               n.options[n.selectedIndex].value,
               n.options[n.selectedIndex].text
@@ -1958,7 +1970,7 @@ let convert_ics_date = function (t) {
   let nn = t.replace(/-/g, "");
   nn = nn.replace(/:/g, "");
   nn = nn.replace(" ", "T");
-  nn = nn + "00";
+  nn = nn + "Z";
   return nn;
 };
 
@@ -2024,7 +2036,10 @@ let store_event = function (db_id, cal_name) {
   let rrule_convert = function () {
     let p = document.getElementById("event-recur").value;
     let r;
-    if (p != "" || p != "none") {
+    if (p == "none") {
+      return "";
+    }
+    if (p != "none") {
       r =
         "FREQ=" +
         document.getElementById("event-recur").value +
@@ -2069,8 +2084,6 @@ let store_event = function (db_id, cal_name) {
   if (db_id == "local-id" && cal_name == "local") {
     events.push(event);
 
-    //console.log(JSON.stringify(event));
-
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
     );
@@ -2090,51 +2103,27 @@ let store_event = function (db_id, cal_name) {
         console.log(err);
       });
   } else {
-    localforage
-      .getItem(db_id)
-      .then(function (value) {
-        value.forEach(function (n) {
-          if (n.displayName == cal_name) {
-            event = {
-              "url":
-                "https://efss.qloud.my/remote.php/dav/calendars/strukturart@gmail.com/test/" +
-                uid(32) +
-                ".ics",
-              "etag": uid(32),
-              "data":
-                "BEGIN:VCALENDAR\nPRODID:-//IDN nextcloud.com//Calendar app 3.2.2//EN\nCALSCALE:GREGORIAN\nVERSION:2.0\nBEGIN:VEVENT\nCREATED:20220704T073951Z\nDTSTAMP:20220704T073955Z\nLAST-MODIFIED:20220704T073955Z\nSEQUENCE:2\nUID:828f8b46-3ce2-49c7-a55e-4183b02a3d7d\nDTSTART;VALUE=DATE:20220706\nDTEND;VALUE=DATE:20220707\nSTATUS:CONFIRMED\nSUMMARY:hellotest\nDESCRIPTION:willi\nEND:VEVENT\nEND:VCALENDAR",
-            };
-            n.objects.push(event);
-            //console.log(JSON.stringify(value));
-            localforage
-              .setItem(db_id, value)
-              .then(function (value) {
-                // console.log(JSON.stringify(value));
-                setTimeout(function () {
-                  sync_caldav();
-                }, 2000);
-
-                n.objects.forEach(function (item) {
-                  parse_ics(item.data, callback_caldata_loaded, false, true);
-                });
-
-                clear_form();
-
-                side_toaster("<img src='assets/image/E25C.svg'", 2000);
-                setTimeout(function () {
-                  m.route.set("/page_calendar");
-                  sort_array(events, "dateStart", "date");
-                }, 200);
-              })
-              .catch(function (err) {
-                console.log(err);
-              });
-          }
-        });
-      })
-      .catch(function (err) {
-        console.log(err);
-      });
+    create_caldav(
+      "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
+        event.SUMMARY +
+        "\nUID:" +
+        event.UID +
+        "\nSEQUENCE:0\nRRULE:" +
+        event.RRULE +
+        "\nDTSTART:" +
+        event.DTSTART +
+        "\nDTEND:" +
+        event.DTEND +
+        "\nDTSTAMP:" +
+        event.DTSTAMP +
+        "\nLOCATION:" +
+        event.LOCATION +
+        "\nDESCRIPTION:" +
+        event.DESCRIPTION +
+        "\nEND:VEVENT\nEND:VCALENDAR",
+      db_id,
+      cal_name
+    );
   }
 };
 
