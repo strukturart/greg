@@ -103,7 +103,9 @@ export let parse_ics = function (
   callback,
   saveOnDevice,
   subscription,
-  db_name
+  etag,
+  url,
+  account_id
 ) {
   let temp = [];
   if (subscription) subscription = "subscription";
@@ -204,6 +206,9 @@ export let parse_ics = function (
       notification: " ",
       alarm: "none",
       rrule_: n ? n.freq : "",
+      etag: etag,
+      url: url,
+      id: account_id,
     };
 
     events.push(imp);
