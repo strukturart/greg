@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg width="33mm" height="33mm" viewBox="0 0 33 33" version="1.1" id="svg5" inkscape:version="1.1 (c4e8f9e, 2021-05-24)" sodipodi:docname="moon6.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview id="namedview7" pagecolor="#ffffff" bordercolor="#666666" borderopacity="1.0" inkscape:pageshadow="2" inkscape:pageopacity="1" inkscape:pagecheckerboard="0" inkscape:document-units="mm" showgrid="false" showguides="true" inkscape:guide-bbox="true" fit-margin-top="0" fit-margin-left="0" fit-margin-right="0" fit-margin-bottom="0" inkscape:zoom="0.67081229" inkscape:cx="154.29055" inkscape:cy="246.71581" inkscape:window-width="1848" inkscape:window-height="1016" inkscape:window-x="72" inkscape:window-y="27" inkscape:window-maximized="1" inkscape:current-layer="layer1">
+    <sodipodi:guide position="16.595197,-3.3052203" orientation="1,0" id="guide1614"></sodipodi:guide>
+  </sodipodi:namedview>
+  <defs id="defs2"></defs>
+  <g inkscape:label="Layer 1" inkscape:groupmode="layer" id="layer1" transform="translate(-64.327415,-83.17527)">
+    <circle style="fill: #000; fill-opacity: 1; stroke-width: 0" id="path846-1" cx="70.192436" cy="99.987419" r="16.5"></circle>
+    <path id="rect1329" style="fill: #fff; stroke-width: 4.89508px" d="m 65.403146,83.515978 c -0.543224,0 -0.980818,0.437077 -0.980818,0.980302 v 31.03893 c 0,0.54323 0.437594,0.98082 0.980818,0.98082 h 31.038416 c 0.543224,0 0.980819,-0.43759 0.980819,-0.98082 V 84.49628 c 0,-0.543225 -0.437595,-0.980302 -0.980819,-0.980302 z m 15.519466,1.49965 A 15,15 0 0 1 95.922214,100.01575 15,15 0 0 1 80.922612,115.01586 15,15 0 0 1 65.922494,100.01575 15,15 0 0 1 80.922612,85.015628 Z"></path>
+    <circle style="fill: #fcfcfc; fill-opacity: 1; stroke-width: 0" id="path846-8" cx="142.87714" cy="102.49628" r="16.5"></circle>
+    <rect style="fill: #fff; fill-opacity: 1; stroke: none; stroke-width: 3px; stroke-miterlimit: 4; stroke-dasharray: none; stroke-opacity: 1" id="rect1444" width="53.750053" height="46.918285" x="11.65309" y="83.515976" ry="0.63945031"></rect>
+    <circle style="fill: none; fill-opacity: 1; stroke: #000; stroke-width: 3px; stroke-miterlimit: 4; stroke-dasharray: none; stroke-opacity: 1" id="path846-4" cx="81.356583" cy="99.67527" r="15"></circle>
+  </g>
+</svg>

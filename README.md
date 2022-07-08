@@ -21,9 +21,19 @@ An easy to use calendar for KaiOs
 - Key 2: event slider in month view
 - Key #: toggle moon phase view
 
+### Nextcloud account
+
+if you want to use an external calendar, you have to enter the correct server address.  
+at nextcloud as follows:
+
+    - server: "https://xxxxx/remote.php/dav",
+    - username: "xxxxm",
+    - password: "xxxxx",
+
 ## Features
 
 - Local Calendar
+- Nextcloud calendar
 - subscribe to calendar
 - moon phases
 
@@ -40,7 +50,14 @@ The app is not auto-updating. To update it, you have to follow the same steps yo
 
 ## to do
 
-calDav
+oAuth google
+
+### LICENSES
+
+This software (except KaiAds) is open source and licensed under the MIT License. View the source code.
+
+- tsdav https://github.com/natelindev/tsdav MIT License
+- mithril https://github.com/MithrilJS MIT License
 
 ## Donation
 
