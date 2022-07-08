@@ -1,5 +1,13 @@
 "use strict";
 
+export const get_time = function () {
+  let a = new Date();
+
+  time = `0${a.getHours()}`.slice(-2) + ":" + `0${a.getMinutes()}`.slice(-2);
+
+  return time;
+};
+
 export let sort_array = function (arr, item_key, type) {
   if (type == "date") {
     arr.sort((a, b) => {
@@ -123,6 +131,20 @@ export let getManifest = function (callback) {
     callback(self.result);
   };
   self.onerror = function () {};
+};
+
+//popup
+export let popup = function (text, action) {
+  let m = document.querySelector("div#popup");
+  let mm = document.querySelector("div#popup div div");
+  if (action == "show") {
+    m.style.display = "block";
+    mm.innerText = text;
+  }
+  if (action == "close") {
+    m.style.display = "none";
+    mm.innerText = "";
+  }
 };
 
 //top toaster

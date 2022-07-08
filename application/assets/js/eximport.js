@@ -214,7 +214,7 @@ export let parse_ics = function (
     events.push(imp);
   });
 
-  if (saveOnDevice) {
+  if (saveOnDevice == true) {
     let without_subscription = events.filter(
       (events) => events.isSubscription === false
     );

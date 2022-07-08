@@ -198,6 +198,10 @@ div#intro img {
   }
 }
 
+#icon-loading {
+  opacity: 0;
+}
+
 #KaiOsAd {
   height: 200px;
   width: 240px;
@@ -232,7 +236,7 @@ div#side-toast {
   color: #fff;
   z-index: 10;
   transform-origin: 0 0;
-  background: none;
+  background: orange;
   padding: 5px;
   transition: all .5s ease-in-out;
   position: fixed;
@@ -242,6 +246,35 @@ div#side-toast {
 
 div#side-toast img {
   width: 60px;
+}
+
+div#popup {
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: none;
+  display: none;
+  position: fixed;
+}
+
+div#popup div {
+  -moz-box-pack: center;
+  justify-content: center;
+  -moz-box-align: center;
+  align-items: center;
+  display: flex;
+}
+
+div#popup div div {
+  background: orange;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  -moz-box-pack: center;
+  justify-content: center;
+  -moz-box-align: center;
+  align-items: center;
+  padding: 10px;
+  display: flex;
 }
 
 article.events[data-alarm="none"] img.bell {
