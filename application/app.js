@@ -7,12 +7,10 @@ import { validate } from "./assets/js/helper.js";
 import { pick_image } from "./assets/js/helper.js";
 import { bottom_bar } from "./assets/js/helper.js";
 import { popup } from "./assets/js/helper.js";
-
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
 import { fetch_ics } from "./assets/js/eximport.js";
 import { export_ical } from "./assets/js/eximport.js";
 import { parse_ics } from "./assets/js/eximport.js";
-
 import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
@@ -23,6 +21,7 @@ import { propfind } from "./assets/js/tsdav.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
 import { get_time } from "./assets/js/helper.js";
 import { uid } from "uid";
+import { captureRejectionSymbol } from "events";
 
 var moment = require("moment-timezone");
 
@@ -80,6 +79,7 @@ let load_caldav = function (action) {
       try {
         await client.login();
       } catch (e) {
+        console.log(e);
         //load cached data
         toaster("load cached data", 5000);
         localforage
@@ -114,7 +114,7 @@ let load_caldav = function (action) {
       }
 
       try {
-        document.getElementById("icon-loading").style.opacity = 100;
+        document.getElementById("icon-loading").style.visibility = "visible";
         const calendars = await client.fetchCalendars();
         let k = [];
 
@@ -157,7 +157,7 @@ let load_caldav = function (action) {
               item.id
             );
           });
-          document.getElementById("icon-loading").style.opacity = 0;
+          document.getElementById("icon-loading").style.visibility = "hidden";
           style_calendar_cell();
         }
       } catch (e) {
@@ -1053,13 +1053,11 @@ var page_calendar = {
           id: "monthAndYear",
         }),
 
-        m(
-          "div",
-          {
-            id: "icon-loading",
-          },
-          "loading"
-        ),
+        m("img", {
+          id: "icon-loading",
+          src: "./assets/image/E252.svg",
+          alt: "loading",
+        }),
         m(
           "div",
           {
@@ -1342,14 +1340,14 @@ var page_options = {
           {
             class: "item subscriptions-item",
             "data-id": item.id,
-            "data-action": "delete-account",
+            "data-action": "edit-delete-account",
 
             tabindex: index + subscriptions.length + 5,
             onblur: function () {
               bottom_bar("", "", "");
             },
             onfocus: function () {
-              bottom_bar("delete", "", "");
+              bottom_bar("delete", "", "edit");
             },
           },
           item.name
@@ -1450,6 +1448,131 @@ var page_subscriptions = {
           },
         },
         "save"
+      ),
+    ]);
+  },
+};
+
+let update_account;
+var page_edit_account = {
+  view: function () {
+    return m("div", { id: "account-form" }, [
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "0",
+
+          oninit: function () {},
+
+          oncreate: function ({ dom }) {
+            dom.focus();
+          },
+        },
+        [
+          m("label", { for: "description" }, "account name"),
+          m("input", {
+            placeholder: "Name",
+            type: "text",
+            id: "account-name",
+            value: update_account.name,
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "1",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "server"),
+          m("input", {
+            placeholder: "URL",
+            type: "text",
+            id: "account-url",
+            "data-scan-action": "true",
+            value: update_account.server_url,
+
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "2",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "username"),
+          m("input", {
+            placeholder: "username",
+            type: "url",
+            id: "account-username",
+            value: update_account.user,
+
+            "data-scan-action": "true",
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          tabindex: "3",
+
+          onblur: function () {
+            bottom_bar("", "", "");
+          },
+        },
+        [
+          m("label", { for: "description" }, "password"),
+          m("input", {
+            placeholder: "password",
+            type: "password",
+            id: "account-password",
+            "data-scan-action": "true",
+            value: update_account.password,
+
+            onfocus: function () {
+              bottom_bar("qr-scan", "", "");
+            },
+            onblur: function () {
+              bottom_bar("", "", "");
+            },
+          }),
+        ]
+      ),
+      m(
+        "button",
+        {
+          class: "item",
+          tabindex: "4",
+          onclick: function () {
+            store_account(true, status.edit_account_id);
+          },
+        },
+        "update"
       ),
     ]);
   },
@@ -1956,6 +2079,7 @@ m.route(root, "/page_calendar", {
   "/page_edit_event": page_edit_event,
   "/page_subscriptions": page_subscriptions,
   "/page_accounts": page_accounts,
+  "/page_edit_account": page_edit_account,
 });
 m.route.prefix = "#";
 
@@ -2014,20 +2138,36 @@ let store_subscription = function () {
   }
 };
 
-let store_account = function () {
+let store_account = function (edit, id) {
   if (
     validate(document.getElementById("account-url").value) &&
     document.getElementById("account-name").value != "" &&
     document.getElementById("account-username").value != "" &&
     document.getElementById("account-password").value != ""
   ) {
-    accounts.push({
-      server_url: document.getElementById("account-url").value,
-      user: document.getElementById("account-username").value,
-      password: document.getElementById("account-password").value,
-      name: document.getElementById("account-name").value,
-      id: uid(32),
-    });
+    if (edit) {
+      const newArr = accounts.filter((object) => {
+        return object.id !== id;
+      });
+
+      accounts = newArr;
+
+      accounts.push({
+        server_url: document.getElementById("account-url").value,
+        user: document.getElementById("account-username").value,
+        password: document.getElementById("account-password").value,
+        name: document.getElementById("account-name").value,
+        id: id,
+      });
+    } else {
+      accounts.push({
+        server_url: document.getElementById("account-url").value,
+        user: document.getElementById("account-username").value,
+        password: document.getElementById("account-password").value,
+        name: document.getElementById("account-name").value,
+        id: uid(32),
+      });
+    }
 
     localforage
       .setItem("accounts", accounts)
@@ -2081,7 +2221,7 @@ let delete_account = function () {
     .setItem("accounts", updated_subscriptions)
     .then(function (value) {
       //Do other things once the value has been saved.
-      side_toaster("subscription deleted", 2000);
+      side_toaster("account deleted", 2000);
       document.activeElement.remove();
     })
     .catch(function (err) {
@@ -2097,8 +2237,6 @@ let delete_account = function () {
     .catch(function (err) {
       console.log(err);
     });
-
-  document.activeElement.remove();
 };
 
 //load indexedDB
@@ -2167,7 +2305,8 @@ let nav = function (move) {
 
   if (
     m.route.get() == "/page_subscriptions" ||
-    m.route.get() == "/page_accounts"
+    m.route.get() == "/page_accounts" ||
+    m.route.get() == "/page_edit_account"
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll(".item");
@@ -2777,6 +2916,7 @@ function shortpress_action(param) {
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
         m.route.get() == "/page_accounts" ||
+        m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event"
       ) {
@@ -2792,6 +2932,7 @@ function shortpress_action(param) {
         m.route.get() == "/page_options" ||
         m.route.get() == "/page_subscriptions" ||
         m.route.get() == "/page_accounts" ||
+        m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event"
       ) {
@@ -2839,6 +2980,19 @@ function shortpress_action(param) {
         return true;
       }
 
+      if (
+        document.activeElement.getAttribute("data-action") ==
+        "edit-delete-account"
+      ) {
+        status.edit_account_id = document.activeElement.getAttribute("data-id");
+        update_account = accounts.filter(function (arr) {
+          return arr.id == status.edit_account_id;
+        })[0];
+
+        console.log("du" + JSON.stringify(update_account));
+        m.route.set("/page_edit_account");
+      }
+
       break;
 
     case "SoftLeft":
@@ -2877,7 +3031,8 @@ function shortpress_action(param) {
         }
 
         if (
-          document.activeElement.getAttribute("data-action") == "delete-account"
+          document.activeElement.getAttribute("data-action") ==
+          "edit-delete-account"
         ) {
           delete_account();
         }
@@ -2885,10 +3040,6 @@ function shortpress_action(param) {
 
       if (m.route.get() == "/page_calendar") {
         m.route.set("/page_add_event");
-
-        // when new event
-        // set time
-        // set_datetime_form();
 
         return true;
       }
@@ -2958,7 +3109,8 @@ function shortpress_action(param) {
 
       if (
         m.route.get() == "/page_subscriptions" ||
-        m.route.get() == "/page_accounts"
+        m.route.get() == "/page_accounts" ||
+        m.route.get() == "/page_edit_account"
       ) {
         m.route.set("/page_options");
         if (document.getElementById("qr-screen").style == "block")

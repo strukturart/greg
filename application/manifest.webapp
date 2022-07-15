@@ -1,9 +1,9 @@
 {
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"name": "greg",
 	"id":"greg",
 	"categories": ["utilities"],
-	"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars. you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #",
+	"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars or connect to nextcloud(caldav). you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #",
 	"launch_path": "/index.html",
 	"type": "privileged",
 	"fullscreen": "true",
@@ -22,7 +22,7 @@
 		"en-US": {
 			"name": "greg",
 			"subtitle": "greg",
-			"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars. you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #"
+			"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars  connect to nextcloud(caldav). you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #"
 		}
 	},
 	"default_locale": "en-US",
@@ -42,7 +42,13 @@
  "serviceworker": {
       "script_url": "service-worker.js"
     },
+  "redirects": [
+    {
 
+      "from": "https://strukturart.github.io/greg/",
+      "to": "/index.html"
+    }
+  ],
 
 
 	"permissions": {

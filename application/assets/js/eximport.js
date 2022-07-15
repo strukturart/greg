@@ -6,6 +6,8 @@ import { events } from "../../app.js";
 
 import ICAL from "ical.js";
 
+var moment = require("moment-timezone");
+
 export let export_ical = function (filename, event_data) {
   if (!navigator.getDeviceStorage) return false;
 
@@ -107,7 +109,6 @@ export let parse_ics = function (
   url,
   account_id
 ) {
-  let temp = [];
   if (subscription) subscription = "subscription";
 
   var jcalData = ICAL.parse(data);
@@ -115,13 +116,18 @@ export let parse_ics = function (
   var comp = new ICAL.Component(jcalData);
   var vevent = comp.getAllSubcomponents("vevent");
   vevent.forEach(function (ite) {
-    //if (ite.getFirstPropertyValue("rrule"))
-    // console.log(ite.getFirstPropertyValue("rrule").freq);
     let n = ite.getFirstPropertyValue("rrule");
-
+    let ds;
     let dateStart, timeStart;
     if (ite.getFirstPropertyValue("dtstart")) {
-      let ds = new Date(ite.getFirstPropertyValue("dtstart"));
+      {
+        ds = new Date(ite.getFirstPropertyValue("dtstart"));
+
+        var m = moment.tz(
+          ite.getFirstPropertyValue("dtstart"),
+          "Europe/Berlin"
+        );
+      }
 
       dateStart =
         ds.getFullYear() +
@@ -222,7 +228,6 @@ export let parse_ics = function (
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        // events = value;
         side_toaster("<img src='assets/image/E25C.svg'>", 2500);
       })
       .catch(function (err) {
