@@ -16,6 +16,12 @@ npm run  build --no-source-maps --no-optimize  ./ application/index.html
 cp -r ./application/assets/icons ./dist/assets/icons
 cp -r ./application/assets/image ./dist/assets/image
 
+mkdir ./dist/assets/js
+cp  ./application/assets/js/kaiads.v5.min.js ./dist/assets/js/
+cp  ./application/assets/js/kaios-ads.js ./dist/assets/js/
+
+
+
 cp ./application/manifest.webapp ./dist/
 cp ./application/ads.html ./dist/
 

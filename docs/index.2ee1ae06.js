@@ -14319,7 +14319,7 @@ var $aS0o5 = parcelRequire("aS0o5");
 "use strict";
 var $162001cafa2b40fd$export$99b0f35a4c27c9eb = function get_time() {
     var a = new Date();
-    time = "0".concat(a.getHours()).slice(-2) + ":" + "0".concat(a.getMinutes()).slice(-2);
+    var time = "0".concat(a.getHours()).slice(-2) + ":" + "0".concat(a.getMinutes()).slice(-2);
     return time;
 };
 var $162001cafa2b40fd$export$b04ad9f70842c3f1 = function sort_array(arr, item_key, type) {
@@ -21900,12 +21900,10 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
             var DTstart = new Date(ite.getFirstPropertyValue("dtend"));
             dateEnd = DTstart.getFullYear() + "-" + "0".concat(DTstart.getMonth() + 1).slice(-2) + "-" + "0".concat(DTstart.getDate()).slice(-2);
             timeEnd = "0".concat(DTstart.getHours()).slice(-2) + ":" + "0".concat(DTstart.getMinutes()).slice(-2) + ":" + "0".concat(DTstart.getSeconds()).slice(-2);
-        } //multiday event
-        var allDay = false;
+        } //allDay event
+        var allDay = "";
         if (ite.getFirstPropertyValue("dtend") && ite.getFirstPropertyValue("dtstart")) {
-            if (new Date(ite.getFirstPropertyValue("dtend")) > new Date(ite.getFirstPropertyValue("dtstart"))) allDay = true;
-             //all day events have the time 00:00:00 but the start end date consecutive
-            if (new Date(ite.getFirstPropertyValue("dtend")) > new Date(ite.getFirstPropertyValue("dtstart")) && timeStart == "00:00:00" && timeEnd == "00:00:00") allDay = false;
+            if (timeStart == timeEnd) allDay = "allDay";
         }
         var imp = {
             BEGIN: "VEVENT",
@@ -21922,7 +21920,7 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
             DTEND: ite.getFirstPropertyValue("dtend"),
             END: "VEVENT",
             isSubscription: subscription,
-            allDay: ite.getFirstPropertyValue("dtstart").isDate,
+            allDay: allDay,
             dateStart: dateStart,
             time_start: timeStart,
             dateEnd: dateEnd,
@@ -41301,8 +41299,9 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav(action) {
                     case 5:
                         _ctx.prev = 5;
                         _ctx.t0 = _ctx["catch"](0);
-                        console.log(_ctx.t0); //load cached data
-                        (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("load cached data", 5000);
+                        console.log(_ctx.t0.message);
+                        if (_ctx.t0.message == "Network request failed") (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("the data of the accounts" + item.name + " could not be loaded", 5000);
+                         //load cached data
                         (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem(item.id).then(function(w) {
                             w.forEach(function(b) {
                                 b.objects.forEach(function(m1) {
@@ -41325,7 +41324,7 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav(action) {
                         i1 = 0;
                     case 18:
                         if (!(i1 < calendars.length)) {
-                            _ctx.next = 32;
+                            _ctx.next = 33;
                             break;
                         }
                         _ctx.next = 21;
@@ -41354,18 +41353,19 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav(action) {
                         });
                         document.getElementById("icon-loading").style.visibility = "hidden";
                         $5535d7a9ff238efe$var$style_calendar_cell();
-                    case 29:
+                        (0, $162001cafa2b40fd$export$6593825dc0f3a767)("Data loaded", 3000);
+                    case 30:
                         i1++;
                         _ctx.next = 18;
                         break;
-                    case 32:
-                        _ctx.next = 37;
+                    case 33:
+                        _ctx.next = 38;
                         break;
-                    case 34:
-                        _ctx.prev = 34;
+                    case 35:
+                        _ctx.prev = 35;
                         _ctx.t1 = _ctx["catch"](11);
                         console.log(_ctx.t1);
-                    case 37:
+                    case 38:
                     case "end":
                         return _ctx.stop();
                 }
@@ -41376,7 +41376,7 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav(action) {
                 ],
                 [
                     11,
-                    34
+                    35
                 ]
             ]);
         }))();
@@ -41875,7 +41875,43 @@ var $5535d7a9ff238efe$var$load_settings = function load_settings() {
     });
 };
 $5535d7a9ff238efe$var$load_settings(); //ads || ads free
-//KaioOs ads
+var $5535d7a9ff238efe$var$load_ads = function load_ads() {
+    var js = document.createElement("script");
+    js.type = "text/javascript";
+    js.src = "assets/js/kaiads.v5.min.js";
+    js.onload = function() {
+        getKaiAd({
+            publisher: "4408b6fa-4e1d-438f-af4d-f3be2fa97208",
+            app: "omap",
+            slot: "omap",
+            test: 0,
+            timeout: 10000,
+            h: 100,
+            w: 240,
+            container: document.getElementById("KaiOsAds-Wrapper"),
+            onerror: function(err) {
+                return console.error("Error:", err);
+            },
+            onready: function(ad) {
+                // user clicked the ad
+                ad.on("click", function() {
+                    return console.log("click event");
+                }); // user closed the ad (currently only with fullscreen)
+                ad.on("close", function() {
+                    return console.log("close event");
+                }); // the ad succesfully displayed
+                ad.on("display", function() {
+                    return console.log("display event");
+                }); // Ad is ready to be displayed
+                // calling 'display' will display the ad
+                ad.call("display", {
+                    navClass: "item" //tabIndex: 0,
+                });
+            }
+        });
+    };
+    document.head.appendChild(js);
+}; //KaioOs ads
 var $5535d7a9ff238efe$var$getManifest = function getManifest(callback) {
     if (!navigator.mozApps) return false;
     var self1 = navigator.mozApps.getSelf();
@@ -42097,7 +42133,16 @@ function $5535d7a9ff238efe$var$previous() {
     $5535d7a9ff238efe$var$currentMonth = $5535d7a9ff238efe$var$currentMonth === 0 ? 11 : $5535d7a9ff238efe$var$currentMonth - 1;
     $5535d7a9ff238efe$var$showCalendar($5535d7a9ff238efe$var$currentMonth, $5535d7a9ff238efe$var$currentYear);
     $5535d7a9ff238efe$var$event_slider($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day);
-} //////////////
+}
+var $5535d7a9ff238efe$var$highlight_current_day = function highlight_current_day() {
+    setTimeout(function() {
+        document.querySelectorAll("div#calendar div.calendar-head div").forEach(function(e) {
+            e.classList.remove("active");
+        });
+        var s = document.activeElement.getAttribute("data-day");
+        document.querySelectorAll("div#calendar div.calendar-head div")[s].classList.add("active");
+    }, 500);
+}; //////////////
 //BUILD CALENDAR
 //////////////
 // get weeknumber
@@ -42142,6 +42187,8 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
                 var mmonth = "0".concat(month + 1).slice(-2);
                 var day = "0".concat(date).slice(-2);
                 var p = year + "-" + mmonth + "-" + day;
+                var d4 = new Date(p);
+                cell1.setAttribute("data-day", d4.getDay());
                 moon.classList.add("moon-phase-" + (0, $9f0e935a15ef5a93$export$69e63ab66e4cb4c7)(year, month, date));
                 cell1.appendChild(moon);
                 cell1.setAttribute("data-date", p);
@@ -42161,10 +42208,12 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
         week.appendChild(weekText);
         row.appendChild(week); //add row
         tbl.appendChild(row);
+        $5535d7a9ff238efe$var$highlight_current_day();
     }
     document.querySelectorAll(".item")[0].focus();
     $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date"); // highlight current day
     if ($5535d7a9ff238efe$var$today.getMonth() == month && $5535d7a9ff238efe$var$today.getFullYear() == year) {
+        $5535d7a9ff238efe$var$highlight_current_day();
         document.querySelectorAll(".item")[$5535d7a9ff238efe$var$currentDay - 1].focus();
         document.querySelectorAll(".item")[$5535d7a9ff238efe$var$currentDay - 1].classList.add("today");
     }
@@ -42298,7 +42347,7 @@ var $5535d7a9ff238efe$var$page_events = {
                     "data-time-end": item.time_end,
                     "data-date-end": item.dateEnd,
                     "data-rrule": item.rrule_,
-                    "data-multidayevent": item.multidayevent,
+                    "data-allDay": item.allDay,
                     "data-alarm": item.alarm
                 }, [
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -42314,6 +42363,9 @@ var $5535d7a9ff238efe$var$page_events = {
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                             class: "time"
                         }, item.time_start),
+                        (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                            class: "allDay"
+                        }, "all Day"),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", {
                             class: "time"
                         }, item.SUMMARY),
@@ -42463,28 +42515,27 @@ var $5535d7a9ff238efe$var$page_options = {
                     }
                 }, item.name);
             }),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", {
+                class: "ads-title"
+            }, "Ads"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 id: "KaiOsAds-Wrapper",
                 tabindex: $5535d7a9ff238efe$var$subscriptions.length + $5535d7a9ff238efe$export$c5541db89994d14.length + 4,
-                class: "item",
+                class: "flex justify-content-spacearound",
+                oninit: function oninit() {
+                    if ($5535d7a9ff238efe$var$settings.ads) $5535d7a9ff238efe$var$load_ads();
+                    else document.querySelector("h2.ads-title").remove();
+                },
+                oncreate: function oncreate() {},
                 onfocus: function onfocus() {
                     (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "open", "");
-                    document.getElementById("KaiOsAd").style.border = "2px solid red";
                 },
-                onblur: function onblur() {
-                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("delete", "", "");
-                },
-                onclick: function onclick() {
-                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "open", "");
+                onblur: function onblur() {},
+                onkeypress: function onkeypress(event) {
+                    (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
+                    event.keyCode;
                 }
-            }, [
-                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("iframe", {
-                    oncreate: function oncreate() {
-                        if ($5535d7a9ff238efe$var$settings.ads == true) document.querySelector("#KaiOsAds-Wrapper iframe").src = "./ads.html";
-                        else document.querySelector("#KaiOsAds-Wrapper").remove();
-                    }
-                })
-            ])
+            })
         ]);
     },
     oncreate: function oncreate() {
@@ -43304,11 +43355,13 @@ function $5535d7a9ff238efe$var$handleVisibilityChange() {
 $5535d7a9ff238efe$var$handleVisibilityChange(); /////////////////
 ///NAVIGATION
 /////////////////
+var $5535d7a9ff238efe$var$mmm = document.querySelectorAll("div#calendar div.calendar-head div");
 var $5535d7a9ff238efe$var$nav = function nav(move) {
     if (document.activeElement.nodeName == "SELECT" || document.activeElement.type == "date" || document.activeElement.type == "time") return false;
     var currentIndex = document.activeElement.tabIndex;
     var next1 = currentIndex + move;
     var items = 0;
+    if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$highlight_current_day();
     if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events") {
         var b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
@@ -43615,12 +43668,12 @@ var $5535d7a9ff238efe$var$import_event_callback = function import_event_callback
     }).catch(function(err) {});
 };
 var $5535d7a9ff238efe$var$set_datetime_form = function set_datetime_form() {
-    var d4 = new Date();
-    var d_h = "0".concat(d4.getHours()).slice(-2);
-    var d_m = "0".concat(d4.getMinutes()).slice(-2);
+    var d5 = new Date();
+    var d_h = "0".concat(d5.getHours()).slice(-2);
+    var d_m = "0".concat(d5.getMinutes()).slice(-2);
     var p = d_h + ":" + d_m;
-    var d_h_ = "0".concat(d4.getHours() + 1).slice(-2);
-    var d_m_ = "0".concat(d4.getMinutes()).slice(-2);
+    var d_h_ = "0".concat(d5.getHours() + 1).slice(-2);
+    var d_m_ = "0".concat(d5.getMinutes()).slice(-2);
     if (d_h_ > 23) d_h_ = "23";
     var pp = d_h_ + ":" + d_m_;
     document.getElementById("event-time-start").value = p;

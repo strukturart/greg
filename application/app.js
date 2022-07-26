@@ -79,9 +79,15 @@ let load_caldav = function (action) {
       try {
         await client.login();
       } catch (e) {
-        console.log(e);
+        console.log(e.message);
+
+        if (e.message == "Network request failed") {
+          toaster(
+            "the data of the accounts" + item.name + " could not be loaded",
+            5000
+          );
+        }
         //load cached data
-        toaster("load cached data", 5000);
         localforage
           .getItem(item.id)
           .then(function (w) {
@@ -159,6 +165,7 @@ let load_caldav = function (action) {
           });
           document.getElementById("icon-loading").style.visibility = "hidden";
           style_calendar_cell();
+          side_toaster("Data loaded", 3000);
         }
       } catch (e) {
         console.log(e);
@@ -551,6 +558,45 @@ load_settings();
 
 //ads || ads free
 
+let load_ads = function () {
+  var js = document.createElement("script");
+  js.type = "text/javascript";
+  js.src = "assets/js/kaiads.v5.min.js";
+
+  js.onload = function () {
+    getKaiAd({
+      publisher: "4408b6fa-4e1d-438f-af4d-f3be2fa97208",
+      app: "omap",
+      slot: "omap",
+      test: 0,
+      timeout: 10000,
+      h: 100,
+      w: 240,
+      container: document.getElementById("KaiOsAds-Wrapper"),
+      onerror: (err) => console.error("Error:", err),
+      onready: (ad) => {
+        // user clicked the ad
+        ad.on("click", () => console.log("click event"));
+
+        // user closed the ad (currently only with fullscreen)
+        ad.on("close", () => console.log("close event"));
+
+        // the ad succesfully displayed
+        ad.on("display", () => console.log("display event"));
+
+        // Ad is ready to be displayed
+        // calling 'display' will display the ad
+        ad.call("display", {
+          navClass: "item",
+          //tabIndex: 0,
+          //display: "block",
+        });
+      },
+    });
+  };
+  document.head.appendChild(js);
+};
+
 //KaioOs ads
 let getManifest = function (callback) {
   if (!navigator.mozApps) {
@@ -900,6 +946,22 @@ function previous() {
   event_slider(status.selected_day);
 }
 
+let highlight_current_day = function () {
+  setTimeout(function () {
+    document
+      .querySelectorAll("div#calendar div.calendar-head div")
+      .forEach(function (e) {
+        e.classList.remove("active");
+      });
+
+    let s = document.activeElement.getAttribute("data-day");
+
+    document
+      .querySelectorAll("div#calendar div.calendar-head div")
+      [s].classList.add("active");
+  }, 500);
+};
+
 //////////////
 //BUILD CALENDAR
 //////////////
@@ -978,6 +1040,9 @@ let showCalendar = function (month, year) {
 
         let p = year + "-" + mmonth + "-" + day;
 
+        const d = new Date(p);
+        cell.setAttribute("data-day", d.getDay());
+
         moon.classList.add("moon-phase-" + getMoonPhase(year, month, date));
         cell.appendChild(moon);
 
@@ -1016,6 +1081,7 @@ let showCalendar = function (month, year) {
 
     //add row
     tbl.appendChild(row);
+    highlight_current_day();
   }
 
   document.querySelectorAll(".item")[0].focus();
@@ -1023,6 +1089,7 @@ let showCalendar = function (month, year) {
 
   // highlight current day
   if (today.getMonth() == month && today.getFullYear() == year) {
+    highlight_current_day();
     document.querySelectorAll(".item")[currentDay - 1].focus();
     document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
   }
@@ -1184,7 +1251,7 @@ var page_events = {
               "data-time-end": item.time_end,
               "data-date-end": item.dateEnd,
               "data-rrule": item.rrule_,
-              "data-multidayevent": item.multidayevent,
+              "data-allDay": item.allDay,
               "data-alarm": item.alarm,
             },
             [
@@ -1192,6 +1259,8 @@ var page_events = {
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
                 m("div", { class: "date" }, item.dateStart),
                 m("div", { class: "time" }, item.time_start),
+                m("div", { class: "allDay" }, "all Day"),
+
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION),
@@ -1353,24 +1422,33 @@ var page_options = {
           item.name
         );
       }),
+      m("h2", { class: "ads-title" }, "Ads"),
 
       m(
         "div",
         {
           id: "KaiOsAds-Wrapper",
           tabindex: subscriptions.length + accounts.length + 4,
-          class: "item",
+          class: "flex justify-content-spacearound",
+          oninit: function () {
+            if (settings.ads) {
+              load_ads();
+            } else {
+              document.querySelector("h2.ads-title").remove();
+            }
+          },
+          oncreate: function () {},
           onfocus: function () {
             bottom_bar("", "open", "");
-            document.getElementById("KaiOsAd").style.border = "2px solid red";
           },
-          onblur: function () {
-            bottom_bar("delete", "", "");
+          onblur: function () {},
+          onkeypress: function (event) {
+            bottom_bar("", "", "");
+            if (event.keyCode == 13) {
+            }
           },
-          onclick: function () {
-            bottom_bar("", "open", "");
-          },
-        },
+        }
+        /*
         [
           m("iframe", {
             oncreate: function () {
@@ -1379,10 +1457,12 @@ var page_options = {
                   "./ads.html";
               } else {
                 document.querySelector("#KaiOsAds-Wrapper").remove();
+                document.querySelector(".ads-title").remove();
               }
             },
           }),
         ]
+        */
       ),
     ]);
   },
@@ -2280,6 +2360,7 @@ handleVisibilityChange();
 /////////////////
 ///NAVIGATION
 /////////////////
+let mmm = document.querySelectorAll("div#calendar div.calendar-head div");
 
 let nav = function (move) {
   if (
@@ -2293,6 +2374,10 @@ let nav = function (move) {
   const currentIndex = document.activeElement.tabIndex;
   let next = currentIndex + move;
   let items = 0;
+
+  if (m.route.get() == "/page_calendar") {
+    highlight_current_day();
+  }
 
   if (
     m.route.get() == "/page_calendar" ||

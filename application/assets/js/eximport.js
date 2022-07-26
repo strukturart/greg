@@ -164,27 +164,15 @@ export let parse_ics = function (
         `0${DTstart.getSeconds()}`.slice(-2);
     }
 
-    //multiday event
-    let allDay = false;
+    //allDay event
+    let allDay = "";
 
     if (
       ite.getFirstPropertyValue("dtend") &&
       ite.getFirstPropertyValue("dtstart")
     ) {
-      if (
-        new Date(ite.getFirstPropertyValue("dtend")) >
-        new Date(ite.getFirstPropertyValue("dtstart"))
-      ) {
-        allDay = true;
-      }
-      //all day events have the time 00:00:00 but the start end date consecutive
-      if (
-        new Date(ite.getFirstPropertyValue("dtend")) >
-          new Date(ite.getFirstPropertyValue("dtstart")) &&
-        timeStart == "00:00:00" &&
-        timeEnd == "00:00:00"
-      ) {
-        allDay = false;
+      if (timeStart == timeEnd) {
+        allDay = "allDay";
       }
     }
 
@@ -204,7 +192,7 @@ export let parse_ics = function (
       END: "VEVENT",
 
       isSubscription: subscription,
-      allDay: ite.getFirstPropertyValue("dtstart").isDate,
+      allDay: allDay,
       dateStart: dateStart,
       time_start: timeStart,
       dateEnd: dateEnd,

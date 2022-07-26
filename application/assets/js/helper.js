@@ -3,7 +3,8 @@
 export const get_time = function () {
   let a = new Date();
 
-  time = `0${a.getHours()}`.slice(-2) + ":" + `0${a.getMinutes()}`.slice(-2);
+  let time =
+    `0${a.getHours()}`.slice(-2) + ":" + `0${a.getMinutes()}`.slice(-2);
 
   return time;
 };
