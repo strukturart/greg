@@ -112,7 +112,9 @@ textarea {
 input {
   width: 90%;
   height: 30px;
-  border: 1px solid silver;
+  border: 2px solid silver;
+  -moz-border-radius: 7px;
+  border-radius: 7px;
   padding: 3px;
 }
 
@@ -120,6 +122,7 @@ label {
   width: 100%;
   text-align: center;
   margin: 0 0 10px;
+  font-weight: bold;
   display: block;
 }
 
@@ -593,6 +596,10 @@ div#event-slider article:nth-child(1) {
 
 div#event-slider article h2 {
   background: var(--color-five);
+}
+
+button.save-button {
+  margin: 10px 0 0;
 }
 
 div#options {

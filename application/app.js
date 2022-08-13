@@ -39,15 +39,6 @@ let calendar_names = [
     data: "",
   },
 ];
-/*
-let empty = [];
-localforage
-  .setItem("events", empty)
-  .then(function (value) {})
-  .catch(function (err) {
-    console.log(err);
-  });
-*/
 
 let style_calendar_cell = function () {
   document.querySelectorAll("div.calendar-cell").forEach(function (e) {
@@ -537,7 +528,7 @@ export let status = {
 };
 
 let settings = {
-  default_notification: "",
+  default_notification: "none",
   ads: "",
   timezone: moment.tz.guess(),
 };
@@ -549,11 +540,13 @@ let load_settings = function () {
     .then(function (value) {
       if (value == null) return false;
       settings = value;
+      console.log(value);
     })
     .catch(function (err) {
       console.log(err);
     });
 };
+
 load_settings();
 
 //ads || ads free
@@ -1103,6 +1096,18 @@ let clear_form = function () {
   });
 };
 
+let focus_after_selection = function () {
+  if (document.querySelectorAll(".select-box") == null) return false;
+  document.querySelectorAll(".select-box").forEach(function (e) {
+    e.addEventListener("blur", function (k) {
+      console.log(k.keyCode);
+      setTimeout(function () {
+        e.parentElement.focus();
+      }, 200);
+    });
+  });
+};
+
 /*
 // /////////////////
 // /VIEWS
@@ -1131,7 +1136,7 @@ var page_calendar = {
             id: "time",
             oncreate: function (e) {
               setInterval(function () {
-                document.getElementById("time").innerText = get_time();
+                e.innerText = get_time();
               }, 3600);
             },
           },
@@ -1259,7 +1264,7 @@ var page_events = {
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
                 m("div", { class: "date" }, item.dateStart),
                 m("div", { class: "time" }, item.time_start),
-                m("div", { class: "allDay" }, "all Day"),
+                //m("div", { class: "allDay" }, "all Day"),
 
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
@@ -1285,6 +1290,14 @@ var page_options = {
           class: "item",
           tabindex: "0",
           oncreate: function ({ dom }) {
+            document.querySelectorAll(".select-box").forEach(function (e) {
+              e.addEventListener("keypress", function () {
+                setTimeout(function () {
+                  e.parentElement.focus();
+                }, 200);
+              });
+            });
+
             dom.focus();
           },
         },
@@ -1321,14 +1334,21 @@ var page_options = {
             "select",
             {
               id: "default-notification-time",
+              class: "select-box",
               onchange: function () {
                 store_settings();
               },
               oncreate: function () {
                 load_settings();
                 setTimeout(function () {
-                  document.querySelector("#default-notification-time").value =
-                    settings.default_notification;
+                  focus_after_selection();
+                  if (settings.default_notification == "") {
+                    document.querySelector("#default-notification-time").value =
+                      "none";
+                  } else {
+                    document.querySelector("#default-notification-time").value =
+                      settings.default_notification;
+                  }
                 }, 1000);
               },
             },
@@ -1424,46 +1444,28 @@ var page_options = {
       }),
       m("h2", { class: "ads-title" }, "Ads"),
 
-      m(
-        "div",
-        {
-          id: "KaiOsAds-Wrapper",
-          tabindex: subscriptions.length + accounts.length + 4,
-          class: "flex justify-content-spacearound",
-          oninit: function () {
-            if (settings.ads) {
-              load_ads();
-            } else {
-              document.querySelector("h2.ads-title").remove();
-            }
-          },
-          oncreate: function () {},
-          onfocus: function () {
-            bottom_bar("", "open", "");
-          },
-          onblur: function () {},
-          onkeypress: function (event) {
-            bottom_bar("", "", "");
-            if (event.keyCode == 13) {
-            }
-          },
-        }
-        /*
-        [
-          m("iframe", {
-            oncreate: function () {
-              if (settings.ads == true) {
-                document.querySelector("#KaiOsAds-Wrapper iframe").src =
-                  "./ads.html";
-              } else {
-                document.querySelector("#KaiOsAds-Wrapper").remove();
-                document.querySelector(".ads-title").remove();
-              }
-            },
-          }),
-        ]
-        */
-      ),
+      m("div", {
+        id: "KaiOsAds-Wrapper",
+        tabindex: subscriptions.length + accounts.length + 4,
+        class: "flex justify-content-spacearound",
+        oninit: function () {
+          if (settings.ads) {
+            load_ads();
+          } else {
+            document.querySelector("h2.ads-title").remove();
+          }
+        },
+        oncreate: function () {},
+        onfocus: function () {
+          bottom_bar("", "open", "");
+        },
+        onblur: function () {},
+        onkeypress: function (event) {
+          bottom_bar("", "", "");
+          if (event.keyCode == 13) {
+          }
+        },
+      }),
     ]);
   },
   oncreate: function () {
@@ -1762,6 +1764,7 @@ var page_accounts = {
         {
           class: "item",
           tabindex: "4",
+          class: "save-button",
           onclick: function () {
             store_account();
           },
@@ -1789,7 +1792,6 @@ var page_add_event = {
             oncreate: ({ dom }) =>
               setTimeout(function () {
                 dom.focus();
-                console.log("tz" + moment.tz.guess());
                 settings.timezone = moment.tz.guess();
               }, 500),
           },
@@ -1816,6 +1818,7 @@ var page_add_event = {
             placeholder: "YYYY-MM-DD",
             type: "date",
             id: "event-date",
+            class: "select-box",
             value: status.selected_day,
           }),
         ]),
@@ -1826,28 +1829,27 @@ var page_add_event = {
             placeholder: "YYYY-MM-DD",
             type: "date",
             id: "event-date-end",
+            class: "select-box",
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
           m("input", {
-            placeholder: "hh:mm:ss",
+            placeholder: "hh:mm",
             type: "time",
             id: "event-time-start",
-            value:
-              new Date().getHours() +
-              ":" +
-              new Date().getMinutes() +
-              ":" +
-              new Date().getSeconds(),
+            class: "select-box",
+
+            value: new Date().getHours() + ":" + new Date().getMinutes(),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
           m("input", {
-            placeholder: "hh:mm:ss",
+            placeholder: "hh:mm",
             type: "time",
             id: "event-time-end",
+            class: "select-box",
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -1872,8 +1874,10 @@ var page_add_event = {
               "select",
               {
                 id: "event-notification-time",
+                class: "select-box",
                 oncreate: function () {
                   setTimeout(function () {
+                    console.log(settings.default_notification);
                     document.querySelector("#event-notification-time").value =
                       settings.default_notification;
                   }, 2000);
@@ -1899,7 +1903,7 @@ var page_add_event = {
           },
           [
             m("label", { for: "notification" }, "Recur"),
-            m("select", { id: "event-recur" }, [
+            m("select", { id: "event-recur", class: "select-box" }, [
               m("option", { value: "none" }, "none"),
               m("option", { value: "DAILY" }, "Daily"),
               m("option", { value: "WEEKLY" }, "Weekly"),
@@ -1928,7 +1932,7 @@ var page_add_event = {
           },
           [
             m("label", { for: "notification" }, "Calendars"),
-            m("select", { id: "event-calendar" }, [
+            m("select", { id: "event-calendar", class: "select-box" }, [
               calendar_names.map(function (item, index) {
                 return m(
                   "option",
@@ -1948,7 +1952,10 @@ var page_add_event = {
           {
             tabindex: "10",
             id: "save-event",
-            class: "item",
+            class: "item save-button",
+            oncreate: function () {
+              focus_after_selection();
+            },
             onclick: function () {
               let n = document.getElementById("event-calendar");
               store_event(
@@ -2011,6 +2018,8 @@ var page_edit_event = {
             placeholder: "YYYY-MM-DD",
             type: "date",
             id: "event-date",
+            class: "select-box",
+
             value: update_event_date.dateStart,
           }),
         ]),
@@ -2021,6 +2030,8 @@ var page_edit_event = {
             placeholder: "YYYY-MM-DD",
             type: "date",
             id: "event-date-end",
+            class: "select-box",
+
             value: update_event_date.dateEnd,
           }),
         ]),
@@ -2030,6 +2041,8 @@ var page_edit_event = {
             placeholder: "hh:mm:ss",
             type: "time",
             id: "event-time-start",
+            class: "select-box",
+
             value: update_event_date.time_start,
           }),
         ]),
@@ -2039,6 +2052,8 @@ var page_edit_event = {
             placeholder: "hh:mm:ss",
             type: "time",
             id: "event-time-end",
+            class: "select-box",
+
             value: update_event_date.time_end,
           }),
         ]),
@@ -2048,6 +2063,7 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-description",
+
             value: update_event_date.DESCRIPTION,
           }),
         ]),
@@ -2065,6 +2081,7 @@ var page_edit_event = {
               "select",
               {
                 id: "event-notification-time",
+                class: "select-box",
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2092,7 +2109,11 @@ var page_edit_event = {
             m("label", { for: "notification" }, "Recur"),
             m(
               "select",
-              { id: "event-recur", value: update_event_date.rrule_ },
+              {
+                id: "event-recur",
+                value: update_event_date.rrule_,
+                class: "select-box",
+              },
               [
                 m("option", { value: "none" }, "none"),
                 m("option", { value: "DAILY" }, "Daily"),
@@ -2122,7 +2143,6 @@ var page_edit_event = {
             id: "delete-event",
             class: "item",
             onclick: function () {
-              console.log(update_event_date);
               delete_event(
                 update_event_date.etag,
                 update_event_date.url,
@@ -2139,7 +2159,10 @@ var page_edit_event = {
           {
             tabindex: "10",
             id: "save-event",
-            class: "item",
+            class: "item save-button",
+            oncreate: () => {
+              focus_after_selection();
+            },
             onclick: function () {
               update_event(update_event_date.id);
             },
