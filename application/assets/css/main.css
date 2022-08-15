@@ -49,6 +49,8 @@
 html,
 body {
   font-family: "Lato-Regular";
+  font-family: "Roboto", sans-serif;
+
   font-weight: 100;
   position: relative;
   margin: 0px;
@@ -109,23 +111,21 @@ button:focus {
 select {
   width: 90%;
   padding: 10px;
-  margin: 10px 5% 0px 5%;
 
-  /* styling */
-  background-color: white;
-  border: thin solid rgb(56, 56, 66);
-  border-radius: 4px;
-  font: inherit;
-  line-height: 1.5em;
-  text-align: center;
-
-  /* reset */
-
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
   -webkit-appearance: none;
   -moz-appearance: none;
+  appearance: none;
+  background: none;
+  color: rgb(54, 54, 54);
+  width: 90%;
+
+  outline: 0;
+  border: 0;
+  border-bottom: 2px solid rgb(63, 63, 63);
+  margin: 0 5% 0 5%;
+  text-align: center;
+  position: relative;
+  background: #fafafa url("../image/E264.svg") no-repeat 99% 80%;
 }
 
 textarea {
@@ -140,7 +140,7 @@ input {
   height: 30px;
   padding: 3px;
   border: 2px solid silver;
-  border-radius: 7px;
+  border-radius: 6px;
 }
 
 label {
@@ -153,10 +153,12 @@ label {
 .input-parent {
   padding: 10px;
   margin: 0 0 20px 0;
+  width: 100%;
 }
 
 .input-parent:focus {
   background: orange;
+  width: 100%;
 }
 div#intro {
   position: fixed;
@@ -466,6 +468,7 @@ div#add-edit-event {
   z-index: 2;
   top: 0;
   height: 92vh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -625,7 +628,19 @@ div#event-slider article h2 {
 }
 
 button.save-button {
-  margin: 10px 0 0 0;
+  margin: 30px 0 10px 0 !important;
+  background: red;
+  color: white;
+  outline: none;
+  border: none;
+}
+
+button.save-button:focus {
+  margin: 30px 0 10px 0 !important;
+  background: orange;
+  color: black;
+  outline: none;
+  border: none;
 }
 
 /*options view*/

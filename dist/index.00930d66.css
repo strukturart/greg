@@ -45,7 +45,7 @@ html, body {
   background: #fff;
   margin: 0;
   padding: 0;
-  font-family: Lato-Regular;
+  font-family: Roboto, sans-serif;
   font-size: 1rem;
   font-weight: 100;
   line-height: 1.4rem;
@@ -85,17 +85,17 @@ button:focus {
 
 select {
   width: 90%;
-  font: inherit;
+  appearance: none;
+  color: #363636;
+  width: 90%;
   text-align: center;
-  box-sizing: border-box;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: #fff;
-  border: thin solid #383842;
-  border-radius: 4px;
-  margin: 10px 5% 0;
+  background: #fafafa url("E264.bce0b63c.svg") 99% 80% no-repeat;
+  border: 0;
+  border-bottom: 2px solid #3f3f3f;
+  outline: 0;
+  margin: 0 5%;
   padding: 10px;
-  line-height: 1.5em;
+  position: relative;
 }
 
 textarea {
@@ -109,7 +109,7 @@ input {
   width: 90%;
   height: 30px;
   border: 2px solid silver;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 3px;
 }
 
@@ -122,11 +122,13 @@ label {
 }
 
 .input-parent {
+  width: 100%;
   margin: 0 0 20px;
   padding: 10px;
 }
 
 .input-parent:focus {
+  width: 100%;
   background: orange;
 }
 
@@ -433,6 +435,7 @@ span.weeknumber {
 div#add-edit-event {
   z-index: 2;
   height: 92vh;
+  width: 100%;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -587,7 +590,19 @@ div#event-slider article h2 {
 }
 
 button.save-button {
-  margin: 10px 0 0;
+  color: #fff;
+  background: red;
+  border: none;
+  outline: none;
+  margin: 30px 0 10px !important;
+}
+
+button.save-button:focus {
+  color: #000;
+  background: orange;
+  border: none;
+  outline: none;
+  margin: 30px 0 10px !important;
 }
 
 div#options {
