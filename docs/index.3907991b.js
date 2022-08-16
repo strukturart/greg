@@ -868,7 +868,7 @@ let load_subscriptions = function() {
     for(let i = 0; i < subscriptions.length; i++)(0, _eximportJs.fetch_ics)(subscriptions[i].url, "", subscriptions[i].id);
     setTimeout(()=>{
         jump_to_today();
-        (0, _helperJs.sort_array)(events, "dateStart", "date");
+        (0, _helperJs.sort_array)(events, "DTSTART", "date");
     }, 1000);
     event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
@@ -987,7 +987,9 @@ getManifest(manifest); // ////////
 // finde closest event to selected date in list view
 // ////////
 let find_closest_date = function(search_term) {
-    let search = new Date(status.selected_day).getTime(); //equal
+    let search = new Date(status.selected_day).getTime();
+    if (events == "") document.getElementById("events-wrapper").innerHTML = "you haven't made any calendar entries yet";
+    if (events == "") return false; //equal
     for(let i = 0; i < events.length; i++){
         let item = new Date(events[i].dateStart).getTime();
         if (search == item) {
@@ -1161,13 +1163,16 @@ let event_slider = function(date) {
             }
         }
     }
-    if (slider != "") {
+    if (slider.length != "") {
         slider.forEach(function(item) {
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article>" + item.SUMMARY + "</article>");
         });
         if (slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if (slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
     }
+    if (document.querySelectorAll("div.indicator").length <= 1 || document.querySelectorAll("div.indicator").length == undefined) document.getElementById("event-slider-indicator").style.opacity = 0;
+    else document.getElementById("event-slider-indicator").style.opacity = 1;
+    console.log(document.querySelectorAll("div.indicator").length);
 }; ////
 // JUMP TO TODAY
 ////
@@ -1319,10 +1324,10 @@ var page_calendar = {
                     id: "time",
                     oncreate: function(e) {
                         setInterval(function() {
-                            e.innerText = (0, _helperJs.get_time)();
+                            document.getElementById("time").innerText = (0, _helperJs.get_time)();
                         }, 3600);
                     }
-                }, "")
+                }, "time is relative")
             ]),
             (0, _mithrilDefault.default)("div", {
                 class: "calendar-head flex width-100"
@@ -1339,6 +1344,14 @@ var page_calendar = {
                 id: "calendar-body"
             }),
             (0, _mithrilDefault.default)("div", {
+                id: "event-slider-indicator",
+                class: "flex width-100 justify-content-spacearound"
+            }, [
+                (0, _mithrilDefault.default)("div", {
+                    class: "flex justify-content-spacearound"
+                })
+            ]),
+            (0, _mithrilDefault.default)("div", {
                 id: "event-slider",
                 class: "flex"
             }, [
@@ -1346,21 +1359,13 @@ var page_calendar = {
                     id: "slider-inner",
                     class: "flex"
                 })
-            ]),
-            (0, _mithrilDefault.default)("div", {
-                id: "event-slider-indicator",
-                class: "flex width-100 justify-content-spacearound"
-            }, [
-                (0, _mithrilDefault.default)("div", {
-                    class: "flex justify-content-spacearound"
-                })
             ])
         ]);
     },
     oncreate: ({ dom  })=>setTimeout(function() {
             dom.focus();
             if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            (0, _helperJs.bottom_bar)("add", "events", "options");
+            (0, _helperJs.bottom_bar)("<img src='assets/image/add.svg'>", "<img src='assets/image/list.svg'>", "<img src='assets/image/option.svg'>");
             if (status.selected_day != "") {
                 let t3 = new Date(status.selected_day);
                 currentMonth = t3.getMonth();
@@ -1375,7 +1380,6 @@ var page_calendar = {
             });
             showCalendar(currentMonth, currentYear);
             if (document.activeElement.hasAttribute("data-date")) status.selected_day = document.activeElement.getAttribute("data-date");
-            (0, _helperJs.bottom_bar)("add", "events", "options");
             let t4 = new Date(status.selected_day);
             currentMonth = t4.getMonth();
             currentYear = t4.getFullYear();
@@ -1393,13 +1397,14 @@ var page_events = {
     view: function(vnode) {
         return (0, _mithrilDefault.default)("div", {
             id: "events-wrapper",
-            oncreate: ()=>setTimeout(function() {
+            oncreate: function() {
+                (0, _helperJs.bottom_bar)("<img src='assets/image/pencil.svg'>", "<img src='assets/image/calendar.svg'>", "");
+                setTimeout(function() {
                     find_closest_date();
-                    (0, _helperJs.bottom_bar)("edit", "calendar", "");
-                }, 1500)
+                }, 1500);
+            }
         }, [
             events.map(function(item, index) {
-                (0, _helperJs.bottom_bar)("edit", "calendar", "");
                 return (0, _mithrilDefault.default)("article", {
                     class: "item events " + item.isSubscription,
                     tabindex: index,
@@ -1449,6 +1454,7 @@ var page_options = {
                 class: "item",
                 tabindex: "0",
                 oncreate: function({ dom  }) {
+                    (0, _helperJs.bottom_bar)("", "", "");
                     document.querySelectorAll(".select-box").forEach(function(e) {
                         e.addEventListener("keypress", function() {
                             setTimeout(function() {
@@ -1553,9 +1559,7 @@ var page_options = {
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
                     },
-                    onfocus: function() {
-                        (0, _helperJs.bottom_bar)("delete", "", "");
-                    }
+                    onfocus: function() {}
                 }, item.name);
             }),
             (0, _mithrilDefault.default)("h2", "Accounts"),
@@ -1579,7 +1583,7 @@ var page_options = {
                         (0, _helperJs.bottom_bar)("", "", "");
                     },
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("delete", "", "edit");
+                        (0, _helperJs.bottom_bar)("delete", "", "<img src='assets/image/pencil.svg'>");
                     }
                 }, item.name);
             }),
@@ -1596,7 +1600,7 @@ var page_options = {
                 },
                 oncreate: function() {},
                 onfocus: function() {
-                    (0, _helperJs.bottom_bar)("", "open", "");
+                    (0, _helperJs.bottom_bar)("", "<img src='assets/image/eye.svg'>", "");
                 },
                 onblur: function() {},
                 onkeypress: function(event) {
@@ -1647,7 +1651,7 @@ var page_subscriptions = {
                     id: "cal-subs-url",
                     "data-scan-action": "true",
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1655,7 +1659,7 @@ var page_subscriptions = {
                 })
             ]),
             (0, _mithrilDefault.default)("button", {
-                class: "item",
+                class: "item save-button",
                 tabindex: "2",
                 onclick: function() {
                     store_subscription();
@@ -1705,7 +1709,7 @@ var page_edit_account = {
                     "data-scan-action": "true",
                     value: update_account.server_url,
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1729,7 +1733,7 @@ var page_edit_account = {
                     value: update_account.user,
                     "data-scan-action": "true",
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1753,7 +1757,7 @@ var page_edit_account = {
                     "data-scan-action": "true",
                     value: update_account.password,
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1761,7 +1765,7 @@ var page_edit_account = {
                 })
             ]),
             (0, _mithrilDefault.default)("button", {
-                class: "item",
+                class: "item save-button",
                 tabindex: "4",
                 onclick: function() {
                     store_account(true, status.edit_account_id);
@@ -1807,7 +1811,7 @@ var page_accounts = {
                     id: "account-url",
                     "data-scan-action": "true",
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1830,7 +1834,7 @@ var page_accounts = {
                     id: "account-username",
                     "data-scan-action": "true",
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1853,7 +1857,7 @@ var page_accounts = {
                     id: "account-password",
                     "data-scan-action": "true",
                     onfocus: function() {
-                        (0, _helperJs.bottom_bar)("qr-scan", "", "");
+                        (0, _helperJs.bottom_bar)("<img src='assets/image/E1D8.svg'>", "", "");
                     },
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
@@ -1880,10 +1884,13 @@ var page_add_event = {
             (0, _mithrilDefault.default)("div", {
                 class: "item input-parent",
                 tabindex: 0,
-                oncreate: ({ dom  })=>setTimeout(function() {
+                oncreate: function({ dom  }) {
+                    setTimeout(function() {
                         dom.focus();
+                        (0, _helperJs.bottom_bar)("", "", "");
                         settings.timezone = moment.tz.guess();
-                    }, 500)
+                    }, 500);
+                }
             }, [
                 (0, _mithrilDefault.default)("label", {
                     for: "event-title"
@@ -1965,7 +1972,8 @@ var page_add_event = {
                     placeholder: "hh:mm",
                     type: "time",
                     id: "event-time-end",
-                    class: "select-box"
+                    class: "select-box",
+                    value: new Date().getHours() + 1 + ":" + new Date().getMinutes()
                 })
             ]),
             (0, _mithrilDefault.default)("div", {
@@ -2022,7 +2030,7 @@ var page_add_event = {
                 tabindex: "8"
             }, [
                 (0, _mithrilDefault.default)("label", {
-                    for: "notification"
+                    for: "event-recur"
                 }, "Recur"),
                 (0, _mithrilDefault.default)("select", {
                     id: "event-recur",
@@ -2045,16 +2053,7 @@ var page_add_event = {
                     }, "Yearly")
                 ])
             ]),
-            /*
-    m(
-      "button",
-      { class: "item", tabindex: "", id: "select-image", tabindex: "9" },
-      "add image"
-    ),
-    m("div", { id: "form-image-wrapper" }, [
-      m("img", { id: "form-image", "data-blob": "" }),
-    ]),
-    */ (0, _mithrilDefault.default)("div", {
+            (0, _mithrilDefault.default)("div", {
                 class: "item input-parent",
                 id: "event-calendar-wrapper",
                 tabindex: "9"
@@ -2100,9 +2099,12 @@ var page_edit_event = {
             (0, _mithrilDefault.default)("div", {
                 class: "item input-parent",
                 tabindex: 0,
-                oncreate: ({ dom  })=>setTimeout(function() {
+                oncreate: function({ dom  }) {
+                    setTimeout(function() {
                         dom.focus();
-                    }, 500)
+                        (0, _helperJs.bottom_bar)("", "", "");
+                    }, 500);
+                }
             }, [
                 (0, _mithrilDefault.default)("label", {
                     for: "event-title"
@@ -2240,7 +2242,7 @@ var page_edit_event = {
                 }
             }, [
                 (0, _mithrilDefault.default)("label", {
-                    for: "notification"
+                    for: "event-recur"
                 }, "Recur"),
                 (0, _mithrilDefault.default)("select", {
                     id: "event-recur",
@@ -2264,18 +2266,7 @@ var page_edit_event = {
                     }, "Yearly")
                 ])
             ]),
-            /*
-    m(
-      "button",
-      { class: "item", tabindex: "", id: "select-image", tabindex: "9" },
-      "add image"
-    ),
-    m("div", { id: "form-image-wrapper" }, [
-      m("img", {
-        id: "form-image",
-        "src": update_event_date.ATTACH,
-      }),
-    ]),*/ (0, _mithrilDefault.default)("button", {
+            (0, _mithrilDefault.default)("button", {
                 tabindex: "9",
                 id: "delete-event",
                 class: "item",
@@ -2407,7 +2398,7 @@ let delete_account = function() {
 }; //load indexedDB
 (0, _localforageDefault.default).getItem("events").then(function(value) {
     if (value != null) events = value;
-    (0, _helperJs.sort_array)(events, "dateStart", "date");
+    (0, _helperJs.sort_array)(events, "DTSTART", "date");
 }).catch(function(err) {});
 (0, _localforageDefault.default).getItem("subscriptions").then(function(value) {
     subscriptions = value;
@@ -2602,14 +2593,13 @@ let store_event = function(db_id, cal_name) {
         events.push(event);
         console.log(JSON.stringify(events));
         let without_subscription = events.filter((events1)=>events1.id == "local-id");
-        console.log(JSON.stringify(without_subscription));
         (0, _localforageDefault.default).setItem("events", without_subscription).then(function(value) {
             clear_form();
             (0, _eximportJs.export_ical)("greg.ics", without_subscription);
             (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
             setTimeout(function() {
                 (0, _mithrilDefault.default).route.set("/page_calendar");
-                (0, _helperJs.sort_array)(events, "dateStart", "date");
+                (0, _helperJs.sort_array)(events, "DTSTART", "date");
             }, 200);
         }).catch(function(err) {
             console.log(err);
@@ -2691,13 +2681,14 @@ let update_event = function(account_id) {
                 (0, _localforageDefault.default).setItem("events", without_subscription).then(function(value) {
                     // clean form
                     (0, _helperJs.side_toaster)("<img src='assets/image/E25C.svg'", 2000);
-                    (0, _mithrilDefault.default).route.set("/page_calendar");
+                    (0, _mithrilDefault.default).route.set("/page_events");
                     (0, _eximportJs.export_ical)("greg.ics", value);
                     clear_form();
                 }).catch(function(err) {});
             } else update_caldav(index.etag, index.url, "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + settings.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + settings.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + settings.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR", index.id);
         }
     });
+    (0, _helperJs.sort_array)(events, "DTSTART", "date");
 }; //////////////
 //DELETE EVENT
 ///////////
@@ -2724,8 +2715,6 @@ let mm = `0${t.getMonth() + 1}`.slice(-2);
 let d = `0${t.getDate()}`.slice(-2);
 let y = t.getFullYear(); // callback import event
 let import_event_callback = function(id, date) {
-    (0, _helperJs.toaster)("done", 2000);
-    (0, _helperJs.bottom_bar)("edit", "", "");
     let without_subscription = events.filter((events3)=>events3.isSubscription === false);
     (0, _localforageDefault.default).setItem("events", without_subscription).then(function(value) {
         (0, _eximportJs.export_ical)("greg.ics", without_subscription);
@@ -2892,7 +2881,11 @@ function shortpress_action(param) {
                 blob = "";
                 return true;
             } //toggle month/events
-            if ((0, _mithrilDefault.default).route.get() == "/page_calendar" || (0, _mithrilDefault.default).route.get() == "/page_events") (0, _mithrilDefault.default).route.get() == "/page_calendar" ? (0, _mithrilDefault.default).route.set("/page_events") : (0, _mithrilDefault.default).route.set("/page_calendar");
+            if ((0, _mithrilDefault.default).route.get() == "/page_edit_event") return false;
+            if (events == "") (0, _helperJs.side_toaster)("There are no calendar entries to display", 3000);
+            if (events != "") {
+                if ((0, _mithrilDefault.default).route.get() == "/page_calendar" || (0, _mithrilDefault.default).route.get() == "/page_events") (0, _mithrilDefault.default).route.get() == "/page_calendar" ? (0, _mithrilDefault.default).route.set("/page_events") : (0, _mithrilDefault.default).route.set("/page_calendar");
+            }
             break;
         case "Backspace":
             if ((0, _mithrilDefault.default).route.get() == "/page_add_event" && document.activeElement.tagName != "INPUT") (0, _mithrilDefault.default).route.set("/page_calendar");
@@ -2909,8 +2902,7 @@ function shortpress_action(param) {
 // //shortpress / longpress logic
 // //////////////////////////////
 function handleKeyDown(evt) {
-    //option_button_bar();
-    if (evt.key === "Backspace") evt.preventDefault();
+    if (evt.key === "Backspace" && (0, _mithrilDefault.default).route.get() != "/page_calendar") evt.preventDefault();
     if (evt.key === "EndCall") {
         evt.preventDefault();
         window.close();
@@ -5306,9 +5298,10 @@ let toast_qq = function(text, time) {
     }, time);
 }; //bottom bar
 let bottom_bar = function(left, center, right) {
-    document.querySelector("div#bottom-bar div#button-left").textContent = left;
-    document.querySelector("div#bottom-bar div#button-center").textContent = center;
-    document.querySelector("div#bottom-bar div#button-right").textContent = right;
+    console.log(right);
+    document.querySelector("div#bottom-bar div#button-left").innerHTML = left;
+    document.querySelector("div#bottom-bar div#button-center").innerHTML = center;
+    document.querySelector("div#bottom-bar div#button-right").innerHTML = right;
     if (left == "" && center == "" && right == "") document.querySelector("div#bottom-bar").style.display = "none";
     else document.querySelector("div#bottom-bar").style.display = "block";
 }; //top bar
@@ -40269,8 +40262,8 @@ Object.defineProperty(Duplex.prototype, "destroyed", {
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Writable;
 /* <replacement> */ function WriteReq(chunk, encoding, cb) {
     this.chunk = chunk;

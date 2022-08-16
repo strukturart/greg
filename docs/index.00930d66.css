@@ -45,7 +45,7 @@ html, body {
   background: #fff;
   margin: 0;
   padding: 0;
-  font-family: Roboto, sans-serif;
+  font-family: Lato-Regular;
   font-size: 1rem;
   font-weight: 100;
   line-height: 1.4rem;
@@ -87,12 +87,15 @@ select {
   width: 90%;
   appearance: none;
   color: #363636;
-  width: 100%;
-  background: none;
+  width: 90%;
+  text-align: center;
+  background: #fafafa url("E264.bce0b63c.svg") 99% 80% no-repeat;
   border: 0;
-  border-bottom: 2px solid #000;
+  border-bottom: 2px solid #3f3f3f;
   outline: 0;
+  margin: 0 5%;
   padding: 10px;
+  position: relative;
 }
 
 textarea {
@@ -106,7 +109,7 @@ input {
   width: 90%;
   height: 30px;
   border: 2px solid silver;
-  border-radius: 7px;
+  border-radius: 6px;
   padding: 3px;
 }
 
@@ -119,11 +122,13 @@ label {
 }
 
 .input-parent {
+  width: 100%;
   margin: 0 0 20px;
-  padding: 10px;
+  padding: 15px;
 }
 
 .input-parent:focus {
+  width: 100%;
   background: orange;
 }
 
@@ -430,6 +435,7 @@ span.weeknumber {
 div#add-edit-event {
   z-index: 2;
   height: 92vh;
+  width: 100%;
   position: absolute;
   top: 0;
   overflow: hidden;
@@ -530,8 +536,8 @@ div#event-slider div.icons-bar img {
 }
 
 div#event-slider-indicator div div {
-  height: 10px;
-  width: 10px;
+  height: 5px;
+  width: 5px;
   background: #797070;
   border-radius: 50%;
   margin: 0 5px 0 0;
@@ -585,10 +591,11 @@ div#event-slider article h2 {
 
 button.save-button {
   color: #fff;
-  background: red;
+  width: 90%;
+  background: #000;
   border: none;
   outline: none;
-  margin: 30px 0 10px !important;
+  margin: 30px 5% !important;
 }
 
 button.save-button:focus {
@@ -596,7 +603,6 @@ button.save-button:focus {
   background: orange;
   border: none;
   outline: none;
-  margin: 30px 0 10px !important;
 }
 
 div#options {
@@ -674,7 +680,8 @@ div#options li span.keys-current-day {
 
 div#subscription-form {
   z-index: 4;
-  height: 92vh;
+  height: 100vh;
+  width: 100vw;
   padding: 10px 0 0;
   position: absolute;
   top: 0;
@@ -686,7 +693,7 @@ div#bottom-bar {
   height: 18px;
   z-index: 6;
   min-width: 100vw;
-  background: #000;
+  background: none;
   position: fixed;
   bottom: 10px;
   left: 0;
@@ -699,7 +706,7 @@ div#bottom-bar div#inner {
 div#bottom-bar div {
   color: #fff;
   text-align: center;
-  background: #000;
+  background: none;
   padding: 2px;
   font-size: .8rem;
 }
@@ -708,8 +715,15 @@ div#bottom-bar div#button-center {
   color: #fff;
   width: 32%;
   text-align: center;
-  background: #000;
+  background: none;
   padding: 2px;
+}
+
+div#bottom-bar div#button-center img {
+  width: 25px;
+  position: fixed;
+  bottom: 5px;
+  left: 46%;
 }
 
 div#bottom-bar div#button-left {
@@ -717,15 +731,29 @@ div#bottom-bar div#button-left {
   width: 32%;
   text-align: left;
   width: 32%;
-  background: #000;
+  background: none;
   padding: 2px;
+}
+
+div#bottom-bar div#button-left img {
+  width: 25px;
+  position: fixed;
+  bottom: 5px;
+  left: 10px;
+}
+
+div#bottom-bar div#button-right img {
+  width: 25px;
+  position: fixed;
+  bottom: 5px;
+  right: 10px;
 }
 
 div#bottom-bar div#button-right {
   color: #fff;
   width: 32%;
   text-align: right;
-  background: #000;
+  background: none;
   padding: 2px;
 }
 
@@ -810,6 +838,10 @@ div#settings label {
   min-width: 80%;
   height: 30px;
   margin: 5px 5px 0 0;
+}
+
+div#time {
+  font-size: .8rem;
 }
 
 @keyframes jump {

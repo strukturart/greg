@@ -464,7 +464,7 @@ let load_subscriptions = function () {
   }
   setTimeout(() => {
     jump_to_today();
-    sort_array(events, "dateStart", "date");
+    sort_array(events, "DTSTART", "date");
   }, 1000);
 
   event_slider(document.activeElement.getAttribute("data-date"));
@@ -623,6 +623,11 @@ getManifest(manifest);
 
 let find_closest_date = function (search_term) {
   let search = new Date(status.selected_day).getTime();
+  if (events == "") {
+    document.getElementById("events-wrapper").innerHTML =
+      "you haven't made any calendar entries yet";
+  }
+  if (events == "") return false;
   //equal
   for (let i = 0; i < events.length; i++) {
     let item = new Date(events[i].dateStart).getTime();
@@ -823,6 +828,8 @@ let event_slider = function (date) {
 
   document.querySelector("div#event-slider").innerHTML = "";
 
+
+
   for (let i = 0; i < events.length; i++) {
     let a = new Date(events[i].dateStart).getTime();
     let b = new Date(events[i].dateEnd).getTime();
@@ -889,7 +896,9 @@ let event_slider = function (date) {
     }
   }
 
-  if (slider != "") {
+
+  
+  if (slider.length !="") {
     slider.forEach(function (item) {
       document
         .querySelector("div#event-slider")
@@ -909,6 +918,13 @@ let event_slider = function (date) {
       )[0].style.classList.add = "active";
     }
   }
+
+  if (document.querySelectorAll("div.indicator").length <= 1 || document.querySelectorAll("div.indicator").length == undefined)
+  {document.getElementById("event-slider-indicator").style.opacity=0 }
+  else{document.getElementById("event-slider-indicator").style.opacity=1 }
+
+    console.log(document.querySelectorAll("div.indicator").length)
+
 };
 
 ////
@@ -1136,11 +1152,11 @@ var page_calendar = {
             id: "time",
             oncreate: function (e) {
               setInterval(function () {
-                e.innerText = get_time();
+                document.getElementById("time").innerText = get_time();
               }, 3600);
             },
           },
-          ""
+          "time is relative"
         ),
       ]),
 
@@ -1160,6 +1176,14 @@ var page_calendar = {
         ]
       ),
       m("div", { id: "calendar-body" }),
+           m(
+        "div",
+        {
+          id: "event-slider-indicator",
+          class: "flex width-100 justify-content-spacearound",
+        },
+        [m("div", { class: "flex justify-content-spacearound" })]
+      ),
       m(
         "div",
         {
@@ -1169,14 +1193,7 @@ var page_calendar = {
         [m("div", { id: "slider-inner", class: "flex" })]
       ),
 
-      m(
-        "div",
-        {
-          id: "event-slider-indicator",
-          class: "flex width-100 justify-content-spacearound",
-        },
-        [m("div", { class: "flex justify-content-spacearound" })]
-      ),
+ 
     ]);
   },
   oncreate: ({ dom }) =>
@@ -1185,7 +1202,11 @@ var page_calendar = {
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
 
-      bottom_bar("add", "events", "options");
+      bottom_bar(
+        "<img src='assets/image/add.svg'>",
+        "<img src='assets/image/list.svg'>",
+        "<img src='assets/image/option.svg'>"
+      );
       if (status.selected_day != "") {
         let t = new Date(status.selected_day);
         currentMonth = t.getMonth();
@@ -1207,8 +1228,6 @@ var page_calendar = {
 
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
-
-      bottom_bar("add", "events", "options");
 
       let t = new Date(status.selected_day);
       currentMonth = t.getMonth();
@@ -1235,15 +1254,19 @@ var page_events = {
       "div",
       {
         id: "events-wrapper",
-        oncreate: () =>
+        oncreate: function () {
+          bottom_bar(
+            "<img src='assets/image/pencil.svg'>",
+            "<img src='assets/image/calendar.svg'>",
+            ""
+          );
           setTimeout(function () {
             find_closest_date();
-            bottom_bar("edit", "calendar", "");
-          }, 1500),
+          }, 1500);
+        },
       },
       [
         events.map(function (item, index) {
-          bottom_bar("edit", "calendar", "");
 
           return m(
             "article",
@@ -1290,6 +1313,8 @@ var page_options = {
           class: "item",
           tabindex: "0",
           oncreate: function ({ dom }) {
+            bottom_bar("", "", "");
+
             document.querySelectorAll(".select-box").forEach(function (e) {
               e.addEventListener("keypress", function () {
                 setTimeout(function () {
@@ -1401,7 +1426,6 @@ var page_options = {
               bottom_bar("", "", "");
             },
             onfocus: function () {
-              bottom_bar("delete", "", "");
             },
           },
           item.name
@@ -1436,7 +1460,8 @@ var page_options = {
               bottom_bar("", "", "");
             },
             onfocus: function () {
-              bottom_bar("delete", "", "edit");
+              bottom_bar("delete", "","<img src='assets/image/pencil.svg'>",
+);
             },
           },
           item.name
@@ -1457,7 +1482,7 @@ var page_options = {
         },
         oncreate: function () {},
         onfocus: function () {
-          bottom_bar("", "open", "");
+          bottom_bar("","<img src='assets/image/eye.svg'>", "");
         },
         onblur: function () {},
         onkeypress: function (event) {
@@ -1512,7 +1537,7 @@ var page_subscriptions = {
             id: "cal-subs-url",
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1523,7 +1548,7 @@ var page_subscriptions = {
       m(
         "button",
         {
-          class: "item",
+          class: "item save-button",
           tabindex: "2",
           onclick: function () {
             store_subscription();
@@ -1581,7 +1606,7 @@ var page_edit_account = {
             value: update_account.server_url,
 
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1609,7 +1634,7 @@ var page_edit_account = {
 
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1637,7 +1662,7 @@ var page_edit_account = {
             value: update_account.password,
 
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1648,7 +1673,7 @@ var page_edit_account = {
       m(
         "button",
         {
-          class: "item",
+          class: "item save-button",
           tabindex: "4",
           onclick: function () {
             store_account(true, status.edit_account_id);
@@ -1699,7 +1724,7 @@ var page_accounts = {
             id: "account-url",
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1725,7 +1750,7 @@ var page_accounts = {
             id: "account-username",
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1751,7 +1776,7 @@ var page_accounts = {
             id: "account-password",
             "data-scan-action": "true",
             onfocus: function () {
-              bottom_bar("qr-scan", "", "");
+              bottom_bar("<img src='assets/image/E1D8.svg'>", "", "");
             },
             onblur: function () {
               bottom_bar("", "", "");
@@ -1789,11 +1814,17 @@ var page_add_event = {
           {
             class: "item input-parent",
             tabindex: 0,
-            oncreate: ({ dom }) =>
+
+            oncreate: function ({ dom }) {
               setTimeout(function () {
-                dom.focus();
-                settings.timezone = moment.tz.guess();
-              }, 500),
+                dom.focus()
+                bottom_bar("", "", "")
+                  settings.timezone = moment.tz.guess();
+              }, 500)
+              
+            }
+
+            
           },
           [
             m("label", { for: "event-title" }, "title"),
@@ -1850,6 +1881,10 @@ var page_add_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
+
+        
+
+             value: new Date().getHours()+1 + ":" + new Date().getMinutes(),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -1902,7 +1937,7 @@ var page_add_event = {
             tabindex: "8",
           },
           [
-            m("label", { for: "notification" }, "Recur"),
+            m("label", { for: "event-recur" }, "Recur"),
             m("select", { id: "event-recur", class: "select-box" }, [
               m("option", { value: "none" }, "none"),
               m("option", { value: "DAILY" }, "Daily"),
@@ -1912,16 +1947,7 @@ var page_add_event = {
             ]),
           ]
         ),
-        /*
-        m(
-          "button",
-          { class: "item", tabindex: "", id: "select-image", tabindex: "9" },
-          "add image"
-        ),
-        m("div", { id: "form-image-wrapper" }, [
-          m("img", { id: "form-image", "data-blob": "" }),
-        ]),
-        */
+  
 
         m(
           "div",
@@ -1987,10 +2013,14 @@ var page_edit_event = {
           {
             class: "item input-parent",
             tabindex: 0,
-            oncreate: ({ dom }) =>
+            oncreate: function ({ dom }) {
               setTimeout(function () {
-                dom.focus();
-              }, 500),
+                dom.focus()
+                bottom_bar("","","")
+              
+              }, 500)
+              
+            }
           },
           [
             m("label", { for: "event-title" }, "title"),
@@ -2106,7 +2136,8 @@ var page_edit_event = {
             },
           },
           [
-            m("label", { for: "notification" }, "Recur"),
+            m("label", { for: "event-recur" }, "Recur"),
+
             m(
               "select",
               {
@@ -2124,18 +2155,7 @@ var page_edit_event = {
             ),
           ]
         ),
-        /*
-        m(
-          "button",
-          { class: "item", tabindex: "", id: "select-image", tabindex: "9" },
-          "add image"
-        ),
-        m("div", { id: "form-image-wrapper" }, [
-          m("img", {
-            id: "form-image",
-            "src": update_event_date.ATTACH,
-          }),
-        ]),*/
+   
         m(
           "button",
           {
@@ -2348,7 +2368,7 @@ localforage
   .getItem("events")
   .then(function (value) {
     if (value != null) events = value;
-    sort_array(events, "dateStart", "date");
+    sort_array(events, "DTSTART", "date");
   })
   .catch(function (err) {});
 
@@ -2655,8 +2675,6 @@ let store_event = function (db_id, cal_name) {
       (events) => events.id == "local-id"
     );
 
-    console.log(JSON.stringify(without_subscription));
-
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
@@ -2665,7 +2683,7 @@ let store_event = function (db_id, cal_name) {
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
-          sort_array(events, "dateStart", "date");
+          sort_array(events, "DTSTART", "date");
         }, 200);
       })
       .catch(function (err) {
@@ -2817,7 +2835,7 @@ let update_event = function (account_id) {
           .then(function (value) {
             // clean form
             side_toaster("<img src='assets/image/E25C.svg'", 2000);
-            m.route.set("/page_calendar");
+            m.route.set("/page_events");
             export_ical("greg.ics", value);
 
             clear_form();
@@ -2855,6 +2873,8 @@ let update_event = function (account_id) {
       }
     }
   });
+  sort_array(events, "DTSTART", "date");
+
 };
 
 //////////////
@@ -2898,8 +2918,6 @@ let y = t.getFullYear();
 
 // callback import event
 let import_event_callback = function (id, date) {
-  toaster("done", 2000);
-  bottom_bar("edit", "", "");
 
   let without_subscription = events.filter(
     (events) => events.isSubscription === false
@@ -3186,13 +3204,20 @@ function shortpress_action(param) {
       }
 
       //toggle month/events
-      if (
-        m.route.get() == "/page_calendar" ||
-        m.route.get() == "/page_events"
-      ) {
-        m.route.get() == "/page_calendar"
-          ? m.route.set("/page_events")
-          : m.route.set("/page_calendar");
+      if( m.route.get() == "/page_edit_event" )return false
+      if (events == "") {
+        side_toaster("There are no calendar entries to display", 3000);
+      }
+
+      if (events != "") {
+        if (
+          m.route.get() == "/page_calendar" ||
+          m.route.get() == "/page_events"
+        ) {
+          m.route.get() == "/page_calendar"
+            ? m.route.set("/page_events")
+            : m.route.set("/page_calendar");
+        }
       }
       break;
 
@@ -3235,8 +3260,7 @@ function shortpress_action(param) {
 // //////////////////////////////
 
 function handleKeyDown(evt) {
-  //option_button_bar();
-  if (evt.key === "Backspace") {
+  if (evt.key === "Backspace"&&m.route.get()!="/page_calendar") {
     evt.preventDefault();
   }
 
