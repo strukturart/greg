@@ -76,7 +76,7 @@ let load_caldav = function (action) {
             5000
           );
         }
-        //load cached data
+        //load cached data if not possible to download data
         localforage
           .getItem(item.id)
           .then(function (w) {
@@ -133,10 +133,11 @@ let load_caldav = function (action) {
             id: item.id,
           });
 
-          //cache caldata
           localforage
             .setItem(item.id, k)
-            .then(function () {})
+            .then(function () {
+              console.log("data cached");
+            })
             .catch(function (err) {
               console.log(err);
             });
@@ -191,8 +192,17 @@ let sync_caldav = function () {
         const value = await localforage.getItem(item.id);
 
         for (let i = 0; i < value.length; i++) {
+          console.log(value[i]);
           let s = {
-            oldCalendars: [value[i].objects],
+            oldCalendars: [
+              {
+                url: value[i].url,
+                ctag: value[i].ctag,
+                syncToken: value[i].syncToken,
+                displayName: value[i].displayName,
+                objects: value[i].objects,
+              },
+            ],
             detailedResult: true,
             headers: client.authHeaders,
           };
@@ -478,6 +488,8 @@ localforage
       return false;
     }
     accounts = value;
+    sync_caldav();
+
     load_caldav();
   })
   .catch(function (err) {
