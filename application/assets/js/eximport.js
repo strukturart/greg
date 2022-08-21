@@ -107,7 +107,8 @@ export let parse_ics = function (
   subscription,
   etag,
   url,
-  account_id
+  account_id,
+  isCaldav
 ) {
   if (subscription) subscription = "subscription";
 
@@ -192,6 +193,7 @@ export let parse_ics = function (
       END: "VEVENT",
 
       isSubscription: subscription,
+      isCaldav: isCaldav,
       allDay: allDay,
       dateStart: dateStart,
       time_start: timeStart,

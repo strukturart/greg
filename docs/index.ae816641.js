@@ -14458,7 +14458,6 @@ var $6d3f4b507512327e$var$toast_qq = function(text, time) {
     }, time);
 }; //bottom bar
 var $6d3f4b507512327e$export$247be4ede8e3a24a = function bottom_bar(left, center, right) {
-    console.log(right);
     document.querySelector("div#bottom-bar div#button-left").innerHTML = left;
     document.querySelector("div#bottom-bar div#button-center").innerHTML = center;
     document.querySelector("div#bottom-bar div#button-right").innerHTML = right;
@@ -21880,7 +21879,7 @@ var $1592f8b2f8ebd4e4$export$c0899e1f14c33b33 = function list_ics() {
     };
     (0, $6d3f4b507512327e$export$99c802f9c0aea792)("ics", cb);
 }; // /////////////
-var $1592f8b2f8ebd4e4$export$74efaa7af40e4235 = function parse_ics(data, callback, saveOnDevice, subscription, etag, url, account_id) {
+var $1592f8b2f8ebd4e4$export$74efaa7af40e4235 = function parse_ics(data, callback, saveOnDevice, subscription, etag, url, account_id, isCaldav) {
     if (subscription) subscription = "subscription";
     var jcalData = (0, (/*@__PURE__*/$parcel$interopDefault($96dc9914b778f9fd$exports))).parse(data);
     var comp = new (0, (/*@__PURE__*/$parcel$interopDefault($96dc9914b778f9fd$exports))).Component(jcalData);
@@ -21920,6 +21919,7 @@ var $1592f8b2f8ebd4e4$export$74efaa7af40e4235 = function parse_ics(data, callbac
             DTEND: ite.getFirstPropertyValue("dtend"),
             END: "VEVENT",
             isSubscription: subscription,
+            isCaldav: isCaldav,
             allDay: allDay,
             dateStart: dateStart,
             time_start: timeStart,
@@ -41286,43 +41286,54 @@ var $3e4edb8379ebf8a3$var$load_caldav = function load_caldav(action) {
                         _ctx.next = 3;
                         return client.login();
                     case 3:
-                        _ctx.next = 10;
+                        _ctx.next = 9;
                         break;
                     case 5:
                         _ctx.prev = 5;
                         _ctx.t0 = _ctx["catch"](0);
                         if (_ctx.t0.message == "Network request failed") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("the data of the accounts" + item.name + " could not be loaded", 5000);
-                         //load cached data if not possible to download data
-                        (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(item.id).then(function(w) {
-                            w.forEach(function(b) {
-                                b.objects.forEach(function(m1) {
-                                    (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(m1.data, $3e4edb8379ebf8a3$var$callback_caldata_loaded, false, false, b.etag, b.url, item.id);
-                                });
-                            });
-                            (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("load cached data", 5000);
-                        })["catch"](function(err) {
-                            console.log(err);
-                        });
-                        if (_ctx.t0.message == "Invalid credentials") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
-                    case 10:
-                        _ctx.prev = 10;
+                        /*
+        //load cached data if not possible to download data
+        localforage
+          .getItem(item.id)
+          .then(function (w) {
+            w.forEach((b) => {
+              b.objects.forEach((m) => {
+                parse_ics(
+                  m.data,
+                  callback_caldata_loaded,
+                  false,
+                  false,
+                  b.etag,
+                  b.url,
+                  item.id
+                );
+              });
+            });
+            toaster("load cached data", 5000);
+          })
+          .catch(function (err) {
+            console.log(err);
+          });*/ if (_ctx.t0.message == "Invalid credentials") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                    case 9:
+                        _ctx.prev = 9;
                         document.getElementById("icon-loading").style.visibility = "visible";
-                        _ctx.next = 14;
+                        _ctx.next = 13;
                         return client.fetchCalendars();
-                    case 14:
+                    case 13:
                         calendars = _ctx.sent;
                         k = [];
                         i1 = 0;
-                    case 17:
+                    case 16:
                         if (!(i1 < calendars.length)) {
-                            _ctx.next = 32;
+                            _ctx.next = 30;
                             break;
                         }
-                        _ctx.next = 20;
+                        _ctx.next = 19;
                         return client.fetchCalendarObjects({
                             calendar: calendars[i1]
                         });
-                    case 20:
+                    case 19:
                         objects = _ctx.sent;
                         data_to_store = {
                             displayName: calendars[i1].displayName,
@@ -41332,33 +41343,34 @@ var $3e4edb8379ebf8a3$var$load_caldav = function load_caldav(action) {
                             objects: objects
                         };
                         k.push(data_to_store); //add cal name to list
-                        $3e4edb8379ebf8a3$var$calendar_names.push({
-                            name: calendars[i1].displayName,
-                            id: item.id
-                        });
-                        (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(item.id, k).then(function() {
+                        /*
+          calendar_names.push({
+            name: calendars[i].displayName,
+            id: item.id,
+          });
+           */ (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(item.id, k).then(function() {
                             console.log("data cached");
                         })["catch"](function(err) {
                             console.log(err);
                         }); //parse data
                         objects.forEach(function(i) {
-                            (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(i.data, $3e4edb8379ebf8a3$var$callback_caldata_loaded, false, false, i.etag, i.url, item.id);
+                            (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(i.data, $3e4edb8379ebf8a3$var$callback_caldata_loaded, false, false, i.etag, i.url, item.id, true);
                         });
                         document.getElementById("icon-loading").style.visibility = "hidden";
                         $3e4edb8379ebf8a3$var$style_calendar_cell();
                         (0, $6d3f4b507512327e$export$6593825dc0f3a767)("Data loaded", 3000);
-                    case 29:
+                    case 27:
                         i1++;
-                        _ctx.next = 17;
+                        _ctx.next = 16;
+                        break;
+                    case 30:
+                        _ctx.next = 35;
                         break;
                     case 32:
-                        _ctx.next = 37;
-                        break;
-                    case 34:
-                        _ctx.prev = 34;
-                        _ctx.t1 = _ctx["catch"](10);
+                        _ctx.prev = 32;
+                        _ctx.t1 = _ctx["catch"](9);
                         console.log(_ctx.t1);
-                    case 37:
+                    case 35:
                     case "end":
                         return _ctx.stop();
                 }
@@ -41368,14 +41380,14 @@ var $3e4edb8379ebf8a3$var$load_caldav = function load_caldav(action) {
                     5
                 ],
                 [
-                    10,
-                    34
+                    9,
+                    32
                 ]
             ]);
         }))();
     });
 };
-var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
+var $3e4edb8379ebf8a3$var$cache_caldav = function cache_caldav() {
     $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
         var client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
             serverUrl: item.server_url,
@@ -41387,7 +41399,95 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
             defaultAccountType: "caldav"
         });
         (0, $34670b6097bfdcc2$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).mark(function _callee() {
-            var value, i, s, ma;
+            var calendars, k, i, objects, data_to_store;
+            return (0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).wrap(function _callee$(_ctx) {
+                while(1)switch(_ctx.prev = _ctx.next){
+                    case 0:
+                        _ctx.prev = 0;
+                        _ctx.next = 3;
+                        return client.login();
+                    case 3:
+                        _ctx.next = 9;
+                        break;
+                    case 5:
+                        _ctx.prev = 5;
+                        _ctx.t0 = _ctx["catch"](0);
+                        if (_ctx.t0.message == "Network request failed") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("the data of the accounts" + item.name + " could not be loaded", 5000);
+                        if (_ctx.t0.message == "Invalid credentials") (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                    case 9:
+                        _ctx.prev = 9;
+                        _ctx.next = 12;
+                        return client.fetchCalendars();
+                    case 12:
+                        calendars = _ctx.sent;
+                        k = [];
+                        i = 0;
+                    case 15:
+                        if (!(i < calendars.length)) {
+                            _ctx.next = 26;
+                            break;
+                        }
+                        _ctx.next = 18;
+                        return client.fetchCalendarObjects({
+                            calendar: calendars[i]
+                        });
+                    case 18:
+                        objects = _ctx.sent;
+                        data_to_store = {
+                            displayName: calendars[i].displayName,
+                            syncToken: calendars[i].syncToken,
+                            ctag: calendars[i].ctag,
+                            url: calendars[i].url,
+                            objects: objects
+                        };
+                        k.push(data_to_store);
+                        (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(item.id, k).then(function() {
+                            console.log("data cached");
+                        })["catch"](function(err) {
+                            console.log(err);
+                        });
+                        (0, $6d3f4b507512327e$export$6593825dc0f3a767)("Data synchronized", 3000);
+                    case 23:
+                        i++;
+                        _ctx.next = 15;
+                        break;
+                    case 26:
+                        _ctx.next = 31;
+                        break;
+                    case 28:
+                        _ctx.prev = 28;
+                        _ctx.t1 = _ctx["catch"](9);
+                        console.log(_ctx.t1);
+                    case 31:
+                    case "end":
+                        return _ctx.stop();
+                }
+            }, _callee, null, [
+                [
+                    0,
+                    5
+                ],
+                [
+                    9,
+                    28
+                ]
+            ]);
+        }))();
+    });
+};
+var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav(callback) {
+    $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
+        var client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
+            serverUrl: item.server_url,
+            credentials: {
+                username: item.user,
+                password: item.password
+            },
+            authMethod: "Basic",
+            defaultAccountType: "caldav"
+        });
+        (0, $34670b6097bfdcc2$export$2e2bcd8739ae039)((0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).mark(function _callee() {
+            var calendars, i, objects, value, i2, s, ma;
             return (0, (/*@__PURE__*/$parcel$interopDefault($1iF1j))).wrap(function _callee$(_ctx) {
                 while(1)switch(_ctx.prev = _ctx.next){
                     case 0:
@@ -41404,53 +41504,77 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
                     case 8:
                         _ctx.prev = 8;
                         _ctx.next = 11;
-                        return (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(item.id);
+                        return client.fetchCalendars();
                     case 11:
-                        value = _ctx.sent;
+                        calendars = _ctx.sent;
                         i = 0;
                     case 13:
-                        if (!(i < value.length)) {
-                            _ctx.next = 29;
+                        if (!(i < calendars.length)) {
+                            _ctx.next = 21;
                             break;
                         }
-                        console.log(value[i]);
+                        _ctx.next = 16;
+                        return client.fetchCalendarObjects({
+                            calendar: calendars[i]
+                        });
+                    case 16:
+                        objects = _ctx.sent;
+                        $3e4edb8379ebf8a3$var$calendar_names.push({
+                            name: calendars[i].displayName,
+                            id: item.id
+                        });
+                    case 18:
+                        i++;
+                        _ctx.next = 13;
+                        break;
+                    case 21:
+                        _ctx.next = 23;
+                        return (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(item.id);
+                    case 23:
+                        value = _ctx.sent;
+                        i2 = 0;
+                    case 25:
+                        if (!(i2 < value.length)) {
+                            _ctx.next = 40;
+                            break;
+                        }
                         s = {
                             oldCalendars: [
                                 {
-                                    url: value[i].url,
-                                    ctag: value[i].ctag,
-                                    syncToken: value[i].syncToken,
-                                    displayName: value[i].displayName,
-                                    objects: value[i].objects
+                                    url: value[i2].url,
+                                    ctag: value[i2].ctag,
+                                    syncToken: value[i2].syncToken,
+                                    displayName: value[i2].displayName,
+                                    objects: value[i2].objects
                                 }
                             ],
                             detailedResult: true,
                             headers: client.authHeaders
                         };
-                        _ctx.prev = 16;
-                        _ctx.next = 19;
+                        _ctx.prev = 27;
+                        _ctx.next = 30;
                         return client.syncCalendars(s);
-                    case 19:
+                    case 30:
                         ma = _ctx.sent;
-                        console.log(ma);
-                        _ctx.next = 26;
+                        callback(ma);
+                        _ctx.next = 37;
                         break;
-                    case 23:
-                        _ctx.prev = 23;
-                        _ctx.t1 = _ctx["catch"](16);
+                    case 34:
+                        _ctx.prev = 34;
+                        _ctx.t1 = _ctx["catch"](27);
                         console.log(_ctx.t1);
-                    case 26:
-                        i++;
-                        _ctx.next = 13;
+                    case 37:
+                        i2++;
+                        _ctx.next = 25;
                         break;
-                    case 29:
-                        _ctx.next = 34;
+                    case 40:
+                        _ctx.next = 45;
                         break;
-                    case 31:
-                        _ctx.prev = 31;
+                    case 42:
+                        _ctx.prev = 42;
                         _ctx.t2 = _ctx["catch"](8);
                         console.log(_ctx.t2);
-                    case 34:
+                    case 45:
                     case "end":
                         return _ctx.stop();
                 }
@@ -41461,11 +41585,11 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav() {
                 ],
                 [
                     8,
-                    31
+                    42
                 ],
                 [
-                    16,
-                    23
+                    27,
+                    34
                 ]
             ]);
         }))();
@@ -41509,11 +41633,11 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                             i = 0;
                         case 14:
                             if (!(i < calendars.length)) {
-                                _ctx.next = 44;
+                                _ctx.next = 47;
                                 break;
                             }
                             if (!(calendars[i].displayName == calendar_name)) {
-                                _ctx.next = 41;
+                                _ctx.next = 44;
                                 break;
                             }
                             i = calendars.length;
@@ -41531,7 +41655,7 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                         case 19:
                             result = _ctx.sent;
                             if (!result.ok) {
-                                _ctx.next = 40;
+                                _ctx.next = 43;
                                 break;
                             }
                             _ctx.prev = 21;
@@ -41549,36 +41673,39 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                             res = ref[0];
                             event.etag = res.props.getetag;
                             event.url = result.url;
-                            _ctx.next = 35;
+                            event.isCaldav = true;
+                            event.id = calendar_id;
+                            _ctx.next = 37;
                             break;
-                        case 32:
-                            _ctx.prev = 32;
+                        case 34:
+                            _ctx.prev = 34;
                             _ctx.t3 = _ctx["catch"](21);
                             console.log(_ctx.t3);
-                        case 35:
+                        case 37:
                             $3e4edb8379ebf8a3$export$4bf9923669ad6c63.push(event);
                             (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
+                            $3e4edb8379ebf8a3$var$cache_caldav();
                             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar");
-                            _ctx.next = 41;
+                            _ctx.next = 44;
                             break;
-                        case 40:
+                        case 43:
                             {
                                 (0, $6d3f4b507512327e$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                                 setTimeout(function() {
                                     (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
                                 }, 5000);
                             }
-                        case 41:
+                        case 44:
                             i++;
                             _ctx.next = 14;
                             break;
-                        case 44:
-                            _ctx.next = 48;
+                        case 47:
+                            _ctx.next = 51;
                             break;
-                        case 46:
-                            _ctx.prev = 46;
+                        case 49:
+                            _ctx.prev = 49;
                             _ctx.t4 = _ctx["catch"](9);
-                        case 48:
+                        case 51:
                         case "end":
                             return _ctx.stop();
                     }
@@ -41589,11 +41716,11 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                     ],
                     [
                         9,
-                        46
+                        49
                     ],
                     [
                         21,
-                        32
+                        34
                     ]
                 ]);
             }))();
@@ -41649,6 +41776,7 @@ var $3e4edb8379ebf8a3$var$delete_caldav = function delete_caldav(etag, url, acco
                                     return person.UID != uid1;
                                 });
                                 $3e4edb8379ebf8a3$var$remove_alarm(uid1);
+                                $3e4edb8379ebf8a3$var$cache_caldav();
                                 $3e4edb8379ebf8a3$var$clear_form();
                                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar");
                             } else {
@@ -41729,21 +41857,22 @@ var $3e4edb8379ebf8a3$var$update_caldav = function update_caldav(etag, url, data
                             result = _ctx.sent;
                             console.log(result);
                             if (!result.ok) {
-                                _ctx.next = 31;
+                                _ctx.next = 32;
                                 break;
                             }
                             (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
-                            (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar"); //get new ETAG
-                            _ctx.prev = 16;
+                            (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar");
+                            $3e4edb8379ebf8a3$var$cache_caldav(); //get new ETAG
+                            _ctx.prev = 17;
                             _ctx.t1 = (0, $2138daa55317b86b$export$2e2bcd8739ae039);
-                            _ctx.next = 20;
+                            _ctx.next = 21;
                             return client.propfind({
                                 url: result.url,
                                 props: (0, $f80b839894f61243$export$2e2bcd8739ae039)({}, "".concat((0, $124e898a1ee7bd9a$export$60e764203870007f).DAV, ":getetag"), {}),
                                 depth: "0",
                                 headers: client.authHeaders
                             });
-                        case 20:
+                        case 21:
                             _ctx.t2 = _ctx.sent;
                             ref = (0, _ctx.t1)(_ctx.t2, 1);
                             res = ref[0];
@@ -41753,33 +41882,33 @@ var $3e4edb8379ebf8a3$var$update_caldav = function update_caldav(etag, url, data
                                     return item.etag;
                                 } else return item;
                             });
-                            _ctx.next = 29;
+                            _ctx.next = 30;
                             break;
-                        case 26:
-                            _ctx.prev = 26;
-                            _ctx.t3 = _ctx["catch"](16);
+                        case 27:
+                            _ctx.prev = 27;
+                            _ctx.t3 = _ctx["catch"](17);
                             console.log(_ctx.t3);
-                        case 29:
-                            _ctx.next = 32;
+                        case 30:
+                            _ctx.next = 33;
                             break;
-                        case 31:
+                        case 32:
                             {
                                 (0, $6d3f4b507512327e$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                                 setTimeout(function() {
                                     (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
                                 }, 5000);
                             }
-                        case 32:
-                            _ctx.next = 38;
+                        case 33:
+                            _ctx.next = 39;
                             break;
-                        case 34:
-                            _ctx.prev = 34;
+                        case 35:
+                            _ctx.prev = 35;
                             _ctx.t4 = _ctx["catch"](8);
                             (0, $6d3f4b507512327e$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                             setTimeout(function() {
                                 (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
                             }, 5000);
-                        case 38:
+                        case 39:
                         case "end":
                             return _ctx.stop();
                     }
@@ -41790,15 +41919,30 @@ var $3e4edb8379ebf8a3$var$update_caldav = function update_caldav(etag, url, data
                     ],
                     [
                         8,
-                        34
+                        35
                     ],
                     [
-                        16,
-                        26
+                        17,
+                        27
                     ]
                 ]);
             }))();
         }
+    });
+};
+var $3e4edb8379ebf8a3$var$load_cached_caldav = function load_cached_caldav() {
+    $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
+        try {
+            (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(item.id).then(function(w) {
+                w.forEach(function(b) {
+                    b.objects.forEach(function(m1) {
+                        (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(m1.data, $3e4edb8379ebf8a3$var$callback_caldata_loaded, false, false, m1.etag, m1.url, item.id, true);
+                    });
+                });
+            })["catch"](function(err) {
+                console.log(err);
+            });
+        } catch (e) {}
     });
 };
 var $3e4edb8379ebf8a3$var$load_subscriptions = function load_subscriptions() {
@@ -41811,14 +41955,24 @@ var $3e4edb8379ebf8a3$var$load_subscriptions = function load_subscriptions() {
     $3e4edb8379ebf8a3$var$event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) $3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date");
 }; //load accounts data
+sync_caldav_callback = function sync_caldav_callback(o) {
+    console.log("\xf6\xf6\xf6" + o.updated.length);
+    if (o.updated.length > 0) {
+        var without_cached = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events1) {
+            return events1.isCaldav === false || undefined;
+        });
+        $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = without_cached;
+        $3e4edb8379ebf8a3$var$load_caldav();
+    }
+};
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("accounts").then(function(value) {
     if (value == null) {
         $3e4edb8379ebf8a3$export$c5541db89994d14 = [];
         return false;
     }
     $3e4edb8379ebf8a3$export$c5541db89994d14 = value;
-    $3e4edb8379ebf8a3$var$sync_caldav();
-    $3e4edb8379ebf8a3$var$load_caldav();
+    $3e4edb8379ebf8a3$var$load_cached_caldav();
+    $3e4edb8379ebf8a3$var$sync_caldav(sync_caldav_callback);
 })["catch"](function(err) {
     console.log(err);
 }); //get event data
@@ -41945,9 +42099,9 @@ var $3e4edb8379ebf8a3$var$find_closest_date = function find_closest_date(search_
         }
     } //between
     if ($3e4edb8379ebf8a3$var$t == 0) {
-        for(var i2 = 0; i2 < $3e4edb8379ebf8a3$export$4bf9923669ad6c63.length - 1; i2++)if (search > new Date($3e4edb8379ebf8a3$export$4bf9923669ad6c63[i2].dateStart).getTime()) {
-            $3e4edb8379ebf8a3$var$t = $3e4edb8379ebf8a3$export$4bf9923669ad6c63[i2].dateStart;
-            i2 = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.length;
+        for(var i3 = 0; i3 < $3e4edb8379ebf8a3$export$4bf9923669ad6c63.length - 1; i3++)if (search > new Date($3e4edb8379ebf8a3$export$4bf9923669ad6c63[i3].dateStart).getTime()) {
+            $3e4edb8379ebf8a3$var$t = $3e4edb8379ebf8a3$export$4bf9923669ad6c63[i3].dateStart;
+            i3 = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.length;
         }
     } //default
     if ($3e4edb8379ebf8a3$var$t == 0) {
@@ -43533,6 +43687,7 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
         alarm: document.getElementById("event-notification-time").value,
         alarmTrigger: notification_time,
         isSubscription: false,
+        isCaldav: db_id == "local-id" ? false : true,
         multidayevent: multidayevent,
         ATTACH: $3e4edb8379ebf8a3$var$blob,
         id: db_id
@@ -43545,11 +43700,9 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
         $3e4edb8379ebf8a3$var$add_alarm(calc_notification, event.SUMMARY, event.UID);
     }
     if (db_id == "local-id") {
-        console.log("local");
         $3e4edb8379ebf8a3$export$4bf9923669ad6c63.push(event);
-        console.log(JSON.stringify($3e4edb8379ebf8a3$export$4bf9923669ad6c63));
-        var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events1) {
-            return events1.id == "local-id";
+        var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events2) {
+            return events2.id == "local-id";
         });
         (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem("events", without_subscription).then(function(value) {
             $3e4edb8379ebf8a3$var$clear_form();
@@ -43627,6 +43780,7 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
             index.time_end = document.getElementById("event-time-end").value;
             index.rrule_ = document.getElementById("event-recur").value;
             index.isSubscription = false;
+            index.isCaldav = account_id == "local-id" ? false : true;
             index.multidayevent = multidayevent;
             index.alarm = document.getElementById("event-notification-time").value;
             index.alarmTrigger = notification_time;
@@ -43640,8 +43794,8 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
                 $3e4edb8379ebf8a3$var$add_alarm(calc_notification, index.SUMMARY, index.UID);
             }
             if (account_id == "local-id") {
-                var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events2) {
-                    return events2.isSubscription === false;
+                var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events3) {
+                    return events3.isSubscription === false;
                 });
                 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem("events", without_subscription).then(function(value) {
                     // clean form
@@ -43685,8 +43839,8 @@ var $3e4edb8379ebf8a3$var$mm = "0".concat($3e4edb8379ebf8a3$var$t.getMonth() + 1
 var $3e4edb8379ebf8a3$var$d = "0".concat($3e4edb8379ebf8a3$var$t.getDate()).slice(-2);
 var $3e4edb8379ebf8a3$var$y = $3e4edb8379ebf8a3$var$t.getFullYear(); // callback import event
 var $3e4edb8379ebf8a3$var$import_event_callback = function import_event_callback(id, date) {
-    var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events3) {
-        return events3.isSubscription === false;
+    var without_subscription = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events4) {
+        return events4.isSubscription === false;
     });
     (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem("events", without_subscription).then(function(value) {
         (0, $1592f8b2f8ebd4e4$export$f1976d86f97fc8b2)("greg.ics", without_subscription);

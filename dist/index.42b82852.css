@@ -491,7 +491,7 @@ div#event-recur-wrapper {
 
 div#events-wrapper {
   z-index: 4;
-  height: 92vh;
+  height: 98vh;
   width: 100vw;
   padding: 5px;
   position: absolute;
@@ -502,6 +502,10 @@ div#events-wrapper {
 div#events-wrapper article {
   min-width: 100%;
   margin: 0 0 15px;
+}
+
+div#events-wrapper article:last-child {
+  margin: 0 0 55px;
 }
 
 div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time, div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
@@ -731,7 +735,7 @@ div#bottom-bar div#button-center {
 }
 
 div#bottom-bar div#button-center img {
-  width: 25px;
+  width: 30px;
   position: fixed;
   bottom: 5px;
   left: 46%;
@@ -747,14 +751,14 @@ div#bottom-bar div#button-left {
 }
 
 div#bottom-bar div#button-left img {
-  width: 25px;
+  width: 30px;
   position: fixed;
   bottom: 5px;
   left: 10px;
 }
 
 div#bottom-bar div#button-right img {
-  width: 25px;
+  width: 30px;
   position: fixed;
   bottom: 5px;
   right: 10px;

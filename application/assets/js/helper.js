@@ -207,7 +207,6 @@ let toast_qq = function (text, time) {
 
 //bottom bar
 export let bottom_bar = function (left, center, right) {
-  console.log(right);
   document.querySelector("div#bottom-bar div#button-left").innerHTML = left;
   document.querySelector("div#bottom-bar div#button-center").innerHTML = center;
   document.querySelector("div#bottom-bar div#button-right").innerHTML = right;

@@ -76,6 +76,7 @@ let load_caldav = function (action) {
             5000
           );
         }
+        /*
         //load cached data if not possible to download data
         localforage
           .getItem(item.id)
@@ -97,7 +98,7 @@ let load_caldav = function (action) {
           })
           .catch(function (err) {
             console.log(err);
-          });
+          });*/
 
         if (e.message == "Invalid credentials")
           toaster(
@@ -117,7 +118,7 @@ let load_caldav = function (action) {
           const objects = await client.fetchCalendarObjects({
             calendar: calendars[i],
           });
-
+          //cache data
           let data_to_store = {
             "displayName": calendars[i].displayName,
             "syncToken": calendars[i].syncToken,
@@ -128,10 +129,13 @@ let load_caldav = function (action) {
 
           k.push(data_to_store);
           //add cal name to list
+          /*
           calendar_names.push({
             name: calendars[i].displayName,
             id: item.id,
           });
+
+          */
 
           localforage
             .setItem(item.id, k)
@@ -150,7 +154,8 @@ let load_caldav = function (action) {
               false,
               i.etag,
               i.url,
-              item.id
+              item.id,
+              true
             );
           });
           document.getElementById("icon-loading").style.visibility = "hidden";
@@ -164,7 +169,76 @@ let load_caldav = function (action) {
   });
 };
 
-let sync_caldav = function () {
+let cache_caldav = function () {
+  accounts.forEach(function (item) {
+    const client = new DAVClient({
+      serverUrl: item.server_url,
+      credentials: {
+        username: item.user,
+        password: item.password,
+      },
+      authMethod: "Basic",
+      defaultAccountType: "caldav",
+    });
+
+    (async () => {
+      try {
+        await client.login();
+      } catch (e) {
+        if (e.message == "Network request failed") {
+          toaster(
+            "the data of the accounts" + item.name + " could not be loaded",
+            5000
+          );
+        }
+
+        if (e.message == "Invalid credentials")
+          toaster(
+            "there was a problem logging into your account " +
+              item.name +
+              " please check your account details",
+            5000
+          );
+      }
+
+      try {
+        const calendars = await client.fetchCalendars();
+        let k = [];
+
+        for (let i = 0; i < calendars.length; i++) {
+          const objects = await client.fetchCalendarObjects({
+            calendar: calendars[i],
+          });
+          //cache data
+          let data_to_store = {
+            "displayName": calendars[i].displayName,
+            "syncToken": calendars[i].syncToken,
+            "ctag": calendars[i].ctag,
+            "url": calendars[i].url,
+            "objects": objects,
+          };
+
+          k.push(data_to_store);
+
+          localforage
+            .setItem(item.id, k)
+            .then(function () {
+              console.log("data cached");
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
+
+          side_toaster("Data synchronized", 3000);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+  });
+};
+
+let sync_caldav = function (callback) {
   accounts.forEach(function (item) {
     const client = new DAVClient({
       serverUrl: item.server_url,
@@ -189,10 +263,21 @@ let sync_caldav = function () {
       }
 
       try {
+        //set calendars names
+        const calendars = await client.fetchCalendars();
+        for (let i = 0; i < calendars.length; i++) {
+          const objects = await client.fetchCalendarObjects({
+            calendar: calendars[i],
+          });
+          calendar_names.push({
+            name: calendars[i].displayName,
+            id: item.id,
+          });
+        }
+
         const value = await localforage.getItem(item.id);
 
         for (let i = 0; i < value.length; i++) {
-          console.log(value[i]);
           let s = {
             oldCalendars: [
               {
@@ -208,7 +293,7 @@ let sync_caldav = function () {
           };
           try {
             const ma = await client.syncCalendars(s);
-            console.log(ma);
+            callback(ma);
           } catch (e) {
             console.log(e);
           }
@@ -275,12 +360,16 @@ let create_caldav = function (event_data, calendar_id, calendar_name, event) {
 
                   event.etag = res.props.getetag;
                   event.url = result.url;
+                  event.isCaldav = true;
+                  event.id = calendar_id;
                 } catch (e) {
                   console.log(e);
                 }
 
                 events.push(event);
                 popup("", "close");
+                cache_caldav();
+
                 m.route.set("/page_calendar");
               } else {
                 popup(
@@ -342,6 +431,7 @@ let delete_caldav = function (etag, url, account_id, uid) {
 
             events = temp.filter((person) => person.UID != uid);
             remove_alarm(uid);
+            cache_caldav();
 
             clear_form();
 
@@ -415,7 +505,7 @@ let update_caldav = function (etag, url, data, account_id) {
           if (result.ok) {
             popup("", "close");
             m.route.set("/page_calendar");
-
+            cache_caldav();
             //get new ETAG
             try {
               const [res] = await client.propfind({
@@ -458,6 +548,34 @@ let update_caldav = function (etag, url, data, account_id) {
   });
 };
 
+let load_cached_caldav = function () {
+  accounts.forEach(function (item) {
+    try {
+      localforage
+        .getItem(item.id)
+        .then(function (w) {
+          w.forEach((b) => {
+            b.objects.forEach((m) => {
+              parse_ics(
+                m.data,
+                callback_caldata_loaded,
+                false,
+                false,
+                m.etag,
+                m.url,
+                item.id,
+                true
+              );
+            });
+          });
+        })
+        .catch(function (err) {
+          console.log(err);
+        });
+    } catch (e) {}
+  });
+};
+
 let load_subscriptions = function () {
   if (
     subscriptions == null ||
@@ -480,6 +598,17 @@ let load_subscriptions = function () {
 };
 
 //load accounts data
+sync_caldav_callback = function (o) {
+  console.log("ööö" + o.updated.length);
+  if (o.updated.length > 0) {
+    let without_cached = events.filter(
+      (events) => events.isCaldav === false || undefined
+    );
+    events = without_cached;
+
+    load_caldav();
+  }
+};
 localforage
   .getItem("accounts")
   .then(function (value) {
@@ -488,9 +617,9 @@ localforage
       return false;
     }
     accounts = value;
-    sync_caldav();
+    load_cached_caldav();
 
-    load_caldav();
+    sync_caldav(sync_caldav_callback);
   })
   .catch(function (err) {
     console.log(err);
@@ -2640,6 +2769,7 @@ let store_event = function (db_id, cal_name) {
     alarm: document.getElementById("event-notification-time").value,
     alarmTrigger: notification_time,
     isSubscription: false,
+    isCaldav: db_id == "local-id" ? false : true,
     multidayevent: multidayevent,
     ATTACH: blob,
     id: db_id,
@@ -2654,9 +2784,7 @@ let store_event = function (db_id, cal_name) {
   }
 
   if (db_id == "local-id") {
-    console.log("local");
     events.push(event);
-    console.log(JSON.stringify(events));
 
     let without_subscription = events.filter(
       (events) => events.id == "local-id"
@@ -2810,6 +2938,7 @@ let update_event = function (account_id) {
       index.time_end = document.getElementById("event-time-end").value;
       index.rrule_ = document.getElementById("event-recur").value;
       index.isSubscription = false;
+      index.isCaldav = account_id == "local-id" ? false : true;
       index.multidayevent = multidayevent;
       index.alarm = document.getElementById("event-notification-time").value;
       index.alarmTrigger = notification_time;
