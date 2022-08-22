@@ -18,12 +18,11 @@ cp -r ./application/assets/image ./dist/assets/image
 
 mkdir ./dist/assets/js
 cp  ./application/assets/js/kaiads.v5.min.js ./dist/assets/js/
-cp  ./application/assets/js/kaios-ads.js ./dist/assets/js/
 
 
 
 cp ./application/manifest.webapp ./dist/
-cp ./application/ads.html ./dist/
+cp ./application/manifest.webmanifest ./dist/
 
 #!/bin/bash
 #create default app zip
