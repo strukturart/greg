@@ -895,6 +895,18 @@ let rrule_check = function (date) {
               return feedback;
             }
           }
+          
+          if (d == "BIWEEKLY") {
+            if (
+                 Math.floor((c - a)/(24 * 60 * 60 * 1000)) % 14 === 0
+            ) {
+              feedback.rrule = true;
+              feedback.event = true;
+              t = events.length;
+
+              return feedback;
+            }
+          }
 
           if (d == "YEARLY") {
             let tt = new Date(events[t].dateStart);
@@ -997,6 +1009,16 @@ let event_slider = function (date) {
         if (d == "WEEKLY") {
           if (
             new Date(events[i].dateStart).getDay() == new Date(date).getDay()
+          ) {
+            slider.push(events[i]);
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+        
+        //BIWEEK
+        if (d == "BIWEEKLY") {
+          if (
+                 Math.floor((c - a)/(24 * 60 * 60 * 1000)) % 14 === 0
           ) {
             slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -2061,6 +2083,7 @@ var page_add_event = {
               m("option", { value: "none" }, "none"),
               m("option", { value: "DAILY" }, "Daily"),
               m("option", { value: "WEEKLY" }, "Weekly"),
+              m("option", { value: "BIWEEKLY" }, "Biweekly"),
               m("option", { value: "MONTHLY" }, "Monthly"),
               m("option", { value: "YEARLY" }, "Yearly"),
             ]),
@@ -2265,6 +2288,7 @@ var page_edit_event = {
                 m("option", { value: "none" }, "none"),
                 m("option", { value: "DAILY" }, "Daily"),
                 m("option", { value: "WEEKLY" }, "Weekly"),
+                m("option", { value: "BIWEEKLY" }, "Biweekly"),
                 m("option", { value: "MONTHLY" }, "Monthly"),
                 m("option", { value: "YEARLY" }, "Yearly"),
               ]
