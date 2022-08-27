@@ -42185,6 +42185,14 @@ var $5535d7a9ff238efe$var$rrule_check = function rrule_check(date) {
                         return feedback;
                     }
                 }
+                if (d2 == "BIWEEKLY") {
+                    if (Math.floor((c - a) / 86400000) % 14 === 0) {
+                        feedback.rrule = true;
+                        feedback.event = true;
+                        t2 = $5535d7a9ff238efe$export$4bf9923669ad6c63.length;
+                        return feedback;
+                    }
+                }
                 if (d2 == "YEARLY") {
                     var tt = new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[t2].dateStart);
                     var pp = new Date(date);
@@ -42246,6 +42254,12 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
             } //WEEK
             if (d3 == "WEEKLY") {
                 if (new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[i].dateStart).getDay() == new Date(date).getDay()) {
+                    $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
+                    k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+                }
+            } //BIWEEK
+            if (d3 == "BIWEEKLY") {
+                if (Math.floor((c - a) / 86400000) % 14 === 0) {
                     $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
                     k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
                 }
@@ -43126,6 +43140,9 @@ var $5535d7a9ff238efe$var$page_add_event = {
                         value: "30"
                     }, "30 minutes"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
+                        value: "60"
+                    }, "60 minutes"),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "1440"
                     }, "1 Day")
                 ])
@@ -43151,6 +43168,9 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "WEEKLY"
                     }, "Weekly"),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
+                        value: "BIWEEKLY"
+                    }, "Biweekly"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "MONTHLY"
                     }, "Monthly"),
@@ -43336,6 +43356,9 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                         value: "30"
                     }, "30 minutes"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
+                        value: "60"
+                    }, "60 minutes"),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "1440"
                     }, "1 Day")
                 ])
@@ -43365,6 +43388,9 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "WEEKLY"
                     }, "Weekly"),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
+                        value: "BIWEEKLY"
+                    }, "Biweekly"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "MONTHLY"
                     }, "Monthly"),

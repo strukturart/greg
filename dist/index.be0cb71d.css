@@ -485,55 +485,43 @@
 }
 
 .flex {
-  -moz-box-orient: horizontal;
-  -moz-box-direction: normal;
   flex-flow: wrap;
   display: flex;
 }
 
 .flex-column {
-  -moz-box-orient: vertical;
-  -moz-box-direction: normal;
   flex-direction: column;
 }
 
 .justify-content-start {
-  -moz-box-align: start;
   align-items: flex-start;
 }
 
 .justify-content-end {
-  -moz-box-pack: end;
   justify-content: flex-end;
 }
 
 .algin-item-start {
-  -moz-box-align: start;
   align-items: flex-start;
 }
 
 .algin-item-end {
-  -moz-box-align: end;
   align-items: flex-end;
 }
 
 .align-item-center {
-  -moz-box-align: center;
   align-items: center;
 }
 
 .justify-content-spacebetween {
-  -moz-box-pack: justify;
   justify-content: space-between;
 }
 
 .justify-content-spacearound {
-  align-content: space-around;
-  justify-content: space-around;
+  place-content: space-around;
 }
 
 .justify-content-center {
-  -moz-box-pack: center;
   justify-content: center;
 }
 

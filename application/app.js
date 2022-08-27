@@ -896,6 +896,16 @@ let rrule_check = function (date) {
             }
           }
 
+          if (d == "BIWEEKLY") {
+            if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
+              feedback.rrule = true;
+              feedback.event = true;
+              t = events.length;
+
+              return feedback;
+            }
+          }
+
           if (d == "YEARLY") {
             let tt = new Date(events[t].dateStart);
             let pp = new Date(date);
@@ -1003,6 +1013,14 @@ let event_slider = function (date) {
           }
         }
 
+        //BIWEEK
+        if (d == "BIWEEKLY") {
+          if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
+            slider.push(events[i]);
+            k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
+          }
+        }
+
         //MONTH
 
         if (d == "MONTHLY") {
@@ -1054,8 +1072,6 @@ let event_slider = function (date) {
   } else {
     document.getElementById("event-slider-indicator").style.opacity = 1;
   }
-
-  console.log(document.querySelectorAll("div.indicator").length);
 };
 
 ////
@@ -1247,7 +1263,6 @@ let focus_after_selection = function () {
   if (document.querySelectorAll(".select-box") == null) return false;
   document.querySelectorAll(".select-box").forEach(function (e) {
     e.addEventListener("blur", function (k) {
-      console.log(k.keyCode);
       setTimeout(function () {
         e.parentElement.focus();
       }, 200);
@@ -2042,6 +2057,7 @@ var page_add_event = {
                 m("option", { value: "5" }, "5 minutes"),
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
+                m("option", { value: "60" }, "60 minutes"),
                 m("option", { value: "1440" }, "1 Day"),
               ]
             ),
@@ -2061,6 +2077,7 @@ var page_add_event = {
               m("option", { value: "none" }, "none"),
               m("option", { value: "DAILY" }, "Daily"),
               m("option", { value: "WEEKLY" }, "Weekly"),
+              m("option", { value: "BIWEEKLY" }, "Biweekly"),
               m("option", { value: "MONTHLY" }, "Monthly"),
               m("option", { value: "YEARLY" }, "Yearly"),
             ]),
@@ -2234,6 +2251,7 @@ var page_edit_event = {
                 m("option", { value: "5" }, "5 minutes"),
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
+                m("option", { value: "60" }, "60 minutes"),
                 m("option", { value: "1440" }, "1 Day"),
               ]
             ),
@@ -2265,6 +2283,7 @@ var page_edit_event = {
                 m("option", { value: "none" }, "none"),
                 m("option", { value: "DAILY" }, "Daily"),
                 m("option", { value: "WEEKLY" }, "Weekly"),
+                m("option", { value: "BIWEEKLY" }, "Biweekly"),
                 m("option", { value: "MONTHLY" }, "Monthly"),
                 m("option", { value: "YEARLY" }, "Yearly"),
               ]
