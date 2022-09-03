@@ -16,12 +16,16 @@ import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
+
+import { fetchOauthTokens, getOauthHeaders } from "./assets/js/tsdav.js";
+
 import { createCalendarObject } from "./assets/js/tsdav.js";
 import { propfind } from "./assets/js/tsdav.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
 import { get_time } from "./assets/js/helper.js";
 import { uid } from "uid";
 import { captureRejectionSymbol } from "events";
+import { google_cred } from "./assets/js/google_cred.js";
 
 var moment = require("moment-timezone");
 
@@ -29,6 +33,8 @@ export let events = [];
 export let accounts = [];
 
 localforage.setDriver(localforage.LOCALSTORAGE);
+
+//tokens();
 
 let callback_caldata_loaded = function () {};
 
@@ -39,6 +45,50 @@ let calendar_names = [
     data: "",
   },
 ];
+
+let test = function () {
+  /*
+  (async () => {
+    try {
+      const tokens = await getOauthHeaders({
+        authorizationCode: localStorage.getItem("authorizationCode"),
+        clientId: google_cred.clientId,
+        clientSecret: google_cred.clientSecret,
+        tokenUrl: "https://accounts.google.com/o/oauth2/token",
+        redirectUrl: "https://strukturart.github.io/greg/",
+      });
+      console.log("result" + JSON.stringify(tokens));
+    } catch (e) {
+      console.log("error" + e);
+    }
+  })();
+
+  */
+
+  var myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+
+  var urlencoded = new URLSearchParams();
+  urlencoded.append("code", localStorage.getItem("authorizationCode"));
+  urlencoded.append("grant_type", "authorization_code");
+  urlencoded.append("redirect_uri", "https://strukturart.github.io/greg/");
+  urlencoded.append("client_id", google_cred.clientId);
+  urlencoded.append("client_secret", google_cred.clientSecret);
+
+  var requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: urlencoded,
+    redirect: "follow",
+  };
+
+  fetch("https://accounts.google.com/o/oauth2/token", requestOptions);
+};
+try {
+  test();
+} catch (e) {
+  console.log(e);
+}
 
 let style_calendar_cell = function () {
   document.querySelectorAll("div.calendar-cell").forEach(function (e) {
@@ -53,6 +103,7 @@ let style_calendar_cell = function () {
     }
   });
 };
+console.log(localStorage.getItem("authorizationCode"));
 
 let load_caldav = function (action) {
   accounts.forEach(function (item) {
@@ -1585,6 +1636,18 @@ var page_options = {
         },
         "add account"
       ),
+
+      m(
+        "button",
+        {
+          class: "item",
+          tabindex: subscriptions.length + 4,
+          onclick: function () {
+            window.open(google_cred.url);
+          },
+        },
+        "add google account"
+      ),
       m("div", { id: "subscription-text" }, "Your accounts"),
 
       accounts.map(function (item, index) {
@@ -2135,6 +2198,12 @@ var page_add_event = {
   },
 };
 
+var page_oauth = {
+  view: function () {
+    return m("div", "hello world");
+  },
+};
+
 var page_edit_event = {
   view: function () {
     return m(
@@ -2338,8 +2407,17 @@ m.route(root, "/page_calendar", {
   "/page_subscriptions": page_subscriptions,
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
+  "/page_oauth": page_oauth,
 });
 m.route.prefix = "#";
+
+window.addEventListener(
+  "hashchange",
+  () => {
+    console.log("The hash has changed!");
+  },
+  false
+);
 
 let store_settings = function () {
   settings.default_notification = document.getElementById(

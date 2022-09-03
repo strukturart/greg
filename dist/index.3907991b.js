@@ -548,11 +548,12 @@ var _mithrilDefault = parcelHelpers.interopDefault(_mithril);
 var _tsdavJs = require("./assets/js/tsdav.js");
 var _uid = require("uid");
 var _events = require("events");
+var _googleCredJs = require("./assets/js/google_cred.js");
 "use strict";
 var moment = require("moment-timezone");
 let events = [];
 let accounts = [];
-(0, _localforageDefault.default).setDriver((0, _localforageDefault.default).LOCALSTORAGE);
+(0, _localforageDefault.default).setDriver((0, _localforageDefault.default).LOCALSTORAGE); //tokens();
 let callback_caldata_loaded = function() {};
 let calendar_names = [
     {
@@ -561,13 +562,51 @@ let calendar_names = [
         data: ""
     }
 ];
+let test = function() {
+    /*
+  (async () => {
+    try {
+      const tokens = await getOauthHeaders({
+        authorizationCode: localStorage.getItem("authorizationCode"),
+        clientId: google_cred.clientId,
+        clientSecret: google_cred.clientSecret,
+        tokenUrl: "https://accounts.google.com/o/oauth2/token",
+        redirectUrl: "https://strukturart.github.io/greg/",
+      });
+      console.log("result" + JSON.stringify(tokens));
+    } catch (e) {
+      console.log("error" + e);
+    }
+  })();
+   */ var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+    var urlencoded = new URLSearchParams();
+    urlencoded.append("code", localStorage.getItem("authorizationCode"));
+    urlencoded.append("grant_type", "authorization_code");
+    urlencoded.append("redirect_uri", "https://strukturart.github.io/greg/");
+    urlencoded.append("client_id", (0, _googleCredJs.google_cred).clientId);
+    urlencoded.append("client_secret", (0, _googleCredJs.google_cred).clientSecret);
+    var requestOptions = {
+        method: "POST",
+        headers: myHeaders,
+        body: urlencoded,
+        redirect: "follow"
+    };
+    fetch("https://accounts.google.com/o/oauth2/token", requestOptions);
+};
+try {
+    test();
+} catch (e) {
+    console.log(e);
+}
 let style_calendar_cell = function() {
-    document.querySelectorAll("div.calendar-cell").forEach(function(e) {
-        let p = e.getAttribute("data-date");
-        if (event_check(p).event == true) e.classList.add("event");
-        if (rrule_check(p).rrule) e.classList.add("event");
+    document.querySelectorAll("div.calendar-cell").forEach(function(e1) {
+        let p = e1.getAttribute("data-date");
+        if (event_check(p).event == true) e1.classList.add("event");
+        if (rrule_check(p).rrule) e1.classList.add("event");
     });
 };
+console.log(localStorage.getItem("authorizationCode"));
 let load_caldav = function(action) {
     accounts.forEach(function(item) {
         const client = new (0, _tsdavJs.DAVClient)({
@@ -582,8 +621,8 @@ let load_caldav = function(action) {
         (async ()=>{
             try {
                 await client.login();
-            } catch (e) {
-                if (e.message == "Network request failed") (0, _helperJs.toaster)("the data of the accounts" + item.name + " could not be loaded", 5000);
+            } catch (e2) {
+                if (e2.message == "Network request failed") (0, _helperJs.toaster)("the data of the accounts" + item.name + " could not be loaded", 5000);
                 /*
         //load cached data if not possible to download data
         localforage
@@ -606,7 +645,7 @@ let load_caldav = function(action) {
           })
           .catch(function (err) {
             console.log(err);
-          });*/ if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+          });*/ if (e2.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
             }
             try {
                 document.getElementById("icon-loading").style.visibility = "visible";
@@ -641,8 +680,8 @@ let load_caldav = function(action) {
                     style_calendar_cell();
                     (0, _helperJs.side_toaster)("Data loaded", 3000);
                 }
-            } catch (e1) {
-                console.log(e1);
+            } catch (e3) {
+                console.log(e3);
             }
         })();
     });
@@ -661,9 +700,9 @@ let cache_caldav = function() {
         (async ()=>{
             try {
                 await client.login();
-            } catch (e) {
-                if (e.message == "Network request failed") (0, _helperJs.toaster)("the data of the accounts" + item.name + " could not be loaded", 5000);
-                if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+            } catch (e4) {
+                if (e4.message == "Network request failed") (0, _helperJs.toaster)("the data of the accounts" + item.name + " could not be loaded", 5000);
+                if (e4.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
             }
             try {
                 const calendars = await client.fetchCalendars();
@@ -687,8 +726,8 @@ let cache_caldav = function() {
                     });
                     (0, _helperJs.side_toaster)("Data synchronized", 3000);
                 }
-            } catch (e2) {
-                console.log(e2);
+            } catch (e5) {
+                console.log(e5);
             }
         })();
     });
@@ -707,8 +746,8 @@ let sync_caldav = function(callback) {
         (async ()=>{
             try {
                 await client.login();
-            } catch (e) {
-                if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+            } catch (e6) {
+                if (e6.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
             }
             try {
                 //set calendars names
@@ -740,8 +779,8 @@ let sync_caldav = function(callback) {
                     try {
                         const ma = await client.syncCalendars(s);
                         callback(ma);
-                    } catch (e) {
-                        console.log(e);
+                    } catch (e7) {
+                        console.log(e7);
                     }
                 }
             } catch (err) {
@@ -766,8 +805,8 @@ let create_caldav = function(event_data, calendar_id, calendar_name, event) {
             (async ()=>{
                 try {
                     let n = await client.login();
-                } catch (e) {
-                    if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                } catch (e8) {
+                    if (e8.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
                 }
                 try {
                     const calendars = await client.fetchCalendars();
@@ -797,8 +836,8 @@ let create_caldav = function(event_data, calendar_id, calendar_name, event) {
                                 event.url = result.url;
                                 event.isCaldav = true;
                                 event.id = calendar_id;
-                            } catch (e) {
-                                console.log(e);
+                            } catch (e9) {
+                                console.log(e9);
                             }
                             events.push(event);
                             (0, _helperJs.popup)("", "close");
@@ -811,7 +850,7 @@ let create_caldav = function(event_data, calendar_id, calendar_name, event) {
                             }, 5000);
                         }
                     }
-                } catch (e3) {}
+                } catch (e) {}
             })();
         }
     });
@@ -832,9 +871,9 @@ let delete_caldav = function(etag, url, account_id, uid) {
             (async ()=>{
                 try {
                     await client.login();
-                } catch (e) {
-                    console.log(e);
-                    if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                } catch (e10) {
+                    console.log(e10);
+                    if (e10.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
                 }
                 try {
                     const result = await client.deleteCalendarObject({
@@ -859,8 +898,8 @@ let delete_caldav = function(etag, url, account_id, uid) {
                             (0, _helperJs.popup)("", "close");
                         }, 5000);
                     }
-                } catch (e4) {
-                    console.log(e4);
+                } catch (e11) {
+                    console.log(e11);
                     (0, _helperJs.popup)("There was a problem deleting, please try again later.", "show");
                     setTimeout(function() {
                         (0, _helperJs.popup)("", "close");
@@ -887,8 +926,8 @@ let update_caldav = function(etag, url, data, account_id) {
             (async ()=>{
                 try {
                     await client.login();
-                } catch (e) {
-                    if (e.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
+                } catch (e12) {
+                    if (e12.message == "Invalid credentials") (0, _helperJs.toaster)("there was a problem logging into your account " + item.name + " please check your account details", 5000);
                 }
                 try {
                     const result = await client.updateCalendarObject({
@@ -919,8 +958,8 @@ let update_caldav = function(etag, url, data, account_id) {
                                     return item.etag;
                                 } else return item;
                             });
-                        } catch (e) {
-                            console.log(e);
+                        } catch (e13) {
+                            console.log(e13);
                         }
                     } else {
                         (0, _helperJs.popup)("There was a problem saving, please try again later.", "show");
@@ -928,7 +967,7 @@ let update_caldav = function(etag, url, data, account_id) {
                             (0, _helperJs.popup)("", "close");
                         }, 5000);
                     }
-                } catch (e5) {
+                } catch (e) {
                     (0, _helperJs.popup)("There was a problem saving, please try again later.", "show");
                     setTimeout(function() {
                         (0, _helperJs.popup)("", "close");
@@ -1157,8 +1196,8 @@ let rrule_check = function(date) {
         let b = new Date(events[t2].dateEnd).getTime();
         let c = new Date(date).getTime();
         let d2 = events[t2].rrule_;
-        let e = events[t2].RRULE; //recurrences
-        if (typeof e !== "undefined" && e !== undefined && e != null) {
+        let e14 = events[t2].RRULE; //recurrences
+        if (typeof e14 !== "undefined" && e14 !== undefined && e14 != null) {
             if (a === c || b === c || a < c && b > c) {
                 if (d2 == "MONTHLY") {
                     if (new Date(events[t2].dateStart).getDate() === new Date(date).getDate()) {
@@ -1308,8 +1347,8 @@ function previous() {
 }
 let highlight_current_day = function() {
     setTimeout(function() {
-        document.querySelectorAll("div#calendar div.calendar-head div").forEach(function(e) {
-            e.classList.remove("active");
+        document.querySelectorAll("div#calendar div.calendar-head div").forEach(function(e15) {
+            e15.classList.remove("active");
         });
         let s = document.activeElement.getAttribute("data-day");
         document.querySelectorAll("div#calendar div.calendar-head div")[s].classList.add("active");
@@ -1391,17 +1430,17 @@ let showCalendar = function(month, year) {
     }
 };
 let clear_form = function() {
-    document.querySelectorAll("div#add-edit-event input").forEach(function(e) {
-        e.value = ""; // document.getElementById("form-image").src = "";
+    document.querySelectorAll("div#add-edit-event input").forEach(function(e16) {
+        e16.value = ""; // document.getElementById("form-image").src = "";
         blob = "";
     });
 };
 let focus_after_selection = function() {
     if (document.querySelectorAll(".select-box") == null) return false;
-    document.querySelectorAll(".select-box").forEach(function(e) {
-        e.addEventListener("blur", function(k) {
+    document.querySelectorAll(".select-box").forEach(function(e17) {
+        e17.addEventListener("blur", function(k) {
             setTimeout(function() {
-                e.parentElement.focus();
+                e17.parentElement.focus();
             }, 200);
         });
     });
@@ -1563,10 +1602,10 @@ var page_options = {
                 tabindex: "0",
                 oncreate: function({ dom  }) {
                     (0, _helperJs.bottom_bar)("", "", "");
-                    document.querySelectorAll(".select-box").forEach(function(e) {
-                        e.addEventListener("keypress", function() {
+                    document.querySelectorAll(".select-box").forEach(function(e18) {
+                        e18.addEventListener("keypress", function() {
                             setTimeout(function() {
-                                e.parentElement.focus();
+                                e18.parentElement.focus();
                             }, 200);
                         });
                     });
@@ -1678,6 +1717,13 @@ var page_options = {
                     (0, _mithrilDefault.default).route.set("/page_accounts");
                 }
             }, "add account"),
+            (0, _mithrilDefault.default)("button", {
+                class: "item",
+                tabindex: subscriptions.length + 4,
+                onclick: function() {
+                    window.open((0, _googleCredJs.google_cred).url);
+                }
+            }, "add google account"),
             (0, _mithrilDefault.default)("div", {
                 id: "subscription-text"
             }, "Your accounts"),
@@ -2204,6 +2250,11 @@ var page_add_event = {
         (0, _helperJs.bottom_bar)("", "", "");
     }
 };
+var page_oauth = {
+    view: function() {
+        return (0, _mithrilDefault.default)("div", "hello world");
+    }
+};
 var page_edit_event = {
     view: function() {
         return (0, _mithrilDefault.default)("div", {
@@ -2415,9 +2466,13 @@ var page_edit_event = {
     "/page_edit_event": page_edit_event,
     "/page_subscriptions": page_subscriptions,
     "/page_accounts": page_accounts,
-    "/page_edit_account": page_edit_account
+    "/page_edit_account": page_edit_account,
+    "/page_oauth": page_oauth
 });
 (0, _mithrilDefault.default).route.prefix = "#";
+window.addEventListener("hashchange", ()=>{
+    console.log("The hash has changed!");
+}, false);
 let store_settings = function() {
     settings.default_notification = document.getElementById("default-notification-time").value;
     (0, _localforageDefault.default).setItem("settings", settings).then(function(value) {
@@ -2484,7 +2539,7 @@ let store_account = function(edit, id) {
     } else (0, _helperJs.toaster)("Please enter a name and a valid url", 2000);
 };
 let delete_subscription = function() {
-    let updated_subscriptions = subscriptions.filter((e)=>e.id != document.activeElement.getAttribute("data-id"));
+    let updated_subscriptions = subscriptions.filter((e19)=>e19.id != document.activeElement.getAttribute("data-id"));
     (0, _localforageDefault.default).removeItem(document.activeElement.getAttribute("data-id")).then(function() {
         (0, _helperJs.toaster)("subscription removed", 4000);
     }).catch(function(err) {
@@ -2500,7 +2555,7 @@ let delete_subscription = function() {
     document.activeElement.remove();
 };
 let delete_account = function() {
-    let updated_subscriptions = accounts.filter((e)=>e.id != document.activeElement.getAttribute("data-id"));
+    let updated_subscriptions = accounts.filter((e20)=>e20.id != document.activeElement.getAttribute("data-id"));
     (0, _localforageDefault.default).setItem("accounts", updated_subscriptions).then(function(value) {
         //Do other things once the value has been saved.
         (0, _helperJs.side_toaster)("account deleted", 2000);
@@ -2938,8 +2993,8 @@ function shortpress_action(param) {
             slider_navigation();
             break;
         case "#":
-            document.querySelectorAll("div#calendar div#calendar-body div div [class^='moon-phase-']").forEach(function(e) {
-                e.classList.toggle("active");
+            document.querySelectorAll("div#calendar div#calendar-body div div [class^='moon-phase-']").forEach(function(e21) {
+                e21.classList.toggle("active");
             });
             break;
         case "SoftRight":
@@ -3053,7 +3108,7 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
-},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","./assets/js/tsdav.js":"14ZM6","uid":"lE7Rf","events":"32fHr","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8ZRFG":[function(require,module,exports) {
+},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","./assets/js/tsdav.js":"14ZM6","uid":"lE7Rf","events":"32fHr","./assets/js/google_cred.js":"c2NC3","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8ZRFG":[function(require,module,exports) {
 var global = arguments[3];
 /*!
     localForage -- Offline Storage, Improved
@@ -37246,8 +37301,8 @@ module.exports = function inherits(ctor, superCtor) {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var process = require("process");
 var global = arguments[3];
+var process = require("process");
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;
@@ -41812,6 +41867,26 @@ function uid(len) {
     if (!BUFFER || IDX + tmp > SIZE * 2) for(BUFFER = "", IDX = 0; i < SIZE; i++)BUFFER += HEX[Math.random() * 256 | 0];
     return BUFFER.substring(IDX, (IDX++) + tmp);
 }
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"c2NC3":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "google_cred", ()=>google_cred);
+"use strict";
+const google_cred = {
+    authorizationCode: "",
+    clientId: "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
+    clientSecret: "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",
+    email: "strukturart@gmail.com",
+    url: "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://strukturart.github.io/greg/&access_type=offline&prompt=consent"
+}; /*https://accounts.google.com/o/oauth2/v2/auth?
+  client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&
+  response_type=code&
+  state=state_parameter_passthrough_value&
+  scope=https://www.googleapis.com/auth/calendar&
+  redirect_uri=http://localhost:8080&
+  prompt=consent&
+  include_granted_scopes=true*/ 
 
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}]},["2PqY3","20BJq"], "20BJq", "parcelRequire8806")
 

@@ -18,6 +18,11 @@
 	"dependencies": {
 		"ads-sdk": "1.5.0"
 	},
+
+
+
+
+
 	"locales": {
 		"en-US": {
 			"name": "greg",
@@ -38,17 +43,20 @@
 
 	],
 
+	  "redirects": [
+    {
+
+      "from": "https://strukturart.github.io/greg/",
+      "to": "/oauth.html"
+    }
+  ],
+
+
+
 
  "serviceworker": {
       "script_url": "service-worker.js"
     },
-  "redirects": [
-    {
-
-      "from": "https://strukturart.github.io/greg/",
-      "to": "/index.html"
-    }
-  ],
 
 
 	"permissions": {

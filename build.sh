@@ -23,6 +23,10 @@ cp  ./application/assets/js/kaiads.v5.min.js ./dist/assets/js/
 
 cp ./application/manifest.webapp ./dist/
 cp ./application/manifest.webmanifest ./dist/
+cp ./application/oauth.html ./dist/
+cp ./application/oauth.js ./dist/
+cp ./application/oauth.js ./docs/
+
 
 #!/bin/bash
 #create default app zip
@@ -47,10 +51,7 @@ rm ../application.zip
 
 
 #github page
-cd ../..
-rm -fr ./docs
-mkdir docs
-cp -r ./dist/* ./docs/
+
 exit
 
 
