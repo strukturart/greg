@@ -8649,6 +8649,7 @@ const fetchOauthTokens = (credentials) =>
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
+    console.log(param.toString());
     const response = yield browserPonyfill.exports.fetch(credentials.tokenUrl, {
       method: "POST",
       body: param.toString(),

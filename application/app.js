@@ -16,8 +16,7 @@ import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
-
-import { fetchOauthTokens, getOauthHeaders } from "./assets/js/tsdav.js";
+import "url-search-params-polyfill";
 
 import { createCalendarObject } from "./assets/js/tsdav.js";
 import { propfind } from "./assets/js/tsdav.js";
@@ -34,8 +33,6 @@ export let accounts = [];
 
 localforage.setDriver(localforage.LOCALSTORAGE);
 
-//tokens();
-
 let callback_caldata_loaded = function () {};
 
 let calendar_names = [
@@ -47,43 +44,86 @@ let calendar_names = [
 ];
 
 let test = function () {
-  /*
+  let t = JSON.parse(localStorage.getItem("oauth_auth"));
+
+  const client = new DAVClient({
+    serverUrl: "https://apidata.googleusercontent.com/caldav/v2/",
+    credentials: {
+      tokenUrl: "https://oauth2.googleapis.com/token",
+      username: "strukturart@gmail.com",
+      refreshToken: t.refresh_token,
+      clientId: google_cred.clientId,
+      clientSecret: google_cred.clientSecret,
+      authorizationCode: localStorage.getItem("authorizationCode"),
+      redirectUrl: "https://strukturart.github.io/greg/",
+    },
+    authMethod: "Oauth",
+    defaultAccountType: "caldav",
+  });
+
   (async () => {
     try {
-      const tokens = await getOauthHeaders({
-        authorizationCode: localStorage.getItem("authorizationCode"),
-        clientId: google_cred.clientId,
-        clientSecret: google_cred.clientSecret,
-        tokenUrl: "https://accounts.google.com/o/oauth2/token",
-        redirectUrl: "https://strukturart.github.io/greg/",
-      });
-      console.log("result" + JSON.stringify(tokens));
+      await client.login();
     } catch (e) {
-      console.log("error" + e);
+      if (e.message == "Network request failed") {
+        toaster(
+          "the data of the accounts" + item.name + " could not be loaded",
+          5000
+        );
+      }
+
+      if (e.message == "Invalid credentials")
+        toaster(
+          "there was a problem logging into your account " +
+            item.name +
+            " please check your account details",
+          5000
+        );
+    }
+
+    try {
+      document.getElementById("icon-loading").style.visibility = "visible";
+      const calendars = await client.fetchCalendars();
+      let k = [];
+
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+        //cache data
+        let data_to_store = {
+          "displayName": calendars[i].displayName,
+          "syncToken": calendars[i].syncToken,
+          "ctag": calendars[i].ctag,
+          "url": calendars[i].url,
+          "objects": objects,
+        };
+
+        k.push(data_to_store);
+
+        //parse data
+        objects.forEach(function (i) {
+          parse_ics(
+            i.data,
+            callback_caldata_loaded,
+            false,
+            false,
+            i.etag,
+            i.url,
+            "",
+            true
+          );
+        });
+        document.getElementById("icon-loading").style.visibility = "hidden";
+        style_calendar_cell();
+        side_toaster("Data loaded", 3000);
+      }
+    } catch (e) {
+      console.log(e);
     }
   })();
-
-  */
-
-  var myHeaders = new Headers();
-  myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-
-  var urlencoded = new URLSearchParams();
-  urlencoded.append("code", localStorage.getItem("authorizationCode"));
-  urlencoded.append("grant_type", "authorization_code");
-  urlencoded.append("redirect_uri", "https://strukturart.github.io/greg/");
-  urlencoded.append("client_id", google_cred.clientId);
-  urlencoded.append("client_secret", google_cred.clientSecret);
-
-  var requestOptions = {
-    method: "POST",
-    headers: myHeaders,
-    body: urlencoded,
-    redirect: "follow",
-  };
-
-  fetch("https://accounts.google.com/o/oauth2/token", requestOptions);
 };
+
 try {
   test();
 } catch (e) {
@@ -103,10 +143,12 @@ let style_calendar_cell = function () {
     }
   });
 };
-console.log(localStorage.getItem("authorizationCode"));
 
-let load_caldav = function (action) {
+let load_caldav = function () {
   accounts.forEach(function (item) {
+    if (item.type == "oauth") {
+      console.log("oauth");
+    }
     const client = new DAVClient({
       serverUrl: item.server_url,
       credentials: {
@@ -127,29 +169,6 @@ let load_caldav = function (action) {
             5000
           );
         }
-        /*
-        //load cached data if not possible to download data
-        localforage
-          .getItem(item.id)
-          .then(function (w) {
-            w.forEach((b) => {
-              b.objects.forEach((m) => {
-                parse_ics(
-                  m.data,
-                  callback_caldata_loaded,
-                  false,
-                  false,
-                  b.etag,
-                  b.url,
-                  item.id
-                );
-              });
-            });
-            toaster("load cached data", 5000);
-          })
-          .catch(function (err) {
-            console.log(err);
-          });*/
 
         if (e.message == "Invalid credentials")
           toaster(

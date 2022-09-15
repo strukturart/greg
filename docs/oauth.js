@@ -1,17 +1,19 @@
+import { accounts } from "./apps.js";
+import localforage from "localforage";
+
 const google_cred = {
-  authorizationCode: "",
   clientId:
     "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
   clientSecret: "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",
-  email: "strukturart@gmail.com",
-  url: "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://strukturart.github.io/greg/&access_type=offline&prompt=consent",
 };
+const authorizationCode = "";
 let get_token = function () {
   const code = window.location.href;
   const r = code.split("&code=");
   const b = r[1].split("&");
-  alert(b[0]);
 
+  //localStorage.setItem("authorizationCode", b[0]);
+  authorizationCode = b[0];
   var myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
@@ -35,8 +37,26 @@ let get_token = function () {
 };
 
 get_token().then((result) => {
-  console.log(result);
-  JSON.stringify(result);
-  localStorage.setItem("oauth_auth", JSON.stringify(result));
-  //window.close();
+  // console.log(result);
+  //JSON.stringify(result);
+  // localStorage.setItem("oauth_auth", JSON.stringify(result));
+
+  accounts.push({
+    server_url: "https://apidata.googleusercontent.com/caldav/v2/",
+    tokens: result,
+    authorizationCode: authorizationCode,
+    name: "Google",
+    id: uid(32),
+    type: "oauth",
+  });
+
+  localforage
+    .setItem("accounts", accounts)
+    .then(function (value) {
+      window.close();
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      console.log(err);
+    });
 });
