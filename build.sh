@@ -27,6 +27,9 @@ cp ./application/oauth.html ./dist/
 cp ./application/oauth.js ./dist/
 cp ./application/oauth.js ./docs/
 
+#make oauth js script
+parcel build  --no-source-maps --no-optimize ./application/oauth.js --dist-dir ./dist
+
 
 #!/bin/bash
 #create default app zip

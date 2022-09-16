@@ -46,7 +46,7 @@
 	  "redirects": [
     {
 
-      "from": "https://strukturart.github.io/greg/",
+      "from": "https://greg.strukturart.com/redirect.html",
       "to": "/oauth.html"
     }
   ],

@@ -40,95 +40,9 @@ let calendar_names = [
     name: "local",
     id: "local-id",
     data: "",
+    type: "local",
   },
 ];
-
-let test = function () {
-  let t = JSON.parse(localStorage.getItem("oauth_auth"));
-
-  const client = new DAVClient({
-    serverUrl: "https://apidata.googleusercontent.com/caldav/v2/",
-    credentials: {
-      tokenUrl: "https://oauth2.googleapis.com/token",
-      username: "strukturart@gmail.com",
-      refreshToken: t.refresh_token,
-      clientId: google_cred.clientId,
-      clientSecret: google_cred.clientSecret,
-      authorizationCode: localStorage.getItem("authorizationCode"),
-      redirectUrl: "https://strukturart.github.io/greg/",
-    },
-    authMethod: "Oauth",
-    defaultAccountType: "caldav",
-  });
-
-  (async () => {
-    try {
-      await client.login();
-    } catch (e) {
-      if (e.message == "Network request failed") {
-        toaster(
-          "the data of the accounts" + item.name + " could not be loaded",
-          5000
-        );
-      }
-
-      if (e.message == "Invalid credentials")
-        toaster(
-          "there was a problem logging into your account " +
-            item.name +
-            " please check your account details",
-          5000
-        );
-    }
-
-    try {
-      document.getElementById("icon-loading").style.visibility = "visible";
-      const calendars = await client.fetchCalendars();
-      let k = [];
-
-      for (let i = 0; i < calendars.length; i++) {
-        const objects = await client.fetchCalendarObjects({
-          calendar: calendars[i],
-        });
-        //cache data
-        let data_to_store = {
-          "displayName": calendars[i].displayName,
-          "syncToken": calendars[i].syncToken,
-          "ctag": calendars[i].ctag,
-          "url": calendars[i].url,
-          "objects": objects,
-        };
-
-        k.push(data_to_store);
-
-        //parse data
-        objects.forEach(function (i) {
-          parse_ics(
-            i.data,
-            callback_caldata_loaded,
-            false,
-            false,
-            i.etag,
-            i.url,
-            "",
-            true
-          );
-        });
-        document.getElementById("icon-loading").style.visibility = "hidden";
-        style_calendar_cell();
-        side_toaster("Data loaded", 3000);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  })();
-};
-
-try {
-  test();
-} catch (e) {
-  console.log(e);
-}
 
 let style_calendar_cell = function () {
   document.querySelectorAll("div.calendar-cell").forEach(function (e) {
@@ -146,18 +60,32 @@ let style_calendar_cell = function () {
 
 let load_caldav = function () {
   accounts.forEach(function (item) {
+    const client = "";
     if (item.type == "oauth") {
-      console.log("oauth");
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          tokenUrl: "https://oauth2.googleapis.com/token",
+          refreshToken: item.tokens.refresh_token,
+          clientId: google_cred.clientId,
+          clientSecret: google_cred.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
+        },
+        authMethod: "Oauth",
+        defaultAccountType: "caldav",
+      });
+    } else {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          username: item.user,
+          password: item.password,
+        },
+        authMethod: "Basic",
+        defaultAccountType: "caldav",
+      });
     }
-    const client = new DAVClient({
-      serverUrl: item.server_url,
-      credentials: {
-        username: item.user,
-        password: item.password,
-      },
-      authMethod: "Basic",
-      defaultAccountType: "caldav",
-    });
 
     (async () => {
       try {
@@ -190,22 +118,14 @@ let load_caldav = function () {
           });
           //cache data
           let data_to_store = {
-            "displayName": calendars[i].displayName,
-            "syncToken": calendars[i].syncToken,
-            "ctag": calendars[i].ctag,
-            "url": calendars[i].url,
-            "objects": objects,
+            displayName: calendars[i].displayName,
+            syncToken: calendars[i].syncToken,
+            ctag: calendars[i].ctag,
+            url: calendars[i].url,
+            objects: objects,
           };
 
           k.push(data_to_store);
-          //add cal name to list
-          /*
-          calendar_names.push({
-            name: calendars[i].displayName,
-            id: item.id,
-          });
-
-          */
 
           localforage
             .setItem(item.id, k)
@@ -233,6 +153,8 @@ let load_caldav = function () {
           side_toaster("Data loaded", 3000);
         }
       } catch (e) {
+        document.getElementById("icon-loading").style.visibility = "hidden";
+
         console.log(e);
       }
     })();
@@ -241,15 +163,33 @@ let load_caldav = function () {
 
 let cache_caldav = function () {
   accounts.forEach(function (item) {
-    const client = new DAVClient({
-      serverUrl: item.server_url,
-      credentials: {
-        username: item.user,
-        password: item.password,
-      },
-      authMethod: "Basic",
-      defaultAccountType: "caldav",
-    });
+    const client = "";
+    if (item.type == "oauth") {
+      console.log("oauth");
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          tokenUrl: "https://oauth2.googleapis.com/token",
+          refreshToken: item.tokens.refresh_token,
+          clientId: google_cred.clientId,
+          clientSecret: google_cred.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
+        },
+        authMethod: "Oauth",
+        defaultAccountType: "caldav",
+      });
+    } else {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          username: item.user,
+          password: item.password,
+        },
+        authMethod: "Basic",
+        defaultAccountType: "caldav",
+      });
+    }
 
     (async () => {
       try {
@@ -281,11 +221,11 @@ let cache_caldav = function () {
           });
           //cache data
           let data_to_store = {
-            "displayName": calendars[i].displayName,
-            "syncToken": calendars[i].syncToken,
-            "ctag": calendars[i].ctag,
-            "url": calendars[i].url,
-            "objects": objects,
+            displayName: calendars[i].displayName,
+            syncToken: calendars[i].syncToken,
+            ctag: calendars[i].ctag,
+            url: calendars[i].url,
+            objects: objects,
           };
 
           k.push(data_to_store);
@@ -310,15 +250,33 @@ let cache_caldav = function () {
 
 let sync_caldav = function (callback) {
   accounts.forEach(function (item) {
-    const client = new DAVClient({
-      serverUrl: item.server_url,
-      credentials: {
-        username: item.user,
-        password: item.password,
-      },
-      authMethod: "Basic",
-      defaultAccountType: "caldav",
-    });
+    const client = "";
+    if (item.type == "oauth") {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          tokenUrl: "https://oauth2.googleapis.com/token",
+          refreshToken: item.tokens.refresh_token,
+          clientId: google_cred.clientId,
+          clientSecret: google_cred.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
+        },
+        authMethod: "Oauth",
+        defaultAccountType: "caldav",
+      });
+    } else {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          username: item.user,
+          password: item.password,
+        },
+        authMethod: "Basic",
+        defaultAccountType: "caldav",
+      });
+    }
+
     (async () => {
       try {
         await client.login();
@@ -335,6 +293,7 @@ let sync_caldav = function (callback) {
       try {
         //set calendars names
         const calendars = await client.fetchCalendars();
+
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
             calendar: calendars[i],
@@ -346,6 +305,7 @@ let sync_caldav = function (callback) {
         }
 
         const value = await localforage.getItem(item.id);
+        if (value == null) return false;
 
         for (let i = 0; i < value.length; i++) {
           let s = {
@@ -375,20 +335,43 @@ let sync_caldav = function (callback) {
   });
 };
 
-let create_caldav = function (event_data, calendar_id, calendar_name, event) {
+let create_caldav = function (
+  event_data,
+  calendar_id,
+  calendar_name,
+  event,
+  event_id
+) {
   popup("Please wait...", "show");
 
   accounts.forEach(function (p) {
     if (p.id == calendar_id) {
-      const client = new DAVClient({
-        serverUrl: p.server_url,
-        credentials: {
-          username: p.user,
-          password: p.password,
-        },
-        authMethod: "Basic",
-        defaultAccountType: "caldav",
-      });
+      const client = "";
+      if (p.type == "oauth") {
+        client = new DAVClient({
+          serverUrl: p.server_url,
+          credentials: {
+            tokenUrl: "https://oauth2.googleapis.com/token",
+            refreshToken: p.tokens.refresh_token,
+            clientId: google_cred.clientId,
+            clientSecret: google_cred.clientSecret,
+            authorizationCode: p.authorizationCode,
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
+          },
+          authMethod: "Oauth",
+          defaultAccountType: "caldav",
+        });
+      } else {
+        client = new DAVClient({
+          serverUrl: p.server_url,
+          credentials: {
+            username: p.user,
+            password: p.password,
+          },
+          authMethod: "Basic",
+          defaultAccountType: "caldav",
+        });
+      }
       (async () => {
         try {
           let n = await client.login();
@@ -405,15 +388,15 @@ let create_caldav = function (event_data, calendar_id, calendar_name, event) {
           const calendars = await client.fetchCalendars();
           for (let i = 0; i < calendars.length; i++) {
             if (calendars[i].displayName == calendar_name) {
-              i = calendars.length;
+              console.log(calendars[i].url);
+
               const result = await client.createCalendarObject({
-                //headers: client.authHeaders,
-                calendar: calendars[0],
-                filename: uid(16) + ".ics",
+                calendar: calendars[i],
+                filename: event_id + ".ics",
                 iCalString: event_data,
                 headers: {
                   "content-type": "text/calendar; charset=utf-8",
-                  "authorization": client.authHeaders.authorization,
+                  authorization: client.authHeaders.authorization,
                 },
               });
 
@@ -451,6 +434,7 @@ let create_caldav = function (event_data, calendar_id, calendar_name, event) {
                 }, 5000);
               }
             }
+            break;
           }
         } catch (e) {}
       })();
@@ -463,15 +447,32 @@ let delete_caldav = function (etag, url, account_id, uid) {
 
   accounts.forEach(function (p) {
     if (p.id == account_id) {
-      const client = new DAVClient({
-        serverUrl: p.server_url,
-        credentials: {
-          username: p.user,
-          password: p.password,
-        },
-        authMethod: "Basic",
-        defaultAccountType: "caldav",
-      });
+      const client = "";
+      if (p.type == "oauth") {
+        client = new DAVClient({
+          serverUrl: p.server_url,
+          credentials: {
+            tokenUrl: "https://oauth2.googleapis.com/token",
+            refreshToken: p.tokens.refresh_token,
+            clientId: google_cred.clientId,
+            clientSecret: google_cred.clientSecret,
+            authorizationCode: p.authorizationCode,
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
+          },
+          authMethod: "Oauth",
+          defaultAccountType: "caldav",
+        });
+      } else {
+        client = new DAVClient({
+          serverUrl: item.server_url,
+          credentials: {
+            username: item.user,
+            password: item.password,
+          },
+          authMethod: "Basic",
+          defaultAccountType: "caldav",
+        });
+      }
       (async () => {
         try {
           await client.login();
@@ -534,19 +535,36 @@ let delete_caldav = function (etag, url, account_id, uid) {
 let update_caldav = function (etag, url, data, account_id) {
   popup("Please wait...", "show");
 
-  console.log("hey: " + etag, url, data);
-
   accounts.forEach(function (p) {
     if (p.id == account_id) {
-      const client = new DAVClient({
-        serverUrl: p.server_url,
-        credentials: {
-          username: p.user,
-          password: p.password,
-        },
-        authMethod: "Basic",
-        defaultAccountType: "caldav",
-      });
+      console.log("match");
+
+      const client = "";
+      if (p.type == "oauth") {
+        client = new DAVClient({
+          serverUrl: p.server_url,
+          credentials: {
+            tokenUrl: "https://oauth2.googleapis.com/token",
+            refreshToken: p.tokens.refresh_token,
+            clientId: google_cred.clientId,
+            clientSecret: google_cred.clientSecret,
+            authorizationCode: p.authorizationCode,
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
+          },
+          authMethod: "Oauth",
+          defaultAccountType: "caldav",
+        });
+      } else {
+        client = new DAVClient({
+          serverUrl: p.server_url,
+          credentials: {
+            username: p.user,
+            password: p.password,
+          },
+          authMethod: "Basic",
+          defaultAccountType: "caldav",
+        });
+      }
       (async () => {
         try {
           await client.login();
@@ -624,6 +642,12 @@ let load_cached_caldav = function () {
       localforage
         .getItem(item.id)
         .then(function (w) {
+          //when never cached
+          //load content
+          if (w == null) {
+            load_caldav();
+            return false;
+          }
           w.forEach((b) => {
             b.objects.forEach((m) => {
               parse_ics(
@@ -667,9 +691,7 @@ let load_subscriptions = function () {
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 
-//load accounts data
 sync_caldav_callback = function (o) {
-  console.log("ööö" + o.updated.length);
   if (o.updated.length > 0) {
     let without_cached = events.filter(
       (events) => events.isCaldav === false || undefined
@@ -679,6 +701,9 @@ sync_caldav_callback = function (o) {
     load_caldav();
   }
 };
+
+//load accounts data
+
 localforage
   .getItem("accounts")
   .then(function (value) {
@@ -688,7 +713,6 @@ localforage
     }
     accounts = value;
     load_cached_caldav();
-
     sync_caldav(sync_caldav_callback);
   })
   .catch(function (err) {
@@ -1653,19 +1677,19 @@ var page_options = {
             m.route.set("/page_accounts");
           },
         },
-        "add account"
+        "add  CalDav account"
       ),
 
       m(
         "button",
         {
           class: "item",
-          tabindex: subscriptions.length + 4,
+          tabindex: subscriptions.length + 5,
           onclick: function () {
             window.open(google_cred.url);
           },
         },
-        "add google account"
+        "add Google account"
       ),
       m("div", { id: "subscription-text" }, "Your accounts"),
 
@@ -1675,14 +1699,23 @@ var page_options = {
           {
             class: "item subscriptions-item",
             "data-id": item.id,
+            "data-account-type": item.type,
             "data-action": "edit-delete-account",
 
-            tabindex: index + subscriptions.length + 5,
+            tabindex: index + subscriptions.length + 6,
             onblur: function () {
               bottom_bar("", "", "");
             },
             onfocus: function () {
-              bottom_bar("delete", "", "<img src='assets/image/pencil.svg'>");
+              if (itemtype == "google") {
+                bottom_bar("<img src='assets/image/delete.svg'>", "", "");
+              } else {
+                bottom_bar(
+                  "<img src='assets/image/delete.svg'>",
+                  "",
+                  "<img src='assets/image/pencil.svg'>"
+                );
+              }
             },
           },
           item.name
@@ -2945,9 +2978,10 @@ let store_event = function (db_id, cal_name) {
         "\nDESCRIPTION:" +
         event.DESCRIPTION +
         "\nEND:VEVENT\nEND:VCALENDAR",
-      db_id,
+      event.id,
       cal_name,
-      event
+      event,
+      event.UID
     );
   }
   style_calendar_cell();
@@ -3351,14 +3385,14 @@ function shortpress_action(param) {
 
       if (
         document.activeElement.getAttribute("data-action") ==
-        "edit-delete-account"
+          "edit-delete-account" &&
+        document.activeElement.getAttribute("data-account-type") != "google"
       ) {
         status.edit_account_id = document.activeElement.getAttribute("data-id");
         update_account = accounts.filter(function (arr) {
           return arr.id == status.edit_account_id;
         })[0];
 
-        console.log("du" + JSON.stringify(update_account));
         m.route.set("/page_edit_account");
       }
 

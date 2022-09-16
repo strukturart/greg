@@ -4,8 +4,7 @@
 
 ![badge-release](https://img.shields.io/github/v/release/strukturart/greg?include_prereleases&style=plastic)
 [![badge-bhackers](https://img.shields.io/badge/bHackers-bHackerStore-orange)](https://store.bananahackers.net/#greg)
-![badge-downloads](https://img.shields.io/github/downloads/strukturart/greg/total)
-
+![badge-download
 An easy to use calendar for KaiOs
 
 ![image-1](/images/mockup.png)
@@ -55,6 +54,11 @@ This software (except KaiAds) is open source and licensed under the MIT License.
 
 - tsdav https://github.com/natelindev/tsdav MIT License
 - mithril https://github.com/MithrilJS MIT License
+
+### Privacy Policy
+
+This software uses KaiAds. This is a third party service that may collect information used to identify you. Pricacy policy of KaiAds.
+If you connect a Google account to greg, it is possible that Google collects information about you, or identifies you.
 
 ## Donation
 
