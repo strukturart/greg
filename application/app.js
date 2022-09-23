@@ -248,7 +248,7 @@ let cache_caldav = function () {
   });
 };
 
-let sync_caldav = function (callback) {
+export let sync_caldav = function (callback) {
   accounts.forEach(function (item) {
     const client = "";
     if (item.type == "oauth") {
@@ -300,6 +300,7 @@ let sync_caldav = function (callback) {
           });
           calendar_names.push({
             name: calendars[i].displayName,
+            url: calendars[i].url,
             id: item.id,
           });
         }
@@ -387,9 +388,8 @@ let create_caldav = function (
         try {
           const calendars = await client.fetchCalendars();
           for (let i = 0; i < calendars.length; i++) {
+            console.log(calendars[i].displayName, calendars[i].url);
             if (calendars[i].displayName == calendar_name) {
-              console.log(calendars[i].url);
-
               const result = await client.createCalendarObject({
                 calendar: calendars[i],
                 filename: event_id + ".ics",
@@ -431,10 +431,10 @@ let create_caldav = function (
                 );
                 setTimeout(function () {
                   popup("", "close");
+                  sort_array(events, "dateStart", "date");
                 }, 5000);
               }
             }
-            break;
           }
         } catch (e) {}
       })();
@@ -525,6 +525,7 @@ let delete_caldav = function (etag, url, account_id, uid) {
           );
           setTimeout(function () {
             popup("", "close");
+            sort_array(events, "dateStart", "date");
           }, 5000);
         }
       })();
@@ -683,7 +684,7 @@ let load_subscriptions = function () {
   }
   setTimeout(() => {
     jump_to_today();
-    sort_array(events, "DTSTART", "date");
+    sort_array(events, "dateStart", "date");
   }, 1000);
 
   event_slider(document.activeElement.getAttribute("data-date"));
@@ -691,7 +692,7 @@ let load_subscriptions = function () {
     status.selected_day = document.activeElement.getAttribute("data-date");
 };
 
-sync_caldav_callback = function (o) {
+export let sync_caldav_callback = function (o) {
   if (o.updated.length > 0) {
     let without_cached = events.filter(
       (events) => events.isCaldav === false || undefined
@@ -707,6 +708,7 @@ sync_caldav_callback = function (o) {
 localforage
   .getItem("accounts")
   .then(function (value) {
+    console.log(value);
     if (value == null) {
       accounts = [];
       return false;
@@ -883,6 +885,15 @@ let find_closest_date = function (search_term) {
     t = events[0].dateStart;
   }
   document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
+  const rect = document.activeElement.getBoundingClientRect();
+  const elY =
+    rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+
+  document.activeElement.parentNode.scrollBy({
+    left: 0,
+    top: elY - window.innerHeight / 2,
+    behavior: "smooth",
+  });
   return t;
 };
 
@@ -1177,9 +1188,8 @@ let jump_to_today = function () {
   let currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
 
-  event_slider(status.selected_day);
-
   status.selected_day = document.activeElement.getAttribute("data-date");
+  event_slider(status.selected_day);
 };
 
 function next() {
@@ -1497,6 +1507,9 @@ var page_events = {
             ""
           );
           setTimeout(function () {
+            console.log(events);
+            sort_array(events, "dateStart", "date");
+
             find_closest_date();
           }, 1500);
         },
@@ -1677,19 +1690,47 @@ var page_options = {
             m.route.set("/page_accounts");
           },
         },
-        "add  CalDav account"
+
+        [
+          m(
+            "div",
+            {
+              class: "flex justify-content-center align-item-center ",
+            },
+            [
+              m("img", {
+                src: "assets/image/caldav.png",
+                width: "20px",
+              }),
+              m("span", "Sign in with CalDAV Account"),
+            ]
+          ),
+        ]
       ),
 
       m(
         "button",
         {
-          class: "item",
+          class: "item google-account-button ",
           tabindex: subscriptions.length + 5,
           onclick: function () {
             window.open(google_cred.url);
           },
         },
-        "add Google account"
+        [
+          m(
+            "div",
+            {
+              class: "flex justify-content-center align-item-center ",
+            },
+            [
+              m("img", {
+                src: "assets/image/google_button.svg",
+              }),
+              m("span", "Sign in with Google"),
+            ]
+          ),
+        ]
       ),
       m("div", { id: "subscription-text" }, "Your accounts"),
 
@@ -1707,7 +1748,7 @@ var page_options = {
               bottom_bar("", "", "");
             },
             onfocus: function () {
-              if (itemtype == "google") {
+              if (item.type == "oauth") {
                 bottom_bar("<img src='assets/image/delete.svg'>", "", "");
               } else {
                 bottom_bar(
@@ -2250,12 +2291,6 @@ var page_add_event = {
   },
 };
 
-var page_oauth = {
-  view: function () {
-    return m("div", "hello world");
-  },
-};
-
 var page_edit_event = {
   view: function () {
     return m(
@@ -2399,6 +2434,9 @@ var page_edit_event = {
                 id: "event-recur",
                 value: update_event_date.rrule_,
                 class: "select-box",
+                oncreate: function () {
+                  console.log(update_event_date);
+                },
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2459,7 +2497,6 @@ m.route(root, "/page_calendar", {
   "/page_subscriptions": page_subscriptions,
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
-  "/page_oauth": page_oauth,
 });
 m.route.prefix = "#";
 
@@ -2611,6 +2648,7 @@ let delete_account = function () {
       //Do other things once the value has been saved.
       side_toaster("account deleted", 2000);
       document.activeElement.remove();
+      bottom_bar("", "", "");
     })
     .catch(function (err) {
       // This code runs if there were any errors
@@ -2619,9 +2657,7 @@ let delete_account = function () {
 
   localforage
     .removeItem(document.activeElement.getAttribute("data-id"))
-    .then(function () {
-      toaster("subscription removed", 4000);
-    })
+    .then(function () {})
     .catch(function (err) {
       console.log(err);
     });
@@ -2633,7 +2669,6 @@ localforage
   .getItem("events")
   .then(function (value) {
     if (value != null) events = value;
-    sort_array(events, "DTSTART", "date");
   })
   .catch(function (err) {});
 
@@ -2882,24 +2917,19 @@ let store_event = function (db_id, cal_name) {
     multidayevent = true;
   }
 
-  let rrule_convert = function () {
-    let p = document.getElementById("event-recur").value;
+  let rrule_convert = function (val) {
+    let p = val;
     let r;
     if (p == "none") {
-      return "";
+      return null;
     }
     if (p != "none") {
-      r =
-        "FREQ=" +
-        document.getElementById("event-recur").value +
-        ";UNTIL=" +
-        convert_ics_date(convert_dt_end);
+      r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
     }
     return r;
   };
 
   if (validation == false) return false;
-
   let event = {
     UID: uid(32),
     SUMMARY: document.getElementById("event-title").value,
@@ -2909,8 +2939,11 @@ let store_event = function (db_id, cal_name) {
     DTSTAMP: convert_ics_date(convert_dt_start),
     DTSTART: convert_ics_date(convert_dt_start),
     DTEND: convert_ics_date(convert_dt_end),
-    RRULE: rrule_convert(),
-    rrule_: document.getElementById("event-recur").value,
+    RRULE: rrule_convert(document.getElementById("event-recur").value),
+    rrule_:
+      document.getElementById("event-recur").value == ""
+        ? "none"
+        : document.getElementById("event-recur").value,
     dateStart: document.getElementById("event-date").value,
     dateEnd: document.getElementById("event-date-end").value,
     time_start: document.getElementById("event-time-start").value,
@@ -2947,42 +2980,44 @@ let store_event = function (db_id, cal_name) {
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
-          sort_array(events, "DTSTART", "date");
         }, 200);
       })
       .catch(function (err) {
         console.log(err);
       });
   } else {
-    create_caldav(
+    let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
-        event.SUMMARY +
-        "\nUID:" +
-        event.UID +
-        "\nSEQUENCE:0\nRRULE:" +
-        event.RRULE +
-        "\nDTSTART;TZID=" +
-        settings.timezone +
-        ":" +
-        event.DTSTART +
-        "\nDTEND;TZID=" +
-        settings.timezone +
-        ":" +
-        event.DTEND +
-        "\nDTSTAMP;TZID=" +
-        settings.timezone +
-        ":" +
-        event.DTSTAMP +
-        "\nLOCATION:" +
-        event.LOCATION +
-        "\nDESCRIPTION:" +
-        event.DESCRIPTION +
-        "\nEND:VEVENT\nEND:VCALENDAR",
-      event.id,
-      cal_name,
-      event,
-      event.UID
-    );
+      event.SUMMARY +
+      "\nUID:" +
+      event.UID +
+      "\nSEQUENCE:0\nRRULE:" +
+      event.RRULE +
+      "\nDTSTART;TZID=" +
+      settings.timezone +
+      ":" +
+      event.DTSTART +
+      "\nDTEND;TZID=" +
+      settings.timezone +
+      ":" +
+      event.DTEND +
+      "\nDTSTAMP;TZID=" +
+      settings.timezone +
+      ":" +
+      event.DTSTAMP +
+      "\nLOCATION:" +
+      event.LOCATION +
+      "\nDESCRIPTION:" +
+      event.DESCRIPTION +
+      "\nEND:VEVENT\nEND:VCALENDAR";
+
+    if (event.RRULE == null) {
+      console.log("empty rrule");
+      event_data = event_data.replace("SEQUENCE:0", "");
+      event_data = event_data.replace("RRULE:null", "");
+      event_data = event_data.trim();
+    }
+    create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
   style_calendar_cell();
 };
@@ -3059,15 +3094,14 @@ let update_event = function (account_id) {
         notification_time = convert_ics_date(calc_notification.toISOString());
       }
 
-      let rrule_convert = function () {
-        let p = document.getElementById("event-recur").value;
+      let rrule_convert = function (val) {
+        let p = val;
         let r;
-        if (p != "" || p != "none") {
-          r =
-            "FREQ=" +
-            document.getElementById("event-recur").value +
-            ";UNTIL=" +
-            convert_ics_date(convert_dt_end);
+        if (p == "none") {
+          return null;
+        }
+        if (p != "none") {
+          r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
         }
         return r;
       };
@@ -3081,7 +3115,7 @@ let update_event = function (account_id) {
       index.DTSTAMP = convert_ics_date(convert_dt_start);
       index.DTSTART = convert_ics_date(convert_dt_start);
       index.DTEND = convert_ics_date(convert_dt_end);
-      index.RRULE = rrule_convert();
+      index.RRULE = rrule_convert(document.getElementById("event-recur").value);
       index.dateEnd = document.getElementById("event-date-end").value;
       index.dateStart = document.getElementById("event-date").value;
       index.time_start = document.getElementById("event-time-start").value;
@@ -3120,38 +3154,41 @@ let update_event = function (account_id) {
           })
           .catch(function (err) {});
       } else {
-        update_caldav(
-          index.etag,
-          index.url,
+        let event_data =
           "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
-            index.SUMMARY +
-            "\nUID:" +
-            index.UID +
-            "\nSEQUENCE:0\nRRULE:" +
-            index.RRULE +
-            "\nDTSTART;TZID=" +
-            settings.timezone +
-            ":" +
-            index.DTSTART +
-            "\nDTEND;TZID=" +
-            settings.timezone +
-            ":" +
-            index.DTEND +
-            "\nDTSTAMP;TZID=" +
-            settings.timezone +
-            ":" +
-            index.DTSTAMP +
-            "\nLOCATION:" +
-            index.LOCATION +
-            "\nDESCRIPTION:" +
-            index.DESCRIPTION +
-            "\nEND:VEVENT\nEND:VCALENDAR",
-          index.id
-        );
+          index.SUMMARY +
+          "\nUID:" +
+          index.UID +
+          "\nSEQUENCE:0\nRRULE:" +
+          index.RRULE +
+          "\nDTSTART;TZID=" +
+          settings.timezone +
+          ":" +
+          index.DTSTART +
+          "\nDTEND;TZID=" +
+          settings.timezone +
+          ":" +
+          index.DTEND +
+          "\nDTSTAMP;TZID=" +
+          settings.timezone +
+          ":" +
+          index.DTSTAMP +
+          "\nLOCATION:" +
+          index.LOCATION +
+          "\nDESCRIPTION:" +
+          index.DESCRIPTION +
+          "\nEND:VEVENT\nEND:VCALENDAR";
+        if (index.RRULE == null) {
+          event_data = event_data.replace("SEQUENCE:0", "");
+          event_data = event_data.replace("RRULE:null", "");
+          event_data = event_data.trim();
+        }
+
+        update_caldav(index.etag, index.url, event_data, index.id);
       }
     }
   });
-  sort_array(events, "DTSTART", "date");
+  //sort_array(events, "DTSTART", "date");
 };
 
 //////////////
@@ -3386,7 +3423,7 @@ function shortpress_action(param) {
       if (
         document.activeElement.getAttribute("data-action") ==
           "edit-delete-account" &&
-        document.activeElement.getAttribute("data-account-type") != "google"
+        document.activeElement.getAttribute("data-account-type") != "oauth"
       ) {
         status.edit_account_id = document.activeElement.getAttribute("data-id");
         update_account = accounts.filter(function (arr) {

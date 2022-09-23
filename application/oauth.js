@@ -2,6 +2,8 @@
 
 import localforage from "localforage";
 import { uid } from "uid";
+import { sync_caldav } from "./app.js";
+import { sync_caldav_callback } from "./app.js";
 
 localforage.setDriver(localforage.LOCALSTORAGE);
 
@@ -9,12 +11,12 @@ const google_cred = {
   clientId:
     "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
   clientSecret: "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",
-  redirect_ur:"https://greg.strukturart.com/redirect.html",
 };
 let authorizationCode = "";
 
 let get_token = function () {
   let code = window.location.href;
+  console.log(code);
   let r = code.split("&code=");
   let b = r[1].split("&");
 
@@ -46,8 +48,6 @@ let get_token = function () {
 };
 
 get_token().then((result) => {
-  // console.log(result);
-
   localStorage.setItem("oauth_auth", JSON.stringify(result));
   let accounts = [];
 
@@ -56,9 +56,10 @@ get_token().then((result) => {
     .then(function (value) {
       if (value == null) {
         accounts = [];
-        return false;
+        //return false;
+      } else {
+        accounts = value;
       }
-      accounts = value;
 
       accounts.push({
         server_url: "https://apidata.googleusercontent.com/caldav/v2/",
@@ -74,9 +75,11 @@ get_token().then((result) => {
         .then(function () {
           document.getElementById("success").innerText =
             "Account successfully added to greg";
+
           setTimeout(function () {
             window.close();
-          }, 1000);
+            sync_caldav(sync_caldav_callback, true);
+          }, 3000);
         })
         .catch(function (err) {
           // This code runs if there were any errors

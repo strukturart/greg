@@ -11,8 +11,8 @@
 }
 
 @font-face {
-  font-family: "Lato-Regular";
-  src: url("../fonts/Lato-Regular.ttf");
+  font-family: "Roboto", sans-serif;
+  src: url("../fonts/Roboto-Medium.ttf");
 }
 
 *,
@@ -48,7 +48,7 @@
 }
 html,
 body {
-  font-family: "Lato-Regular";
+  font-family: "Roboto";
 
   font-weight: 100;
   position: relative;
@@ -94,16 +94,22 @@ img[src=" "] {
 button {
   font-size: 1rem;
   background: rgb(255, 255, 255);
-  padding: 7px;
-  width: 90vw;
+  padding: 5px;
+  width: 92vw;
   margin: 0 0 15px 5vw;
   color: black;
   border-radius: 10px;
   border: 3px solid gray;
+  font-weight: 700;
+}
+
+button img {
+  margin: 0 10px 0 0;
+  width: 20px;
 }
 
 button:focus {
-  background: orange;
+  background: #4285f4;
   border: 0px solid gray;
 }
 
@@ -881,6 +887,10 @@ div#settings {
   top: 0px;
   z-index: 3;
   background: rgb(231, 231, 231);
+}
+
+button span {
+  margin: 0 0 0 10px;
 }
 
 div#settings div#text {

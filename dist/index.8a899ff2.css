@@ -9,8 +9,7 @@
 }
 
 @font-face {
-  font-family: Lato-Regular;
-  src: url("Lato-Regular.0babec39.ttf");
+  src: url("Roboto-Medium.91322885.ttf");
 }
 
 *, :before, :after {
@@ -46,7 +45,7 @@ html, body {
   background: #fff;
   margin: 0;
   padding: 0;
-  font-family: Lato-Regular;
+  font-family: Roboto;
   font-size: 1rem;
   font-weight: 100;
   line-height: 1.4rem;
@@ -69,19 +68,25 @@ img[src=""], img[src=" "] {
 }
 
 button {
-  width: 90vw;
+  width: 92vw;
   color: #000;
   background: #fff;
   border: 3px solid gray;
   -moz-border-radius: 10px;
   border-radius: 10px;
   margin: 0 0 15px 5vw;
-  padding: 7px;
+  padding: 5px;
   font-size: 1rem;
+  font-weight: 700;
+}
+
+button img {
+  width: 20px;
+  margin: 0 10px 0 0;
 }
 
 button:focus {
-  background: orange;
+  background: #4285f4;
   border: 0 solid gray;
 }
 
@@ -839,6 +844,10 @@ div#settings {
   position: absolute;
   top: 0;
   overflow: hidden;
+}
+
+button span {
+  margin: 0 0 0 10px;
 }
 
 div#settings div#text {

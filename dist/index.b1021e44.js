@@ -41519,7 +41519,6 @@ parcelRequire("gPs6T");
 var $1b6667df72fd06f4$export$1f48543aacb96c1e = {
     clientId: "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
     clientSecret: "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",
-    email: "strukturart@gmail.com",
     url: "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent"
 };
 
@@ -41758,7 +41757,7 @@ var $3e4edb8379ebf8a3$var$cache_caldav = function cache_caldav() {
         }))();
     });
 };
-var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav(callback) {
+var $3e4edb8379ebf8a3$export$f721405413cfdd7c = function sync_caldav(callback, get_user) {
     $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(item) {
         var client = "";
         if (item.type == "oauth") client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
@@ -41807,38 +41806,47 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav(callback) {
                         i = 0;
                     case 13:
                         if (!(i < calendars.length)) {
-                            _ctx.next = 21;
+                            _ctx.next = 25;
                             break;
                         }
-                        _ctx.next = 16;
+                        console.log(calendars[i].displayName, calendars[i].url);
+                        if (!get_user) {
+                            _ctx.next = 18;
+                            break;
+                        }
+                        alert(calendars[0].url);
+                        return _ctx.abrupt("return", calendars[0].url);
+                    case 18:
+                        _ctx.next = 20;
                         return client.fetchCalendarObjects({
                             calendar: calendars[i]
                         });
-                    case 16:
+                    case 20:
                         objects = _ctx.sent;
                         $3e4edb8379ebf8a3$var$calendar_names.push({
                             name: calendars[i].displayName,
+                            url: calendars[i].url,
                             id: item.id
                         });
-                    case 18:
+                    case 22:
                         i++;
                         _ctx.next = 13;
                         break;
-                    case 21:
-                        _ctx.next = 23;
+                    case 25:
+                        _ctx.next = 27;
                         return (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem(item.id);
-                    case 23:
+                    case 27:
                         value = _ctx.sent;
                         if (!(value == null)) {
-                            _ctx.next = 26;
+                            _ctx.next = 30;
                             break;
                         }
                         return _ctx.abrupt("return", false);
-                    case 26:
+                    case 30:
                         i2 = 0;
-                    case 27:
+                    case 31:
                         if (!(i2 < value.length)) {
-                            _ctx.next = 42;
+                            _ctx.next = 46;
                             break;
                         }
                         s = {
@@ -41854,30 +41862,30 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav(callback) {
                             detailedResult: true,
                             headers: client.authHeaders
                         };
-                        _ctx.prev = 29;
-                        _ctx.next = 32;
+                        _ctx.prev = 33;
+                        _ctx.next = 36;
                         return client.syncCalendars(s);
-                    case 32:
+                    case 36:
                         ma = _ctx.sent;
                         callback(ma);
-                        _ctx.next = 39;
+                        _ctx.next = 43;
                         break;
-                    case 36:
-                        _ctx.prev = 36;
-                        _ctx.t1 = _ctx["catch"](29);
+                    case 40:
+                        _ctx.prev = 40;
+                        _ctx.t1 = _ctx["catch"](33);
                         console.log(_ctx.t1);
-                    case 39:
+                    case 43:
                         i2++;
-                        _ctx.next = 27;
+                        _ctx.next = 31;
                         break;
-                    case 42:
-                        _ctx.next = 47;
+                    case 46:
+                        _ctx.next = 51;
                         break;
-                    case 44:
-                        _ctx.prev = 44;
+                    case 48:
+                        _ctx.prev = 48;
                         _ctx.t2 = _ctx["catch"](8);
                         console.log(_ctx.t2);
-                    case 47:
+                    case 51:
                     case "end":
                         return _ctx.stop();
                 }
@@ -41888,11 +41896,11 @@ var $3e4edb8379ebf8a3$var$sync_caldav = function sync_caldav(callback) {
                 ],
                 [
                     8,
-                    44
+                    48
                 ],
                 [
-                    29,
-                    36
+                    33,
+                    40
                 ]
             ]);
         }))();
@@ -41950,14 +41958,14 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                             i = 0;
                         case 14:
                             if (!(i < calendars.length)) {
-                                _ctx.next = 48;
+                                _ctx.next = 47;
                                 break;
                             }
+                            console.log(calendars[i].displayName, calendars[i].url);
                             if (!(calendars[i].displayName == calendar_name)) {
                                 _ctx.next = 44;
                                 break;
                             }
-                            console.log(calendars[i].url);
                             _ctx.next = 19;
                             return client.createCalendarObject({
                                 calendar: calendars[i],
@@ -42009,21 +42017,20 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                                 (0, $6d3f4b507512327e$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                                 setTimeout(function() {
                                     (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
+                                    (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
                                 }, 5000);
                             }
                         case 44:
-                            return _ctx.abrupt("break", 48);
-                        case 45:
                             i++;
                             _ctx.next = 14;
                             break;
-                        case 48:
-                            _ctx.next = 52;
+                        case 47:
+                            _ctx.next = 51;
                             break;
-                        case 50:
-                            _ctx.prev = 50;
+                        case 49:
+                            _ctx.prev = 49;
                             _ctx.t4 = _ctx["catch"](9);
-                        case 52:
+                        case 51:
                         case "end":
                             return _ctx.stop();
                     }
@@ -42034,7 +42041,7 @@ var $3e4edb8379ebf8a3$var$create_caldav = function create_caldav(event_data, cal
                     ],
                     [
                         9,
-                        50
+                        49
                     ],
                     [
                         21,
@@ -42126,6 +42133,7 @@ var $3e4edb8379ebf8a3$var$delete_caldav = function delete_caldav(etag, url, acco
                             (0, $6d3f4b507512327e$export$63b4813c5280c707)("There was a problem deleting, please try again later.", "show");
                             setTimeout(function() {
                                 (0, $6d3f4b507512327e$export$63b4813c5280c707)("", "close");
+                                (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
                             }, 5000);
                         case 21:
                         case "end":
@@ -42302,12 +42310,12 @@ var $3e4edb8379ebf8a3$var$load_subscriptions = function load_subscriptions() {
     for(var i = 0; i < $3e4edb8379ebf8a3$var$subscriptions.length; i++)(0, $1592f8b2f8ebd4e4$export$730c80d46f5e5f34)($3e4edb8379ebf8a3$var$subscriptions[i].url, "", $3e4edb8379ebf8a3$var$subscriptions[i].id);
     setTimeout(function() {
         $3e4edb8379ebf8a3$var$jump_to_today();
-        (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "DTSTART", "date");
+        (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
     }, 1000);
     $3e4edb8379ebf8a3$var$event_slider(document.activeElement.getAttribute("data-date"));
     if (document.activeElement.hasAttribute("data-date")) $3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date");
 };
-sync_caldav_callback = function sync_caldav_callback(o) {
+var $3e4edb8379ebf8a3$export$41f40119b64780 = function sync_caldav_callback(o) {
     if (o.updated.length > 0) {
         var without_cached = $3e4edb8379ebf8a3$export$4bf9923669ad6c63.filter(function(events1) {
             return events1.isCaldav === false || undefined;
@@ -42317,13 +42325,14 @@ sync_caldav_callback = function sync_caldav_callback(o) {
     }
 }; //load accounts data
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("accounts").then(function(value) {
+    console.log(value);
     if (value == null) {
         $3e4edb8379ebf8a3$export$c5541db89994d14 = [];
         return false;
     }
     $3e4edb8379ebf8a3$export$c5541db89994d14 = value;
     $3e4edb8379ebf8a3$var$load_cached_caldav();
-    $3e4edb8379ebf8a3$var$sync_caldav(sync_caldav_callback);
+    $3e4edb8379ebf8a3$export$f721405413cfdd7c($3e4edb8379ebf8a3$export$41f40119b64780);
 })["catch"](function(err) {
     console.log(err);
 }); //get event data
@@ -42460,6 +42469,13 @@ var $3e4edb8379ebf8a3$var$find_closest_date = function find_closest_date(search_
         $3e4edb8379ebf8a3$var$t = $3e4edb8379ebf8a3$export$4bf9923669ad6c63[0].dateStart;
     }
     document.querySelectorAll("article[data-date='" + $3e4edb8379ebf8a3$var$t + "']")[0].focus();
+    var rect = document.activeElement.getBoundingClientRect();
+    var elY = rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+    document.activeElement.parentNode.scrollBy({
+        left: 0,
+        top: elY - window.innerHeight / 2,
+        behavior: "smooth"
+    });
     return $3e4edb8379ebf8a3$var$t;
 }; // check if has event
 var $3e4edb8379ebf8a3$var$event_check = function event_check(date) {
@@ -42644,8 +42660,8 @@ var $3e4edb8379ebf8a3$var$jump_to_today = function jump_to_today() {
     var currentMonth1 = $3e4edb8379ebf8a3$var$today.getMonth();
     var currentYear1 = $3e4edb8379ebf8a3$var$today.getFullYear();
     $3e4edb8379ebf8a3$var$showCalendar(currentMonth1, currentYear1);
-    $3e4edb8379ebf8a3$var$event_slider($3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day);
     $3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day = document.activeElement.getAttribute("data-date");
+    $3e4edb8379ebf8a3$var$event_slider($3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day);
 };
 function $3e4edb8379ebf8a3$var$next() {
     $3e4edb8379ebf8a3$var$currentYear = $3e4edb8379ebf8a3$var$currentMonth === 11 ? $3e4edb8379ebf8a3$var$currentYear + 1 : $3e4edb8379ebf8a3$var$currentYear;
@@ -42864,6 +42880,8 @@ var $3e4edb8379ebf8a3$var$page_events = {
             oncreate: function oncreate() {
                 (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("<img src='assets/image/pencil.svg'>", "<img src='assets/image/calendar.svg'>", "");
                 setTimeout(function() {
+                    console.log($3e4edb8379ebf8a3$export$4bf9923669ad6c63);
+                    (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
                     $3e4edb8379ebf8a3$var$find_closest_date();
                 }, 1500);
             }
@@ -43034,14 +43052,33 @@ var $3e4edb8379ebf8a3$var$page_options = {
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_accounts");
                 }
-            }, "add  CalDav account"),
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
+                    "class": "flex justify-content-center align-item-center "
+                }, [
+                    (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("img", {
+                        src: "assets/image/caldav.png",
+                        width: "20px"
+                    }),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("span", "Sign in with CalDAV Account")
+                ])
+            ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
-                "class": "item",
+                "class": "item google-account-button ",
                 tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + 5,
                 onclick: function onclick() {
                     window.open((0, $1b6667df72fd06f4$export$1f48543aacb96c1e).url);
                 }
-            }, "add Google account"),
+            }, [
+                (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
+                    "class": "flex justify-content-center align-item-center "
+                }, [
+                    (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("img", {
+                        src: "assets/image/google_button.svg"
+                    }),
+                    (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("span", "Sign in with Google")
+                ])
+            ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 id: "subscription-text"
             }, "Your accounts"),
@@ -43056,7 +43093,7 @@ var $3e4edb8379ebf8a3$var$page_options = {
                         (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("", "", "");
                     },
                     onfocus: function onfocus() {
-                        if (itemtype == "google") (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("<img src='assets/image/delete.svg'>", "", "");
+                        if (item.type == "oauth") (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("<img src='assets/image/delete.svg'>", "", "");
                         else (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("<img src='assets/image/delete.svg'>", "", "<img src='assets/image/pencil.svg'>");
                     }
                 }, item.name);
@@ -43574,11 +43611,6 @@ var $3e4edb8379ebf8a3$var$page_add_event = {
         (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("", "", "");
     }
 };
-var $3e4edb8379ebf8a3$var$page_oauth = {
-    view: function view() {
-        return (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", "hello world");
-    }
-};
 var $3e4edb8379ebf8a3$var$page_edit_event = {
     view: function view() {
         return (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
@@ -43739,7 +43771,10 @@ var $3e4edb8379ebf8a3$var$page_edit_event = {
                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("select", {
                     id: "event-recur",
                     value: $3e4edb8379ebf8a3$var$update_event_date.rrule_,
-                    "class": "select-box"
+                    "class": "select-box",
+                    oncreate: function oncreate() {
+                        console.log($3e4edb8379ebf8a3$var$update_event_date);
+                    }
                 }, [
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("option", {
                         value: "none"
@@ -43791,8 +43826,7 @@ var $3e4edb8379ebf8a3$var$page_edit_event = {
     "/page_edit_event": $3e4edb8379ebf8a3$var$page_edit_event,
     "/page_subscriptions": $3e4edb8379ebf8a3$var$page_subscriptions,
     "/page_accounts": $3e4edb8379ebf8a3$var$page_accounts,
-    "/page_edit_account": $3e4edb8379ebf8a3$var$page_edit_account,
-    "/page_oauth": $3e4edb8379ebf8a3$var$page_oauth
+    "/page_edit_account": $3e4edb8379ebf8a3$var$page_edit_account
 });
 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.prefix = "#";
 window.addEventListener("hashchange", function() {
@@ -43889,19 +43923,17 @@ var $3e4edb8379ebf8a3$var$delete_account = function delete_account() {
         //Do other things once the value has been saved.
         (0, $6d3f4b507512327e$export$6593825dc0f3a767)("account deleted", 2000);
         document.activeElement.remove();
+        (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("", "", "");
     })["catch"](function(err) {
         // This code runs if there were any errors
         (0, $6d3f4b507512327e$export$a224d1f4f6f98541)(err, 2000);
     });
-    (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).removeItem(document.activeElement.getAttribute("data-id")).then(function() {
-        (0, $6d3f4b507512327e$export$a224d1f4f6f98541)("subscription removed", 4000);
-    })["catch"](function(err) {
+    (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).removeItem(document.activeElement.getAttribute("data-id")).then(function() {})["catch"](function(err) {
         console.log(err);
     });
 }; //load indexedDB
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("events").then(function(value) {
     if (value != null) $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = value;
-    (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "DTSTART", "date");
 })["catch"](function(err) {});
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("subscriptions").then(function(value) {
     $3e4edb8379ebf8a3$var$subscriptions = value;
@@ -44054,11 +44086,11 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
     var a = new Date(document.getElementById("event-date").value).getTime();
     var b = new Date(document.getElementById("event-date-end").value).getTime();
     if (a != b) multidayevent = true;
-    var rrule_convert = function rrule_convert() {
-        var p = document.getElementById("event-recur").value;
+    var rrule_convert = function rrule_convert(val) {
+        var p = val;
         var r;
-        if (p == "none") return "";
-        if (p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end);
+        if (p == "none") return null;
+        if (p != "none") r = "FREQ=" + val + ";UNTIL=" + $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end);
         return r;
     };
     if (validation == false) return false;
@@ -44071,8 +44103,8 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
         DTSTAMP: $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_start),
         DTSTART: $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_start),
         DTEND: $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end),
-        RRULE: rrule_convert(),
-        rrule_: document.getElementById("event-recur").value,
+        RRULE: rrule_convert(document.getElementById("event-recur").value),
+        rrule_: document.getElementById("event-recur").value == "" ? "none" : document.getElementById("event-recur").value,
         dateStart: document.getElementById("event-date").value,
         dateEnd: document.getElementById("event-date-end").value,
         time_start: document.getElementById("event-time-start").value,
@@ -44103,12 +44135,20 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
             (0, $6d3f4b507512327e$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
             setTimeout(function() {
                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_calendar");
-                (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "DTSTART", "date");
             }, 200);
         })["catch"](function(err) {
             console.log(err);
         });
-    } else $3e4edb8379ebf8a3$var$create_caldav("BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR", event.id, cal_name, event, event.UID);
+    } else {
+        var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+        if (event.RRULE == null) {
+            console.log("empty rrule");
+            event_data = event_data.replace("SEQUENCE:0", "");
+            event_data = event_data.replace("RRULE:null", "");
+            event_data = event_data.trim();
+        }
+        $3e4edb8379ebf8a3$var$create_caldav(event_data, event.id, cal_name, event, event.UID);
+    }
     $3e4edb8379ebf8a3$var$style_calendar_cell();
 }; // ////////////
 // UPDATE EVENT
@@ -44152,10 +44192,11 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
                 calc_notification.setMinutes(calc_notification.getMinutes() - notification_time);
                 notification_time = $3e4edb8379ebf8a3$var$convert_ics_date(calc_notification.toISOString());
             }
-            var rrule_convert = function rrule_convert() {
-                var p = document.getElementById("event-recur").value;
+            var rrule_convert = function rrule_convert(val) {
+                var p = val;
                 var r;
-                if (p != "" || p != "none") r = "FREQ=" + document.getElementById("event-recur").value + ";UNTIL=" + $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end);
+                if (p == "none") return null;
+                if (p != "none") r = "FREQ=" + val + ";UNTIL=" + $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end);
                 return r;
             };
             if (validation == false) return false;
@@ -44166,7 +44207,7 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
             index.DTSTAMP = $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_start);
             index.DTSTART = $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_start);
             index.DTEND = $3e4edb8379ebf8a3$var$convert_ics_date(convert_dt_end);
-            index.RRULE = rrule_convert();
+            index.RRULE = rrule_convert(document.getElementById("event-recur").value);
             index.dateEnd = document.getElementById("event-date-end").value;
             index.dateStart = document.getElementById("event-date").value;
             index.time_start = document.getElementById("event-time-start").value;
@@ -44197,10 +44238,17 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
                     (0, $1592f8b2f8ebd4e4$export$f1976d86f97fc8b2)("greg.ics", value);
                     $3e4edb8379ebf8a3$var$clear_form();
                 })["catch"](function(err) {});
-            } else $3e4edb8379ebf8a3$var$update_caldav(index.etag, index.url, "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR", index.id);
+            } else {
+                var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$var$settings.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+                if (index.RRULE == null) {
+                    event_data = event_data.replace("SEQUENCE:0", "");
+                    event_data = event_data.replace("RRULE:null", "");
+                    event_data = event_data.trim();
+                }
+                $3e4edb8379ebf8a3$var$update_caldav(index.etag, index.url, event_data, index.id);
+            }
         }
-    });
-    (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "DTSTART", "date");
+    }); //sort_array(events, "DTSTART", "date");
 }; //////////////
 //DELETE EVENT
 ///////////
@@ -44342,7 +44390,7 @@ function $3e4edb8379ebf8a3$var$shortpress_action(param) {
                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_options");
                 return true;
             }
-            if (document.activeElement.getAttribute("data-action") == "edit-delete-account" && document.activeElement.getAttribute("data-account-type") != "google") {
+            if (document.activeElement.getAttribute("data-action") == "edit-delete-account" && document.activeElement.getAttribute("data-account-type") != "oauth") {
                 $3e4edb8379ebf8a3$export$471f7ae5c4103ae1.edit_account_id = document.activeElement.getAttribute("data-id");
                 $3e4edb8379ebf8a3$var$update_account = $3e4edb8379ebf8a3$export$c5541db89994d14.filter(function(arr) {
                     return arr.id == $3e4edb8379ebf8a3$export$471f7ae5c4103ae1.edit_account_id;

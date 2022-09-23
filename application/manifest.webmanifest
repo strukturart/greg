@@ -1,5 +1,6 @@
 {
   "name": "greg",
+  "version": "0.0.9",
   "description": "greg",
   "lang": "en-US",
   "start_url": "/index.html",
@@ -34,6 +35,13 @@
       },
       {
         "notification": "/index.html"
+      }
+    ],
+
+    "redirects": [
+      {
+        "from": "https://greg.strukturart.com/redirect.html",
+        "to": "/oauth.html"
       }
     ],
     "permissions": {

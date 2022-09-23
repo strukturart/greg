@@ -19,16 +19,15 @@ cp -r ./application/assets/image ./dist/assets/image
 mkdir ./dist/assets/js
 cp  ./application/assets/js/kaiads.v5.min.js ./dist/assets/js/
 
-
+#make oauth js script
+./make_oauth_script.sh
 
 cp ./application/manifest.webapp ./dist/
 cp ./application/manifest.webmanifest ./dist/
 cp ./application/oauth.html ./dist/
-cp ./application/oauth.js ./dist/
+#cp ./application/oauth.js ./dist/
 cp ./application/oauth.js ./docs/
 
-#make oauth js script
-parcel build  --no-source-maps --no-optimize ./application/oauth.js --dist-dir ./dist
 
 
 #!/bin/bash
