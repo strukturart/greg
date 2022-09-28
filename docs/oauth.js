@@ -2,8 +2,6 @@
 
 import localforage from "localforage";
 import { uid } from "uid";
-import { sync_caldav } from "./app.js";
-import { sync_caldav_callback } from "./app.js";
 
 localforage.setDriver(localforage.LOCALSTORAGE);
 
@@ -48,8 +46,9 @@ let get_token = function () {
 };
 
 get_token().then((result) => {
-  localStorage.setItem("oauth_auth", JSON.stringify(result));
+  //localStorage.setItem("oauth_auth", JSON.stringify(result));
   let accounts = [];
+  localStorage.setItem("oauth_back", "true");
 
   localforage
     .getItem("accounts")
@@ -75,10 +74,9 @@ get_token().then((result) => {
         .then(function () {
           document.getElementById("success").innerText =
             "Account successfully added to greg";
-
+          localStorage.setItem("oauth_callback", "true");
           setTimeout(function () {
-            sync_caldav(sync_caldav_callback, true);
-            window.close();
+            self.close();
           }, 3000);
         })
         .catch(function (err) {

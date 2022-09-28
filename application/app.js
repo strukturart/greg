@@ -31,6 +31,8 @@ var moment = require("moment-timezone");
 export let events = [];
 export let accounts = [];
 
+let oauth_callback = "";
+
 localforage.setDriver(localforage.LOCALSTORAGE);
 
 let callback_caldata_loaded = function () {};
@@ -1549,7 +1551,7 @@ var page_events = {
   },
 };
 
-var page_options = {
+export let page_options = {
   view: function () {
     return m("div", { id: "options" }, [
       m("h2", "Key assignment"),
@@ -1714,6 +1716,34 @@ var page_options = {
           class: "item google-account-button ",
           tabindex: subscriptions.length + 5,
           onclick: function () {
+            oauth_callback = setInterval(function () {
+              if (localStorage.getItem("oauth_callback") == "true") {
+                m.route.set("/page_calendar");
+                //stop interval
+                clearInterval(oauth_callback);
+                //load accounts
+                setTimeout(function () {
+                  accounts = [];
+                  localforage
+                    .getItem("accounts")
+                    .then(function (value) {
+                      console.log(value);
+                      if (value == null) {
+                        accounts = [];
+                        return false;
+                      }
+                      accounts = value;
+                      side_toaster(
+                        "the calendar events will be loaded the next time the app is restarted",
+                        30000
+                      );
+                    })
+                    .catch(function (err) {
+                      console.log(err);
+                    });
+                }, 5000);
+              }
+            }, 1000);
             window.open(google_cred.url);
           },
         },
@@ -2499,14 +2529,6 @@ m.route(root, "/page_calendar", {
   "/page_edit_account": page_edit_account,
 });
 m.route.prefix = "#";
-
-window.addEventListener(
-  "hashchange",
-  () => {
-    console.log("The hash has changed!");
-  },
-  false
-);
 
 let store_settings = function () {
   settings.default_notification = document.getElementById(
