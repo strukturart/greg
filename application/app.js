@@ -30,6 +30,7 @@ var moment = require("moment-timezone");
 
 export let events = [];
 export let accounts = [];
+export let event_templates = [];
 
 let oauth_callback = "";
 
@@ -696,10 +697,11 @@ let load_subscriptions = function () {
 
 export let sync_caldav_callback = function (o) {
   if (o.updated.length > 0) {
-    let without_cached = events.filter(
-      (events) => events.isCaldav === false || undefined
-    );
+    let without_cached = events.filter((events) => events.isCaldav == false);
+
     events = without_cached;
+
+    console.log("must be synced" + events);
 
     load_caldav();
   }
@@ -710,7 +712,6 @@ export let sync_caldav_callback = function (o) {
 localforage
   .getItem("accounts")
   .then(function (value) {
-    console.log(value);
     if (value == null) {
       accounts = [];
       return false;
@@ -729,6 +730,42 @@ let get_event_date = function () {
   update_event_date = events.filter(function (arr) {
     return arr.UID == status.selected_day_id;
   })[0];
+};
+
+//load event templates
+localforage
+  .getItem("event_templates")
+  .then(function (value) {
+    if (value == null) {
+      event_templates = [];
+      console.log("empty");
+      return false;
+    }
+    event_templates = value;
+
+    console.log(event_templates);
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
+
+let store_event_as_template = function (title, description, location) {
+  let m = {
+    "id": uid(32),
+    "title": title,
+    "description": description,
+    "location": location,
+  };
+  event_templates.push(m);
+
+  localforage
+    .setItem("event_templates", event_templates)
+    .then(function (value) {
+      side_toaster("template saved", 2000);
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
 };
 
 let months = [
@@ -794,8 +831,8 @@ let load_ads = function () {
   js.onload = function () {
     getKaiAd({
       publisher: "4408b6fa-4e1d-438f-af4d-f3be2fa97208",
-      app: "omap",
-      slot: "omap",
+      app: "greg",
+      slot: "greg",
       test: 0,
       timeout: 10000,
       h: 100,
@@ -1686,7 +1723,7 @@ export let page_options = {
       m(
         "button",
         {
-          class: "item",
+          class: "item  google-button caldav-button",
           tabindex: subscriptions.length + 4,
           onclick: function () {
             m.route.set("/page_accounts");
@@ -1697,14 +1734,13 @@ export let page_options = {
           m(
             "div",
             {
-              class: "flex justify-content-center align-item-center ",
+              class: "flex  align-item-center justify-content-spacebetween ",
             },
             [
               m("img", {
                 src: "assets/image/caldav.png",
-                width: "20px",
               }),
-              m("span", "Sign in with CalDAV Account"),
+              m("span", "CalDAV Account"),
             ]
           ),
         ]
@@ -1713,7 +1749,7 @@ export let page_options = {
       m(
         "button",
         {
-          class: "item google-account-button ",
+          class: "item google-button",
           tabindex: subscriptions.length + 5,
           onclick: function () {
             oauth_callback = setInterval(function () {
@@ -1751,7 +1787,7 @@ export let page_options = {
           m(
             "div",
             {
-              class: "flex justify-content-center align-item-center ",
+              class: "flex justify-content-spacebetween align-item-center ",
             },
             [
               m("img", {
@@ -2156,6 +2192,7 @@ var page_add_event = {
               id: "event-title",
               oncreate: function () {
                 load_settings();
+                load_template_data();
               },
             }),
           ]
@@ -2462,10 +2499,13 @@ var page_edit_event = {
               "select",
               {
                 id: "event-recur",
-                value: update_event_date.rrule_,
+                value:
+                  update_event_date.rrule_ == ""
+                    ? "none"
+                    : update_event_date.rrule_,
                 class: "select-box",
                 oncreate: function () {
-                  console.log(update_event_date);
+                  console.log(update_event_date.rrule_);
                 },
               },
               [
@@ -2513,6 +2553,73 @@ var page_edit_event = {
           },
           "update"
         ),
+
+        m(
+          "button",
+          {
+            tabindex: "11",
+            id: "save-event-as-template",
+            class: "item save-template-button",
+            oncreate: () => {
+              focus_after_selection();
+            },
+            onclick: function () {
+              store_event_as_template(
+                document.getElementById("event-title").value,
+                document.getElementById("event-description").value,
+                document.getElementById("event-location").value
+              );
+            },
+          },
+          "save as template"
+        ),
+      ]
+    );
+  },
+};
+let selected_template;
+var page_event_templates = {
+  view: function () {
+    return m(
+      "div",
+      {
+        id: "templates-page",
+        oncreate: function () {
+          bottom_bar(
+            "<img src='assets/image/delete.svg'>",
+            "<img src='assets/image/add.svg'>",
+            ""
+          );
+        },
+      },
+      [
+        m("h2", { class: "text-center" }, "Templates"),
+        event_templates.map(function (item, index) {
+          return m(
+            "button",
+            {
+              class: "item",
+              onclick: function () {
+                selected_template = item.id;
+                m.route.set("/page_add_event");
+              },
+              onfocus: function () {},
+              oncreate: function ({ dom }) {
+                if (index == 0) {
+                  dom.focus();
+                  bottom_bar(
+                    "<img src='assets/image/delete.svg'>",
+                    "<img src='assets/image/add.svg'>",
+                    ""
+                  );
+                }
+              },
+              tabIndex: index,
+              "data-id": item.id,
+            },
+            item.title
+          );
+        }),
       ]
     );
   },
@@ -2527,6 +2634,7 @@ m.route(root, "/page_calendar", {
   "/page_subscriptions": page_subscriptions,
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
+  "/page_event_templates": page_event_templates,
 });
 m.route.prefix = "#";
 
@@ -2723,6 +2831,20 @@ function handleVisibilityChange() {
 handleVisibilityChange();
 
 /////////////////
+//load template data
+////////////////
+let load_template_data = function () {
+  event_templates.forEach(function (e) {
+    if (e.id == selected_template) {
+      document.getElementById("event-title").value = e.title;
+      document.getElementById("event-description").value = e.description;
+      document.getElementById("event-location").value = e.location;
+      selected_template = "";
+    }
+  });
+};
+
+/////////////////
 ///NAVIGATION
 /////////////////
 let mmm = document.querySelectorAll("div#calendar div.calendar-head div");
@@ -2747,7 +2869,8 @@ let nav = function (move) {
   if (
     m.route.get() == "/page_calendar" ||
     m.route.get() == "/page_options" ||
-    m.route.get() == "/page_events"
+    m.route.get() == "/page_events" ||
+    m.route.get() == "/page_event_templates"
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll(".item");
@@ -3119,7 +3242,7 @@ let update_event = function (account_id) {
       let rrule_convert = function (val) {
         let p = val;
         let r;
-        if (p == "none") {
+        if (p == "none" || p == "") {
           return null;
         }
         if (p != "none") {
@@ -3332,6 +3455,14 @@ function longpress_action(param) {
 
     case "ArrowLeft":
       break;
+
+    case "SoftLeft":
+      m.route.set("/page_event_templates");
+      break;
+
+    case "m":
+      m.route.set("/page_event_templates");
+      break;
   }
 }
 
@@ -3380,7 +3511,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_accounts" ||
         m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
-        m.route.get() == "/page_edit_event"
+        m.route.get() == "/page_edit_event" ||
+        m.route.get() == "/page_event_templates"
       ) {
         nav(-1);
       }
@@ -3396,7 +3528,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_accounts" ||
         m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
-        m.route.get() == "/page_edit_event"
+        m.route.get() == "/page_edit_event" ||
+        m.route.get() == "/page_event_templates"
       ) {
         nav(+1);
       }
@@ -3571,6 +3704,10 @@ function shortpress_action(param) {
       }
 
       if (m.route.get() == "/page_options") {
+        m.route.set("/page_calendar");
+      }
+
+      if (m.route.get() == "/page_event_templates") {
         m.route.set("/page_calendar");
       }
 
