@@ -26,8 +26,8 @@
      inkscape:deskcolor="#d1d1d1"
      showgrid="false"
      inkscape:zoom="5.1304348"
-     inkscape:cx="-24.949153"
-     inkscape:cy="9.2584746"
+     inkscape:cx="-56.330508"
+     inkscape:cy="9.4533898"
      inkscape:window-width="1920"
      inkscape:window-height="1016"
      inkscape:window-x="0"
@@ -134,7 +134,7 @@
       <g
          id="logo_googleg_48dp"
          sketch:type="MSLayerGroup"
-         transform="translate(18.51546,17.761685)">
+         transform="matrix(0.77777778,0,0,0.77777778,20.51546,19.761685)">
         <path
            d="m 17.64,9.2045455 c 0,-0.6381819 -0.05727,-1.2518182 -0.163636,-1.8409091 H 9 V 10.845 h 4.843636 C 13.635,11.97 13.000909,12.923182 12.047727,13.561364 v 2.258182 h 2.908637 C 16.658182,14.252727 17.64,11.945455 17.64,9.2045455 Z"
            id="Shape"

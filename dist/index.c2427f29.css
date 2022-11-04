@@ -24,7 +24,6 @@ div#qr-screen {
   text-align: center;
   width: 150px;
   background: #0095dd;
-  -moz-border-radius: 40px;
   border-radius: 40px;
   margin: -30px 0 0 -95px;
   padding: 20px;
@@ -45,7 +44,6 @@ div#qr-screen {
 #corner-nw {
   border-bottom: 0;
   border-right: 0;
-  -moz-border-top-left-radius: 20px;
   border-top-left-radius: 20px;
   top: 20px;
   left: 20px;
@@ -54,7 +52,6 @@ div#qr-screen {
 #corner-no {
   border-bottom: 0;
   border-left: 0;
-  -moz-border-top-right-radius: 20px;
   border-top-right-radius: 20px;
   top: 20px;
   right: 20px;
@@ -63,7 +60,6 @@ div#qr-screen {
 #corner-so {
   border-top: 0;
   border-left: 0;
-  -moz-border-bottom-right-radius: 20px;
   border-bottom-right-radius: 20px;
   bottom: 20px;
   right: 20px;
@@ -72,7 +68,6 @@ div#qr-screen {
 #corner-sw {
   border-top: 0;
   border-right: 0;
-  -moz-border-bottom-left-radius: 20px;
   border-bottom-left-radius: 20px;
   bottom: 20px;
   left: 20px;
