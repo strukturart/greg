@@ -1416,7 +1416,7 @@ let focus_after_selection = function () {
 
 /*
 ///////////////////
-// /VIEWS
+//VIEWS
 /////////////////
 */
 
@@ -1540,16 +1540,18 @@ var page_events = {
       "div",
       {
         id: "events-wrapper",
+        oninit: function () {
+          sort_array(events, "dateStart", "date");
+        },
+
         oncreate: function () {
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
             ""
           );
-          setTimeout(function () {
-            console.log(events);
-            sort_array(events, "dateStart", "date");
 
+          setTimeout(function () {
             find_closest_date();
           }, 1500);
         },
@@ -2586,32 +2588,43 @@ var page_edit_event = {
 let selected_template;
 var page_event_templates = {
   view: function () {
-    return event_templates.map(function (item, index) {
-      return m(
-        "button",
-        {
-          class: "item",
-          onclick: function () {
-            selected_template = item.id;
-            m.route.set("/page_add_event");
-          },
-          onfocus: function () {},
-          oncreate: function ({ dom }) {
-            if (index == 0) {
-              dom.focus();
-              bottom_bar(
-                "<img src='assets/image/delete.svg'>",
-                "<img src='assets/image/add.svg'>",
-                ""
-              );
-            }
-          },
-          tabIndex: index,
-          "data-id": item.id,
+    return m(
+      "div",
+      {
+        id: "options",
+        oncreate: function () {
+          bottom_bar(
+            "<img src='assets/image/delete.svg'>",
+            "<img src='assets/image/add.svg'>",
+            ""
+          );
         },
-        item.title
-      );
-    });
+      },
+      [
+        m("h2", { class: "text-center" }, "Templates"),
+        event_templates.map(function (item, index) {
+          return m(
+            "button",
+            {
+              class: "item",
+              onclick: function () {
+                selected_template = item.id;
+                m.route.set("/page_add_event");
+              },
+              onfocus: function () {},
+              oncreate: function ({ dom }) {
+                if (index == 0) {
+                  dom.focus();
+                }
+              },
+              tabIndex: index,
+              "data-id": item.id,
+            },
+            item.title
+          );
+        }),
+      ]
+    );
   },
 };
 
@@ -2788,7 +2801,10 @@ let delete_account = function () {
 localforage
   .getItem("events")
   .then(function (value) {
-    if (value != null) events = value;
+    if (value != null) {
+      events = value;
+      sort_array(events, "dateStart", "date");
+    }
   })
   .catch(function (err) {});
 

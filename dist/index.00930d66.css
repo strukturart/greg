@@ -648,6 +648,24 @@ button.save-button:focus {
   outline: none;
 }
 
+div#templates-page {
+  z-index: 4;
+  height: 92vh;
+  padding: 0 5px 5px 0;
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+}
+
+div#templates-page h2 {
+  min-width: 100vw;
+  width: 100vw;
+  background: #e6e6e6;
+  margin: 0 0 10px;
+  padding: 10px;
+  font-weight: bold;
+}
+
 div#options {
   z-index: 4;
   height: 92vh;

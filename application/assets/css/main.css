@@ -687,6 +687,22 @@ button.save-button:focus {
   border: none;
 }
 
+div#templates-page{  position: absolute;
+  z-index: 4;
+  top: 0;
+  padding: 0px 5px 5px 0px;
+  height: 92vh;
+  overflow: hidden;}
+  
+  div#templates-page h2 {
+  background: rgb(230, 230, 230);
+  min-width: 100vw;
+  width: 100vw;
+  font-weight: bold;
+  padding: 10px;
+  margin: 0px 0 10px 0;
+}
+
 /*options view*/
 
 div#options {

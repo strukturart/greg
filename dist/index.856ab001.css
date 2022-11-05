@@ -1,42 +1,31 @@
-/*GENERAL*/
-
 :root {
   --color-one: black;
   --color-two: yellow;
   --color-three: silver;
-  --color-four: rgb(190, 185, 185);
-  --color-five: rgba(214, 225, 228, 0.322);
-  --color-seven: rgba(101, 216, 24, 0.288);
-  --color-eight: rgba(47, 82, 196, 0.188);
+  --color-four: #beb9b9;
+  --color-five: rgba(214, 225, 228, .32);
+  --color-seven: rgba(101, 216, 24, .286);
+  --color-eight: rgba(47, 82, 196, .19);
 }
 
 @font-face {
-  font-family: "Roboto", sans-serif;
-  src: url("../fonts/Roboto-Medium.ttf");
+  src: url("Roboto-Medium.91322885.ttf");
 }
 
-*,
-*:before,
-*:after {
-  border: 0px;
-  padding: 0px;
-  margin: 0px;
+*, :before, :after {
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
-
-  /* Careful, this breaks the word wherever it is without a hyphen */
   overflow-wrap: break-word;
   word-wrap: break-word;
-
-  /* Adds a hyphen where the word breaks */
-  -webkit-hyphens: auto;
-  -ms-hyphens: auto;
-  -moz-hyphens: auto;
   hyphens: auto;
+  border: 0;
+  margin: 0;
+  padding: 0;
 }
 
 :focus {
-  outline: none;
   background: var(--color-four);
+  outline: none;
 }
 
 ::-moz-focus-inner {
@@ -46,34 +35,25 @@
 .debug {
   outline: 1px solid red;
 }
-html,
-body {
-  font-family: "Roboto";
 
-  font-weight: 100;
-  position: relative;
-  margin: 0px;
-  padding: 0px;
-  font-size: 1rem;
-  line-height: 1.4rem;
+html, body {
   max-height: 100%;
   max-width: 100%;
   height: 100%;
   width: 100%;
   max-width: 100vw;
+  background: #fff;
+  margin: 0;
+  padding: 0;
+  font-family: Roboto;
+  font-size: 1rem;
+  font-weight: 100;
+  line-height: 1.4rem;
+  position: relative;
   overflow: hidden;
-  background: white;
 }
 
-h1 {
-  font-size: 1rem;
-}
-
-h2 {
-  font-size: 1rem;
-}
-
-h3 {
+h1, h2, h3 {
   font-size: 1rem;
 }
 
@@ -83,96 +63,92 @@ img {
   display: block;
 }
 
-img[src=""] {
-  display: none;
-}
-
-img[src=" "] {
+img[src=""], img[src=" "] {
   display: none;
 }
 
 button {
-  font-size: 1rem;
-  background: rgb(255, 255, 255);
-  padding: 5px;
   width: 92vw;
-  margin: 0 0 15px 5vw;
-  color: black;
-  border-radius: 1px;
-  border: 2px solid gray;
-  font-weight: 700;
+  color: #000;
   min-height: 40px;
+  background: #fff;
+  border: 2px solid gray;
+  -moz-border-radius: 1px;
+  border-radius: 1px;
+  margin: 0 0 15px 5vw;
+  padding: 5px;
+  font-size: 1rem;
+  font-weight: 700;
 }
 
 button img {
-  margin: 0 10px 0 0;
   width: 20px;
+  margin: 0 10px 0 0;
 }
 
 button:focus {
   background: #4285f4;
-  border: 0px solid gray;
+  border: 0 solid gray;
 }
 
 select {
   width: 90%;
-  padding: 10px;
-
-  -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background: none;
-  color: rgb(54, 54, 54);
+  color: #363636;
   width: 90%;
-
-  outline: 0;
-  border: 0;
-  border-bottom: 2px solid rgb(63, 63, 63);
-  margin: 0 5% 0 5%;
   text-align: center;
+  background: #fafafa url("E264.e4f33402.svg") 99% 80% no-repeat;
+  border: 0;
+  border-bottom: 2px solid #3f3f3f;
+  outline: 0;
+  margin: 0 5%;
+  padding: 10px;
   position: relative;
-  background: #fafafa url("../image/E264.svg") no-repeat 99% 80%;
 }
 
 textarea {
   height: 30px;
   width: 90%;
-  padding: 3px;
   border: 1px solid silver;
+  padding: 3px;
 }
 
 input {
   width: 90%;
   height: 30px;
-  padding: 3px;
   border: 2px solid silver;
+  -moz-border-radius: 6px;
   border-radius: 6px;
+  padding: 3px;
 }
 
 label {
-  display: block;
   width: 100%;
-  margin: 0 0 10px 0;
   text-align: center;
+  margin: 0 0 10px;
   font-weight: bold;
+  display: block;
 }
+
 .input-parent {
-  padding: 15px;
-  margin: 0 0 20px 0;
   width: 100%;
+  margin: 0 0 20px;
+  padding: 15px;
 }
 
 .input-parent:focus {
-  background: orange;
   width: 100%;
+  background: orange;
 }
 
 .google-button {
-  border-radius: 0;
-  position: relative;
   height: 40px;
-  outline: 0px;
-  border: 0px solid gray;
+  border: 0 solid gray;
+  -moz-border-radius: 0;
+  border-radius: 0;
+  outline: 0;
+  position: relative;
 }
 
 button.google-button:focus {
@@ -182,70 +158,71 @@ button.google-button:focus {
 .google-button span {
   padding: 5px;
   position: absolute;
-  right: 10px;
   top: 4px;
+  right: 10px;
 }
 
 .google-button img {
-  position: absolute;
   width: 40px;
+  position: absolute;
+  top: 0;
   left: -1px;
-  top: 0px;
 }
 
 .caldav-button img {
-  position: absolute;
   width: 40px;
-  left: -1px;
+  position: absolute;
   top: 3px;
+  left: -1px;
 }
 
 div#intro {
-  position: fixed;
-  background: black;
   z-index: 100000;
   min-width: 100%;
   height: 100%;
+  background: #000;
   animation-name: intro;
   animation-duration: 1.5s;
-  animation-delay: 2s;
   animation-iteration-count: 1;
+  animation-delay: 2s;
   animation-fill-mode: forwards;
+  position: fixed;
 }
 
 div#intro #version {
-  position: absolute;
-  background: black;
   z-index: 100000;
-  bottom: 20px;
-  color: white;
+  color: #fff;
   text-align: center;
-  font-size: 0.8rem;
+  background: #000;
+  font-size: .8rem;
   animation-name: intro_img;
   animation-duration: 2s;
-  animation-delay: 1s;
   animation-iteration-count: 1;
+  animation-delay: 1s;
   animation-fill-mode: forwards;
+  position: absolute;
+  bottom: 20px;
 }
 
 div#intro img {
   width: 180px;
   height: auto;
-  position: absolute;
-  top: 50px;
-  left: 50%;
   margin-left: -90px;
   animation-name: intro_img;
   animation-duration: 2s;
-  animation-delay: 1s;
   animation-iteration-count: 1;
+  animation-delay: 1s;
   animation-fill-mode: forwards;
+  position: absolute;
+  top: 50px;
+  left: 50%;
 }
 
 @keyframes intro_img {
   from {
-    transform: translateX(0px);
+    transform: translateX(0);
   }
+
   to {
     transform: translateX(-450px);
   }
@@ -253,14 +230,15 @@ div#intro img {
 
 @keyframes intro {
   from {
-    transform: translateY(0px);
-    display: block;
     opacity: 100;
+    display: block;
+    transform: translateY(0);
   }
+
   to {
-    transform: translateY(0px);
-    display: none;
     opacity: 0;
+    display: none;
+    transform: translateY(0);
   }
 }
 
@@ -268,6 +246,7 @@ div#intro img {
   from {
     opacity: 100;
   }
+
   to {
     opacity: 0;
   }
@@ -295,38 +274,33 @@ div#intro img {
   width: 220px;
 }
 
-/*///////////////////////////
-///TOAST////////////////*/
-
 div#toast {
-  position: fixed;
   height: auto;
   overflow: none;
-  background: black;
-  color: white;
+  color: #fff;
   z-index: 10;
   min-width: 100%;
+  transform-origin: 0 0;
+  background: #000;
   padding: 5px;
-  top: 0px;
-
-  transition: all 0.5s ease-in-out;
-  transform-origin: left top;
-  transform: translate(0px, -100px);
+  transition: all .5s ease-in-out;
+  position: fixed;
+  top: 0;
+  transform: translate(0, -100px);
 }
 
 div#side-toast {
-  position: fixed;
   height: auto;
   overflow: none;
-  background: orange;
-  color: white;
+  color: #fff;
   z-index: 10;
+  transform-origin: 0 0;
+  background: orange;
   padding: 5px;
+  transition: all .5s ease-in-out;
+  position: fixed;
   top: 70vh;
-
-  transition: all 0.5s ease-in-out;
-  transform-origin: left top;
-  transform: translate(-100vw, 0px);
+  transform: translate(-100vw);
 }
 
 div#side-toast img {
@@ -334,30 +308,33 @@ div#side-toast img {
 }
 
 div#popup {
-  position: fixed;
   width: 100%;
   height: 100%;
-  display: block;
   z-index: 10000;
   background: none;
   display: none;
+  position: fixed;
 }
+
 div#popup div {
-  display: flex;
-  align-items: center;
+  -moz-box-pack: center;
   justify-content: center;
+  -moz-box-align: center;
+  align-items: center;
+  display: flex;
 }
 
 div#popup div div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
   background: orange;
+  -moz-border-radius: 10px;
   border-radius: 10px;
+  -moz-box-pack: center;
+  justify-content: center;
+  -moz-box-align: center;
+  align-items: center;
+  padding: 10px;
+  display: flex;
 }
-/*///////////////////////////
-///VIEWS////////////////*/
 
 article.events[data-alarm="none"] img.bell {
   display: none;
@@ -373,61 +350,62 @@ div#calendar h3 {
 
 div#calendar div.calendar-head {
   background: var(--color-five);
-  margin: 0 0 5px 0px;
+  margin: 0 0 5px;
 }
 
 div#calendar div.calendar-head div {
   width: 12%;
-  font-size: 0.8rem;
   text-align: center;
+  font-size: .8rem;
 }
 
 div#calendar div.calendar-head div.active {
-  color: rgb(33, 197, 170);
+  color: #21c5aa;
   font-weight: bold;
 }
+
 div#calendar div.calendar-head div:first-child {
-  margin: 0 0 0 0px;
+  margin: 0;
 }
 
 div#calendar div.calendar-body {
-  padding: 0px;
-  margin: 8px 0 0 0px;
+  margin: 8px 0 0;
+  padding: 0;
 }
 
 div#calendar div#calendar-body div {
   min-width: 12.8%;
-  font-size: 0.8rem;
   text-align: center;
+  border: 0;
+  outline: 0 solid red;
+  font-size: .8rem;
   position: relative;
   overflow: hidden;
-  outline: 0px solid red;
-  border: 0px;
 }
 
 div#calendar div#calendar-body div:focus {
   background: none;
-  outline: 0px solid red;
-  border: 0px;
+  border: 0;
+  outline: 0 solid red;
 }
 
 div#calendar div#calendar-body div div {
   text-align: center;
-  padding: 2px 0 0 0;
-  background: white;
+  background: #fff;
+  padding: 2px 0 0;
 }
 
 div#calendar div#calendar-body div div.today {
-  background: rgb(120, 183, 255);
+  background: #78b7ff;
 }
 
 div#calendar div#calendar-body :focus span {
   min-width: 10px;
   min-height: 10px;
-  background: black;
-  right: -5px;
-  top: -5px;
+  background: #000;
   position: absolute;
+  top: -5px;
+  right: -5px;
   transform: rotate(45deg);
 }
 
@@ -436,54 +414,54 @@ div#calendar div#calendar-body div div.event {
 }
 
 div#calendar div#calendar-body div div.subscription {
-  background: rgb(245, 245, 169);
+  background: #f5f5a9;
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
-  background-image: url(../image/moon1.svg);
+  background-image: url("moon1.e4268891.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-1 {
-  background-image: url(../image/moon2.svg);
+  background-image: url("moon2.ae40efa3.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-2 {
-  background-image: url(../image/moon3.svg);
+  background-image: url("moon3.f830d829.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-3 {
-  background-image: url(../image/moon4.svg);
+  background-image: url("moon4.eae03906.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-4 {
-  background-image: url(../image/moon5.svg);
+  background-image: url("moon5.864e3993.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-5 {
-  background-image: url(../image/moon6.svg);
+  background-image: url("moon6.7409cecf.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-6 {
-  background-image: url(../image/moon7.svg);
+  background-image: url("moon7.be050850.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-7 {
-  background-image: url(../image/moon8.svg);
+  background-image: url("moon8.3ac887be.svg");
 }
 
 div#calendar div#calendar-body div div div[class^="moon-phase-"] {
-  background-position: center;
-  background-size: 80% 80%;
-  background-repeat: no-repeat;
   width: 100%;
   height: 100%;
+  z-index: 1;
+  background-color: #fff;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 80% 80%;
+  display: none;
   position: absolute;
-  top: 0px;
+  top: 0;
   left: 0%;
   right: 0%;
-  z-index: 1;
-  background-color: white;
-  display: none;
 }
 
 div#calendar div#calendar-body div div div.active {
@@ -491,48 +469,47 @@ div#calendar div#calendar-body div div div.active {
 }
 
 div#calendar div#calendar-body div div.today div.active {
+  filter: sepia();
   display: block;
-  filter: sepia(100%);
 }
 
 span.weeknumber {
   color: silver;
   padding: 2px;
-  font-size: 0.7rem;
+  font-size: .7rem;
   position: absolute;
   right: 0;
 }
 
 div#add-edit-event {
-  position: absolute;
   z-index: 2;
-  top: 0;
   height: 92vh;
   width: 100%;
+  position: absolute;
+  top: 0;
   overflow: hidden;
 }
-
-/*add edit form*/
 
 div#add-edit-event .item {
   margin: 0;
 }
+
 div#add-edit-event .item input {
-  margin: 0 5vw 0 5vw;
+  margin: 0 5vw;
 }
 
 div#add-edit-event button.item {
-  margin: 0 5vw 10px 5vw;
+  margin: 0 5vw 10px;
 }
 
 div#form-image-wrapper {
-  margin: 0 0 10px 0;
+  margin: 0 0 10px;
 }
 
 #event-notification-time-wrapper {
-  padding: 0 0 20px 0;
-  margin: 20px 0 30px 0 !important;
+  padding: 0 0 20px;
   position: relative;
+  margin: 20px 0 30px !important;
 }
 
 #form-image-wrapper {
@@ -549,41 +526,34 @@ div#form-image-wrapper img#form-image {
 }
 
 div#event-recur-wrapper {
-  margin: 0 0 20px 0 !important;
+  margin: 0 0 20px !important;
 }
 
-/*List view*/
-
 div#events-wrapper {
-  position: absolute;
   z-index: 4;
-  top: 0;
-  padding: 5px;
   height: 98vh;
   width: 100vw;
+  padding: 5px;
+  position: absolute;
+  top: 0;
   overflow: hidden;
 }
 
 div#events-wrapper article {
-  margin: 0 0 15px 0;
   min-width: 100%;
+  margin: 0 0 15px;
 }
 
 div#events-wrapper article:last-child {
-  margin: 0 0 55px 0;
+  margin: 0 0 55px;
 }
 
-div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time {
+div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time, div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
   display: none;
 }
 
-div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
-  display: none;
-}
-
-/*event slider*/
 div.icons-bar {
-  margin: 5px 0 0 0;
+  margin: 5px 0 0;
 }
 
 div.icons-bar img {
@@ -592,21 +562,21 @@ div.icons-bar img {
 }
 
 div#event-slider {
-  position: relative;
-  margin: 15px 0 0 0;
   min-height: 40px;
+  margin: 15px 0 0;
+  position: relative;
 }
 
 div#event-slider div.date {
   opacity: 0;
-  height: 0px;
+  height: 0;
 }
 
 div#event-slider div.icons-bar {
-  position: absolute;
-  left: 90%;
   width: 50px;
   margin: 5px 0;
+  position: absolute;
+  left: 90%;
 }
 
 div#event-slider article[data-alarm="none"] div.icons-bar img.bell {
@@ -619,25 +589,27 @@ div#event-slider div.icons-bar img {
 }
 
 div#event-slider-indicator div div {
-  background: rgb(121, 112, 112);
   height: 5px;
   width: 5px;
+  background: #797070;
+  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
 
 div#event-slider-indicator div div.active {
-  background: rgb(0, 0, 0);
   height: 10px;
   width: 10px;
+  background: #000;
+  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
 
 div#event-slider-indicator {
-  margin: 3px 0 0 0px;
   max-width: 90vw;
   min-width: 90vw;
+  margin: 3px 0 0;
 }
 
 div#event-slider article h2 {
@@ -645,26 +617,27 @@ div#event-slider article h2 {
 }
 
 div#event-slider article {
-  margin: 0 0 15px 0;
   max-width: 80vw;
   min-width: 80vw;
-  font-size: 0.9rem;
   text-overflow: ellipsis;
   white-space: nowrap;
-  position: absolute;
-  top: 0px;
+  margin: 0 0 15px;
+  font-size: .9rem;
   display: none;
+  position: absolute;
+  top: 0;
 }
 
 div#event-slider article > * {
   text-align: center;
 }
+
 div#event-slider article:nth-child(1) {
-  margin: 0 0 15px 0;
-  font-size: 0.9rem;
-  position: absolute;
-  top: 0px;
+  margin: 0 0 15px;
+  font-size: .9rem;
   display: block;
+  position: absolute;
+  top: 0;
 }
 
 div#event-slider article h2 {
@@ -672,63 +645,79 @@ div#event-slider article h2 {
 }
 
 button.save-button {
-  margin: 30px 5% 30px 5% !important;
-  background: rgb(0, 0, 0);
-  color: white;
-  outline: none;
-  border: none;
+  color: #fff;
   width: 90%;
+  background: #000;
+  border: none;
+  outline: none;
+  margin: 30px 5% !important;
 }
 
 button.save-button:focus {
+  color: #000;
   background: orange;
-  color: black;
-  outline: none;
   border: none;
+  outline: none;
 }
 
-/*options view*/
+div#templates-page {
+  z-index: 4;
+  height: 92vh;
+  padding: 0 5px 5px 0;
+  position: absolute;
+  top: 0;
+  overflow: hidden;
+}
+
+div#templates-page h2 {
+  min-width: 100vw;
+  width: 100vw;
+  background: #e6e6e6;
+  margin: 0 0 10px;
+  padding: 10px;
+  font-weight: bold;
+}
 
 div#options {
-  position: absolute;
   z-index: 4;
-  top: 0;
-  padding: 0px 5px 5px 0px;
   height: 92vh;
+  padding: 0 5px 5px 0;
+  position: absolute;
+  top: 0;
   overflow: hidden;
 }
 
 div#options div#import-text {
+  text-align: center;
+  margin: 0 0 20px;
   padding: 10px;
   font-weight: bold;
-  margin: 0 0 20px 0;
-  text-align: center;
 }
 
 div#options div#subscription-text {
+  text-align: center;
+  margin: 0 0 10px;
   padding: 10px;
   font-weight: bold;
-  margin: 0 0 10px 0;
-  text-align: center;
 }
-ul#keys li span {
-  display: block;
 
+ul#keys li span {
+  margin: 0;
   font-weight: bold;
-  margin: 0px 0 0px 0;
+  display: block;
 }
 
 div#options ul#keys li {
-  margin: 0 0 0px 0;
+  margin: 0;
   padding: 5px 0 10px 10px;
 }
 
 div#options ul#keys:focus {
-  background: white;
+  background: #fff;
 }
 
 div#options ul#keys {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
 }
 
 ul#keys li:first-child {
@@ -737,55 +726,49 @@ ul#keys li:first-child {
 }
 
 div#options h2 {
-  background: rgb(230, 230, 230);
   min-width: 100vw;
   width: 100vw;
-  font-weight: bold;
+  background: #e6e6e6;
+  margin: 0 0 10px;
   padding: 10px;
-  margin: 0px 0 10px 0;
+  font-weight: bold;
 }
 
 div#options li span.keys-day-event {
   min-width: 20px;
   width: 20px;
   background: pink;
-  padding: 5px;
   margin: 0 40px 0 0;
+  padding: 5px;
 }
 
 div#options li span.keys-current-day {
   min-width: 20px;
   width: 20px;
-  background: rgb(120, 183, 255);
-  background-size: 10%;
-  padding: 5px;
+  background: #78b7ff 0 0 / 10%;
   margin: 0 40px 0 0;
+  padding: 5px;
 }
 
 div#subscription-form {
-  position: absolute;
   z-index: 4;
-  top: 0;
-  padding: 5px;
   height: 100vh;
   width: 100vw;
+  padding: 10px 0 0;
+  position: absolute;
+  top: 0;
   overflow: hidden;
-  padding: 10px 0 0 0;
 }
 
-/*/////////////////
-///BOTTOM BAR////
-////////////////*/
-
 div#bottom-bar {
-  position: fixed;
   z-index: 2000;
-  bottom: 10px;
-  left: 0px;
   height: 18px;
   z-index: 6;
-  background: none;
   min-width: 100vw;
+  background: none;
+  position: fixed;
+  bottom: 10px;
+  left: 0;
 }
 
 div#bottom-bar div#inner {
@@ -793,78 +776,74 @@ div#bottom-bar div#inner {
 }
 
 div#bottom-bar div {
-  background: none;
-  color: white;
-  padding: 2px;
-  font-size: 0.8rem;
+  color: #fff;
   text-align: center;
+  background: none;
+  padding: 2px;
+  font-size: .8rem;
 }
 
 div#bottom-bar div#button-center {
-  background: none;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 32%;
   text-align: center;
+  background: none;
+  padding: 2px;
 }
 
 div#bottom-bar div#button-center img {
+  width: 30px;
   position: fixed;
   bottom: 5px;
-
   left: 46%;
-  width: 30px;
 }
 
 div#bottom-bar div#button-left {
-  background: none;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 32%;
   text-align: left;
   width: 32%;
+  background: none;
+  padding: 2px;
 }
 
 div#bottom-bar div#button-left img {
+  width: 30px;
   position: fixed;
   bottom: 5px;
   left: 10px;
-  width: 30px;
 }
 
 div#bottom-bar div#button-right img {
+  width: 30px;
   position: fixed;
   bottom: 5px;
   right: 10px;
-  width: 30px;
 }
 
 div#bottom-bar div#button-right {
-  background: none;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 32%;
   text-align: right;
+  background: none;
+  padding: 2px;
 }
 
-/*/////////////////
-///TOP-BAR///////*/
-
 div#top-bar {
-  position: fixed;
-  top: 0px;
-  left: 0px;
   height: 18px;
   z-index: 4;
-  background: black;
   min-width: 100vw;
+  background: #000;
   display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 div#top-bar img {
-  margin: 3px 0 0 5px;
   max-height: 15px;
-  color: white;
+  color: #fff;
+  margin: 3px 0 0 5px;
 }
 
 div#top-bar div#inner {
@@ -872,39 +851,35 @@ div#top-bar div#inner {
 }
 
 div#top-bar div {
-  background: black;
-  color: white;
+  color: #fff;
+  background: #000;
   padding: 2px;
 }
 
 div#top-bar div#button-center {
-  background: black;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 30%;
   text-align: center;
+  background: #000;
+  padding: 2px;
 }
 
 div#top-bar div#button-left {
-  background: black;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 20px;
   text-align: left;
   width: 30%;
+  background: #000;
+  padding: 2px;
 }
 
 div#top-bar div#button-right {
-  background: black;
-  color: white;
-  padding: 2px;
+  color: #fff;
   width: 30%;
   text-align: right;
+  background: #000;
+  padding: 2px;
 }
-
-/*
- SETTINGS
- */
 
 div#top {
   position: fixed;
@@ -912,15 +887,15 @@ div#top {
 }
 
 div#settings {
-  display: none;
   height: 92vh;
   width: 100%;
-  padding: 0px 0 50px 0;
-  overflow: hidden;
-  position: absolute;
-  top: 0px;
   z-index: 3;
-  background: rgb(231, 231, 231);
+  background: #e7e7e7;
+  padding: 0 0 50px;
+  display: none;
+  position: absolute;
+  top: 0;
+  overflow: hidden;
 }
 
 button span {
@@ -928,10 +903,11 @@ button span {
 }
 
 div#settings div#text {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
 }
+
 div#settings h2 {
-  padding: 0 10px 0 10px;
+  padding: 0 10px;
 }
 
 div#settings label {
@@ -941,7 +917,7 @@ div#settings label {
 }
 
 div#time {
-  font-size: 0.8rem;
+  font-size: .8rem;
 }
 
 @keyframes jump {
@@ -953,3 +929,4 @@ div#time {
     transform: translateY(-30px);
   }
 }
+

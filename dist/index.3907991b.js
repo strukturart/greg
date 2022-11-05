@@ -1521,7 +1521,7 @@ let focus_after_selection = function() {
 };
 /*
 ///////////////////
-// /VIEWS
+//VIEWS
 /////////////////
 */ var root = document.getElementById("app");
 var page_calendar = {
@@ -1618,11 +1618,12 @@ var page_events = {
     view: function(vnode) {
         return (0, _mithrilDefault.default)("div", {
             id: "events-wrapper",
+            oninit: function() {
+                (0, _helperJs.sort_array)(events, "dateStart", "date");
+            },
             oncreate: function() {
                 (0, _helperJs.bottom_bar)("<img src='assets/image/pencil.svg'>", "<img src='assets/image/calendar.svg'>", "");
                 setTimeout(function() {
-                    console.log(events);
-                    (0, _helperJs.sort_array)(events, "dateStart", "date");
                     find_closest_date();
                 }, 1500);
             }
@@ -2596,24 +2597,31 @@ var page_edit_event = {
 let selected_template;
 var page_event_templates = {
     view: function() {
-        return event_templates.map(function(item, index) {
-            return (0, _mithrilDefault.default)("button", {
-                class: "item",
-                onclick: function() {
-                    selected_template = item.id;
-                    (0, _mithrilDefault.default).route.set("/page_add_event");
-                },
-                onfocus: function() {},
-                oncreate: function({ dom  }) {
-                    if (index == 0) {
-                        dom.focus();
-                        (0, _helperJs.bottom_bar)("<img src='assets/image/delete.svg'>", "<img src='assets/image/add.svg'>", "");
-                    }
-                },
-                tabIndex: index,
-                "data-id": item.id
-            }, item.title);
-        });
+        return (0, _mithrilDefault.default)("div", {
+            id: "options",
+            oncreate: function() {
+                (0, _helperJs.bottom_bar)("<img src='assets/image/delete.svg'>", "<img src='assets/image/add.svg'>", "");
+            }
+        }, [
+            (0, _mithrilDefault.default)("h2", {
+                class: "text-center"
+            }, "Templates"),
+            event_templates.map(function(item, index) {
+                return (0, _mithrilDefault.default)("button", {
+                    class: "item",
+                    onclick: function() {
+                        selected_template = item.id;
+                        (0, _mithrilDefault.default).route.set("/page_add_event");
+                    },
+                    onfocus: function() {},
+                    oncreate: function({ dom  }) {
+                        if (index == 0) dom.focus();
+                    },
+                    tabIndex: index,
+                    "data-id": item.id
+                }, item.title);
+            })
+        ]);
     }
 };
 (0, _mithrilDefault.default).route(root, "/page_calendar", {
@@ -2725,7 +2733,10 @@ let delete_account = function() {
     });
 }; //load indexedDB
 (0, _localforageDefault.default).getItem("events").then(function(value) {
-    if (value != null) events = value;
+    if (value != null) {
+        events = value;
+        (0, _helperJs.sort_array)(events, "dateStart", "date");
+    }
 }).catch(function(err) {});
 (0, _localforageDefault.default).getItem("subscriptions").then(function(value) {
     subscriptions = value;
@@ -37508,8 +37519,8 @@ module.exports = function inherits(ctor, superCtor) {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;
@@ -40648,8 +40659,8 @@ Object.defineProperty(Duplex.prototype, "destroyed", {
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
 // the drain event emission and buffering.
 "use strict";
-var global = arguments[3];
 var process = require("process");
+var global = arguments[3];
 module.exports = Writable;
 /* <replacement> */ function WriteReq(chunk, encoding, cb) {
     this.chunk = chunk;
