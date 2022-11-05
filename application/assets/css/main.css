@@ -712,16 +712,15 @@ div#options div#subscription-text {
   text-align: center;
 }
 ul#keys li span {
-  display: inline-block;
+  display: block;
 
-  min-width: 60px;
-  width: 60px;
   font-weight: bold;
+  margin: 0px 0 0px 0;
 }
 
 div#options ul#keys li {
   margin: 0 0 0px 0;
-  padding: 5px 0 0 10px;
+  padding: 5px 0 10px 10px;
 }
 
 div#options ul#keys:focus {

@@ -762,6 +762,7 @@ let store_event_as_template = function (title, description, location) {
     .setItem("event_templates", event_templates)
     .then(function (value) {
       side_toaster("template saved", 2000);
+      m.route.set("/page_calendar");
     })
     .catch(function (err) {
       console.log(err);
@@ -1414,9 +1415,9 @@ let focus_after_selection = function () {
 };
 
 /*
-// /////////////////
+///////////////////
 // /VIEWS
-// ///////////////
+/////////////////
 */
 
 var root = document.getElementById("app");
@@ -1591,14 +1592,14 @@ var page_events = {
 export let page_options = {
   view: function () {
     return m("div", { id: "options" }, [
-      m("h2", "Key assignment"),
+      m("h2", { class: "item", tabIndex: 0 }, "Key assignment"),
 
       m(
         "ul",
         {
           id: "keys",
           class: "item",
-          tabindex: "0",
+          tabindex: "1",
           oncreate: function ({ dom }) {
             bottom_bar("", "", "");
 
@@ -1621,6 +1622,11 @@ export let page_options = {
           m("li", [m("span", "*")], "Jump to today"),
           m(
             "li",
+            [m("span", "SoftLeft longpress")],
+            "create event from template"
+          ),
+          m(
+            "li",
             [m("span", { class: "keys-current-day" }, "")],
             "current day"
           ),
@@ -1631,14 +1637,14 @@ export let page_options = {
           ),
         ]
       ),
-      m("h2", "settings"),
+      m("h2", { class: "item", tabindex: "2" }, "settings"),
 
       m(
         "div",
         {
           class: "item input-parent",
           id: "event-notification-time-wrapper",
-          tabindex: "1",
+          tabindex: "3",
         },
         [
           m("label", { for: "default-notification" }, "default Notification"),
@@ -1678,7 +1684,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "2",
+          tabindex: "4",
           onclick: function () {
             backup_events();
           },
@@ -1691,7 +1697,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "3",
+          tabindex: "5",
           onclick: function () {
             m.route.set("/page_subscriptions");
           },
@@ -1708,7 +1714,7 @@ export let page_options = {
             "data-id": item.id,
             "data-action": "delete-subscription",
 
-            tabindex: index + 4,
+            tabindex: index + 5,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1724,7 +1730,7 @@ export let page_options = {
         "button",
         {
           class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 4,
+          tabindex: subscriptions.length + 6,
           onclick: function () {
             m.route.set("/page_accounts");
           },
@@ -1750,7 +1756,7 @@ export let page_options = {
         "button",
         {
           class: "item google-button",
-          tabindex: subscriptions.length + 5,
+          tabindex: subscriptions.length + 7,
           onclick: function () {
             oauth_callback = setInterval(function () {
               if (localStorage.getItem("oauth_callback") == "true") {
@@ -1809,7 +1815,7 @@ export let page_options = {
             "data-account-type": item.type,
             "data-action": "edit-delete-account",
 
-            tabindex: index + subscriptions.length + 6,
+            tabindex: index + subscriptions.length + 8,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1832,7 +1838,7 @@ export let page_options = {
 
       m("div", {
         id: "KaiOsAds-Wrapper",
-        tabindex: subscriptions.length + accounts.length + 4,
+        tabindex: subscriptions.length + accounts.length + 6,
         class: "flex justify-content-spacearound",
         oninit: function () {
           if (settings.ads) {
@@ -2815,6 +2821,23 @@ function handleVisibilityChange() {
 handleVisibilityChange();
 
 /////////////////
+//delete template data
+////////////////
+let delete_template = function (id) {
+  event_templates = event_templates.filter((d) => d.id != id);
+
+  localforage
+    .setItem("event_templates", event_templates)
+    .then(function (value) {
+      side_toaster("template deleted", 2000);
+      m.route.set("/page_calendar");
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+};
+
+/////////////////
 //load template data
 ////////////////
 let load_template_data = function () {
@@ -3441,11 +3464,14 @@ function longpress_action(param) {
       break;
 
     case "SoftLeft":
-      m.route.set("/page_event_templates");
-      break;
-
     case "m":
-      m.route.set("/page_event_templates");
+      if (event_templates.length == 0) {
+        side_toaster("no templates found", 3000);
+        return false;
+      } else {
+        m.route.set("/page_event_templates");
+      }
+
       break;
   }
 }
@@ -3576,6 +3602,9 @@ function shortpress_action(param) {
 
     case "SoftLeft":
     case "Control":
+      if (m.route.get() == "/page_event_templates") {
+        delete_template(document.activeElement.getAttribute("data-id"));
+      }
       if (m.route.get() == "/page_events") {
         if (document.activeElement.classList.contains("subscription")) {
           toaster("a subscription cannot be edited", 2000);

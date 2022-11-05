@@ -672,15 +672,14 @@ div#options div#subscription-text {
 }
 
 ul#keys li span {
-  min-width: 60px;
-  width: 60px;
+  margin: 0;
   font-weight: bold;
-  display: inline-block;
+  display: block;
 }
 
 div#options ul#keys li {
   margin: 0;
-  padding: 5px 0 0 10px;
+  padding: 5px 0 10px 10px;
 }
 
 div#options ul#keys:focus {

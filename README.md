@@ -16,6 +16,8 @@ An easy to use calendar for KaiOs
 - Key Enter: toggle views
 - Key 2: event slider in month view
 - Key #: toggle moon phase view
+- Key SoftLeft: Add event
+- Key SoftLeft Longpress: Add Event with template
 
 ### Nextcloud account
 
@@ -30,6 +32,7 @@ at nextcloud as follows:
 
 - Local Calendar
 - Nextcloud calendar
+- Google Calendar
 - subscribe to calendar
 - moon phases
 
@@ -43,10 +46,6 @@ Martin Kaptein wrote a comprehensive, <a href="https://www.martinkaptein.com/blo
 The Developer Portal also contains a guide, and if nothing seems to work, you can <a href="https://discord.com/invite/rQ93zEu">ask for help on Discord</a>.
 You can download the latest version from the Releases page.
 The app is not auto-updating. To update it, you have to follow the same steps you took when installing it.
-
-## to do
-
-oAuth google
 
 ### LICENSES
 

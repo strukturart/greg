@@ -1089,6 +1089,7 @@ let store_event_as_template = function(title, description, location) {
     event_templates.push(m);
     (0, _localforageDefault.default).setItem("event_templates", event_templates).then(function(value) {
         (0, _helperJs.side_toaster)("template saved", 2000);
+        m.route.set("/page_calendar");
     }).catch(function(err) {
         console.log(err);
     });
@@ -1519,9 +1520,9 @@ let focus_after_selection = function() {
     });
 };
 /*
-// /////////////////
+///////////////////
 // /VIEWS
-// ///////////////
+/////////////////
 */ var root = document.getElementById("app");
 var page_calendar = {
     view: function() {
@@ -1670,11 +1671,14 @@ let page_options = {
         return (0, _mithrilDefault.default)("div", {
             id: "options"
         }, [
-            (0, _mithrilDefault.default)("h2", "Key assignment"),
+            (0, _mithrilDefault.default)("h2", {
+                class: "item",
+                tabIndex: 0
+            }, "Key assignment"),
             (0, _mithrilDefault.default)("ul", {
                 id: "keys",
                 class: "item",
-                tabindex: "0",
+                tabindex: "1",
                 oncreate: function({ dom  }) {
                     (0, _helperJs.bottom_bar)("", "", "");
                     document.querySelectorAll(".select-box").forEach(function(e) {
@@ -1703,6 +1707,9 @@ let page_options = {
                     (0, _mithrilDefault.default)("span", "*")
                 ], "Jump to today"),
                 (0, _mithrilDefault.default)("li", [
+                    (0, _mithrilDefault.default)("span", "SoftLeft longpress")
+                ], "create event from template"),
+                (0, _mithrilDefault.default)("li", [
                     (0, _mithrilDefault.default)("span", {
                         class: "keys-current-day"
                     }, "")
@@ -1713,11 +1720,14 @@ let page_options = {
                     }, "")
                 ], "day with event")
             ]),
-            (0, _mithrilDefault.default)("h2", "settings"),
+            (0, _mithrilDefault.default)("h2", {
+                class: "item",
+                tabindex: "2"
+            }, "settings"),
             (0, _mithrilDefault.default)("div", {
                 class: "item input-parent",
                 id: "event-notification-time-wrapper",
-                tabindex: "1"
+                tabindex: "3"
             }, [
                 (0, _mithrilDefault.default)("label", {
                     for: "default-notification"
@@ -1756,7 +1766,7 @@ let page_options = {
             ]),
             (0, _mithrilDefault.default)("button", {
                 class: "item",
-                tabindex: "2",
+                tabindex: "4",
                 onclick: function() {
                     backup_events();
                 }
@@ -1764,7 +1774,7 @@ let page_options = {
             (0, _mithrilDefault.default)("h2", "Subscriptions"),
             (0, _mithrilDefault.default)("button", {
                 class: "item",
-                tabindex: "3",
+                tabindex: "5",
                 onclick: function() {
                     (0, _mithrilDefault.default).route.set("/page_subscriptions");
                 }
@@ -1777,7 +1787,7 @@ let page_options = {
                     class: "item subscriptions-item",
                     "data-id": item.id,
                     "data-action": "delete-subscription",
-                    tabindex: index + 4,
+                    tabindex: index + 5,
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
                     },
@@ -1787,7 +1797,7 @@ let page_options = {
             (0, _mithrilDefault.default)("h2", "Accounts"),
             (0, _mithrilDefault.default)("button", {
                 class: "item  google-button caldav-button",
-                tabindex: subscriptions.length + 4,
+                tabindex: subscriptions.length + 6,
                 onclick: function() {
                     (0, _mithrilDefault.default).route.set("/page_accounts");
                 }
@@ -1803,7 +1813,7 @@ let page_options = {
             ]),
             (0, _mithrilDefault.default)("button", {
                 class: "item google-button",
-                tabindex: subscriptions.length + 5,
+                tabindex: subscriptions.length + 7,
                 onclick: function() {
                     oauth_callback = setInterval(function() {
                         if (localStorage.getItem("oauth_callback") == "true") {
@@ -1846,7 +1856,7 @@ let page_options = {
                     "data-id": item.id,
                     "data-account-type": item.type,
                     "data-action": "edit-delete-account",
-                    tabindex: index + subscriptions.length + 6,
+                    tabindex: index + subscriptions.length + 8,
                     onblur: function() {
                         (0, _helperJs.bottom_bar)("", "", "");
                     },
@@ -1861,7 +1871,7 @@ let page_options = {
             }, "Ads"),
             (0, _mithrilDefault.default)("div", {
                 id: "KaiOsAds-Wrapper",
-                tabindex: subscriptions.length + accounts.length + 4,
+                tabindex: subscriptions.length + accounts.length + 6,
                 class: "flex justify-content-spacearound",
                 oninit: function() {
                     if (settings.ads) load_ads();
@@ -2735,6 +2745,17 @@ function handleVisibilityChange() {
     }, 1000);
 }
 handleVisibilityChange(); /////////////////
+//delete template data
+////////////////
+let delete_template = function(id) {
+    event_templates = event_templates.filter((d5)=>d5.id != id);
+    (0, _localforageDefault.default).setItem("event_templates", event_templates).then(function(value) {
+        (0, _helperJs.side_toaster)("template deleted", 2000);
+        (0, _mithrilDefault.default).route.set("/page_calendar");
+    }).catch(function(err) {
+        console.log(err);
+    });
+}; /////////////////
 //load template data
 ////////////////
 let load_template_data = function() {
@@ -3072,12 +3093,12 @@ let import_event_callback = function(id, date) {
     }).catch(function(err) {});
 };
 let set_datetime_form = function() {
-    let d5 = new Date();
-    let d_h = `0${d5.getHours()}`.slice(-2);
-    let d_m = `0${d5.getMinutes()}`.slice(-2);
+    let d6 = new Date();
+    let d_h = `0${d6.getHours()}`.slice(-2);
+    let d_m = `0${d6.getMinutes()}`.slice(-2);
     let p = d_h + ":" + d_m;
-    let d_h_ = `0${d5.getHours() + 1}`.slice(-2);
-    let d_m_ = `0${d5.getMinutes()}`.slice(-2);
+    let d_h_ = `0${d6.getHours() + 1}`.slice(-2);
+    let d_m_ = `0${d6.getMinutes()}`.slice(-2);
     if (d_h_ > 23) d_h_ = "23";
     let pp = d_h_ + ":" + d_m_;
     document.getElementById("event-time-start").value = p;
@@ -3116,10 +3137,11 @@ function longpress_action(param) {
         case "ArrowLeft":
             break;
         case "SoftLeft":
-            (0, _mithrilDefault.default).route.set("/page_event_templates");
-            break;
         case "m":
-            (0, _mithrilDefault.default).route.set("/page_event_templates");
+            if (event_templates.length == 0) {
+                (0, _helperJs.side_toaster)("no templates found", 3000);
+                return false;
+            } else (0, _mithrilDefault.default).route.set("/page_event_templates");
             break;
     }
 }
@@ -3190,6 +3212,7 @@ function shortpress_action(param) {
             break;
         case "SoftLeft":
         case "Control":
+            if ((0, _mithrilDefault.default).route.get() == "/page_event_templates") delete_template(document.activeElement.getAttribute("data-id"));
             if ((0, _mithrilDefault.default).route.get() == "/page_events") {
                 if (document.activeElement.classList.contains("subscription")) {
                     (0, _helperJs.toaster)("a subscription cannot be edited", 2000);
@@ -37485,8 +37508,8 @@ module.exports = function inherits(ctor, superCtor) {
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 "use strict";
-var process = require("process");
 var global = arguments[3];
+var process = require("process");
 module.exports = Readable;
 /*<replacement>*/ var Duplex;
 /*</replacement>*/ Readable.ReadableState = ReadableState;
