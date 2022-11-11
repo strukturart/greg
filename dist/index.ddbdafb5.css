@@ -565,6 +565,18 @@ div#event-slider {
   min-height: 40px;
   margin: 15px 0 0;
   position: relative;
+  max-width: 90vw !important;
+  min-width: 90vw !important;
+}
+
+div#event-slider div {
+  min-height: 40px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  position: relative;
+  overflow: hidden;
+  max-width: 90vw !important;
 }
 
 div#event-slider div.date {
@@ -619,13 +631,9 @@ div#event-slider article h2 {
 div#event-slider article {
   max-width: 80vw;
   min-width: 80vw;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   margin: 0 0 15px;
   font-size: .9rem;
   display: none;
-  position: absolute;
-  top: 0;
 }
 
 div#event-slider article > * {
@@ -633,11 +641,11 @@ div#event-slider article > * {
 }
 
 div#event-slider article:nth-child(1) {
+  max-width: 90vw;
+  min-width: 90vw;
   margin: 0 0 15px;
   font-size: .9rem;
   display: block;
-  position: absolute;
-  top: 0;
 }
 
 div#event-slider article h2 {

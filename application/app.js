@@ -134,6 +134,7 @@ let load_caldav = function () {
             .setItem(item.id, k)
             .then(function () {
               console.log("data cached");
+              console.log(JSON.stringify(k));
             })
             .catch(function (err) {
               console.log(err);
@@ -949,7 +950,6 @@ let event_check = function (date) {
       feedback.subscription = false;
       feedback.multidayevent = false;
       feedback.rrule = false;
-
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
@@ -1006,9 +1006,15 @@ let rrule_check = function (date) {
       let d = events[t].rrule_;
       let e = events[t].RRULE;
 
-      //recurrences
-
       if (typeof e !== "undefined" && e !== undefined && e != null) {
+        //recurrences
+
+        if (events[t].rrule_json != null) {
+          if (events[t].rrule_json.until == null) {
+            b = new Date("3000-01-01").getTime();
+          }
+        }
+
         if (a === c || b === c || (a < c && b > c)) {
           if (d == "MONTHLY") {
             if (
@@ -1122,18 +1128,22 @@ let event_slider = function (date) {
 
     if (d === "none" || d === "" || d === undefined) {
       if (a === c || (a < c && b > c)) {
-        //if multiday event
-        //the end date is next day
-        //time is 00:00:00
-        if (events[i].time_end == "00:00:00" && events[i].dateEnd == date) {
-          //return false;
-        }
+        //TODO if multiday event
+
         slider.push(events[i]);
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
       }
     } else {
+      //workaround if enddate is not set
+      //AKA infinity
+      if (events[i].rrule_json != null) {
+        if (events[i].rrule_json.until == null) {
+          b = new Date("3000-01-01").getTime();
+        }
+      }
       if (a === c || b === c || (a < c && b > c)) {
         //recurrences
+
         //YEAR
         if (d == "YEARLY") {
           let tt = new Date(events[i].dateStart);
@@ -1190,11 +1200,18 @@ let event_slider = function (date) {
 
   if (slider.length != "") {
     slider.forEach(function (item) {
+      let t = new Date(item.DTEND);
+      let l =
+        `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
       document
         .querySelector("div#event-slider")
         .insertAdjacentHTML(
           "beforeend",
-          "<article>" + item.SUMMARY + "</article>"
+          "<article><div>" +
+            item.SUMMARY +
+            "</div><div>" +
+            l +
+            "</div></article>"
         );
     });
     if (slider >= 0) {
@@ -1356,7 +1373,7 @@ let showCalendar = function (month, year) {
             cell.classList.add("event");
           }
 
-          if (rrule_check(p).rrule) {
+          if (rrule_check(p).rrule == true) {
             cell.classList.add("event");
           }
         }

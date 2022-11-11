@@ -202,6 +202,8 @@ export let parse_ics = function (
       notification: " ",
       alarm: "none",
       rrule_: n ? n.freq : "",
+      rrule_json: n ? n.toJSON() : "",
+      
       etag: etag,
       url: url,
       id: account_id,

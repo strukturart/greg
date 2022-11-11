@@ -595,6 +595,19 @@ div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
   min-height: 40px;
+  max-width:90vw!important;
+  min-width:90vw!important;
+}
+
+div#event-slider div{
+  position: relative;
+
+  min-height: 40px;
+  max-width:90vw!important;
+    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 div#event-slider div.date {
@@ -649,10 +662,7 @@ div#event-slider article {
   max-width: 80vw;
   min-width: 80vw;
   font-size: 0.9rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  position: absolute;
-  top: 0px;
+
   display: none;
 }
 
@@ -662,9 +672,10 @@ div#event-slider article > * {
 div#event-slider article:nth-child(1) {
   margin: 0 0 15px 0;
   font-size: 0.9rem;
-  position: absolute;
-  top: 0px;
+
   display: block;
+  max-width: 90vw;
+  min-width: 90vw;
 }
 
 div#event-slider article h2 {
