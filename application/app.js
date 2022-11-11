@@ -1008,7 +1008,7 @@ let rrule_check = function (date) {
 
       if (typeof e !== "undefined" && e !== undefined && e != null) {
         //recurrences
-
+        //console.log(events[t].rrule_isFinite);
         if (events[t].rrule_json != null) {
           if (events[t].rrule_json.until == null) {
             b = new Date("3000-01-01").getTime();
@@ -1200,9 +1200,14 @@ let event_slider = function (date) {
 
   if (slider.length != "") {
     slider.forEach(function (item) {
+      let l = "";
       let t = new Date(item.DTEND);
-      let l =
-        `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
+      l = `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
+      /*
+      if (item.DTEND != item.DTSTART) {
+      }
+      */
+
       document
         .querySelector("div#event-slider")
         .insertAdjacentHTML(
@@ -3197,7 +3202,6 @@ let store_event = function (db_id, cal_name) {
       "\nEND:VEVENT\nEND:VCALENDAR";
 
     if (event.RRULE == null) {
-      console.log("empty rrule");
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
       event_data = event_data.trim();

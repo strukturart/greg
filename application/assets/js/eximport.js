@@ -203,7 +203,8 @@ export let parse_ics = function (
       alarm: "none",
       rrule_: n ? n.freq : "",
       rrule_json: n ? n.toJSON() : "",
-      
+      // rrule_isFinite: n.isFinite(),
+
       etag: etag,
       url: url,
       id: account_id,
