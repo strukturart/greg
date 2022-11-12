@@ -1,31 +1,42 @@
+/*GENERAL*/
+
 :root {
   --color-one: black;
   --color-two: yellow;
   --color-three: silver;
-  --color-four: #beb9b9;
-  --color-five: rgba(214, 225, 228, .32);
-  --color-seven: rgba(101, 216, 24, .286);
-  --color-eight: rgba(47, 82, 196, .19);
+  --color-four: rgb(190, 185, 185);
+  --color-five: rgba(214, 225, 228, 0.322);
+  --color-seven: rgba(101, 216, 24, 0.288);
+  --color-eight: rgba(47, 82, 196, 0.188);
 }
 
 @font-face {
-  src: url("Roboto-Medium.91322885.ttf");
+  font-family: "Roboto", sans-serif;
+  src: url("../fonts/Roboto-Medium.ttf");
 }
 
-*, :before, :after {
-  -moz-box-sizing: border-box;
+*,
+*:before,
+*:after {
+  border: 0px;
+  padding: 0px;
+  margin: 0px;
   box-sizing: border-box;
+
+  /* Careful, this breaks the word wherever it is without a hyphen */
   overflow-wrap: break-word;
   word-wrap: break-word;
+
+  /* Adds a hyphen where the word breaks */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
   hyphens: auto;
-  border: 0;
-  margin: 0;
-  padding: 0;
 }
 
 :focus {
-  background: var(--color-four);
   outline: none;
+  background: var(--color-four);
 }
 
 ::-moz-focus-inner {
@@ -35,25 +46,34 @@
 .debug {
   outline: 1px solid red;
 }
+html,
+body {
+  font-family: "Roboto";
 
-html, body {
+  font-weight: 100;
+  position: relative;
+  margin: 0px;
+  padding: 0px;
+  font-size: 1rem;
+  line-height: 1.4rem;
   max-height: 100%;
   max-width: 100%;
   height: 100%;
   width: 100%;
   max-width: 100vw;
-  background: #fff;
-  margin: 0;
-  padding: 0;
-  font-family: Roboto;
-  font-size: 1rem;
-  font-weight: 100;
-  line-height: 1.4rem;
-  position: relative;
   overflow: hidden;
+  background: white;
 }
 
-h1, h2, h3 {
+h1 {
+  font-size: 1rem;
+}
+
+h2 {
+  font-size: 1rem;
+}
+
+h3 {
   font-size: 1rem;
 }
 
@@ -63,92 +83,96 @@ img {
   display: block;
 }
 
-img[src=""], img[src=" "] {
+img[src=""] {
+  display: none;
+}
+
+img[src=" "] {
   display: none;
 }
 
 button {
-  width: 92vw;
-  color: #000;
-  min-height: 40px;
-  background: #fff;
-  border: 2px solid gray;
-  -moz-border-radius: 1px;
-  border-radius: 1px;
-  margin: 0 0 15px 5vw;
-  padding: 5px;
   font-size: 1rem;
+  background: rgb(255, 255, 255);
+  padding: 5px;
+  width: 92vw;
+  margin: 0 0 15px 5vw;
+  color: black;
+  border-radius: 1px;
+  border: 2px solid gray;
   font-weight: 700;
+  min-height: 40px;
 }
 
 button img {
-  width: 20px;
   margin: 0 10px 0 0;
+  width: 20px;
 }
 
 button:focus {
   background: #4285f4;
-  border: 0 solid gray;
+  border: 0px solid gray;
 }
 
 select {
   width: 90%;
+  padding: 10px;
+
+  -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  color: #363636;
+  background: none;
+  color: rgb(54, 54, 54);
   width: 90%;
-  text-align: center;
-  background: #fafafa url("E264.e4f33402.svg") 99% 80% no-repeat;
-  border: 0;
-  border-bottom: 2px solid #3f3f3f;
+
   outline: 0;
-  margin: 0 5%;
-  padding: 10px;
+  border: 0;
+  border-bottom: 2px solid rgb(63, 63, 63);
+  margin: 0 5% 0 5%;
+  text-align: center;
   position: relative;
+  background: #fafafa url("../image/E264.svg") no-repeat 99% 80%;
 }
 
 textarea {
   height: 30px;
   width: 90%;
-  border: 1px solid silver;
   padding: 3px;
+  border: 1px solid silver;
 }
 
 input {
   width: 90%;
   height: 30px;
-  border: 2px solid silver;
-  -moz-border-radius: 6px;
-  border-radius: 6px;
   padding: 3px;
+  border: 2px solid silver;
+  border-radius: 6px;
 }
 
 label {
-  width: 100%;
-  text-align: center;
-  margin: 0 0 10px;
-  font-weight: bold;
   display: block;
-}
-
-.input-parent {
   width: 100%;
-  margin: 0 0 20px;
+  margin: 0 0 10px 0;
+  text-align: center;
+  font-weight: bold;
+}
+.input-parent {
   padding: 15px;
+  margin: 0 0 20px 0;
+  width: 100%;
 }
 
 .input-parent:focus {
-  width: 100%;
   background: orange;
+  width: 100%;
 }
 
 .google-button {
-  height: 40px;
-  border: 0 solid gray;
-  -moz-border-radius: 0;
   border-radius: 0;
-  outline: 0;
   position: relative;
+  height: 40px;
+  outline: 0px;
+  border: 0px solid gray;
 }
 
 button.google-button:focus {
@@ -158,71 +182,70 @@ button.google-button:focus {
 .google-button span {
   padding: 5px;
   position: absolute;
-  top: 4px;
   right: 10px;
+  top: 4px;
 }
 
 .google-button img {
-  width: 40px;
   position: absolute;
-  top: 0;
+  width: 40px;
   left: -1px;
+  top: 0px;
 }
 
 .caldav-button img {
-  width: 40px;
   position: absolute;
-  top: 3px;
+  width: 40px;
   left: -1px;
+  top: 3px;
 }
 
 div#intro {
+  position: fixed;
+  background: black;
   z-index: 100000;
   min-width: 100%;
   height: 100%;
-  background: #000;
   animation-name: intro;
   animation-duration: 1.5s;
-  animation-iteration-count: 1;
   animation-delay: 2s;
+  animation-iteration-count: 1;
   animation-fill-mode: forwards;
-  position: fixed;
 }
 
 div#intro #version {
+  position: absolute;
+  background: black;
   z-index: 100000;
-  color: #fff;
+  bottom: 20px;
+  color: white;
   text-align: center;
-  background: #000;
-  font-size: .8rem;
+  font-size: 0.8rem;
   animation-name: intro_img;
   animation-duration: 2s;
-  animation-iteration-count: 1;
   animation-delay: 1s;
+  animation-iteration-count: 1;
   animation-fill-mode: forwards;
-  position: absolute;
-  bottom: 20px;
 }
 
 div#intro img {
   width: 180px;
   height: auto;
-  margin-left: -90px;
-  animation-name: intro_img;
-  animation-duration: 2s;
-  animation-iteration-count: 1;
-  animation-delay: 1s;
-  animation-fill-mode: forwards;
   position: absolute;
   top: 50px;
   left: 50%;
+  margin-left: -90px;
+  animation-name: intro_img;
+  animation-duration: 2s;
+  animation-delay: 1s;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }
 
 @keyframes intro_img {
   from {
-    transform: translateX(0);
+    transform: translateX(0px);
   }
-
   to {
     transform: translateX(-450px);
   }
@@ -230,15 +253,14 @@ div#intro img {
 
 @keyframes intro {
   from {
-    opacity: 100;
+    transform: translateY(0px);
     display: block;
-    transform: translateY(0);
+    opacity: 100;
   }
-
   to {
-    opacity: 0;
+    transform: translateY(0px);
     display: none;
-    transform: translateY(0);
+    opacity: 0;
   }
 }
 
@@ -246,7 +268,6 @@ div#intro img {
   from {
     opacity: 100;
   }
-
   to {
     opacity: 0;
   }
@@ -274,33 +295,38 @@ div#intro img {
   width: 220px;
 }
 
+/*///////////////////////////
+///TOAST////////////////*/
+
 div#toast {
+  position: fixed;
   height: auto;
   overflow: none;
-  color: #fff;
+  background: black;
+  color: white;
   z-index: 10;
   min-width: 100%;
-  transform-origin: 0 0;
-  background: #000;
   padding: 5px;
-  transition: all .5s ease-in-out;
-  position: fixed;
-  top: 0;
-  transform: translate(0, -100px);
+  top: 0px;
+
+  transition: all 0.5s ease-in-out;
+  transform-origin: left top;
+  transform: translate(0px, -100px);
 }
 
 div#side-toast {
+  position: fixed;
   height: auto;
   overflow: none;
-  color: #fff;
-  z-index: 10;
-  transform-origin: 0 0;
   background: orange;
+  color: white;
+  z-index: 10;
   padding: 5px;
-  transition: all .5s ease-in-out;
-  position: fixed;
   top: 70vh;
-  transform: translate(-100vw);
+
+  transition: all 0.5s ease-in-out;
+  transform-origin: left top;
+  transform: translate(-100vw, 0px);
 }
 
 div#side-toast img {
@@ -308,33 +334,30 @@ div#side-toast img {
 }
 
 div#popup {
+  position: fixed;
   width: 100%;
   height: 100%;
+  display: block;
   z-index: 10000;
   background: none;
   display: none;
-  position: fixed;
 }
-
 div#popup div {
-  -moz-box-pack: center;
-  justify-content: center;
-  -moz-box-align: center;
-  align-items: center;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 div#popup div div {
-  background: orange;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
-  -moz-box-pack: center;
-  justify-content: center;
-  -moz-box-align: center;
-  align-items: center;
-  padding: 10px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: orange;
+  border-radius: 10px;
 }
+/*///////////////////////////
+///VIEWS////////////////*/
 
 article.events[data-alarm="none"] img.bell {
   display: none;
@@ -350,62 +373,61 @@ div#calendar h3 {
 
 div#calendar div.calendar-head {
   background: var(--color-five);
-  margin: 0 0 5px;
+  margin: 0 0 5px 0px;
 }
 
 div#calendar div.calendar-head div {
   width: 12%;
+  font-size: 0.8rem;
   text-align: center;
-  font-size: .8rem;
 }
 
 div#calendar div.calendar-head div.active {
-  color: #21c5aa;
+  color: rgb(33, 197, 170);
   font-weight: bold;
 }
-
 div#calendar div.calendar-head div:first-child {
-  margin: 0;
+  margin: 0 0 0 0px;
 }
 
 div#calendar div.calendar-body {
-  margin: 8px 0 0;
-  padding: 0;
+  padding: 0px;
+  margin: 8px 0 0 0px;
 }
 
 div#calendar div#calendar-body div {
   min-width: 12.8%;
+  font-size: 0.8rem;
   text-align: center;
-  border: 0;
-  outline: 0 solid red;
-  font-size: .8rem;
   position: relative;
   overflow: hidden;
+  outline: 0px solid red;
+  border: 0px;
 }
 
 div#calendar div#calendar-body div:focus {
   background: none;
-  border: 0;
-  outline: 0 solid red;
+  outline: 0px solid red;
+  border: 0px;
 }
 
 div#calendar div#calendar-body div div {
   text-align: center;
-  background: #fff;
-  padding: 2px 0 0;
+  padding: 2px 0 0 0;
+  background: white;
 }
 
 div#calendar div#calendar-body div div.today {
-  background: #78b7ff;
+  background: rgb(120, 183, 255);
 }
 
 div#calendar div#calendar-body :focus span {
   min-width: 10px;
   min-height: 10px;
-  background: #000;
-  position: absolute;
-  top: -5px;
+  background: black;
   right: -5px;
+  top: -5px;
+  position: absolute;
   transform: rotate(45deg);
 }
 
@@ -414,54 +436,54 @@ div#calendar div#calendar-body div div.event {
 }
 
 div#calendar div#calendar-body div div.subscription {
-  background: #f5f5a9;
+  background: rgb(245, 245, 169);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
-  background-image: url("moon1.e4268891.svg");
+  background-image: url(../image/moon1.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-1 {
-  background-image: url("moon2.ae40efa3.svg");
+  background-image: url(../image/moon2.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-2 {
-  background-image: url("moon3.f830d829.svg");
+  background-image: url(../image/moon3.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-3 {
-  background-image: url("moon4.eae03906.svg");
+  background-image: url(../image/moon4.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-4 {
-  background-image: url("moon5.864e3993.svg");
+  background-image: url(../image/moon5.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-5 {
-  background-image: url("moon6.7409cecf.svg");
+  background-image: url(../image/moon6.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-6 {
-  background-image: url("moon7.be050850.svg");
+  background-image: url(../image/moon7.svg);
 }
 
 div#calendar div#calendar-body div div div.moon-phase-7 {
-  background-image: url("moon8.3ac887be.svg");
+  background-image: url(../image/moon8.svg);
 }
 
 div#calendar div#calendar-body div div div[class^="moon-phase-"] {
+  background-position: center;
+  background-size: 80% 80%;
+  background-repeat: no-repeat;
   width: 100%;
   height: 100%;
-  z-index: 1;
-  background-color: #fff;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 80% 80%;
-  display: none;
   position: absolute;
-  top: 0;
+  top: 0px;
   left: 0%;
   right: 0%;
+  z-index: 1;
+  background-color: white;
+  display: none;
 }
 
 div#calendar div#calendar-body div div div.active {
@@ -469,47 +491,48 @@ div#calendar div#calendar-body div div div.active {
 }
 
 div#calendar div#calendar-body div div.today div.active {
-  filter: sepia();
   display: block;
+  filter: sepia(100%);
 }
 
 span.weeknumber {
   color: silver;
   padding: 2px;
-  font-size: .7rem;
+  font-size: 0.7rem;
   position: absolute;
   right: 0;
 }
 
 div#add-edit-event {
+  position: absolute;
   z-index: 2;
+  top: 0;
   height: 92vh;
   width: 100%;
-  position: absolute;
-  top: 0;
   overflow: hidden;
 }
+
+/*add edit form*/
 
 div#add-edit-event .item {
   margin: 0;
 }
-
 div#add-edit-event .item input {
-  margin: 0 5vw;
+  margin: 0 5vw 0 5vw;
 }
 
 div#add-edit-event button.item {
-  margin: 0 5vw 10px;
+  margin: 0 5vw 10px 5vw;
 }
 
 div#form-image-wrapper {
-  margin: 0 0 10px;
+  margin: 0 0 10px 0;
 }
 
 #event-notification-time-wrapper {
-  padding: 0 0 20px;
+  padding: 0 0 20px 0;
+  margin: 20px 0 30px 0 !important;
   position: relative;
-  margin: 20px 0 30px !important;
 }
 
 #form-image-wrapper {
@@ -526,34 +549,45 @@ div#form-image-wrapper img#form-image {
 }
 
 div#event-recur-wrapper {
-  margin: 0 0 20px !important;
+  margin: 0 0 20px 0 !important;
 }
 
+/*List view*/
+
 div#events-wrapper {
+  position: absolute;
   z-index: 4;
+  top: 0;
+  padding: 5px;
   height: 98vh;
   width: 100vw;
-  padding: 5px;
-  position: absolute;
-  top: 0;
   overflow: hidden;
 }
 
 div#events-wrapper article {
+  margin: 0 0 15px 0;
   min-width: 100%;
-  margin: 0 0 15px;
 }
 
 div#events-wrapper article:last-child {
-  margin: 0 0 55px;
+  margin: 0 0 55px 0;
 }
 
-div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time, div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
+div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time {
   display: none;
 }
 
+div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay {
+  display: none;
+}
+
+div#events-wrapper article[data-all-day="true"] div.time {
+  display: none;
+}
+
+/*event slider*/
 div.icons-bar {
-  margin: 5px 0 0;
+  margin: 5px 0 0 0;
 }
 
 div.icons-bar img {
@@ -562,33 +596,34 @@ div.icons-bar img {
 }
 
 div#event-slider {
-  min-height: 40px;
-  margin: 15px 0 0;
   position: relative;
+  margin: 15px 0 0 0;
+  min-height: 40px;
   max-width: 90vw !important;
   min-width: 90vw !important;
 }
 
 div#event-slider div {
+  position: relative;
+
   min-height: 40px;
+  max-width: 90vw !important;
   white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
-  position: relative;
-  overflow: hidden;
-  max-width: 90vw !important;
 }
 
 div#event-slider div.date {
   opacity: 0;
-  height: 0;
+  height: 0px;
 }
 
 div#event-slider div.icons-bar {
-  width: 50px;
-  margin: 5px 0;
   position: absolute;
   left: 90%;
+  width: 50px;
+  margin: 5px 0;
 }
 
 div#event-slider article[data-alarm="none"] div.icons-bar img.bell {
@@ -601,27 +636,25 @@ div#event-slider div.icons-bar img {
 }
 
 div#event-slider-indicator div div {
+  background: rgb(121, 112, 112);
   height: 5px;
   width: 5px;
-  background: #797070;
-  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
 
 div#event-slider-indicator div div.active {
+  background: rgb(0, 0, 0);
   height: 10px;
   width: 10px;
-  background: #000;
-  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
 
 div#event-slider-indicator {
+  margin: 3px 0 0 0px;
   max-width: 90vw;
   min-width: 90vw;
-  margin: 3px 0 0;
 }
 
 div#event-slider article h2 {
@@ -629,23 +662,24 @@ div#event-slider article h2 {
 }
 
 div#event-slider article {
+  margin: 0 0 15px 0;
   max-width: 80vw;
   min-width: 80vw;
-  margin: 0 0 15px;
-  font-size: .9rem;
+  font-size: 0.9rem;
+
   display: none;
 }
 
 div#event-slider article > * {
   text-align: center;
 }
-
 div#event-slider article:nth-child(1) {
+  margin: 0 0 15px 0;
+  font-size: 0.9rem;
+
+  display: block;
   max-width: 90vw;
   min-width: 90vw;
-  margin: 0 0 15px;
-  font-size: .9rem;
-  display: block;
 }
 
 div#event-slider article h2 {
@@ -653,79 +687,81 @@ div#event-slider article h2 {
 }
 
 button.save-button {
-  color: #fff;
-  width: 90%;
-  background: #000;
-  border: none;
+  margin: 30px 5% 30px 5% !important;
+  background: rgb(0, 0, 0);
+  color: white;
   outline: none;
-  margin: 30px 5% !important;
+  border: none;
+  width: 90%;
 }
 
 button.save-button:focus {
-  color: #000;
   background: orange;
-  border: none;
+  color: black;
   outline: none;
+  border: none;
 }
 
 div#templates-page {
-  z-index: 4;
-  height: 92vh;
-  padding: 0 5px 5px 0;
   position: absolute;
+  z-index: 4;
   top: 0;
+  padding: 0px 5px 5px 0px;
+  height: 92vh;
   overflow: hidden;
 }
 
 div#templates-page h2 {
+  background: rgb(230, 230, 230);
   min-width: 100vw;
   width: 100vw;
-  background: #e6e6e6;
-  margin: 0 0 10px;
-  padding: 10px;
   font-weight: bold;
+  padding: 10px;
+  margin: 0px 0 10px 0;
 }
 
+/*options view*/
+
 div#options {
-  z-index: 4;
-  height: 92vh;
-  padding: 0 5px 5px 0;
   position: absolute;
+  z-index: 4;
   top: 0;
+  padding: 0px 5px 5px 0px;
+  height: 92vh;
   overflow: hidden;
 }
 
 div#options div#import-text {
-  text-align: center;
-  margin: 0 0 20px;
   padding: 10px;
   font-weight: bold;
+  margin: 0 0 20px 0;
+  text-align: center;
 }
 
 div#options div#subscription-text {
-  text-align: center;
-  margin: 0 0 10px;
   padding: 10px;
   font-weight: bold;
+  margin: 0 0 10px 0;
+  text-align: center;
 }
-
 ul#keys li span {
-  margin: 0;
-  font-weight: bold;
   display: block;
+
+  font-weight: bold;
+  margin: 0px 0 0px 0;
 }
 
 div#options ul#keys li {
-  margin: 0;
+  margin: 0 0 0px 0;
   padding: 5px 0 10px 10px;
 }
 
 div#options ul#keys:focus {
-  background: #fff;
+  background: white;
 }
 
 div#options ul#keys {
-  margin: 0 0 20px;
+  margin: 0 0 20px 0;
 }
 
 ul#keys li:first-child {
@@ -734,49 +770,55 @@ ul#keys li:first-child {
 }
 
 div#options h2 {
+  background: rgb(230, 230, 230);
   min-width: 100vw;
   width: 100vw;
-  background: #e6e6e6;
-  margin: 0 0 10px;
-  padding: 10px;
   font-weight: bold;
+  padding: 10px;
+  margin: 0px 0 10px 0;
 }
 
 div#options li span.keys-day-event {
   min-width: 20px;
   width: 20px;
   background: pink;
-  margin: 0 40px 0 0;
   padding: 5px;
+  margin: 0 40px 0 0;
 }
 
 div#options li span.keys-current-day {
   min-width: 20px;
   width: 20px;
-  background: #78b7ff 0 0 / 10%;
-  margin: 0 40px 0 0;
+  background: rgb(120, 183, 255);
+  background-size: 10%;
   padding: 5px;
+  margin: 0 40px 0 0;
 }
 
 div#subscription-form {
+  position: absolute;
   z-index: 4;
+  top: 0;
+  padding: 5px;
   height: 100vh;
   width: 100vw;
-  padding: 10px 0 0;
-  position: absolute;
-  top: 0;
   overflow: hidden;
+  padding: 10px 0 0 0;
 }
 
+/*/////////////////
+///BOTTOM BAR////
+////////////////*/
+
 div#bottom-bar {
+  position: fixed;
   z-index: 2000;
+  bottom: 10px;
+  left: 0px;
   height: 18px;
   z-index: 6;
-  min-width: 100vw;
   background: none;
-  position: fixed;
-  bottom: 10px;
-  left: 0;
+  min-width: 100vw;
 }
 
 div#bottom-bar div#inner {
@@ -784,74 +826,78 @@ div#bottom-bar div#inner {
 }
 
 div#bottom-bar div {
-  color: #fff;
-  text-align: center;
   background: none;
+  color: white;
   padding: 2px;
-  font-size: .8rem;
+  font-size: 0.8rem;
+  text-align: center;
 }
 
 div#bottom-bar div#button-center {
-  color: #fff;
+  background: none;
+  color: white;
+  padding: 2px;
   width: 32%;
   text-align: center;
-  background: none;
-  padding: 2px;
 }
 
 div#bottom-bar div#button-center img {
-  width: 30px;
   position: fixed;
   bottom: 5px;
+
   left: 46%;
+  width: 30px;
 }
 
 div#bottom-bar div#button-left {
-  color: #fff;
+  background: none;
+  color: white;
+  padding: 2px;
   width: 32%;
   text-align: left;
   width: 32%;
-  background: none;
-  padding: 2px;
 }
 
 div#bottom-bar div#button-left img {
-  width: 30px;
   position: fixed;
   bottom: 5px;
   left: 10px;
+  width: 30px;
 }
 
 div#bottom-bar div#button-right img {
-  width: 30px;
   position: fixed;
   bottom: 5px;
   right: 10px;
+  width: 30px;
 }
 
 div#bottom-bar div#button-right {
-  color: #fff;
+  background: none;
+  color: white;
+  padding: 2px;
   width: 32%;
   text-align: right;
-  background: none;
-  padding: 2px;
 }
 
+/*/////////////////
+///TOP-BAR///////*/
+
 div#top-bar {
+  position: fixed;
+  top: 0px;
+  left: 0px;
   height: 18px;
   z-index: 4;
+  background: black;
   min-width: 100vw;
-  background: #000;
   display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
 div#top-bar img {
-  max-height: 15px;
-  color: #fff;
   margin: 3px 0 0 5px;
+  max-height: 15px;
+  color: white;
 }
 
 div#top-bar div#inner {
@@ -859,35 +905,39 @@ div#top-bar div#inner {
 }
 
 div#top-bar div {
-  color: #fff;
-  background: #000;
+  background: black;
+  color: white;
   padding: 2px;
 }
 
 div#top-bar div#button-center {
-  color: #fff;
+  background: black;
+  color: white;
+  padding: 2px;
   width: 30%;
   text-align: center;
-  background: #000;
-  padding: 2px;
 }
 
 div#top-bar div#button-left {
-  color: #fff;
+  background: black;
+  color: white;
+  padding: 2px;
   width: 20px;
   text-align: left;
   width: 30%;
-  background: #000;
-  padding: 2px;
 }
 
 div#top-bar div#button-right {
-  color: #fff;
+  background: black;
+  color: white;
+  padding: 2px;
   width: 30%;
   text-align: right;
-  background: #000;
-  padding: 2px;
 }
+
+/*
+ SETTINGS
+ */
 
 div#top {
   position: fixed;
@@ -895,15 +945,15 @@ div#top {
 }
 
 div#settings {
+  display: none;
   height: 92vh;
   width: 100%;
-  z-index: 3;
-  background: #e7e7e7;
-  padding: 0 0 50px;
-  display: none;
-  position: absolute;
-  top: 0;
+  padding: 0px 0 50px 0;
   overflow: hidden;
+  position: absolute;
+  top: 0px;
+  z-index: 3;
+  background: rgb(231, 231, 231);
 }
 
 button span {
@@ -911,11 +961,10 @@ button span {
 }
 
 div#settings div#text {
-  margin: 0 0 20px;
+  margin: 0 0 20px 0;
 }
-
 div#settings h2 {
-  padding: 0 10px;
+  padding: 0 10px 0 10px;
 }
 
 div#settings label {
@@ -925,7 +974,7 @@ div#settings label {
 }
 
 div#time {
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 @keyframes jump {
@@ -937,4 +986,3 @@ div#time {
     transform: translateY(-30px);
   }
 }
-

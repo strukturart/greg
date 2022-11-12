@@ -573,11 +573,15 @@ div#events-wrapper article:last-child {
   margin: 0 0 55px 0;
 }
 
-div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time {
+div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time {
   display: none;
 }
 
-div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
+div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay {
+  display: none;
+}
+
+div#events-wrapper article[data-all-day="true"] div.time {
   display: none;
 }
 
@@ -595,16 +599,16 @@ div#event-slider {
   position: relative;
   margin: 15px 0 0 0;
   min-height: 40px;
-  max-width:90vw!important;
-  min-width:90vw!important;
+  max-width: 90vw !important;
+  min-width: 90vw !important;
 }
 
-div#event-slider div{
+div#event-slider div {
   position: relative;
 
   min-height: 40px;
-  max-width:90vw!important;
-    white-space: nowrap;
+  max-width: 90vw !important;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
@@ -698,14 +702,16 @@ button.save-button:focus {
   border: none;
 }
 
-div#templates-page{  position: absolute;
+div#templates-page {
+  position: absolute;
   z-index: 4;
   top: 0;
   padding: 0px 5px 5px 0px;
   height: 92vh;
-  overflow: hidden;}
-  
-  div#templates-page h2 {
+  overflow: hidden;
+}
+
+div#templates-page h2 {
   background: rgb(230, 230, 230);
   min-width: 100vw;
   width: 100vw;

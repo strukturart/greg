@@ -540,6 +540,7 @@ parcelHelpers.export(exports, "event_templates", ()=>event_templates);
 parcelHelpers.export(exports, "sync_caldav", ()=>sync_caldav);
 parcelHelpers.export(exports, "sync_caldav_callback", ()=>sync_caldav_callback);
 parcelHelpers.export(exports, "status", ()=>status);
+parcelHelpers.export(exports, "settings", ()=>settings);
 parcelHelpers.export(exports, "page_options", ()=>page_options);
 var _localforage = require("localforage");
 var _localforageDefault = parcelHelpers.interopDefault(_localforage);
@@ -555,7 +556,8 @@ var _uid = require("uid");
 var _events = require("events");
 var _googleCredJs = require("./assets/js/google_cred.js");
 "use strict";
-var moment = require("moment-timezone");
+const dayjs = require("dayjs");
+const moment = require("moment-timezone");
 let events = [];
 let accounts = [];
 let event_templates = [];
@@ -1082,10 +1084,10 @@ let get_event_date = function() {
 });
 let store_event_as_template = function(title, description, location) {
     let m = {
-        "id": (0, _uid.uid)(32),
-        "title": title,
-        "description": description,
-        "location": location
+        id: (0, _uid.uid)(32),
+        title: title,
+        description: description,
+        location: location
     };
     event_templates.push(m);
     (0, _localforageDefault.default).setItem("event_templates", event_templates).then(function(value) {
@@ -1132,14 +1134,14 @@ let status = {
 let settings = {
     default_notification: "none",
     ads: "",
-    timezone: moment.tz.guess()
+    timezone: moment.tz.guess(),
+    dateformat: "YY-MM-DD"
 };
 let blob = "";
 let load_settings = function() {
     (0, _localforageDefault.default).getItem("settings").then(function(value) {
         if (value == null) return false;
         settings = value;
-        console.log(value);
     }).catch(function(err) {
         console.log(err);
     });
@@ -1404,12 +1406,9 @@ let event_slider = function(date) {
     if (slider.length != "") {
         slider.forEach(function(item) {
             let l = "";
-            let t3 = new Date(item.DTEND);
-            l = `0${t3.getHours()}`.slice(-2) + ":" + `0${t3.getMinutes()}`.slice(-2);
-            /*
-      if (item.DTEND != item.DTSTART) {
-      }
-      */ document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div>" + item.SUMMARY + "</div><div>" + l + "</div></article>");
+            let t3 = new Date(item.DTSTART);
+            if (!item.allDay) l = `0${t3.getHours()}`.slice(-2) + ":" + `0${t3.getMinutes()}`.slice(-2);
+            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div>" + item.SUMMARY + "</div><div>" + l + "</div></article>");
         });
         if (slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if (slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
@@ -1657,7 +1656,7 @@ var page_events = {
                     "data-time-end": item.time_end,
                     "data-date-end": item.dateEnd,
                     "data-rrule": item.rrule_,
-                    "data-allDay": item.allDay,
+                    "data-all-day": item.allDay ? "true" : "false",
                     "data-alarm": item.alarm
                 }, [
                     (0, _mithrilDefault.default)("div", {
@@ -1669,7 +1668,7 @@ var page_events = {
                         }),
                         (0, _mithrilDefault.default)("div", {
                             class: "date"
-                        }, item.dateStart),
+                        }, dayjs(item.dateStart).format(settings.dateformat)),
                         (0, _mithrilDefault.default)("div", {
                             class: "time"
                         }, item.time_start),
@@ -1744,6 +1743,40 @@ let page_options = {
                 class: "item",
                 tabindex: "2"
             }, "settings"),
+            (0, _mithrilDefault.default)("div", {
+                class: "text-center"
+            }, "Timezone: " + settings.timezone),
+            (0, _mithrilDefault.default)("div", {
+                class: "item input-parent",
+                id: "event-date-format-box",
+                tabindex: "3"
+            }, [
+                (0, _mithrilDefault.default)("label", {
+                    for: "event-date-format"
+                }, "dateformat"),
+                (0, _mithrilDefault.default)("select", {
+                    id: "event-date-format",
+                    class: "select-box",
+                    onchange: function() {
+                        store_settings();
+                    },
+                    oncreate: function() {
+                        load_settings();
+                        setTimeout(function() {
+                            focus_after_selection();
+                            if (settings.dateformat == "") document.querySelector("#event-date-format").value = "YY-mm-dd";
+                            else document.querySelector("#event-date-format").value = settings.dateformat;
+                        }, 1000);
+                    }
+                }, [
+                    (0, _mithrilDefault.default)("option", {
+                        value: "YY-MM-DD"
+                    }, "YY-MM-DD"),
+                    (0, _mithrilDefault.default)("option", {
+                        value: "DD.MM.YY"
+                    }, "DD.MM.YY")
+                ])
+            ]),
             (0, _mithrilDefault.default)("div", {
                 class: "item input-parent",
                 id: "event-notification-time-wrapper",
@@ -2224,7 +2257,7 @@ var page_add_event = {
                     for: "event-date"
                 }, "Start Date"),
                 (0, _mithrilDefault.default)("input", {
-                    placeholder: "YYYY-MM-DD",
+                    placeholder: settings.dateformat,
                     type: "date",
                     id: "event-date",
                     class: "select-box",
@@ -2239,7 +2272,7 @@ var page_add_event = {
                     for: "event-date-end"
                 }, "End Date"),
                 (0, _mithrilDefault.default)("input", {
-                    placeholder: "YYYY-MM-DD",
+                    placeholder: settings.dateformat,
                     type: "date",
                     id: "event-date-end",
                     class: "select-box"
@@ -2443,7 +2476,7 @@ var page_edit_event = {
                     for: "event-date"
                 }, "Start Date"),
                 (0, _mithrilDefault.default)("input", {
-                    placeholder: "YYYY-MM-DD",
+                    placeholder: settings.dateformat,
                     type: "date",
                     id: "event-date",
                     class: "select-box",
@@ -2458,7 +2491,7 @@ var page_edit_event = {
                     for: "event-date-end"
                 }, "End Date"),
                 (0, _mithrilDefault.default)("input", {
-                    placeholder: "YYYY-MM-DD",
+                    placeholder: settings.dateformat,
                     type: "date",
                     id: "event-date-end",
                     class: "select-box",
@@ -2657,6 +2690,7 @@ var page_event_templates = {
 (0, _mithrilDefault.default).route.prefix = "#";
 let store_settings = function() {
     settings.default_notification = document.getElementById("default-notification-time").value;
+    settings.dateformat = document.getElementById("event-date-format").value;
     (0, _localforageDefault.default).setItem("settings", settings).then(function(value) {
         (0, _helperJs.side_toaster)("settings saved", 2000);
     }).catch(function(err) {
@@ -2846,9 +2880,7 @@ let nav = function(move) {
             event_slider(status.selected_day);
         }
     }
-}; // may better to compare all alarms
-// with all events
-// to clean
+};
 let add_alarm = function(date, message_text, id) {
     // KaiOs  2.xx
     if (navigator.mozAlarms) {
@@ -3088,7 +3120,7 @@ let update_event = function(account_id) {
                 update_caldav(index.etag, index.url, event_data, index.id);
             }
         }
-    }); //sort_array(events, "DTSTART", "date");
+    });
 }; //////////////
 //DELETE EVENT
 ///////////
@@ -3337,7 +3369,7 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
 
-},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","./assets/js/tsdav.js":"14ZM6","url-search-params-polyfill":"bzeLu","uid":"lE7Rf","events":"32fHr","./assets/js/google_cred.js":"c2NC3","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8ZRFG":[function(require,module,exports) {
+},{"localforage":"8ZRFG","./assets/js/helper.js":"db1Xp","./assets/js/getMoonPhase.js":"kaybj","./assets/js/eximport.js":"4kH1V","./assets/js/scan.js":"6auJa","mithril":"05eVJ","./assets/js/tsdav.js":"14ZM6","url-search-params-polyfill":"bzeLu","uid":"lE7Rf","events":"32fHr","./assets/js/google_cred.js":"c2NC3","dayjs":"9MXMB","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"8ZRFG":[function(require,module,exports) {
 var global = arguments[3];
 /*!
     localForage -- Offline Storage, Improved
@@ -5950,6 +5982,7 @@ var _localforageDefault = parcelHelpers.interopDefault(_localforage);
 var _appJs = require("../../app.js");
 var _icalJs = require("ical.js");
 var _icalJsDefault = parcelHelpers.interopDefault(_icalJs);
+const dayjs = require("dayjs");
 var moment = require("moment-timezone");
 let export_ical = function(filename, event_data) {
     if (!navigator.getDeviceStorage) return false;
@@ -6011,7 +6044,6 @@ let parse_ics = function(data, callback, saveOnDevice, subscription, etag, url, 
         let dateStart, timeStart;
         if (ite.getFirstPropertyValue("dtstart")) {
             ds = new Date(ite.getFirstPropertyValue("dtstart"));
-            var m = moment.tz(ite.getFirstPropertyValue("dtstart"), "Europe/Berlin");
             dateStart = ds.getFullYear() + "-" + `0${ds.getMonth() + 1}`.slice(-2) + "-" + `0${ds.getDate()}`.slice(-2);
             timeStart = `0${ds.getHours()}`.slice(-2) + ":" + `0${ds.getMinutes()}`.slice(-2) + ":" + `0${ds.getSeconds()}`.slice(-2);
         } //date end
@@ -6021,9 +6053,9 @@ let parse_ics = function(data, callback, saveOnDevice, subscription, etag, url, 
             dateEnd = DTstart.getFullYear() + "-" + `0${DTstart.getMonth() + 1}`.slice(-2) + "-" + `0${DTstart.getDate()}`.slice(-2);
             timeEnd = `0${DTstart.getHours()}`.slice(-2) + ":" + `0${DTstart.getMinutes()}`.slice(-2) + ":" + `0${DTstart.getSeconds()}`.slice(-2);
         } //allDay event
-        let allDay = "";
+        let allday = false;
         if (ite.getFirstPropertyValue("dtend") && ite.getFirstPropertyValue("dtstart")) {
-            if (timeStart == timeEnd) allDay = "allDay";
+            if (timeStart == timeEnd) allday = true;
         }
         let imp = {
             BEGIN: "VEVENT",
@@ -6041,7 +6073,7 @@ let parse_ics = function(data, callback, saveOnDevice, subscription, etag, url, 
             END: "VEVENT",
             isSubscription: subscription,
             isCaldav: isCaldav,
-            allDay: allDay,
+            allDay: allday,
             dateStart: dateStart,
             time_start: timeStart,
             dateEnd: dateEnd,
@@ -6132,7 +6164,7 @@ function loadICS(filename, callback) {
     };
 }
 
-},{"./helper.js":"db1Xp","localforage":"8ZRFG","../../app.js":"20BJq","ical.js":"b17JL","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"b17JL":[function(require,module,exports) {
+},{"./helper.js":"db1Xp","localforage":"8ZRFG","../../app.js":"20BJq","ical.js":"b17JL","dayjs":"9MXMB","moment-timezone":"77kdC","@parcel/transformer-js/src/esmodule-helpers.js":"j7FRh"}],"b17JL":[function(require,module,exports) {
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -13291,6 +13323,301 @@ function loadICS(filename, callback) {
     };
     return ComponentParser;
 }();
+
+},{}],"9MXMB":[function(require,module,exports) {
+!function(t, e) {
+    module.exports = e();
+}(this, function() {
+    "use strict";
+    var t1 = 1e3, e1 = 6e4, n1 = 36e5, r1 = "millisecond", i1 = "second", s1 = "minute", u1 = "hour", a1 = "day", o1 = "week", f1 = "month", h1 = "quarter", c1 = "year", d1 = "date", l1 = "Invalid Date", $1 = /^(\d{4})[-/]?(\d{1,2})?[-/]?(\d{0,2})[Tt\s]*(\d{1,2})?:?(\d{1,2})?:?(\d{1,2})?[.:]?(\d+)?$/, y1 = /\[([^\]]+)]|Y{1,4}|M{1,4}|D{1,2}|d{1,4}|H{1,2}|h{1,2}|a|A|m{1,2}|s{1,2}|Z{1,2}|SSS/g, M1 = {
+        name: "en",
+        weekdays: "Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday".split("_"),
+        months: "January_February_March_April_May_June_July_August_September_October_November_December".split("_"),
+        ordinal: function(t) {
+            var e = [
+                "th",
+                "st",
+                "nd",
+                "rd"
+            ], n = t % 100;
+            return "[" + t + (e[(n - 20) % 10] || e[n] || e[0]) + "]";
+        }
+    }, m1 = function(t, e, n) {
+        var r = String(t);
+        return !r || r.length >= e ? t : "" + Array(e + 1 - r.length).join(n) + t;
+    }, v1 = {
+        s: m1,
+        z: function(t) {
+            var e = -t.utcOffset(), n = Math.abs(e), r = Math.floor(n / 60), i = n % 60;
+            return (e <= 0 ? "+" : "-") + m1(r, 2, "0") + ":" + m1(i, 2, "0");
+        },
+        m: function t(e, n) {
+            if (e.date() < n.date()) return -t(n, e);
+            var r = 12 * (n.year() - e.year()) + (n.month() - e.month()), i = e.clone().add(r, f1), s = n - i < 0, u = e.clone().add(r + (s ? -1 : 1), f1);
+            return +(-(r + (n - i) / (s ? i - u : u - i)) || 0);
+        },
+        a: function(t) {
+            return t < 0 ? Math.ceil(t) || 0 : Math.floor(t);
+        },
+        p: function(t) {
+            return ({
+                M: f1,
+                y: c1,
+                w: o1,
+                d: a1,
+                D: d1,
+                h: u1,
+                m: s1,
+                s: i1,
+                ms: r1,
+                Q: h1
+            })[t] || String(t || "").toLowerCase().replace(/s$/, "");
+        },
+        u: function(t) {
+            return void 0 === t;
+        }
+    }, g1 = "en", D1 = {};
+    D1[g1] = M1;
+    var p = function(t) {
+        return t instanceof _;
+    }, S = function t(e, n, r) {
+        var i;
+        if (!e) return g1;
+        if ("string" == typeof e) {
+            var s = e.toLowerCase();
+            D1[s] && (i = s), n && (D1[s] = n, i = s);
+            var u = e.split("-");
+            if (!i && u.length > 1) return t(u[0]);
+        } else {
+            var a = e.name;
+            D1[a] = e, i = a;
+        }
+        return !r && i && (g1 = i), i || !r && g1;
+    }, w = function(t, e) {
+        if (p(t)) return t.clone();
+        var n = "object" == typeof e ? e : {};
+        return n.date = t, n.args = arguments, new _(n);
+    }, O = v1;
+    O.l = S, O.i = p, O.w = function(t, e) {
+        return w(t, {
+            locale: e.$L,
+            utc: e.$u,
+            x: e.$x,
+            $offset: e.$offset
+        });
+    };
+    var _ = function() {
+        function M2(t) {
+            this.$L = S(t.locale, null, !0), this.parse(t);
+        }
+        var m2 = M2.prototype;
+        return m2.parse = function(t2) {
+            this.$d = function(t) {
+                var e = t.date, n = t.utc;
+                if (null === e) return new Date(NaN);
+                if (O.u(e)) return new Date;
+                if (e instanceof Date) return new Date(e);
+                if ("string" == typeof e && !/Z$/i.test(e)) {
+                    var r = e.match($1);
+                    if (r) {
+                        var i = r[2] - 1 || 0, s = (r[7] || "0").substring(0, 3);
+                        return n ? new Date(Date.UTC(r[1], i, r[3] || 1, r[4] || 0, r[5] || 0, r[6] || 0, s)) : new Date(r[1], i, r[3] || 1, r[4] || 0, r[5] || 0, r[6] || 0, s);
+                    }
+                }
+                return new Date(e);
+            }(t2), this.$x = t2.x || {}, this.init();
+        }, m2.init = function() {
+            var t = this.$d;
+            this.$y = t.getFullYear(), this.$M = t.getMonth(), this.$D = t.getDate(), this.$W = t.getDay(), this.$H = t.getHours(), this.$m = t.getMinutes(), this.$s = t.getSeconds(), this.$ms = t.getMilliseconds();
+        }, m2.$utils = function() {
+            return O;
+        }, m2.isValid = function() {
+            return !(this.$d.toString() === l1);
+        }, m2.isSame = function(t, e) {
+            var n = w(t);
+            return this.startOf(e) <= n && n <= this.endOf(e);
+        }, m2.isAfter = function(t, e) {
+            return w(t) < this.startOf(e);
+        }, m2.isBefore = function(t, e) {
+            return this.endOf(e) < w(t);
+        }, m2.$g = function(t, e, n) {
+            return O.u(t) ? this[e] : this.set(n, t);
+        }, m2.unix = function() {
+            return Math.floor(this.valueOf() / 1e3);
+        }, m2.valueOf = function() {
+            return this.$d.getTime();
+        }, m2.startOf = function(t3, e2) {
+            var n = this, r = !!O.u(e2) || e2, h = O.p(t3), l = function(t, e) {
+                var i = O.w(n.$u ? Date.UTC(n.$y, e, t) : new Date(n.$y, e, t), n);
+                return r ? i : i.endOf(a1);
+            }, $ = function(t, e) {
+                return O.w(n.toDate()[t].apply(n.toDate("s"), (r ? [
+                    0,
+                    0,
+                    0,
+                    0
+                ] : [
+                    23,
+                    59,
+                    59,
+                    999
+                ]).slice(e)), n);
+            }, y = this.$W, M = this.$M, m = this.$D, v = "set" + (this.$u ? "UTC" : "");
+            switch(h){
+                case c1:
+                    return r ? l(1, 0) : l(31, 11);
+                case f1:
+                    return r ? l(1, M) : l(0, M + 1);
+                case o1:
+                    var g = this.$locale().weekStart || 0, D = (y < g ? y + 7 : y) - g;
+                    return l(r ? m - D : m + (6 - D), M);
+                case a1:
+                case d1:
+                    return $(v + "Hours", 0);
+                case u1:
+                    return $(v + "Minutes", 1);
+                case s1:
+                    return $(v + "Seconds", 2);
+                case i1:
+                    return $(v + "Milliseconds", 3);
+                default:
+                    return this.clone();
+            }
+        }, m2.endOf = function(t) {
+            return this.startOf(t, !1);
+        }, m2.$set = function(t, e) {
+            var n, o = O.p(t), h = "set" + (this.$u ? "UTC" : ""), l = (n = {}, n[a1] = h + "Date", n[d1] = h + "Date", n[f1] = h + "Month", n[c1] = h + "FullYear", n[u1] = h + "Hours", n[s1] = h + "Minutes", n[i1] = h + "Seconds", n[r1] = h + "Milliseconds", n)[o], $ = o === a1 ? this.$D + (e - this.$W) : e;
+            if (o === f1 || o === c1) {
+                var y = this.clone().set(d1, 1);
+                y.$d[l]($), y.init(), this.$d = y.set(d1, Math.min(this.$D, y.daysInMonth())).$d;
+            } else l && this.$d[l]($);
+            return this.init(), this;
+        }, m2.set = function(t, e) {
+            return this.clone().$set(t, e);
+        }, m2.get = function(t) {
+            return this[O.p(t)]();
+        }, m2.add = function(r, h) {
+            var d, l = this;
+            r = Number(r);
+            var $ = O.p(h), y = function(t) {
+                var e = w(l);
+                return O.w(e.date(e.date() + Math.round(t * r)), l);
+            };
+            if ($ === f1) return this.set(f1, this.$M + r);
+            if ($ === c1) return this.set(c1, this.$y + r);
+            if ($ === a1) return y(1);
+            if ($ === o1) return y(7);
+            var M = (d = {}, d[s1] = e1, d[u1] = n1, d[i1] = t1, d)[$] || 1, m = this.$d.getTime() + r * M;
+            return O.w(m, this);
+        }, m2.subtract = function(t, e) {
+            return this.add(-1 * t, e);
+        }, m2.format = function(t4) {
+            var e3 = this, n2 = this.$locale();
+            if (!this.isValid()) return n2.invalidDate || l1;
+            var r2 = t4 || "YYYY-MM-DDTHH:mm:ssZ", i2 = O.z(this), s2 = this.$H, u = this.$m, a = this.$M, o = n2.weekdays, f = n2.months, h = function(t, n, i, s) {
+                return t && (t[n] || t(e3, r2)) || i[n].slice(0, s);
+            }, c = function(t) {
+                return O.s(s2 % 12 || 12, t, "0");
+            }, d = n2.meridiem || function(t, e, n) {
+                var r = t < 12 ? "AM" : "PM";
+                return n ? r.toLowerCase() : r;
+            }, $ = {
+                YY: String(this.$y).slice(-2),
+                YYYY: this.$y,
+                M: a + 1,
+                MM: O.s(a + 1, 2, "0"),
+                MMM: h(n2.monthsShort, a, f, 3),
+                MMMM: h(f, a),
+                D: this.$D,
+                DD: O.s(this.$D, 2, "0"),
+                d: String(this.$W),
+                dd: h(n2.weekdaysMin, this.$W, o, 2),
+                ddd: h(n2.weekdaysShort, this.$W, o, 3),
+                dddd: o[this.$W],
+                H: String(s2),
+                HH: O.s(s2, 2, "0"),
+                h: c(1),
+                hh: c(2),
+                a: d(s2, u, !0),
+                A: d(s2, u, !1),
+                m: String(u),
+                mm: O.s(u, 2, "0"),
+                s: String(this.$s),
+                ss: O.s(this.$s, 2, "0"),
+                SSS: O.s(this.$ms, 3, "0"),
+                Z: i2
+            };
+            return r2.replace(y1, function(t, e) {
+                return e || $[t] || i2.replace(":", "");
+            });
+        }, m2.utcOffset = function() {
+            return 15 * -Math.round(this.$d.getTimezoneOffset() / 15);
+        }, m2.diff = function(r, d, l) {
+            var $, y = O.p(d), M = w(r), m = (M.utcOffset() - this.utcOffset()) * e1, v = this - M, g = O.m(this, M);
+            return g = ($ = {}, $[c1] = g / 12, $[f1] = g, $[h1] = g / 3, $[o1] = (v - m) / 6048e5, $[a1] = (v - m) / 864e5, $[u1] = v / n1, $[s1] = v / e1, $[i1] = v / t1, $)[y] || v, l ? g : O.a(g);
+        }, m2.daysInMonth = function() {
+            return this.endOf(f1).$D;
+        }, m2.$locale = function() {
+            return D1[this.$L];
+        }, m2.locale = function(t, e) {
+            if (!t) return this.$L;
+            var n = this.clone(), r = S(t, e, !0);
+            return r && (n.$L = r), n;
+        }, m2.clone = function() {
+            return O.w(this.$d, this);
+        }, m2.toDate = function() {
+            return new Date(this.valueOf());
+        }, m2.toJSON = function() {
+            return this.isValid() ? this.toISOString() : null;
+        }, m2.toISOString = function() {
+            return this.$d.toISOString();
+        }, m2.toString = function() {
+            return this.$d.toUTCString();
+        }, M2;
+    }(), T = _.prototype;
+    return w.prototype = T, [
+        [
+            "$ms",
+            r1
+        ],
+        [
+            "$s",
+            i1
+        ],
+        [
+            "$m",
+            s1
+        ],
+        [
+            "$H",
+            u1
+        ],
+        [
+            "$W",
+            a1
+        ],
+        [
+            "$M",
+            f1
+        ],
+        [
+            "$y",
+            c1
+        ],
+        [
+            "$D",
+            d1
+        ]
+    ].forEach(function(t) {
+        T[t[1]] = function(e) {
+            return this.$g(e, t[0], t[1]);
+        };
+    }), w.extend = function(t, e) {
+        return t.$i || (t(e, _, w), t.$i = !0), w;
+    }, w.locale = S, w.isDayjs = p, w.unix = function(t) {
+        return w(1e3 * t);
+    }, w.en = D1[g1], w.Ls = D1, w.p = {}, w;
+});
 
 },{}],"77kdC":[function(require,module,exports) {
 var moment = module.exports = require("./moment-timezone");

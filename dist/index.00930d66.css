@@ -538,7 +538,7 @@ div#events-wrapper article:last-child {
   margin: 0 0 55px;
 }
 
-div#events-wrapper article[data-allday="allDay"] div.icons-bar div.time, div#events-wrapper article[data-allday=""] div.icons-bar div.allDay {
+div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time, div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay, div#events-wrapper article[data-all-day="true"] div.time {
   display: none;
 }
 

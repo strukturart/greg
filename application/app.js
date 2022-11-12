@@ -26,7 +26,8 @@ import { uid } from "uid";
 import { captureRejectionSymbol } from "events";
 import { google_cred } from "./assets/js/google_cred.js";
 
-var moment = require("moment-timezone");
+const dayjs = require("dayjs");
+const moment = require("moment-timezone");
 
 export let events = [];
 export let accounts = [];
@@ -752,10 +753,10 @@ localforage
 
 let store_event_as_template = function (title, description, location) {
   let m = {
-    "id": uid(32),
-    "title": title,
-    "description": description,
-    "location": location,
+    id: uid(32),
+    title: title,
+    description: description,
+    location: location,
   };
   event_templates.push(m);
 
@@ -801,10 +802,11 @@ export let status = {
   update_event_id: "",
 };
 
-let settings = {
+export let settings = {
   default_notification: "none",
   ads: "",
   timezone: moment.tz.guess(),
+  dateformat: "YY-MM-DD",
 };
 let blob = "";
 
@@ -814,7 +816,6 @@ let load_settings = function () {
     .then(function (value) {
       if (value == null) return false;
       settings = value;
-      console.log(value);
     })
     .catch(function (err) {
       console.log(err);
@@ -1201,12 +1202,9 @@ let event_slider = function (date) {
   if (slider.length != "") {
     slider.forEach(function (item) {
       let l = "";
-      let t = new Date(item.DTEND);
-      l = `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
-      /*
-      if (item.DTEND != item.DTSTART) {
-      }
-      */
+      let t = new Date(item.DTSTART);
+      if (!item.allDay)
+        l = `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
 
       document
         .querySelector("div#event-slider")
@@ -1591,16 +1589,18 @@ var page_events = {
               "data-time-end": item.time_end,
               "data-date-end": item.dateEnd,
               "data-rrule": item.rrule_,
-              "data-allDay": item.allDay,
+              "data-all-day": item.allDay ? "true" : "false",
               "data-alarm": item.alarm,
             },
             [
               m("div", { class: "icons-bar" }, [
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
-                m("div", { class: "date" }, item.dateStart),
+                m(
+                  "div",
+                  { class: "date" },
+                  dayjs(item.dateStart).format(settings.dateformat)
+                ),
                 m("div", { class: "time" }, item.time_start),
-                //m("div", { class: "allDay" }, "all Day"),
-
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION),
@@ -1662,6 +1662,46 @@ export let page_options = {
         ]
       ),
       m("h2", { class: "item", tabindex: "2" }, "settings"),
+      m("div", { class: "text-center" }, "Timezone: " + settings.timezone),
+
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          id: "event-date-format-box",
+          tabindex: "3",
+        },
+        [
+          m("label", { for: "event-date-format" }, "dateformat"),
+          m(
+            "select",
+            {
+              id: "event-date-format",
+              class: "select-box",
+              onchange: function () {
+                store_settings();
+              },
+              oncreate: function () {
+                load_settings();
+                setTimeout(function () {
+                  focus_after_selection();
+                  if (settings.dateformat == "") {
+                    document.querySelector("#event-date-format").value =
+                      "YY-mm-dd";
+                  } else {
+                    document.querySelector("#event-date-format").value =
+                      settings.dateformat;
+                  }
+                }, 1000);
+              },
+            },
+            [
+              m("option", { value: "YY-MM-DD" }, "YY-MM-DD"),
+              m("option", { value: "DD.MM.YY" }, "DD.MM.YY"),
+            ]
+          ),
+        ]
+      ),
 
       m(
         "div",
@@ -2235,7 +2275,7 @@ var page_add_event = {
         m("div", { class: "item input-parent", tabindex: "2" }, [
           m("label", { for: "event-date" }, "Start Date"),
           m("input", {
-            placeholder: "YYYY-MM-DD",
+            placeholder: settings.dateformat,
             type: "date",
             id: "event-date",
             class: "select-box",
@@ -2246,7 +2286,7 @@ var page_add_event = {
         m("div", { class: "item input-parent", tabindex: "3" }, [
           m("label", { for: "event-date-end" }, "End Date"),
           m("input", {
-            placeholder: "YYYY-MM-DD",
+            placeholder: settings.dateformat,
             type: "date",
             id: "event-date-end",
             class: "select-box",
@@ -2431,7 +2471,7 @@ var page_edit_event = {
         m("div", { class: "item input-parent", tabindex: "2" }, [
           m("label", { for: "event-date" }, "Start Date"),
           m("input", {
-            placeholder: "YYYY-MM-DD",
+            placeholder: settings.dateformat,
             type: "date",
             id: "event-date",
             class: "select-box",
@@ -2443,7 +2483,7 @@ var page_edit_event = {
         m("div", { class: "item input-parent", tabindex: "3" }, [
           m("label", { for: "event-date-end" }, "End Date"),
           m("input", {
-            placeholder: "YYYY-MM-DD",
+            placeholder: settings.dateformat,
             type: "date",
             id: "event-date-end",
             class: "select-box",
@@ -2667,6 +2707,8 @@ let store_settings = function () {
   settings.default_notification = document.getElementById(
     "default-notification-time"
   ).value;
+
+  settings.dateformat = document.getElementById("event-date-format").value;
 
   localforage
     .setItem("settings", settings)
@@ -2974,10 +3016,6 @@ let nav = function (move) {
     }
   }
 };
-
-// may better to compare all alarms
-// with all events
-// to clean
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
@@ -3377,7 +3415,6 @@ let update_event = function (account_id) {
       }
     }
   });
-  //sort_array(events, "DTSTART", "date");
 };
 
 //////////////
