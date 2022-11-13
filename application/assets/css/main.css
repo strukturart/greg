@@ -435,6 +435,10 @@ div#calendar div#calendar-body div div.event {
   background: pink !important;
 }
 
+div#calendar div#calendar-body div div.multievent {
+  background: LightSalmon !important;
+}
+
 div#calendar div#calendar-body div div.subscription {
   background: rgb(245, 245, 169);
 }
@@ -606,8 +610,9 @@ div#event-slider {
 div#event-slider div {
   position: relative;
 
-  min-height: 40px;
+  min-height: 30px;
   max-width: 90vw !important;
+  min-width: 90vw !important;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -666,12 +671,12 @@ div#event-slider article {
   max-width: 80vw;
   min-width: 80vw;
   font-size: 0.9rem;
-
   display: none;
 }
 
 div#event-slider article > * {
   text-align: center;
+  font-size: 0.9rem;
 }
 div#event-slider article:nth-child(1) {
   margin: 0 0 15px 0;

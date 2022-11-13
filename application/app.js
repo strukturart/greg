@@ -806,7 +806,7 @@ export let settings = {
   default_notification: "none",
   ads: "",
   timezone: moment.tz.guess(),
-  dateformat: "YY-MM-DD",
+  dateformat: "YYYY-MM-DD",
 };
 let blob = "";
 
@@ -897,52 +897,58 @@ getManifest(manifest);
 // ////////
 
 let find_closest_date = function (search_term) {
-  let search = new Date(status.selected_day).getTime();
+  //let search = new Date(status.selected_day).getTime();
+  let search = dayjs(status.selected_day).unix();
+
   if (events == "") {
     document.getElementById("events-wrapper").innerHTML =
       "you haven't made any calendar entries yet";
   }
   if (events == "") return false;
+  let t = 0;
+
+  let f = function () {
+    console.log("result" + t);
+    document
+      .querySelectorAll('div#events-wrapper article[data-id="' + t + '"]')[0]
+      .focus();
+    const rect = document.activeElement.getBoundingClientRect();
+    const elY =
+      rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
+
+    document.activeElement.parentNode.scrollBy({
+      left: 0,
+      top: elY - window.innerHeight / 2,
+      behavior: "smooth",
+    });
+  };
+  //smaller or first
+  let gg = function () {
+    try {
+      let m = events.find((event) => dayjs(event.DTSTAMP).unix() < search);
+      t = m.UID;
+      f();
+    } catch (e) {
+      t = events[0].UID;
+      f();
+    }
+  };
+
   //equal
-  for (let i = 0; i < events.length; i++) {
-    let item = new Date(events[i].dateStart).getTime();
-
-    if (search == item) {
-      t = events[i].dateStart;
-      i = events.length;
-    }
+  try {
+    let m = events.find((event) => dayjs(event.dateStart).unix() === search);
+    t = m.UID;
+    f();
+  } catch (e) {
+    gg();
   }
-  //between
-  if (t == 0) {
-    for (let i = 0; i < events.length - 1; i++) {
-      if (search > new Date(events[i].dateStart).getTime()) {
-        t = events[i].dateStart;
-        i = events.length;
-      }
-    }
-  }
-  //default
-  if (t == 0) {
-    console.log("no match");
-    t = events[0].dateStart;
-  }
-  document.querySelectorAll("article[data-date='" + t + "']")[0].focus();
-  const rect = document.activeElement.getBoundingClientRect();
-  const elY =
-    rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
-
-  document.activeElement.parentNode.scrollBy({
-    left: 0,
-    top: elY - window.innerHeight / 2,
-    behavior: "smooth",
-  });
-  return t;
 };
 
 // check if has event
 let event_check = function (date) {
   let feedback = {
     event: false,
+    count: 0,
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -959,6 +965,10 @@ let event_check = function (date) {
       if (a === c) {
         feedback.event = true;
         t = events.length;
+        let m = events.filter(
+          (event) => new Date(event.dateStart).getTime() == c
+        );
+        feedback.count = m.length;
         return feedback;
       }
 
@@ -974,7 +984,6 @@ let event_check = function (date) {
             feedback.event = false;
           }
 
-          // t = events.length;
           return feedback;
         }
       }
@@ -1202,9 +1211,7 @@ let event_slider = function (date) {
   if (slider.length != "") {
     slider.forEach(function (item) {
       let l = "";
-      let t = new Date(item.DTSTART);
-      if (!item.allDay)
-        l = `0${t.getHours()}`.slice(-2) + ":" + `0${t.getMinutes()}`.slice(-2);
+      if (!item.allDay) l = dayjs(item.DTSTART).format("HH:mm");
 
       document
         .querySelector("div#event-slider")
@@ -1374,6 +1381,8 @@ let showCalendar = function (month, year) {
         if (events.length > 0) {
           if (event_check(p).event == true) {
             cell.classList.add("event");
+            console.log(event_check(p).count);
+            if (event_check(p).count > 1) cell.classList.add("multievent");
           }
 
           if (rrule_check(p).rrule == true) {
@@ -1573,11 +1582,20 @@ var page_events = {
 
           setTimeout(function () {
             find_closest_date();
-          }, 1500);
+          }, 100);
         },
       },
       [
         events.map(function (item, index) {
+          let de = "";
+          if (item.dateStart != item.dateEnd) {
+            de =
+              dayjs(item.dateStart).format(settings.dateformat) +
+              " - " +
+              dayjs(item.dateEnd).format(settings.dateformat);
+          } else {
+            de = dayjs(item.dateStart).format(settings.dateformat);
+          }
           return m(
             "article",
             {
@@ -1595,12 +1613,13 @@ var page_events = {
             [
               m("div", { class: "icons-bar" }, [
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
+                m("div", { class: "date" }, de),
+
                 m(
                   "div",
-                  { class: "date" },
-                  dayjs(item.dateStart).format(settings.dateformat)
+                  { class: "time" },
+                  dayjs(item.DTSTART).format("HH:mm")
                 ),
-                m("div", { class: "time" }, item.time_start),
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION),
@@ -1696,8 +1715,8 @@ export let page_options = {
               },
             },
             [
-              m("option", { value: "YY-MM-DD" }, "YY-MM-DD"),
-              m("option", { value: "DD.MM.YY" }, "DD.MM.YY"),
+              m("option", { value: "YY-MM-DD" }, "YYYY-MM-DD"),
+              m("option", { value: "DD.MM.YY" }, "DD.MM.YYYY"),
             ]
           ),
         ]
