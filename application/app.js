@@ -1442,7 +1442,46 @@ let focus_after_selection = function () {
     });
   });
 };
+//autocomplete locations
 
+let search = function (e) {
+  if (e == "close") {
+    document.getElementById("event-location").value =
+      document.activeElement.innerText;
+
+    document.getElementById("event-location").focus();
+    document.querySelectorAll(".search-item").forEach(function (e) {
+      e.remove();
+    });
+  }
+  let myList = document.getElementById("search-result");
+  document.querySelectorAll(".search-item").forEach(function (e) {
+    e.remove();
+  });
+
+  const matches = events.filter(
+    (val) => val.LOCATION.toLowerCase().indexOf(e.target.value) > -1
+  );
+
+  if (matches.length === 0 || e.target.value == "") {
+    document.querySelectorAll(".search-item").forEach(function (e) {
+      e.remove();
+    });
+    return;
+  }
+  matches.forEach((val, i) => {
+    if (i > 2) return;
+
+    myList.insertAdjacentHTML(
+      "afterend",
+      "<div class='item search-item'>" + val.LOCATION + "</div>"
+    );
+
+    document.querySelectorAll(".item").forEach(function (e, index) {
+      e.tabIndex = index;
+    });
+  });
+};
 /*
 ///////////////////
 //VIEWS
@@ -2289,8 +2328,17 @@ var page_add_event = {
 
         m("div", { class: "item input-parent", tabindex: "1" }, [
           m("label", { for: "event-location" }, "Location"),
-          m("input", { placeholder: "", type: "text", id: "event-location" }),
+          m("input", {
+            placeholder: "",
+            type: "text",
+            id: "event-location",
+            oninput: function (m) {
+              search(m);
+            },
+          }),
         ]),
+        m("div", { id: "search-result" }),
+
         m("div", { class: "item input-parent", tabindex: "2" }, [
           m("label", { for: "event-date" }, "Start Date"),
           m("input", {
@@ -3749,6 +3797,11 @@ function shortpress_action(param) {
 
       if (document.activeElement.classList.contains("input-parent")) {
         document.activeElement.children[1].focus();
+        return true;
+      }
+
+      if (document.activeElement.classList.contains("search-item")) {
+        search("close");
         return true;
       }
 
