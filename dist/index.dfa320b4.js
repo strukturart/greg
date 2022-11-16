@@ -14323,7 +14323,7 @@ var $6d3f4b507512327e$export$99b0f35a4c27c9eb = function get_time() {
 };
 var $6d3f4b507512327e$export$b04ad9f70842c3f1 = function sort_array(arr, item_key, type) {
     if (type == "date") arr.sort(function(a, b) {
-        var da = new Date(a[item_key]), db = new Date(b[item_key]);
+        var da = new Date(a[item_key]).getTime(), db = new Date(b[item_key]).getTime();
         return db - da;
     });
      //sort by number
@@ -41828,7 +41828,7 @@ var $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = [];
 var $3e4edb8379ebf8a3$export$c5541db89994d14 = [];
 var $3e4edb8379ebf8a3$export$4c2153173b738584 = [];
 var $3e4edb8379ebf8a3$var$oauth_callback = "";
-(0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).LOCALSTORAGE);
+(0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).INDEXEDDB);
 var $3e4edb8379ebf8a3$var$callback_caldata_loaded = function callback_caldata_loaded() {};
 var $3e4edb8379ebf8a3$var$calendar_names = [
     {
@@ -41916,7 +41916,6 @@ var $3e4edb8379ebf8a3$var$load_caldav = function load_caldav() {
                         k.push(data_to_store);
                         (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem(item.id, k).then(function() {
                             console.log("data cached");
-                            console.log(JSON.stringify(k));
                         })["catch"](function(err) {
                             console.log(err);
                         }); //parse data
@@ -42451,7 +42450,6 @@ var $3e4edb8379ebf8a3$var$update_caldav = function update_caldav(etag, url, data
     (0, $6d3f4b507512327e$export$63b4813c5280c707)("Please wait...", "show");
     $3e4edb8379ebf8a3$export$c5541db89994d14.forEach(function(p) {
         if (p.id == account_id) {
-            console.log("match");
             var client = "";
             if (p.type == "oauth") client = new (0, $124e898a1ee7bd9a$export$6a49dbd7f4f10e35)({
                 serverUrl: p.server_url,
@@ -42598,6 +42596,7 @@ var $3e4edb8379ebf8a3$var$load_cached_caldav = function load_cached_caldav() {
             });
         } catch (e) {}
     });
+    (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
 };
 var $3e4edb8379ebf8a3$var$load_subscriptions = function load_subscriptions() {
     if ($3e4edb8379ebf8a3$var$subscriptions == null || $3e4edb8379ebf8a3$var$subscriptions.lenght == -1 || $3e4edb8379ebf8a3$var$subscriptions == "undefined") return false;
@@ -42639,11 +42638,9 @@ var $3e4edb8379ebf8a3$var$get_event_date = function get_event_date() {
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("event_templates").then(function(value) {
     if (value == null) {
         $3e4edb8379ebf8a3$export$4c2153173b738584 = [];
-        console.log("empty");
         return false;
     }
     $3e4edb8379ebf8a3$export$4c2153173b738584 = value;
-    console.log($3e4edb8379ebf8a3$export$4c2153173b738584);
 })["catch"](function(err) {
     console.log(err);
 });
@@ -42768,7 +42765,6 @@ $3e4edb8379ebf8a3$var$getManifest($3e4edb8379ebf8a3$var$manifest); // ////////
 // finde closest event to selected date in list view
 // ////////
 var $3e4edb8379ebf8a3$var$find_closest_date = function find_closest_date(search_term) {
-    //let search = new Date(status.selected_day).getTime();
     var search1 = $165c91a1b129545b$exports($3e4edb8379ebf8a3$export$471f7ae5c4103ae1.selected_day).unix();
     if ($3e4edb8379ebf8a3$export$4bf9923669ad6c63 == "") document.getElementById("events-wrapper").innerHTML = "you haven't made any calendar entries yet";
     if ($3e4edb8379ebf8a3$export$4bf9923669ad6c63 == "") return false;
@@ -42992,7 +42988,7 @@ var $3e4edb8379ebf8a3$var$event_slider = function event_slider(date) {
         $3e4edb8379ebf8a3$var$slider.forEach(function(item) {
             var l = "";
             if (!item.allDay) l = $165c91a1b129545b$exports(item.DTSTART).format("HH:mm");
-            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div>" + item.SUMMARY + "</div><div>" + l + "</div></article>");
+            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div class='width-100'>" + item.SUMMARY + "</div><div class='width-100'>" + l + "</div></article>");
         });
         if ($3e4edb8379ebf8a3$var$slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if ($3e4edb8379ebf8a3$var$slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
@@ -43083,7 +43079,6 @@ var $3e4edb8379ebf8a3$var$showCalendar = function showCalendar(month, year) {
                 if ($3e4edb8379ebf8a3$export$4bf9923669ad6c63.length > 0) {
                     if ($3e4edb8379ebf8a3$var$event_check(p).event == true) {
                         cell1.classList.add("event");
-                        console.log($3e4edb8379ebf8a3$var$event_check(p).count);
                         if ($3e4edb8379ebf8a3$var$event_check(p).count > 1) cell1.classList.add("multievent");
                     }
                     if ($3e4edb8379ebf8a3$var$rrule_check(p).rrule == true) cell1.classList.add("event");
@@ -43127,10 +43122,22 @@ var $3e4edb8379ebf8a3$var$focus_after_selection = function focus_after_selection
 }; //autocomplete locations
 var $3e4edb8379ebf8a3$var$search = function search(e1) {
     if (e1 == "close") {
+        document.querySelectorAll(".search-item").forEach(function(e) {
+            e.remove();
+        });
+        document.querySelectorAll(".item").forEach(function(e, index) {
+            e.tabIndex = index;
+        });
+        return false;
+    }
+    if (e1 == "click") {
         document.getElementById("event-location").value = document.activeElement.innerText;
         document.getElementById("event-location").focus();
         document.querySelectorAll(".search-item").forEach(function(e) {
             e.remove();
+        });
+        document.querySelectorAll(".item").forEach(function(e, index) {
+            e.tabIndex = index;
         });
     }
     var myList = document.getElementById("search-result");
@@ -43268,7 +43275,7 @@ var $3e4edb8379ebf8a3$var$page_events = {
         }, [
             $3e4edb8379ebf8a3$export$4bf9923669ad6c63.map(function(item, index) {
                 var de = "";
-                if (item.dateStart != item.dateEnd) de = $165c91a1b129545b$exports(item.dateStart).format($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.dateformat) + " - " + $165c91a1b129545b$exports(item.dateEnd).format($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.dateformat);
+                if (item.dateStart != item.dateEnd && !item.allDay) de = $165c91a1b129545b$exports(item.dateStart).format($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.dateformat) + " - " + $165c91a1b129545b$exports(item.dateEnd).format($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.dateformat);
                 else de = $165c91a1b129545b$exports(item.dateStart).format($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.dateformat);
                 return (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("article", {
                     "class": "item events " + item.isSubscription,
@@ -43397,14 +43404,14 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
                         value: "YY-MM-DD"
                     }, "YYYY-MM-DD"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("option", {
-                        value: "DD.MM.YY"
+                        value: "DD.MM.YYYY"
                     }, "DD.MM.YYYY")
                 ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 "class": "item input-parent",
                 id: "event-notification-time-wrapper",
-                tabindex: "3"
+                tabindex: "4"
             }, [
                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("label", {
                     "for": "default-notification"
@@ -43443,7 +43450,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
                 "class": "item",
-                tabindex: "4",
+                tabindex: "5",
                 onclick: function onclick() {
                     $3e4edb8379ebf8a3$var$backup_events();
                 }
@@ -43451,7 +43458,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("h2", "Subscriptions"),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
                 "class": "item",
-                tabindex: "5",
+                tabindex: "6",
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_subscriptions");
                 }
@@ -43464,7 +43471,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
                     "class": "item subscriptions-item",
                     "data-id": item.id,
                     "data-action": "delete-subscription",
-                    tabindex: index + 5,
+                    tabindex: index + 6,
                     onblur: function onblur() {
                         (0, $6d3f4b507512327e$export$247be4ede8e3a24a)("", "", "");
                     },
@@ -43474,7 +43481,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("h2", "Accounts"),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
                 "class": "item  google-button caldav-button",
-                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + 6,
+                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + 7,
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_accounts");
                 }
@@ -43490,7 +43497,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
                 "class": "item google-button",
-                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + 7,
+                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + 8,
                 onclick: function onclick() {
                     $3e4edb8379ebf8a3$var$oauth_callback = setInterval(function() {
                         if (localStorage.getItem("oauth_callback") == "true") {
@@ -43548,7 +43555,7 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             }, "Ads"),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 id: "KaiOsAds-Wrapper",
-                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + $3e4edb8379ebf8a3$export$c5541db89994d14.length + 6,
+                tabindex: $3e4edb8379ebf8a3$var$subscriptions.length + $3e4edb8379ebf8a3$export$c5541db89994d14.length + 9,
                 "class": "flex justify-content-spacearound",
                 oninit: function oninit() {
                     if ($3e4edb8379ebf8a3$export$a5a6e0b888b2c992.ads) $3e4edb8379ebf8a3$var$load_ads();
@@ -43842,6 +43849,7 @@ var $3e4edb8379ebf8a3$var$page_add_event = {
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 "class": "item input-parent",
                 tabindex: 0,
+                onfocus: function onfocus() {},
                 oncreate: function oncreate(param) {
                     var dom = param.dom;
                     setTimeout(function() {
@@ -43885,7 +43893,10 @@ var $3e4edb8379ebf8a3$var$page_add_event = {
             }),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 "class": "item input-parent",
-                tabindex: "2"
+                tabindex: "2",
+                onfocus: function onfocus() {
+                    $3e4edb8379ebf8a3$var$search("close");
+                }
             }, [
                 (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("label", {
                     "for": "event-date"
@@ -44103,6 +44114,9 @@ var $3e4edb8379ebf8a3$var$page_edit_event = {
                     value: $3e4edb8379ebf8a3$var$update_event_date.LOCATION
                 })
             ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
+                id: "search-result"
+            }),
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("div", {
                 "class": "item input-parent",
                 tabindex: "2"
@@ -44426,10 +44440,7 @@ var $3e4edb8379ebf8a3$var$delete_account = function delete_account() {
     });
 }; //load indexedDB
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("events").then(function(value) {
-    if (value != null) {
-        $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = value;
-        (0, $6d3f4b507512327e$export$b04ad9f70842c3f1)($3e4edb8379ebf8a3$export$4bf9923669ad6c63, "dateStart", "date");
-    }
+    if (value != null) $3e4edb8379ebf8a3$export$4bf9923669ad6c63 = value; //sort_array(events, "dateStart", "date");
 })["catch"](function(err) {});
 (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).getItem("subscriptions").then(function(value) {
     $3e4edb8379ebf8a3$var$subscriptions = value;
@@ -44657,6 +44668,7 @@ var $3e4edb8379ebf8a3$var$store_event = function store_event(db_id, cal_name) {
             }, 200);
         })["catch"](function(err) {
             console.log(err);
+            (0, $6d3f4b507512327e$export$6593825dc0f3a767)("no data to export", 2000);
         });
     } else {
         var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + event.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
@@ -44755,7 +44767,9 @@ var $3e4edb8379ebf8a3$var$update_event = function update_event(account_id) {
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_events");
                     (0, $1592f8b2f8ebd4e4$export$f1976d86f97fc8b2)("greg.ics", value);
                     $3e4edb8379ebf8a3$var$clear_form();
-                })["catch"](function(err) {});
+                })["catch"](function(err) {
+                    (0, $6d3f4b507512327e$export$6593825dc0f3a767)("no data to export", 2000);
+                });
             } else {
                 var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + $3e4edb8379ebf8a3$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
                 if (index.RRULE == null) {
@@ -44790,6 +44804,7 @@ var $3e4edb8379ebf8a3$var$delete_event = function delete_event(etag, url, accoun
         })["catch"](function(err) {
             // This code runs if there were any errors
             console.log(err);
+            (0, $6d3f4b507512327e$export$6593825dc0f3a767)("no data to export", 2000);
         });
     }
 }; // event slider
@@ -44803,7 +44818,9 @@ var $3e4edb8379ebf8a3$var$import_event_callback = function import_event_callback
     });
     (0, (/*@__PURE__*/$parcel$interopDefault($f09be4829256f6d5$exports))).setItem("events", without_subscription).then(function(value) {
         (0, $1592f8b2f8ebd4e4$export$f1976d86f97fc8b2)("greg.ics", without_subscription);
-    })["catch"](function(err) {});
+    })["catch"](function(err) {
+        (0, $6d3f4b507512327e$export$6593825dc0f3a767)("no data to export", 2000);
+    });
 };
 var $3e4edb8379ebf8a3$var$set_datetime_form = function set_datetime_form() {
     var d6 = new Date();
@@ -44863,6 +44880,7 @@ var $3e4edb8379ebf8a3$var$backup_events = function backup_events() {
         (0, $1592f8b2f8ebd4e4$export$f1976d86f97fc8b2)("greg.ics", value);
     })["catch"](function(err) {
         console.log(err);
+        (0, $6d3f4b507512327e$export$6593825dc0f3a767)("no data to export", 2000);
     });
 };
 var $3e4edb8379ebf8a3$var$import_event = function import_event() {
@@ -44955,7 +44973,7 @@ function $3e4edb8379ebf8a3$var$shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.classList.contains("search-item")) {
-                $3e4edb8379ebf8a3$var$search("close");
+                $3e4edb8379ebf8a3$var$search("click");
                 return true;
             }
             if (document.activeElement.id == "export-event") {

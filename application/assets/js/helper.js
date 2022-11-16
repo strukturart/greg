@@ -12,8 +12,8 @@ export const get_time = function () {
 export let sort_array = function (arr, item_key, type) {
   if (type == "date") {
     arr.sort((a, b) => {
-      let da = new Date(a[item_key]),
-        db = new Date(b[item_key]);
+      let da = new Date(a[item_key]).getTime(),
+        db = new Date(b[item_key]).getTime();
       return db - da;
     });
   }

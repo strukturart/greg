@@ -35,7 +35,7 @@ export let event_templates = [];
 
 let oauth_callback = "";
 
-localforage.setDriver(localforage.LOCALSTORAGE);
+localforage.setDriver(localforage.INDEXEDDB);
 
 let callback_caldata_loaded = function () {};
 
@@ -135,7 +135,6 @@ let load_caldav = function () {
             .setItem(item.id, k)
             .then(function () {
               console.log("data cached");
-              console.log(JSON.stringify(k));
             })
             .catch(function (err) {
               console.log(err);
@@ -543,8 +542,6 @@ let update_caldav = function (etag, url, data, account_id) {
 
   accounts.forEach(function (p) {
     if (p.id == account_id) {
-      console.log("match");
-
       const client = "";
       if (p.type == "oauth") {
         client = new DAVClient({
@@ -674,6 +671,7 @@ let load_cached_caldav = function () {
         });
     } catch (e) {}
   });
+  sort_array(events, "dateStart", "date");
 };
 
 let load_subscriptions = function () {
@@ -740,12 +738,9 @@ localforage
   .then(function (value) {
     if (value == null) {
       event_templates = [];
-      console.log("empty");
       return false;
     }
     event_templates = value;
-
-    console.log(event_templates);
   })
   .catch(function (err) {
     console.log(err);
@@ -897,7 +892,6 @@ getManifest(manifest);
 // ////////
 
 let find_closest_date = function (search_term) {
-  //let search = new Date(status.selected_day).getTime();
   let search = dayjs(status.selected_day).unix();
 
   if (events == "") {
@@ -1217,9 +1211,9 @@ let event_slider = function (date) {
         .querySelector("div#event-slider")
         .insertAdjacentHTML(
           "beforeend",
-          "<article><div>" +
+          "<article><div class='width-100'>" +
             item.SUMMARY +
-            "</div><div>" +
+            "</div><div class='width-100'>" +
             l +
             "</div></article>"
         );
@@ -1381,7 +1375,6 @@ let showCalendar = function (month, year) {
         if (events.length > 0) {
           if (event_check(p).event == true) {
             cell.classList.add("event");
-            console.log(event_check(p).count);
             if (event_check(p).count > 1) cell.classList.add("multievent");
           }
 
@@ -1446,12 +1439,26 @@ let focus_after_selection = function () {
 
 let search = function (e) {
   if (e == "close") {
+    document.querySelectorAll(".search-item").forEach(function (e) {
+      e.remove();
+    });
+    document.querySelectorAll(".item").forEach(function (e, index) {
+      e.tabIndex = index;
+    });
+    return false;
+  }
+
+  if (e == "click") {
     document.getElementById("event-location").value =
       document.activeElement.innerText;
 
     document.getElementById("event-location").focus();
     document.querySelectorAll(".search-item").forEach(function (e) {
       e.remove();
+    });
+
+    document.querySelectorAll(".item").forEach(function (e, index) {
+      e.tabIndex = index;
     });
   }
   let myList = document.getElementById("search-result");
@@ -1627,7 +1634,7 @@ var page_events = {
       [
         events.map(function (item, index) {
           let de = "";
-          if (item.dateStart != item.dateEnd) {
+          if (item.dateStart != item.dateEnd && !item.allDay) {
             de =
               dayjs(item.dateStart).format(settings.dateformat) +
               " - " +
@@ -1755,7 +1762,7 @@ export let page_options = {
             },
             [
               m("option", { value: "YY-MM-DD" }, "YYYY-MM-DD"),
-              m("option", { value: "DD.MM.YY" }, "DD.MM.YYYY"),
+              m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY"),
             ]
           ),
         ]
@@ -1766,7 +1773,7 @@ export let page_options = {
         {
           class: "item input-parent",
           id: "event-notification-time-wrapper",
-          tabindex: "3",
+          tabindex: "4",
         },
         [
           m("label", { for: "default-notification" }, "default Notification"),
@@ -1806,7 +1813,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "4",
+          tabindex: "5",
           onclick: function () {
             backup_events();
           },
@@ -1819,7 +1826,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "5",
+          tabindex: "6",
           onclick: function () {
             m.route.set("/page_subscriptions");
           },
@@ -1836,7 +1843,7 @@ export let page_options = {
             "data-id": item.id,
             "data-action": "delete-subscription",
 
-            tabindex: index + 5,
+            tabindex: index + 6,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1852,7 +1859,7 @@ export let page_options = {
         "button",
         {
           class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 6,
+          tabindex: subscriptions.length + 7,
           onclick: function () {
             m.route.set("/page_accounts");
           },
@@ -1878,7 +1885,7 @@ export let page_options = {
         "button",
         {
           class: "item google-button",
-          tabindex: subscriptions.length + 7,
+          tabindex: subscriptions.length + 8,
           onclick: function () {
             oauth_callback = setInterval(function () {
               if (localStorage.getItem("oauth_callback") == "true") {
@@ -1960,7 +1967,7 @@ export let page_options = {
 
       m("div", {
         id: "KaiOsAds-Wrapper",
-        tabindex: subscriptions.length + accounts.length + 6,
+        tabindex: subscriptions.length + accounts.length + 9,
         class: "flex justify-content-spacearound",
         oninit: function () {
           if (settings.ads) {
@@ -2304,6 +2311,10 @@ var page_add_event = {
             class: "item input-parent",
             tabindex: 0,
 
+            onfocus: function () {
+              //search("close");
+            },
+
             oncreate: function ({ dom }) {
               setTimeout(function () {
                 dom.focus();
@@ -2339,16 +2350,26 @@ var page_add_event = {
         ]),
         m("div", { id: "search-result" }),
 
-        m("div", { class: "item input-parent", tabindex: "2" }, [
-          m("label", { for: "event-date" }, "Start Date"),
-          m("input", {
-            placeholder: settings.dateformat,
-            type: "date",
-            id: "event-date",
-            class: "select-box",
-            value: status.selected_day,
-          }),
-        ]),
+        m(
+          "div",
+          {
+            class: "item input-parent",
+            tabindex: "2",
+            onfocus: function () {
+              search("close");
+            },
+          },
+          [
+            m("label", { for: "event-date" }, "Start Date"),
+            m("input", {
+              placeholder: settings.dateformat,
+              type: "date",
+              id: "event-date",
+              class: "select-box",
+              value: status.selected_day,
+            }),
+          ]
+        ),
 
         m("div", { class: "item input-parent", tabindex: "3" }, [
           m("label", { for: "event-date-end" }, "End Date"),
@@ -2377,7 +2398,6 @@ var page_add_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
-
             value: new Date().getHours() + 1 + ":" + new Date().getMinutes(),
           }),
         ]),
@@ -2535,6 +2555,8 @@ var page_edit_event = {
             value: update_event_date.LOCATION,
           }),
         ]),
+        m("div", { id: "search-result" }),
+
         m("div", { class: "item input-parent", tabindex: "2" }, [
           m("label", { for: "event-date" }, "Start Date"),
           m("input", {
@@ -2934,7 +2956,7 @@ localforage
   .then(function (value) {
     if (value != null) {
       events = value;
-      sort_array(events, "dateStart", "date");
+      //sort_array(events, "dateStart", "date");
     }
   })
   .catch(function (err) {});
@@ -3097,9 +3119,7 @@ let add_alarm = function (date, message_text, id) {
 
     var request = navigator.mozAlarms.add(date, "honorTimezone", data);
 
-    request.onsuccess = function () {
-      // console.log(this.result);
-    };
+    request.onsuccess = function () {};
 
     request.onerror = function () {
       console.log("An error occurred: " + this.error.name);
@@ -3279,6 +3299,7 @@ let store_event = function (db_id, cal_name) {
       })
       .catch(function (err) {
         console.log(err);
+        side_toaster("no data to export", 2000);
       });
   } else {
     let event_data =
@@ -3446,7 +3467,9 @@ let update_event = function (account_id) {
 
             clear_form();
           })
-          .catch(function (err) {});
+          .catch(function (err) {
+            side_toaster("no data to export", 2000);
+          });
       } else {
         let event_data =
           "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
@@ -3514,6 +3537,7 @@ let delete_event = function (etag, url, account_id, uid) {
       .catch(function (err) {
         // This code runs if there were any errors
         console.log(err);
+        side_toaster("no data to export", 2000);
       });
   }
 };
@@ -3535,7 +3559,9 @@ let import_event_callback = function (id, date) {
     .then(function (value) {
       export_ical("greg.ics", without_subscription);
     })
-    .catch(function (err) {});
+    .catch(function (err) {
+      side_toaster("no data to export", 2000);
+    });
 };
 
 let set_datetime_form = function () {
@@ -3625,6 +3651,7 @@ let backup_events = function () {
     })
     .catch(function (err) {
       console.log(err);
+      side_toaster("no data to export", 2000);
     });
 };
 
@@ -3801,7 +3828,7 @@ function shortpress_action(param) {
       }
 
       if (document.activeElement.classList.contains("search-item")) {
-        search("close");
+        search("click");
         return true;
       }
 

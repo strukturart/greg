@@ -2234,7 +2234,7 @@ function $b17776f098274076$export$e2a22331486dcca0(len) {
 
 
 "use strict";
-(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).LOCALSTORAGE);
+(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).INDEXEDDB);
 var $5a690edfed81b18a$var$google_cred = {
     clientId: "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
     clientSecret: "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"

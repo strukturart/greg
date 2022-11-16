@@ -14324,7 +14324,7 @@ var $162001cafa2b40fd$export$99b0f35a4c27c9eb = function get_time() {
 };
 var $162001cafa2b40fd$export$b04ad9f70842c3f1 = function sort_array(arr, item_key, type) {
     if (type == "date") arr.sort(function(a, b) {
-        var da = new Date(a[item_key]), db = new Date(b[item_key]);
+        var da = new Date(a[item_key]).getTime(), db = new Date(b[item_key]).getTime();
         return db - da;
     });
      //sort by number
@@ -41829,7 +41829,7 @@ var $5535d7a9ff238efe$export$4bf9923669ad6c63 = [];
 var $5535d7a9ff238efe$export$c5541db89994d14 = [];
 var $5535d7a9ff238efe$export$4c2153173b738584 = [];
 var $5535d7a9ff238efe$var$oauth_callback = "";
-(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).LOCALSTORAGE);
+(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).INDEXEDDB);
 var $5535d7a9ff238efe$var$callback_caldata_loaded = function callback_caldata_loaded() {};
 var $5535d7a9ff238efe$var$calendar_names = [
     {
@@ -41917,7 +41917,6 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav() {
                         k.push(data_to_store);
                         (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem(item.id, k).then(function() {
                             console.log("data cached");
-                            console.log(JSON.stringify(k));
                         }).catch(function(err) {
                             console.log(err);
                         }); //parse data
@@ -42452,7 +42451,6 @@ var $5535d7a9ff238efe$var$update_caldav = function update_caldav(etag, url, data
     (0, $162001cafa2b40fd$export$63b4813c5280c707)("Please wait...", "show");
     $5535d7a9ff238efe$export$c5541db89994d14.forEach(function(p) {
         if (p.id == account_id) {
-            console.log("match");
             var client = "";
             if (p.type == "oauth") client = new (0, $a4be068310fbf330$export$6a49dbd7f4f10e35)({
                 serverUrl: p.server_url,
@@ -42599,6 +42597,7 @@ var $5535d7a9ff238efe$var$load_cached_caldav = function load_cached_caldav() {
             });
         } catch (e) {}
     });
+    (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
 };
 var $5535d7a9ff238efe$var$load_subscriptions = function load_subscriptions() {
     if ($5535d7a9ff238efe$var$subscriptions == null || $5535d7a9ff238efe$var$subscriptions.lenght == -1 || $5535d7a9ff238efe$var$subscriptions == "undefined") return false;
@@ -42640,11 +42639,9 @@ var $5535d7a9ff238efe$var$get_event_date = function get_event_date() {
 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("event_templates").then(function(value) {
     if (value == null) {
         $5535d7a9ff238efe$export$4c2153173b738584 = [];
-        console.log("empty");
         return false;
     }
     $5535d7a9ff238efe$export$4c2153173b738584 = value;
-    console.log($5535d7a9ff238efe$export$4c2153173b738584);
 }).catch(function(err) {
     console.log(err);
 });
@@ -42769,7 +42766,6 @@ $5535d7a9ff238efe$var$getManifest($5535d7a9ff238efe$var$manifest); // ////////
 // finde closest event to selected date in list view
 // ////////
 var $5535d7a9ff238efe$var$find_closest_date = function find_closest_date(search_term) {
-    //let search = new Date(status.selected_day).getTime();
     var search1 = $e758799baacea373$exports($5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day).unix();
     if ($5535d7a9ff238efe$export$4bf9923669ad6c63 == "") document.getElementById("events-wrapper").innerHTML = "you haven't made any calendar entries yet";
     if ($5535d7a9ff238efe$export$4bf9923669ad6c63 == "") return false;
@@ -42993,7 +42989,7 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
         $5535d7a9ff238efe$var$slider.forEach(function(item) {
             var l = "";
             if (!item.allDay) l = $e758799baacea373$exports(item.DTSTART).format("HH:mm");
-            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div>" + item.SUMMARY + "</div><div>" + l + "</div></article>");
+            document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div class='width-100'>" + item.SUMMARY + "</div><div class='width-100'>" + l + "</div></article>");
         });
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelectorAll("div#event-slider .indicator")[0].style.classList.add = "active";
@@ -43084,7 +43080,6 @@ var $5535d7a9ff238efe$var$showCalendar = function showCalendar(month, year) {
                 if ($5535d7a9ff238efe$export$4bf9923669ad6c63.length > 0) {
                     if ($5535d7a9ff238efe$var$event_check(p).event == true) {
                         cell1.classList.add("event");
-                        console.log($5535d7a9ff238efe$var$event_check(p).count);
                         if ($5535d7a9ff238efe$var$event_check(p).count > 1) cell1.classList.add("multievent");
                     }
                     if ($5535d7a9ff238efe$var$rrule_check(p).rrule == true) cell1.classList.add("event");
@@ -43128,10 +43123,22 @@ var $5535d7a9ff238efe$var$focus_after_selection = function focus_after_selection
 }; //autocomplete locations
 var $5535d7a9ff238efe$var$search = function search(e1) {
     if (e1 == "close") {
+        document.querySelectorAll(".search-item").forEach(function(e) {
+            e.remove();
+        });
+        document.querySelectorAll(".item").forEach(function(e, index) {
+            e.tabIndex = index;
+        });
+        return false;
+    }
+    if (e1 == "click") {
         document.getElementById("event-location").value = document.activeElement.innerText;
         document.getElementById("event-location").focus();
         document.querySelectorAll(".search-item").forEach(function(e) {
             e.remove();
+        });
+        document.querySelectorAll(".item").forEach(function(e, index) {
+            e.tabIndex = index;
         });
     }
     var myList = document.getElementById("search-result");
@@ -43269,7 +43276,7 @@ var $5535d7a9ff238efe$var$page_events = {
         }, [
             $5535d7a9ff238efe$export$4bf9923669ad6c63.map(function(item, index) {
                 var de = "";
-                if (item.dateStart != item.dateEnd) de = $e758799baacea373$exports(item.dateStart).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat) + " - " + $e758799baacea373$exports(item.dateEnd).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
+                if (item.dateStart != item.dateEnd && !item.allDay) de = $e758799baacea373$exports(item.dateStart).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat) + " - " + $e758799baacea373$exports(item.dateEnd).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
                 else de = $e758799baacea373$exports(item.dateStart).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
                 return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("article", {
                     class: "item events " + item.isSubscription,
@@ -43398,14 +43405,14 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
                         value: "YY-MM-DD"
                     }, "YYYY-MM-DD"),
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
-                        value: "DD.MM.YY"
+                        value: "DD.MM.YYYY"
                     }, "DD.MM.YYYY")
                 ])
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
                 id: "event-notification-time-wrapper",
-                tabindex: "3"
+                tabindex: "4"
             }, [
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
                     for: "default-notification"
@@ -43444,7 +43451,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
-                tabindex: "4",
+                tabindex: "5",
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$backup_events();
                 }
@@ -43452,7 +43459,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Subscriptions"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
-                tabindex: "5",
+                tabindex: "6",
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_subscriptions");
                 }
@@ -43465,7 +43472,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
                     class: "item subscriptions-item",
                     "data-id": item.id,
                     "data-action": "delete-subscription",
-                    tabindex: index + 5,
+                    tabindex: index + 6,
                     onblur: function onblur() {
                         (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
                     },
@@ -43475,7 +43482,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Accounts"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item  google-button caldav-button",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 6,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 7,
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_accounts");
                 }
@@ -43491,7 +43498,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item google-button",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 7,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 8,
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$oauth_callback = setInterval(function() {
                         if (localStorage.getItem("oauth_callback") == "true") {
@@ -43549,7 +43556,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             }, "Ads"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 id: "KaiOsAds-Wrapper",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + $5535d7a9ff238efe$export$c5541db89994d14.length + 6,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + $5535d7a9ff238efe$export$c5541db89994d14.length + 9,
                 class: "flex justify-content-spacearound",
                 oninit: function oninit() {
                     if ($5535d7a9ff238efe$export$a5a6e0b888b2c992.ads) $5535d7a9ff238efe$var$load_ads();
@@ -43843,6 +43850,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
                 tabindex: 0,
+                onfocus: function onfocus() {},
                 oncreate: function oncreate(param) {
                     var dom = param.dom;
                     setTimeout(function() {
@@ -43886,7 +43894,10 @@ var $5535d7a9ff238efe$var$page_add_event = {
             }),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
-                tabindex: "2"
+                tabindex: "2",
+                onfocus: function onfocus() {
+                    $5535d7a9ff238efe$var$search("close");
+                }
             }, [
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("label", {
                     for: "event-date"
@@ -44104,6 +44115,9 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     value: $5535d7a9ff238efe$var$update_event_date.LOCATION
                 })
             ]),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+                id: "search-result"
+            }),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                 class: "item input-parent",
                 tabindex: "2"
@@ -44427,10 +44441,7 @@ var $5535d7a9ff238efe$var$delete_account = function delete_account() {
     });
 }; //load indexedDB
 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("events").then(function(value) {
-    if (value != null) {
-        $5535d7a9ff238efe$export$4bf9923669ad6c63 = value;
-        (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
-    }
+    if (value != null) $5535d7a9ff238efe$export$4bf9923669ad6c63 = value; //sort_array(events, "dateStart", "date");
 }).catch(function(err) {});
 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("subscriptions").then(function(value) {
     $5535d7a9ff238efe$var$subscriptions = value;
@@ -44658,6 +44669,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
             }, 200);
         }).catch(function(err) {
             console.log(err);
+            (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
         });
     } else {
         var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTART + "\nDTEND;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTEND + "\nDTSTAMP;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
@@ -44756,7 +44768,9 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_events");
                     (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", value);
                     $5535d7a9ff238efe$var$clear_form();
-                }).catch(function(err) {});
+                }).catch(function(err) {
+                    (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
+                });
             } else {
                 var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
                 if (index.RRULE == null) {
@@ -44791,6 +44805,7 @@ var $5535d7a9ff238efe$var$delete_event = function delete_event(etag, url, accoun
         }).catch(function(err) {
             // This code runs if there were any errors
             console.log(err);
+            (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
         });
     }
 }; // event slider
@@ -44804,7 +44819,9 @@ var $5535d7a9ff238efe$var$import_event_callback = function import_event_callback
     });
     (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function(value) {
         (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", without_subscription);
-    }).catch(function(err) {});
+    }).catch(function(err) {
+        (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
+    });
 };
 var $5535d7a9ff238efe$var$set_datetime_form = function set_datetime_form() {
     var d6 = new Date();
@@ -44864,6 +44881,7 @@ var $5535d7a9ff238efe$var$backup_events = function backup_events() {
         (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", value);
     }).catch(function(err) {
         console.log(err);
+        (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
     });
 };
 var $5535d7a9ff238efe$var$import_event = function import_event() {
@@ -44956,7 +44974,7 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
                 return true;
             }
             if (document.activeElement.classList.contains("search-item")) {
-                $5535d7a9ff238efe$var$search("close");
+                $5535d7a9ff238efe$var$search("click");
                 return true;
             }
             if (document.activeElement.id == "export-event") {

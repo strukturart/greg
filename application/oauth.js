@@ -3,7 +3,7 @@
 import localforage from "localforage";
 import { uid } from "uid";
 
-localforage.setDriver(localforage.LOCALSTORAGE);
+localforage.setDriver(localforage.INDEXEDDB);
 
 const google_cred = {
   clientId:

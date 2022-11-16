@@ -336,6 +336,17 @@ div#popup div div {
   display: flex;
 }
 
+div.search-item {
+  max-width: 100vw;
+  background: silver;
+  margin: 10px 0;
+  padding: 3px 10vw;
+}
+
+div.search-item:focus {
+  background: orange;
+}
+
 article.events[data-alarm="none"] img.bell {
   display: none;
 }
