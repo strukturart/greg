@@ -1620,15 +1620,13 @@ var page_events = {
         },
 
         oncreate: function () {
+          find_closest_date();
+
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
             ""
           );
-
-          setTimeout(function () {
-            find_closest_date();
-          }, 100);
         },
       },
       [
@@ -1636,11 +1634,11 @@ var page_events = {
           let de = "";
           if (item.dateStart != item.dateEnd && !item.allDay) {
             de =
-              dayjs(item.dateStart).format(settings.dateformat) +
+              dayjs(item.DTSTART).format(settings.dateformat) +
               " - " +
-              dayjs(item.dateEnd).format(settings.dateformat);
+              dayjs(item.DTEND).format(settings.dateformat);
           } else {
-            de = dayjs(item.dateStart).format(settings.dateformat);
+            de = dayjs(item.DTSTART).format(settings.dateformat);
           }
           return m(
             "article",
@@ -2564,8 +2562,7 @@ var page_edit_event = {
             type: "date",
             id: "event-date",
             class: "select-box",
-
-            value: update_event_date.dateStart,
+            value: dayjs(update_event_date.DTSTART).format("YYYY-MM-DD"),
           }),
         ]),
 
@@ -2577,18 +2574,18 @@ var page_edit_event = {
             id: "event-date-end",
             class: "select-box",
 
-            value: update_event_date.dateEnd,
+            value: dayjs(update_event_date.DTEND).format("YYYY-MM-DD"),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
           m("input", {
-            placeholder: "hh:mm:ss",
+            placeholder: "HH:mm:ss",
             type: "time",
             id: "event-time-start",
             class: "select-box",
 
-            value: update_event_date.time_start,
+            value: dayjs(update_event_date.DTSTART).format("HH:mm:ss"),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
@@ -2599,7 +2596,7 @@ var page_edit_event = {
             id: "event-time-end",
             class: "select-box",
 
-            value: update_event_date.time_end,
+            value: dayjs(update_event_date.DTEND).format("HH:mm:ss"),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -2663,9 +2660,7 @@ var page_edit_event = {
                     ? "none"
                     : update_event_date.rrule_,
                 class: "select-box",
-                oncreate: function () {
-                  console.log(update_event_date.rrule_);
-                },
+                oncreate: function () {},
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -3223,13 +3218,13 @@ let store_event = function (db_id, cal_name) {
     notification_time = convert_ics_date(calc_notification.toISOString());
   }
 
-  let multidayevent = false;
+  let allday = false;
 
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
 
   if (a != b) {
-    multidayevent = true;
+    allDay = true;
   }
 
   let rrule_convert = function (val) {
@@ -3267,9 +3262,10 @@ let store_event = function (db_id, cal_name) {
     alarmTrigger: notification_time,
     isSubscription: false,
     isCaldav: db_id == "local-id" ? false : true,
-    multidayevent: multidayevent,
     ATTACH: blob,
     id: db_id,
+    allDay: allday,
+    alarm: "none",
   };
 
   if (event.alarm != "none") {

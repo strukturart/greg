@@ -41,7 +41,6 @@ export let export_ical = function (filename, event_data) {
           key != "time_end" &&
           key != "dateStart" &&
           key != "dateEnd" &&
-          key != "notification" &&
           key != "alarm" &&
           key != "isSubscription" &&
           key != "multidayevent" &&
@@ -196,11 +195,9 @@ export let parse_ics = function (
       time_start: timeStart,
       dateEnd: dateEnd,
       time_end: timeEnd,
-      notification: " ",
       alarm: "none",
       rrule_: n ? n.freq : "",
       rrule_json: n ? n.toJSON() : "",
-      // rrule_isFinite: n.isFinite(),
 
       etag: etag,
       url: url,
