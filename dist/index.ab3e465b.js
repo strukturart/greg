@@ -14542,6 +14542,7 @@ var $162001cafa2b40fd$export$dccb98b97a3cb8be = function deleteFile(storage, pat
 var $162001cafa2b40fd$export$99c802f9c0aea792 = function list_files(filetype, callback) {
     if (!navigator.getDeviceStorage) return false;
     var d = navigator.getDeviceStorage("sdcard");
+    var t = false;
     var cursor = d.enumerate();
     cursor.onsuccess = function() {
         if (!this.result) console.log("finished");
@@ -14549,7 +14550,10 @@ var $162001cafa2b40fd$export$99c802f9c0aea792 = function list_files(filetype, ca
             var file = cursor.result;
             var n = file.name.split(".");
             var file_type = n[n.length - 1];
-            if (file_type == filetype) callback(file.name);
+            if (file_type == filetype) {
+                callback(file.name);
+                t = true;
+            }
             this.continue();
         }
     };
@@ -22146,7 +22150,7 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             for(var key in e){
                 index++;
                 if (index == 0) result += "BEGIN:VEVENT\r\n";
-                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_") result += "".concat(key, ":").concat(e[key]) + "\r\n";
+                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_" && key != "isCalDav" && key != "id" && key != "allDay") result += "".concat(key, ":").concat(e[key]) + "\r\n";
                 if (index == Object.keys(e).length - 1) result += "END:VEVENT\r\n";
             }
         });
@@ -22164,7 +22168,7 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("Unable to write the file", 2000);
         };
     }, 2000);
-}; // //////////
+}; ////////////
 var $78c31c2a3de015ee$export$c0899e1f14c33b33 = function list_ics() {
     var file_list = [];
     var cb = function cb(result) {
@@ -41802,6 +41806,7 @@ var $a973944e553bf582$exports = {};
 
 
 
+
 var $b17776f098274076$var$IDX = 256, $b17776f098274076$var$HEX = [], $b17776f098274076$var$SIZE = 256, $b17776f098274076$var$BUFFER;
 while($b17776f098274076$var$IDX--)$b17776f098274076$var$HEX[$b17776f098274076$var$IDX] = ($b17776f098274076$var$IDX + 256).toString(16).substring(1);
 function $b17776f098274076$export$e2a22331486dcca0(len) {
@@ -43452,10 +43457,17 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
                     $5535d7a9ff238efe$var$backup_events();
                 }
             }, "Backup events"),
-            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Subscriptions"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
                 tabindex: "6",
+                onclick: function onclick() {
+                    (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_list_files");
+                }
+            }, "Import events"),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Subscriptions"),
+            (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
+                class: "item",
+                tabindex: "7",
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_subscriptions");
                 }
@@ -43468,7 +43480,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
                     class: "item subscriptions-item",
                     "data-id": item.id,
                     "data-action": "delete-subscription",
-                    tabindex: index + 6,
+                    tabindex: index + 7,
                     onblur: function onblur() {
                         (0, $162001cafa2b40fd$export$247be4ede8e3a24a)("", "", "");
                     },
@@ -43478,7 +43490,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", "Accounts"),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item  google-button caldav-button",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 7,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 8,
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_accounts");
                 }
@@ -43494,7 +43506,7 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item google-button",
-                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 8,
+                tabindex: $5535d7a9ff238efe$var$subscriptions.length + 9,
                 onclick: function onclick() {
                     $5535d7a9ff238efe$var$oauth_callback = setInterval(function() {
                         if (localStorage.getItem("oauth_callback") == "true") {
@@ -44290,6 +44302,41 @@ var $5535d7a9ff238efe$var$page_edit_event = {
         ]);
     }
 };
+var $5535d7a9ff238efe$var$file_list = [];
+var $5535d7a9ff238efe$var$cb = function cb(result) {
+    $5535d7a9ff238efe$var$file_list.push(result);
+};
+(0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", $5535d7a9ff238efe$var$cb);
+var $5535d7a9ff238efe$var$page_list_files = {
+    view: function view() {
+        return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
+            id: "list-files",
+            oninit: function oninit() {
+                setTimeout(function() {
+                    if (!document.body.classList.contains("item")) // m.route.set("/page_options");
+                    (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("no files found", 2000);
+                }, 1000);
+            }
+        }, [
+            $5535d7a9ff238efe$var$file_list.map(function(e, i) {
+                var fn = e.split("/");
+                fn = fn[fn.length - 1];
+                console.log(fn);
+                if (fn == "greg.ics") return false;
+                return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
+                    tabindex: i,
+                    oncreate: function oncreate(param) {
+                        var dom = param.dom;
+                        dom.focus();
+                    },
+                    onclick: function onclick() {
+                        alert("yesah");
+                    }
+                }, fn);
+            })
+        ]);
+    }
+};
 var $5535d7a9ff238efe$var$selected_template;
 var $5535d7a9ff238efe$var$page_event_templates = {
     view: function view() {
@@ -44330,7 +44377,8 @@ var $5535d7a9ff238efe$var$page_event_templates = {
     "/page_subscriptions": $5535d7a9ff238efe$var$page_subscriptions,
     "/page_accounts": $5535d7a9ff238efe$var$page_accounts,
     "/page_edit_account": $5535d7a9ff238efe$var$page_edit_account,
-    "/page_event_templates": $5535d7a9ff238efe$var$page_event_templates
+    "/page_event_templates": $5535d7a9ff238efe$var$page_event_templates,
+    "/page_list_files": $5535d7a9ff238efe$var$page_list_files
 });
 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.prefix = "#";
 var $5535d7a9ff238efe$var$store_settings = function store_settings() {

@@ -17,6 +17,7 @@ import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
 import "url-search-params-polyfill";
+import { list_files } from "./assets/js/helper.js";
 
 import { createCalendarObject } from "./assets/js/tsdav.js";
 import { propfind } from "./assets/js/tsdav.js";
@@ -1818,13 +1819,24 @@ export let page_options = {
         },
         "Backup events"
       ),
+      m(
+        "button",
+        {
+          class: "item",
+          tabindex: "6",
+          onclick: function () {
+            m.route.set("/page_list_files");
+          },
+        },
+        "Import events"
+      ),
       m("h2", "Subscriptions"),
 
       m(
         "button",
         {
           class: "item",
-          tabindex: "6",
+          tabindex: "7",
           onclick: function () {
             m.route.set("/page_subscriptions");
           },
@@ -1841,7 +1853,7 @@ export let page_options = {
             "data-id": item.id,
             "data-action": "delete-subscription",
 
-            tabindex: index + 6,
+            tabindex: index + 7,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1857,7 +1869,7 @@ export let page_options = {
         "button",
         {
           class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 7,
+          tabindex: subscriptions.length + 8,
           onclick: function () {
             m.route.set("/page_accounts");
           },
@@ -1883,7 +1895,7 @@ export let page_options = {
         "button",
         {
           class: "item google-button",
-          tabindex: subscriptions.length + 8,
+          tabindex: subscriptions.length + 9,
           onclick: function () {
             oauth_callback = setInterval(function () {
               if (localStorage.getItem("oauth_callback") == "true") {
@@ -2731,6 +2743,54 @@ var page_edit_event = {
     );
   },
 };
+let file_list = [];
+
+let cb = function (result) {
+  file_list.push(result);
+};
+
+list_files("ics", cb);
+
+var page_list_files = {
+  view: function () {
+    return m(
+      "div",
+      {
+        id: "list-files",
+        oninit: function () {
+          setTimeout(function () {
+            if (!document.body.classList.contains("item")) {
+              // m.route.set("/page_options");
+              toaster("no files found", 2000);
+            }
+          }, 1000);
+        },
+      },
+      [
+        file_list.map(function (e, i) {
+          let fn = e.split("/");
+          fn = fn[fn.length - 1];
+          console.log(fn);
+          if (fn == "greg.ics") return false;
+          return m(
+            "button",
+            {
+              tabindex: i,
+              oncreate: function ({ dom }) {
+                dom.focus();
+              },
+              onclick: function () {
+                alert("yesah");
+              },
+            },
+            fn
+          );
+        }),
+      ]
+    );
+  },
+};
+
 let selected_template;
 var page_event_templates = {
   view: function () {
@@ -2784,6 +2844,7 @@ m.route(root, "/page_calendar", {
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
   "/page_event_templates": page_event_templates,
+  "/page_list_files": page_list_files,
 });
 m.route.prefix = "#";
 

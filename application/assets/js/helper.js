@@ -328,13 +328,14 @@ export let deleteFile = function (storage, path, notification) {
 export let list_files = function (filetype, callback) {
   if (!navigator.getDeviceStorage) return false;
   var d = navigator.getDeviceStorage("sdcard");
-
+  var t = false;
   var cursor = d.enumerate();
 
   cursor.onsuccess = function () {
     if (!this.result) {
       console.log("finished");
     }
+
     if (cursor.result.name !== null) {
       var file = cursor.result;
       let n = file.name.split(".");
@@ -342,10 +343,14 @@ export let list_files = function (filetype, callback) {
 
       if (file_type == filetype) {
         callback(file.name);
+        t =true
       }
       this.continue();
     }
+
   };
+
+  
 
   cursor.onerror = function () {
     console.warn("No file found: " + this.error);

@@ -45,7 +45,10 @@ export let export_ical = function (filename, event_data) {
           key != "isSubscription" &&
           key != "multidayevent" &&
           key != "alarmTrigger" &&
-          key != "rrule_"
+          key != "rrule_" &&
+          key != "isCalDav" &&
+          key != "id" &&
+          key != "allDay"
         ) {
           result += `${key}:${e[key]}` + "\r\n";
         }
@@ -66,9 +69,9 @@ export let export_ical = function (filename, event_data) {
   }, 2000);
 };
 
-// //////////
-// /LIST ICS
-// ////////////
+////////////
+///LIST ICS
+//////////////
 
 export let list_ics = function () {
   let file_list = [];
