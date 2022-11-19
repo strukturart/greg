@@ -343,14 +343,11 @@ export let list_files = function (filetype, callback) {
 
       if (file_type == filetype) {
         callback(file.name);
-        t =true
+        t = true;
       }
       this.continue();
     }
-
   };
-
-  
 
   cursor.onerror = function () {
     console.warn("No file found: " + this.error);
@@ -421,17 +418,29 @@ function delete_file(filename) {
   };
 }
 
-function get_file(filename) {
-  var sdcard = navigator.getDeviceStorages("sdcard");
-  var request = sdcard[1].get(filename);
+export function get_file(filename, cb) {
+  var sdcard = navigator.getDeviceStorage("sdcard");
+  var request = sdcard.get(filename);
 
   request.onsuccess = function () {
     var file = this.result;
-    //alert("Get the file: " + file.name);
+
+    let reader = new FileReader();
+
+    reader.onerror = function (event) {
+      helper.toaster("can't read file", 3000);
+      reader.abort();
+    };
+
+    reader.onloadend = function (event) {
+      cb(reader.result);
+    };
+
+    reader.readAsText(file);
   };
 
   request.onerror = function () {
-    //alert("Unable to get the file: " + this.error);
+    alert("Unable to get the file: " + this.error);
   };
 }
 

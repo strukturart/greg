@@ -1,6 +1,7 @@
 import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
+
 import localforage from "localforage";
 import { events } from "../../app.js";
 import { settings } from "../../app.js";
@@ -48,7 +49,8 @@ export let export_ical = function (filename, event_data) {
           key != "rrule_" &&
           key != "isCalDav" &&
           key != "id" &&
-          key != "allDay"
+          key != "allDay" &&
+          key != "isCaldav"
         ) {
           result += `${key}:${e[key]}` + "\r\n";
         }
@@ -107,15 +109,12 @@ export let list_ics = function () {
 export let parse_ics = function (
   data,
   callback,
-  saveOnDevice,
-  subscription,
+  isSubscription,
   etag,
   url,
   account_id,
   isCaldav
 ) {
-  if (subscription) subscription = "subscription";
-
   var jcalData = ICAL.parse(data);
 
   var comp = new ICAL.Component(jcalData);
@@ -191,7 +190,7 @@ export let parse_ics = function (
       DTEND: ite.getFirstPropertyValue("dtend"),
       END: "VEVENT",
 
-      isSubscription: subscription,
+      isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
@@ -209,21 +208,6 @@ export let parse_ics = function (
 
     events.push(imp);
   });
-
-  if (saveOnDevice == true) {
-    let without_subscription = events.filter(
-      (events) => events.isSubscription === false
-    );
-
-    localforage
-      .setItem("events", without_subscription)
-      .then(function (value) {
-        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
-      })
-      .catch(function (err) {
-        console.log(err);
-      });
-  }
 };
 
 /////////////

@@ -14602,13 +14602,24 @@ function $162001cafa2b40fd$var$delete_file(filename) {
     request.onsuccess = function() {};
     request.onerror = function() {};
 }
-function $162001cafa2b40fd$var$get_file(filename) {
-    var sdcard = navigator.getDeviceStorages("sdcard");
-    var request = sdcard[1].get(filename);
+function $162001cafa2b40fd$export$16146fefff7e9a3b(filename, cb) {
+    var sdcard = navigator.getDeviceStorage("sdcard");
+    var request = sdcard.get(filename);
     request.onsuccess = function() {
-        var file = this.result; //alert("Get the file: " + file.name);
+        var file = this.result;
+        var reader = new FileReader();
+        reader.onerror = function(event) {
+            helper.toaster("can't read file", 3000);
+            reader.abort();
+        };
+        reader.onloadend = function(event) {
+            cb(reader.result);
+        };
+        reader.readAsText(file);
     };
-    request.onerror = function() {};
+    request.onerror = function() {
+        alert("Unable to get the file: " + this.error);
+    };
 }
 function $162001cafa2b40fd$var$write_file(data, filename) {
     var sdcard = navigator.getDeviceStorages("sdcard");
@@ -14625,6 +14636,7 @@ function $162001cafa2b40fd$var$write_file(data, filename) {
         $162001cafa2b40fd$export$a224d1f4f6f98541("Unable to write the file: " + this.error, 2000);
     };
 }
+
 
 
 
@@ -22150,7 +22162,7 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             for(var key in e){
                 index++;
                 if (index == 0) result += "BEGIN:VEVENT\r\n";
-                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_" && key != "isCalDav" && key != "id" && key != "allDay") result += "".concat(key, ":").concat(e[key]) + "\r\n";
+                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_" && key != "isCalDav" && key != "id" && key != "allDay" && key != "isCaldav") result += "".concat(key, ":").concat(e[key]) + "\r\n";
                 if (index == Object.keys(e).length - 1) result += "END:VEVENT\r\n";
             }
         });
@@ -22181,8 +22193,7 @@ var $78c31c2a3de015ee$export$c0899e1f14c33b33 = function list_ics() {
     };
     (0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", cb);
 }; // /////////////
-var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callback, saveOnDevice, subscription, etag, url, account_id, isCaldav) {
-    if (subscription) subscription = "subscription";
+var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callback, isSubscription, etag, url, account_id, isCaldav) {
     var jcalData = (0, (/*@__PURE__*/$parcel$interopDefault($cff6f0fa8dd83f64$exports))).parse(data);
     var comp = new (0, (/*@__PURE__*/$parcel$interopDefault($cff6f0fa8dd83f64$exports))).Component(jcalData);
     var vevent = comp.getAllSubcomponents("vevent");
@@ -22219,7 +22230,7 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
             DTSTART: ite.getFirstPropertyValue("dtstart"),
             DTEND: ite.getFirstPropertyValue("dtend"),
             END: "VEVENT",
-            isSubscription: subscription,
+            isSubscription: isSubscription,
             isCaldav: isCaldav,
             allDay: allday,
             dateStart: dateStart,
@@ -22235,16 +22246,6 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
         };
         (0, $5535d7a9ff238efe$export$4bf9923669ad6c63).push(imp);
     });
-    if (saveOnDevice == true) {
-        var without_subscription = (0, $5535d7a9ff238efe$export$4bf9923669ad6c63).filter(function(events1) {
-            return events1.isSubscription === false;
-        });
-        (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function(value) {
-            (0, $162001cafa2b40fd$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'>", 2500);
-        }).catch(function(err) {
-            console.log(err);
-        });
-    }
 }; /////////////
 var $78c31c2a3de015ee$export$730c80d46f5e5f34 = function fetch_ics(url, cb, db_name) {
     var xhttp = new XMLHttpRequest({
@@ -42991,7 +42992,7 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
     if ($5535d7a9ff238efe$var$slider.length != "") {
         $5535d7a9ff238efe$var$slider.forEach(function(item) {
             var l = "";
-            if (!item.allDay) l = $e758799baacea373$exports(item.DTSTART).format("HH:mm");
+            if (!item.allDay) l = item.time_start;
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div class='width-100'>" + item.SUMMARY + "</div><div class='width-100'>" + l + "</div></article>");
         });
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
@@ -43277,10 +43278,11 @@ var $5535d7a9ff238efe$var$page_events = {
         }, [
             $5535d7a9ff238efe$export$4bf9923669ad6c63.map(function(item, index) {
                 var de = "";
-                if (item.dateStart != item.dateEnd && !item.allDay) de = $e758799baacea373$exports(item.DTSTART).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat) + " - " + $e758799baacea373$exports(item.DTEND).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
-                else de = $e758799baacea373$exports(item.DTSTART).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
+                if (item.dateStart != item.dateEnd && !item.allDay) de = $e758799baacea373$exports(item.dateStart).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat) + " - " + $e758799baacea373$exports(item.dateEnd).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
+                else de = $e758799baacea373$exports(item.dateStart).format($5535d7a9ff238efe$export$a5a6e0b888b2c992.dateformat);
+                u = item.isSubscription ? "subscription" : "";
                 return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("article", {
-                    class: "item events " + item.isSubscription,
+                    class: "item events " + u,
                     tabindex: index,
                     "data-id": item.UID,
                     "data-date": item.dateStart,
@@ -43303,7 +43305,7 @@ var $5535d7a9ff238efe$var$page_events = {
                         }, de),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                             class: "time"
-                        }, $e758799baacea373$exports(item.DTSTART).format("HH:mm")),
+                        }, item.time_start),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", {
                             class: "time"
                         }, item.SUMMARY),
@@ -44138,7 +44140,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "date",
                     id: "event-date",
                     class: "select-box",
-                    value: $e758799baacea373$exports($5535d7a9ff238efe$var$update_event_date.DTSTART).format("YYYY-MM-DD")
+                    value: $5535d7a9ff238efe$var$update_event_date.dateStart
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -44153,7 +44155,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "date",
                     id: "event-date-end",
                     class: "select-box",
-                    value: $e758799baacea373$exports($5535d7a9ff238efe$var$update_event_date.DTEND).format("YYYY-MM-DD")
+                    value: $5535d7a9ff238efe$var$update_event_date.dateEnd
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -44168,7 +44170,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "time",
                     id: "event-time-start",
                     class: "select-box",
-                    value: $e758799baacea373$exports($5535d7a9ff238efe$var$update_event_date.DTSTART).format("HH:mm:ss")
+                    value: $5535d7a9ff238efe$var$update_event_date.time_start
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -44183,7 +44185,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     type: "time",
                     id: "event-time-end",
                     class: "select-box",
-                    value: $e758799baacea373$exports($5535d7a9ff238efe$var$update_event_date.DTEND).format("HH:mm:ss")
+                    value: $5535d7a9ff238efe$var$update_event_date.time_end
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -44307,10 +44309,30 @@ var $5535d7a9ff238efe$var$cb = function cb(result) {
     $5535d7a9ff238efe$var$file_list.push(result);
 };
 (0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", $5535d7a9ff238efe$var$cb);
+var $5535d7a9ff238efe$var$callback_getfile = function callback_getfile(result) {
+    try {
+        console.log(result);
+        (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(result, "", false, "", "", "local-id", false);
+        var only_local_events = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events2) {
+            return events2.id == "local-id";
+        });
+        (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", only_local_events).then(function() {
+            (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", only_local_events);
+            (0, $162001cafa2b40fd$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
+            setTimeout(function() {
+                (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
+            }, 200);
+        }).catch(function(err) {
+            console.log("ssss" + err);
+        });
+    } catch (e) {
+        alert("event could not be imported because the file content is invalid" + e);
+    }
+};
 var $5535d7a9ff238efe$var$page_list_files = {
     view: function view() {
         return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
-            id: "list-files",
+            id: "options",
             oninit: function oninit() {
                 setTimeout(function() {
                     if (!document.body.classList.contains("item")) // m.route.set("/page_options");
@@ -44318,19 +44340,19 @@ var $5535d7a9ff238efe$var$page_list_files = {
                 }, 1000);
             }
         }, [
-            $5535d7a9ff238efe$var$file_list.map(function(e, i) {
+            $5535d7a9ff238efe$var$file_list.map(function(e, index) {
                 var fn = e.split("/");
                 fn = fn[fn.length - 1];
-                console.log(fn);
-                if (fn == "greg.ics") return false;
+                console.log(fn); // if (fn == "greg.ics") return false;
                 return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
-                    tabindex: i,
+                    class: "item",
                     oncreate: function oncreate(param) {
                         var dom = param.dom;
-                        dom.focus();
+                        if (index == 0) dom.focus();
                     },
+                    tabIndex: index,
                     onclick: function onclick() {
-                        alert("yesah");
+                        (0, $162001cafa2b40fd$export$16146fefff7e9a3b)(e, $5535d7a9ff238efe$var$callback_getfile);
                     }
                 }, fn);
             })
@@ -44537,7 +44559,7 @@ var $5535d7a9ff238efe$var$nav = function nav(move) {
     var next1 = currentIndex + move;
     var items = 0;
     if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$highlight_current_day();
-    if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates") {
+    if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_list_files") {
         var b = document.activeElement.parentNode.parentNode;
         items = b.querySelectorAll(".item");
     }
@@ -44625,8 +44647,8 @@ var $5535d7a9ff238efe$var$convert_ics_date = function convert_ics_date(t6) {
     var nn = t6.replace(/-/g, "");
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
-    nn;
-    return nn;
+    var k = nn;
+    return k;
 };
 var $5535d7a9ff238efe$var$export_data = [];
 var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
@@ -44673,9 +44695,9 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
         LOCATION: document.getElementById("event-location").value,
         DESCRIPTION: document.getElementById("event-description").value,
         CLASS: "PRIVATE",
-        DTSTAMP: $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
-        DTSTART: $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
-        DTEND: $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end),
+        DTSTAMP: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
+        DTSTART: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
+        DTEND: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end),
         RRULE: rrule_convert(document.getElementById("event-recur").value),
         rrule_: document.getElementById("event-recur").value == "" ? "none" : document.getElementById("event-recur").value,
         dateStart: document.getElementById("event-date").value,
@@ -44699,10 +44721,10 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
     }
     if (db_id == "local-id") {
         $5535d7a9ff238efe$export$4bf9923669ad6c63.push(event);
-        var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events2) {
-            return events2.id == "local-id";
+        var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events3) {
+            return events3.id == "local-id";
         });
-        (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function(value) {
+        (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function() {
             $5535d7a9ff238efe$var$clear_form();
             (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", without_subscription);
             (0, $162001cafa2b40fd$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
@@ -44714,7 +44736,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
             (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
         });
     } else {
-        var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTART + "\nDTEND;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTEND + "\nDTSTAMP;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+        var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
         if (event.RRULE == null) {
             event_data = event_data.replace("SEQUENCE:0", "");
             event_data = event_data.replace("RRULE:null", "");
@@ -44777,9 +44799,9 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
             index.LOCATION = document.getElementById("event-location").value;
             index.DESCRIPTION = document.getElementById("event-description").value;
             index.CLASS = "PRIVATE";
-            index.DTSTAMP = $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start);
-            index.DTSTART = $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start);
-            index.DTEND = $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end);
+            index.DTSTAMP = ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start);
+            index.DTSTART = ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start);
+            index.DTEND = ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end);
             index.RRULE = rrule_convert(document.getElementById("event-recur").value);
             index.dateEnd = document.getElementById("event-date-end").value;
             index.dateStart = document.getElementById("event-date").value;
@@ -44801,20 +44823,20 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                 $5535d7a9ff238efe$var$add_alarm(calc_notification, index.SUMMARY, index.UID);
             }
             if (account_id == "local-id") {
-                var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events3) {
-                    return events3.isSubscription === false;
+                var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events4) {
+                    return events4.id == "local-id";
                 });
-                (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function(value) {
+                (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function() {
                     // clean form
                     (0, $162001cafa2b40fd$export$6593825dc0f3a767)("<img src='assets/image/E25C.svg'", 2000);
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_events");
-                    (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", value);
+                    (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", without_subscription);
                     $5535d7a9ff238efe$var$clear_form();
                 }).catch(function(err) {
                     (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
                 });
             } else {
-                var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTART + "\nDTEND;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTEND + "\nDTSTAMP;TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+                var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART" + index.DTSTART + "\nDTEND" + index.DTEND + "\nDTSTAMP" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
                 if (index.RRULE == null) {
                     event_data = event_data.replace("SEQUENCE:0", "");
                     event_data = event_data.replace("RRULE:null", "");
@@ -44856,8 +44878,8 @@ var $5535d7a9ff238efe$var$mm = "0".concat($5535d7a9ff238efe$var$t.getMonth() + 1
 var $5535d7a9ff238efe$var$d = "0".concat($5535d7a9ff238efe$var$t.getDate()).slice(-2);
 var $5535d7a9ff238efe$var$y = $5535d7a9ff238efe$var$t.getFullYear(); // callback import event
 var $5535d7a9ff238efe$var$import_event_callback = function import_event_callback(id, date) {
-    var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events4) {
-        return events4.isSubscription === false;
+    var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events5) {
+        return events5.isSubscription === false;
     });
     (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setItem("events", without_subscription).then(function(value) {
         (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", without_subscription);
@@ -44919,15 +44941,15 @@ function $5535d7a9ff238efe$var$longpress_action(param) {
     }
 }
 var $5535d7a9ff238efe$var$backup_events = function backup_events() {
+    var only_local_events = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events6) {
+        return events6.id == "local-id";
+    });
     (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("events").then(function(value) {
-        (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", value);
+        (0, $78c31c2a3de015ee$export$f1976d86f97fc8b2)("greg.ics", only_local_events);
     }).catch(function(err) {
         console.log(err);
         (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
     });
-};
-var $5535d7a9ff238efe$var$import_event = function import_event() {
-    (0, $78c31c2a3de015ee$export$7430511ad5970e27)(document.activeElement.getAttribute("data-filename"), $5535d7a9ff238efe$var$import_event_callback);
 };
 var $5535d7a9ff238efe$var$stop_scan_callback = function stop_scan_callback() {
     // m.route.set("/page_subscriptions");
@@ -44942,11 +44964,11 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
             break;
         case "ArrowUp":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$nav(-7);
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates") $5535d7a9ff238efe$var$nav(-1);
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_list_files") $5535d7a9ff238efe$var$nav(-1);
             break;
         case "ArrowDown":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_calendar") $5535d7a9ff238efe$var$nav(7);
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates") $5535d7a9ff238efe$var$nav(1);
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_events" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_add_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_list_files") $5535d7a9ff238efe$var$nav(1);
             break;
         case "ArrowRight":
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() != "/page_calendar") return true;
@@ -45047,7 +45069,7 @@ function $5535d7a9ff238efe$var$shortpress_action(param) {
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_event" && document.activeElement.tagName != "INPUT") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_options") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_event_templates") (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
-            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account") {
+            if ((0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_subscriptions" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_accounts" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_edit_account" || (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.get() == "/page_list_files") {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_options");
                 if (document.getElementById("qr-screen").style == "block") document.getElementById("qr-screen").style = "none";
                 (0, $2b0cc46421a6d3fe$export$55e6c60a43cc74e2)($5535d7a9ff238efe$var$stop_scan_callback);

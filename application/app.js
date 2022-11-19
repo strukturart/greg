@@ -5,6 +5,8 @@ import { side_toaster, sort_array } from "./assets/js/helper.js";
 import { toaster } from "./assets/js/helper.js";
 import { validate } from "./assets/js/helper.js";
 import { pick_image } from "./assets/js/helper.js";
+import { get_file } from "./assets/js/helper.js";
+
 import { bottom_bar } from "./assets/js/helper.js";
 import { popup } from "./assets/js/helper.js";
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
@@ -1206,7 +1208,7 @@ let event_slider = function (date) {
   if (slider.length != "") {
     slider.forEach(function (item) {
       let l = "";
-      if (!item.allDay) l = dayjs(item.DTSTART).format("HH:mm");
+      if (!item.allDay) l = item.time_start;
 
       document
         .querySelector("div#event-slider")
@@ -1635,16 +1637,17 @@ var page_events = {
           let de = "";
           if (item.dateStart != item.dateEnd && !item.allDay) {
             de =
-              dayjs(item.DTSTART).format(settings.dateformat) +
+              dayjs(item.dateStart).format(settings.dateformat) +
               " - " +
-              dayjs(item.DTEND).format(settings.dateformat);
+              dayjs(item.dateEnd).format(settings.dateformat);
           } else {
-            de = dayjs(item.DTSTART).format(settings.dateformat);
+            de = dayjs(item.dateStart).format(settings.dateformat);
           }
+          u = item.isSubscription ? "subscription" : "";
           return m(
             "article",
             {
-              class: "item events " + item.isSubscription,
+              class: "item events " + u,
               tabindex: index,
               "data-id": item.UID,
               "data-date": item.dateStart,
@@ -1660,11 +1663,7 @@ var page_events = {
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
                 m("div", { class: "date" }, de),
 
-                m(
-                  "div",
-                  { class: "time" },
-                  dayjs(item.DTSTART).format("HH:mm")
-                ),
+                m("div", { class: "time" }, item.time_start),
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION),
@@ -2574,7 +2573,7 @@ var page_edit_event = {
             type: "date",
             id: "event-date",
             class: "select-box",
-            value: dayjs(update_event_date.DTSTART).format("YYYY-MM-DD"),
+            value: update_event_date.dateStart,
           }),
         ]),
 
@@ -2586,7 +2585,7 @@ var page_edit_event = {
             id: "event-date-end",
             class: "select-box",
 
-            value: dayjs(update_event_date.DTEND).format("YYYY-MM-DD"),
+            value: update_event_date.dateEnd,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
@@ -2597,7 +2596,7 @@ var page_edit_event = {
             id: "event-time-start",
             class: "select-box",
 
-            value: dayjs(update_event_date.DTSTART).format("HH:mm:ss"),
+            value: update_event_date.time_start,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
@@ -2608,7 +2607,7 @@ var page_edit_event = {
             id: "event-time-end",
             class: "select-box",
 
-            value: dayjs(update_event_date.DTEND).format("HH:mm:ss"),
+            value: update_event_date.time_end,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -2751,12 +2750,38 @@ let cb = function (result) {
 
 list_files("ics", cb);
 
+let callback_getfile = function (result) {
+  try {
+    console.log(result);
+    parse_ics(result, "", false, "", "", "local-id", false);
+
+    let only_local_events = events.filter((events) => events.id == "local-id");
+
+    localforage
+      .setItem("events", only_local_events)
+      .then(function () {
+        export_ical("greg.ics", only_local_events);
+        side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        setTimeout(function () {
+          m.route.set("/page_calendar");
+        }, 200);
+      })
+      .catch(function (err) {
+        console.log("ssss" + err);
+      });
+  } catch (e) {
+    alert(
+      "event could not be imported because the file content is invalid" + e
+    );
+  }
+};
+
 var page_list_files = {
   view: function () {
     return m(
       "div",
       {
-        id: "list-files",
+        id: "options",
         oninit: function () {
           setTimeout(function () {
             if (!document.body.classList.contains("item")) {
@@ -2767,20 +2792,23 @@ var page_list_files = {
         },
       },
       [
-        file_list.map(function (e, i) {
+        file_list.map(function (e, index) {
           let fn = e.split("/");
           fn = fn[fn.length - 1];
           console.log(fn);
-          if (fn == "greg.ics") return false;
+          // if (fn == "greg.ics") return false;
           return m(
             "button",
             {
-              tabindex: i,
+              class: "item",
               oncreate: function ({ dom }) {
-                dom.focus();
+                if (index == 0) {
+                  dom.focus();
+                }
               },
+              tabIndex: index,
               onclick: function () {
-                alert("yesah");
+                get_file(e, callback_getfile);
               },
             },
             fn
@@ -3075,7 +3103,6 @@ let load_template_data = function () {
     }
   });
 };
-
 /////////////////
 ///NAVIGATION
 /////////////////
@@ -3102,7 +3129,8 @@ let nav = function (move) {
     m.route.get() == "/page_calendar" ||
     m.route.get() == "/page_options" ||
     m.route.get() == "/page_events" ||
-    m.route.get() == "/page_event_templates"
+    m.route.get() == "/page_event_templates" ||
+    m.route.get() == "/page_list_files"
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll(".item");
@@ -3225,8 +3253,9 @@ let convert_ics_date = function (t) {
   let nn = t.replace(/-/g, "");
   nn = nn.replace(/:/g, "");
   nn = nn.replace(" ", "T");
-  nn = nn;
-  return nn;
+
+  let k = nn;
+  return k;
 };
 
 let export_data = [];
@@ -3307,9 +3336,12 @@ let store_event = function (db_id, cal_name) {
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
     CLASS: "PRIVATE",
-    DTSTAMP: convert_ics_date(convert_dt_start),
-    DTSTART: convert_ics_date(convert_dt_start),
-    DTEND: convert_ics_date(convert_dt_end),
+    DTSTAMP:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    DTSTART:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    DTEND:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end),
     RRULE: rrule_convert(document.getElementById("event-recur").value),
     rrule_:
       document.getElementById("event-recur").value == ""
@@ -3346,7 +3378,7 @@ let store_event = function (db_id, cal_name) {
 
     localforage
       .setItem("events", without_subscription)
-      .then(function (value) {
+      .then(function () {
         clear_form();
         export_ical("greg.ics", without_subscription);
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
@@ -3366,17 +3398,11 @@ let store_event = function (db_id, cal_name) {
       event.UID +
       "\nSEQUENCE:0\nRRULE:" +
       event.RRULE +
-      "\nDTSTART;TZID=" +
-      settings.timezone +
-      ":" +
+      "\nDTSTART" +
       event.DTSTART +
-      "\nDTEND;TZID=" +
-      settings.timezone +
-      ":" +
+      "\nDTEND" +
       event.DTEND +
-      "\nDTSTAMP;TZID=" +
-      settings.timezone +
-      ":" +
+      "\nDTSTAMP" +
       event.DTSTAMP +
       "\nLOCATION:" +
       event.LOCATION +
@@ -3484,9 +3510,12 @@ let update_event = function (account_id) {
       index.LOCATION = document.getElementById("event-location").value;
       index.DESCRIPTION = document.getElementById("event-description").value;
       index.CLASS = "PRIVATE";
-      index.DTSTAMP = convert_ics_date(convert_dt_start);
-      index.DTSTART = convert_ics_date(convert_dt_start);
-      index.DTEND = convert_ics_date(convert_dt_end);
+      index.DTSTAMP =
+        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start);
+      index.DTSTART =
+        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start);
+      index.DTEND =
+        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end);
       index.RRULE = rrule_convert(document.getElementById("event-recur").value);
       index.dateEnd = document.getElementById("event-date-end").value;
       index.dateStart = document.getElementById("event-date").value;
@@ -3511,16 +3540,16 @@ let update_event = function (account_id) {
 
       if (account_id == "local-id") {
         let without_subscription = events.filter(
-          (events) => events.isSubscription === false
+          (events) => events.id == "local-id"
         );
 
         localforage
           .setItem("events", without_subscription)
-          .then(function (value) {
+          .then(function () {
             // clean form
             side_toaster("<img src='assets/image/E25C.svg'", 2000);
             m.route.set("/page_events");
-            export_ical("greg.ics", value);
+            export_ical("greg.ics", without_subscription);
 
             clear_form();
           })
@@ -3535,17 +3564,11 @@ let update_event = function (account_id) {
           index.UID +
           "\nSEQUENCE:0\nRRULE:" +
           index.RRULE +
-          "\nDTSTART;TZID=" +
-          settings.timezone +
-          ":" +
+          "\nDTSTART" +
           index.DTSTART +
-          "\nDTEND;TZID=" +
-          settings.timezone +
-          ":" +
+          "\nDTEND" +
           index.DTEND +
-          "\nDTSTAMP;TZID=" +
-          settings.timezone +
-          ":" +
+          "\nDTSTAMP" +
           index.DTSTAMP +
           "\nLOCATION:" +
           index.LOCATION +
@@ -3701,22 +3724,17 @@ function longpress_action(param) {
 }
 
 let backup_events = function () {
+  let only_local_events = events.filter((events) => events.id == "local-id");
+
   localforage
     .getItem("events")
     .then(function (value) {
-      export_ical("greg.ics", value);
+      export_ical("greg.ics", only_local_events);
     })
     .catch(function (err) {
       console.log(err);
       side_toaster("no data to export", 2000);
     });
-};
-
-let import_event = function () {
-  loadICS(
-    document.activeElement.getAttribute("data-filename"),
-    import_event_callback
-  );
 };
 
 let stop_scan_callback = function () {
@@ -3747,7 +3765,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event" ||
-        m.route.get() == "/page_event_templates"
+        m.route.get() == "/page_event_templates" ||
+        m.route.get() == "/page_list_files"
       ) {
         nav(-1);
       }
@@ -3764,7 +3783,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_edit_account" ||
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event" ||
-        m.route.get() == "/page_event_templates"
+        m.route.get() == "/page_event_templates" ||
+        m.route.get() == "/page_list_files"
       ) {
         nav(+1);
       }
@@ -3957,7 +3977,8 @@ function shortpress_action(param) {
       if (
         m.route.get() == "/page_subscriptions" ||
         m.route.get() == "/page_accounts" ||
-        m.route.get() == "/page_edit_account"
+        m.route.get() == "/page_edit_account" ||
+        m.route.get() == "/page_list_files"
       ) {
         m.route.set("/page_options");
         if (document.getElementById("qr-screen").style == "block")
