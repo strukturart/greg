@@ -44825,8 +44825,15 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                 index.ACTION = "AUDIO";
                 index.END = "VALARM";
                 $5535d7a9ff238efe$var$add_alarm(calc_notification, index.SUMMARY, index.UID);
-            }
+            } //todo: patching event
+            var dd = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART" + index.DTSTART + "\nDTEND" + index.DTEND + "\nDTSTAMP" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
             if (account_id == "local-id") {
+                try {
+                    //parse_ics(dd, "", false, "", "", "local-id", false);
+                    $5535d7a9ff238efe$export$4bf9923669ad6c63.push(event);
+                } catch (e) {
+                    console.log(e);
+                }
                 var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events4) {
                     return events4.id == "local-id";
                 });

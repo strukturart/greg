@@ -1135,8 +1135,6 @@ let event_slider = function (date) {
 
     if (d === "none" || d === "" || d === undefined) {
       if (a === c || (a < c && b > c)) {
-        //TODO if multiday event
-
         slider.push(events[i]);
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
       }
@@ -3558,7 +3556,7 @@ let update_event = function (account_id) {
         add_alarm(calc_notification, index.SUMMARY, index.UID);
       }
 
-      //todo: prepare ical data
+      //todo: patching event
       let dd =
         "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
         index.SUMMARY +
@@ -3580,12 +3578,11 @@ let update_event = function (account_id) {
 
       if (account_id == "local-id") {
         try {
-          parse_ics(dd, "", false, "", "", "local-id", false);
+          //parse_ics(dd, "", false, "", "", "local-id", false);
+          events.push(event);
         } catch (e) {
           console.log(e);
         }
-        //events.push(event);
-
         let without_subscription = events.filter(
           (events) => events.id == "local-id"
         );
