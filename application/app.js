@@ -2786,7 +2786,6 @@ var page_list_files = {
           setTimeout(function () {
             if (!document.body.classList.contains("item")) {
               // m.route.set("/page_options");
-              toaster("no files found", 2000);
             }
           }, 1000);
         },
@@ -2795,7 +2794,7 @@ var page_list_files = {
         file_list.map(function (e, index) {
           let fn = e.split("/");
           fn = fn[fn.length - 1];
-          console.log(fn);
+
           // if (fn == "greg.ics") return false;
           return m(
             "button",
@@ -3253,9 +3252,7 @@ let convert_ics_date = function (t) {
   let nn = t.replace(/-/g, "");
   nn = nn.replace(/:/g, "");
   nn = nn.replace(" ", "T");
-
-  let k = nn;
-  return k;
+  return nn;
 };
 
 let export_data = [];
@@ -3358,7 +3355,6 @@ let store_event = function (db_id, cal_name) {
     ATTACH: blob,
     id: db_id,
     allDay: allday,
-    alarm: "none",
   };
 
   if (event.alarm != "none") {
@@ -3368,9 +3364,33 @@ let store_event = function (db_id, cal_name) {
     event.END = "VALARM";
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
+  //todo: prepare ical data
+  let dd =
+    "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
+    event.SUMMARY +
+    "\nUID:" +
+    event.UID +
+    "\nSEQUENCE:0\nRRULE:" +
+    event.RRULE +
+    "\nDTSTART" +
+    event.DTSTART +
+    "\nDTEND" +
+    event.DTEND +
+    "\nDTSTAMP" +
+    event.DTSTAMP +
+    "\nLOCATION:" +
+    event.LOCATION +
+    "\nDESCRIPTION:" +
+    event.DESCRIPTION +
+    "\nEND:VEVENT\nEND:VCALENDAR";
 
   if (db_id == "local-id") {
-    events.push(event);
+    try {
+      parse_ics(dd, "", false, "", "", "local-id", false);
+    } catch (e) {
+      console.log(e);
+    }
+    //events.push(event);
 
     let without_subscription = events.filter(
       (events) => events.id == "local-id"
@@ -3538,7 +3558,34 @@ let update_event = function (account_id) {
         add_alarm(calc_notification, index.SUMMARY, index.UID);
       }
 
+      //todo: prepare ical data
+      let dd =
+        "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
+        index.SUMMARY +
+        "\nUID:" +
+        index.UID +
+        "\nSEQUENCE:0\nRRULE:" +
+        index.RRULE +
+        "\nDTSTART" +
+        index.DTSTART +
+        "\nDTEND" +
+        index.DTEND +
+        "\nDTSTAMP" +
+        index.DTSTAMP +
+        "\nLOCATION:" +
+        index.LOCATION +
+        "\nDESCRIPTION:" +
+        index.DESCRIPTION +
+        "\nEND:VEVENT\nEND:VCALENDAR";
+
       if (account_id == "local-id") {
+        try {
+          parse_ics(dd, "", false, "", "", "local-id", false);
+        } catch (e) {
+          console.log(e);
+        }
+        //events.push(event);
+
         let without_subscription = events.filter(
           (events) => events.id == "local-id"
         );

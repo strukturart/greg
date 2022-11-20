@@ -22167,6 +22167,8 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             }
         });
         result += "END:VCALENDAR\r\n";
+        result = result.replace(/:;TZID/g, ";TZID");
+        result = result.replace(/RRULE:null/g, "RRULE:");
         var file = new Blob([
             result
         ], {
@@ -44335,15 +44337,13 @@ var $5535d7a9ff238efe$var$page_list_files = {
             id: "options",
             oninit: function oninit() {
                 setTimeout(function() {
-                    if (!document.body.classList.contains("item")) // m.route.set("/page_options");
-                    (0, $162001cafa2b40fd$export$a224d1f4f6f98541)("no files found", 2000);
+                    document.body.classList.contains("item");
                 }, 1000);
             }
         }, [
             $5535d7a9ff238efe$var$file_list.map(function(e, index) {
                 var fn = e.split("/");
-                fn = fn[fn.length - 1];
-                console.log(fn); // if (fn == "greg.ics") return false;
+                fn = fn[fn.length - 1]; // if (fn == "greg.ics") return false;
                 return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                     class: "item",
                     oncreate: function oncreate(param) {
@@ -44647,8 +44647,7 @@ var $5535d7a9ff238efe$var$convert_ics_date = function convert_ics_date(t6) {
     var nn = t6.replace(/-/g, "");
     nn = nn.replace(/:/g, "");
     nn = nn.replace(" ", "T");
-    var k = nn;
-    return k;
+    return nn;
 };
 var $5535d7a9ff238efe$var$export_data = [];
 var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
@@ -44689,7 +44688,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
         return r;
     };
     if (validation == false) return false;
-    var event = (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)({
+    var event = {
         UID: (0, $b17776f098274076$export$e2a22331486dcca0)(32),
         SUMMARY: document.getElementById("event-title").value,
         LOCATION: document.getElementById("event-location").value,
@@ -44711,16 +44710,21 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
         ATTACH: $5535d7a9ff238efe$var$blob,
         id: db_id,
         allDay: allday
-    }, "alarm", "none");
+    };
     if (event.alarm != "none") {
         event.BEGIN = "VALARM";
         event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
         event.ACTION = "AUDIO";
         event.END = "VALARM";
         $5535d7a9ff238efe$var$add_alarm(calc_notification, event.SUMMARY, event.UID);
-    }
+    } //todo: prepare ical data
+    var dd = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
     if (db_id == "local-id") {
-        $5535d7a9ff238efe$export$4bf9923669ad6c63.push(event);
+        try {
+            (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(dd, "", false, "", "", "local-id", false);
+        } catch (e) {
+            console.log(e);
+        } //events.push(event);
         var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events3) {
             return events3.id == "local-id";
         });

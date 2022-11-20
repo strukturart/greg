@@ -59,6 +59,12 @@ export let export_ical = function (filename, event_data) {
     });
 
     result += "END:VCALENDAR" + "\r\n";
+
+    result = result.replace(/:;TZID/g, ";TZID");
+
+    result = result.replace(/RRULE:null/g, "RRULE:");
+
+
     var file = new Blob([result], { type: "text/calendar" });
     var request = sdcard.addNamed(file, filename);
     request.onsuccess = function () {
