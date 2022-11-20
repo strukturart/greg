@@ -14675,6 +14675,8 @@ function $9f0e935a15ef5a93$export$69e63ab66e4cb4c7(year, month, day) {
 
 
 
+var $aS0o5 = parcelRequire("aS0o5");
+
 
 
 
@@ -22162,13 +22164,15 @@ var $78c31c2a3de015ee$export$f1976d86f97fc8b2 = function export_ical(filename, e
             for(var key in e){
                 index++;
                 if (index == 0) result += "BEGIN:VEVENT\r\n";
-                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_" && key != "isCalDav" && key != "id" && key != "allDay" && key != "isCaldav") result += "".concat(key, ":").concat(e[key]) + "\r\n";
+                if (key != "BEGIN" && key != "END" && key != "date" && key != "time_start" && key != "time_end" && key != "dateStart" && key != "dateEnd" && key != "alarm" && key != "isSubscription" && key != "multidayevent" && key != "alarmTrigger" && key != "rrule_" && key != "isCalDav" && key != "id" && key != "allDay" && key != "isCaldav" && key != "tzid" && key != "rrule_json" && key != "etag" && key != "url" && key != "id" && key != "dateStartUnix" && key != "dateEndUnix") result += "".concat(key, ":").concat(e[key]) + "\r\n";
                 if (index == Object.keys(e).length - 1) result += "END:VEVENT\r\n";
             }
         });
         result += "END:VCALENDAR\r\n";
         result = result.replace(/:;TZID/g, ";TZID");
-        result = result.replace(/RRULE:null/g, "RRULE:");
+        result = result.replace(/RRULE:null/g, "RRULE:"); //result = result.replace(/LAST-MODIFIED:null/g, "");
+        // result = result.replace(/(^[ \t]*\n)/gm, "");
+        //console.log(result);
         var file = new Blob([
             result
         ], {
@@ -22200,23 +22204,36 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
     var comp = new (0, (/*@__PURE__*/$parcel$interopDefault($cff6f0fa8dd83f64$exports))).Component(jcalData);
     var vevent = comp.getAllSubcomponents("vevent");
     vevent.forEach(function(ite) {
-        var n = ite.getFirstPropertyValue("rrule");
-        var ds;
-        var dateStart, timeStart;
+        var n = "";
+        console.log("rrule ui post type" + (0, $aS0o5.default)(ite.getFirstPropertyValue("rrule")));
+        console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
+        if (typeof ite.getFirstPropertyValue("rrule") == "object" && ite.getFirstPropertyValue("rrule") != null) {
+            n = ite.getFirstPropertyValue("rrule");
+            console.log(n.freq);
+        }
+        var dateStart, timeStart, dateStartUnix;
         if (ite.getFirstPropertyValue("dtstart")) {
-            ds = new Date(ite.getFirstPropertyValue("dtstart"));
-            dateStart = ds.getFullYear() + "-" + "0".concat(ds.getMonth() + 1).slice(-2) + "-" + "0".concat(ds.getDate()).slice(-2);
-            timeStart = "0".concat(ds.getHours()).slice(-2) + ":" + "0".concat(ds.getMinutes()).slice(-2) + ":" + "0".concat(ds.getSeconds()).slice(-2);
+            dateStart = $e758799baacea373$exports(ite.getFirstPropertyValue("dtstart")).format("YYYY-MM-DD");
+            timeStart = $e758799baacea373$exports(ite.getFirstPropertyValue("dtstart")).format("HH:mm:ss");
+            dateStartUnix = new Date(ite.getFirstPropertyValue("dtstart")).getTime() / 1000;
         } //date end
-        var dateEnd, timeEnd;
+        var dateEnd, timeEnd, dateEndUnix;
         if (ite.getFirstPropertyValue("dtend")) {
-            var DTstart = new Date(ite.getFirstPropertyValue("dtend"));
-            dateEnd = DTstart.getFullYear() + "-" + "0".concat(DTstart.getMonth() + 1).slice(-2) + "-" + "0".concat(DTstart.getDate()).slice(-2);
-            timeEnd = "0".concat(DTstart.getHours()).slice(-2) + ":" + "0".concat(DTstart.getMinutes()).slice(-2) + ":" + "0".concat(DTstart.getSeconds()).slice(-2);
+            dateEnd = $e758799baacea373$exports(ite.getFirstPropertyValue("dtend")).format("YYYY-MM-DD");
+            timeEnd = $e758799baacea373$exports(ite.getFirstPropertyValue("dtend")).format("HH:mm:ss");
+            dateEndUnix = new Date(ite.getFirstPropertyValue("dtend")).getTime() / 1000;
         } //allDay event
         var allday = false;
         if (ite.getFirstPropertyValue("dtend") && ite.getFirstPropertyValue("dtstart")) {
             if (timeStart == timeEnd) allday = true;
+        }
+        var lastmod = ite.getFirstPropertyValue("last-modified");
+        var dtstart = ite.getFirstPropertyValue("dtstart");
+        var dtend = ite.getFirstPropertyValue("dtend");
+        if (account_id == "local-id") {
+            dtstart = ";TZID=" + ite.getFirstPropertyValue("dtstart").timezone + ":" + ite.getFirstPropertyValue("dtstart").toICALString();
+            dtend = ";TZID=" + ite.getFirstPropertyValue("dtend").timezone + ":" + ite.getFirstPropertyValue("dtend").toICALString();
+            lastmod = ";TZID=" + ite.getFirstPropertyValue("last-modified").timezone + ":" + ite.getFirstPropertyValue("last-modified").toICALString();
         }
         var imp = {
             BEGIN: "VEVENT",
@@ -22226,22 +22243,25 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
             DESCRIPTION: ite.getFirstPropertyValue("description"),
             ATTACH: ite.getFirstPropertyValue("attach"),
             RRULE: ite.getFirstPropertyValue("rrule"),
-            "LAST-MODIFIED": ite.getFirstPropertyValue("last-modified"),
+            "LAST-MODIFIED": lastmod,
             CLASS: ite.getFirstPropertyValue("class"),
-            DTSTAMP: ite.getFirstPropertyValue("dtstamp"),
-            DTSTART: ite.getFirstPropertyValue("dtstart"),
-            DTEND: ite.getFirstPropertyValue("dtend"),
+            DTSTAMP: dtstart,
+            DTSTART: dtstart,
+            DTEND: dtend,
             END: "VEVENT",
+            tzid: ite.getFirstPropertyValue("dtstart").timezone,
             isSubscription: isSubscription,
             isCaldav: isCaldav,
             allDay: allday,
             dateStart: dateStart,
             time_start: timeStart,
+            dateStartUnix: dateStartUnix,
             dateEnd: dateEnd,
             time_end: timeEnd,
+            dateEndUnix: dateEndUnix,
             alarm: "none",
-            rrule_: n ? n.freq : "",
-            rrule_json: n ? n.toJSON() : "",
+            rrule_: n.freq,
+            rrule_json: n,
             etag: etag,
             url: url,
             id: account_id
@@ -41828,9 +41848,243 @@ var $8323e5cf5715a4d3$export$1f48543aacb96c1e = {
 };
 
 
+var $357cccb8cabc32fd$exports = {};
+
+var $aS0o5 = parcelRequire("aS0o5");
+!function(t, e) {
+    $357cccb8cabc32fd$exports = e();
+}(undefined, function() {
+    return function(t1) {
+        var e1 = {};
+        function n(o) {
+            if (e1[o]) return e1[o].exports;
+            var r = e1[o] = {
+                i: o,
+                l: !1,
+                exports: {}
+            };
+            return t1[o].call(r.exports, r, r.exports, n), r.l = !0, r.exports;
+        }
+        return n.m = t1, n.c = e1, n.d = function(t, e, o) {
+            n.o(t, e) || Object.defineProperty(t, e, {
+                enumerable: !0,
+                get: o
+            });
+        }, n.r = function(t) {
+            "undefined" != typeof Symbol && Symbol.toStringTag && Object.defineProperty(t, Symbol.toStringTag, {
+                value: "Module"
+            }), Object.defineProperty(t, "__esModule", {
+                value: !0
+            });
+        }, n.t = function(t, e2) {
+            if (1 & e2 && (t = n(t)), 8 & e2) return t;
+            if (4 & e2 && "object" == typeof t && t && t.__esModule) return t;
+            var o = Object.create(null);
+            if (n.r(o), Object.defineProperty(o, "default", {
+                enumerable: !0,
+                value: t
+            }), 2 & e2 && "string" != typeof t) for(var r in t)n.d(o, r, (function(e) {
+                return t[e];
+            }).bind(null, r));
+            return o;
+        }, n.n = function(t) {
+            var e = t && t.__esModule ? function e() {
+                return t.default;
+            } : function() {
+                return t;
+            };
+            return n.d(e, "a", e), e;
+        }, n.o = function(t, e) {
+            return Object.prototype.hasOwnProperty.call(t, e);
+        }, n.p = "", n(n.s = 0);
+    }([
+        function(t2, e3, n1) {
+            "use strict";
+            var r1 = function r(t) {
+                var _$e;
+                switch(o1(t)){
+                    case "string":
+                        return /Z$/.test(t) ? 0 : (_$e = /([+-])(\d{2}):?(\d{2})/.exec(t)) && (+_$e[3] + 60 * _$e[2]) * ("+" === _$e[1] ? 1 : -1);
+                    case "number":
+                        return Number.isNaN(t) ? null : Math.abs(t) < 16 ? 60 * t : t;
+                    default:
+                        return null;
+                }
+            };
+            var u = function u(t, e) {
+                for(var _$n = 0; _$n < e.length; _$n++){
+                    var o = e[_$n];
+                    o.enumerable = o.enumerable || !1, o.configurable = !0, "value" in o && (o.writable = !0), Object.defineProperty(t, o.key, o);
+                }
+            };
+            var c = function c(t) {
+                return 6e4 * (t - (arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : f));
+            };
+            function o1(t3) {
+                return (o1 = "function" == typeof Symbol && "symbol" == (0, $aS0o5.default)(Symbol.iterator) ? function o1(t) {
+                    return typeof t === "undefined" ? "undefined" : (0, $aS0o5.default)(t);
+                } : function(t) {
+                    return t && "function" == typeof Symbol && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t === "undefined" ? "undefined" : (0, $aS0o5.default)(t);
+                })(t3);
+            }
+            n1.r(e3);
+            var i1 = function i(t, e, n) {
+                var o = String(t);
+                return !o || o.length >= e ? t : "".concat(Array(e + 1 - o.length).join(n)).concat(t);
+            }, s1 = function s(t) {
+                var _$e = Math.abs(t), _$n = Math.floor(_$e / 60), o = _$e % 60;
+                return "".concat(t <= 0 ? "+" : "-").concat(i1(_$n, 2, "0"), ":").concat(i1(o, 2, "0"));
+            };
+            var f = (new Date).getTimezoneOffset(), a = Date.prototype;
+            var l = function() {
+                function t4() {
+                    var _$e = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : new Date, _$n = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : _$e.getTimezoneOffset();
+                    !function(t, e) {
+                        if (!(t instanceof e)) throw new TypeError("Cannot call a class as a function");
+                    }(this, t4), this.$d = new Date(_$e.getTime() - c(_$n)), this.$timezoneOffset = _$n;
+                }
+                var _$e1, _$n1, o;
+                return _$e1 = t4, _$n1 = [
+                    {
+                        key: "getTimezoneOffset",
+                        value: function value() {
+                            return this.$timezoneOffset;
+                        }
+                    },
+                    {
+                        key: "setTimezoneOffset",
+                        value: function value() {
+                            var _$t = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : this.$timezoneOffset;
+                            this.$d.setTime(this.$d.getTime() + c(this.$timezoneOffset, _$t)), this.$timezoneOffset = _$t;
+                        }
+                    }
+                ], u(_$e1.prototype, _$n1), o && u(_$e1, o), t4;
+            }();
+            [
+                "toDateString",
+                "toLocaleString",
+                "toLocaleDateString",
+                "toLocaleTimeString",
+                "setDate",
+                "setFullYear",
+                "setHours",
+                "setMilliseconds",
+                "setMinutes",
+                "setMonth",
+                "setSeconds",
+                "setTime",
+                "setYear",
+                "getDate",
+                "getDay",
+                "getFullYear",
+                "getHours",
+                "getMilliseconds",
+                "getMinutes",
+                "getMonth",
+                "getSeconds",
+                "getYear"
+            ].forEach(function(t) {
+                l.prototype[t] = function() {
+                    return a[t].apply(this.$d, arguments);
+                };
+            }), [
+                "toISOString",
+                "toUTCString",
+                "toGMTString",
+                "toJSON",
+                "getUTCDate",
+                "getUTCDay",
+                "getUTCFullYear",
+                "getUTCHours",
+                "getUTCMilliseconds",
+                "getUTCMinutes",
+                "getUTCMonth",
+                "getUTCSeconds",
+                "valueOf",
+                "getTime"
+            ].forEach(function(t) {
+                l.prototype[t] = function() {
+                    return a[t].apply(new Date(this.$d.getTime() + c(this.$timezoneOffset)), arguments);
+                };
+            }), [
+                "setUTCDate",
+                "setUTCFullYear",
+                "setUTCHours",
+                "setUTCMilliseconds",
+                "setUTCMinutes",
+                "setUTCMonth",
+                "setUTCSeconds"
+            ].forEach(function(t) {
+                l.prototype[t] = function() {
+                    var _$e = new Date(this.$d.getTime() + c(this.$timezoneOffset));
+                    a[t].apply(_$e, arguments), _$e.setTime(_$e.getTime() - c(this.$timezoneOffset)), this.$d = _$e;
+                };
+            }), [
+                "toString",
+                "toTimeString"
+            ].forEach(function(t) {
+                l.prototype[t] = function() {
+                    return a[t].apply(this.$d, arguments).replace(/GMT(.*)$/, "GMT".concat(s1(this.$timezoneOffset)));
+                };
+            });
+            var d = l, p = !1, h = function h(t5, e) {
+                [
+                    "clone",
+                    "add",
+                    "subtract",
+                    "startOf"
+                ].forEach(function(n) {
+                    t5[n] = function() {
+                        var _$t = this.utcOffset();
+                        return e[n].apply(this, arguments).utcOffset(_$t);
+                    };
+                }), t5.utc = function() {
+                    return this.utcOffset(0);
+                }, t5.local = function() {
+                    return this.utcOffset(-f);
+                }, t5.utcOffset = function(t) {
+                    if (void 0 === t) {
+                        var _$e = this.$d.getTimezoneOffset();
+                        return 0 === _$e ? 0 : -_$e;
+                    }
+                    return null !== r1(t) && (this.$d.setTimezoneOffset(-r1(t)), this.init()), this;
+                }, t5.toDate = function() {
+                    return new Date(this.$d.getTime());
+                }, t5.isLocal = function() {
+                    return this.$d.getTimezoneOffset() === f;
+                }, t5.isUTC = function() {
+                    return 0 === this.$d.getTimezoneOffset();
+                }, t5.$set = function() {
+                    for(var _$t, _$n = this.$d.getTimezoneOffset(), o = arguments.length, r = new Array(o), i = 0; i < o; i++)r[i] = arguments[i];
+                    return (_$t = e.$set).call.apply(_$t, [
+                        this
+                    ].concat(r)), this.$d instanceof Date && (this.$d = new d(this.$d, _$n)), this;
+                }, t5.parse = function(t) {
+                    e.parse.call(this, t);
+                    var _$n = this.$d, o = "string" == typeof t.date ? r1(t.date) : null;
+                    this.$d = new d(_$n, null === o ? f : -o), p && this.local(), this.init();
+                };
+            };
+            e3.default = function() {
+                var t6 = arguments.length > 0 && void 0 !== arguments[0] ? arguments[0] : {}, _$e2 = arguments.length > 1 ? arguments[1] : void 0, _$n = arguments.length > 2 ? arguments[2] : void 0;
+                p = !!t6.parseToLocal;
+                var o = _$e2.prototype, i = function i() {};
+                i.prototype = o;
+                var s = new i;
+                h(s, o), s.constructor = _$e2.constructor, _$e2.prototype = s, _$n.utc = function(t) {
+                    var _$e = this(t);
+                    return "string" == typeof t && null === r1(t) && (_$e.$d.$timezoneOffset = 0), _$e.utc();
+                };
+            };
+        }
+    ]);
+});
+
+
 "use strict";
 
 
+$e758799baacea373$exports.extend((0, (/*@__PURE__*/$parcel$interopDefault($357cccb8cabc32fd$exports))));
 var $5535d7a9ff238efe$export$4bf9923669ad6c63 = [];
 var $5535d7a9ff238efe$export$c5541db89994d14 = [];
 var $5535d7a9ff238efe$export$4c2153173b738584 = [];
@@ -41927,7 +42181,7 @@ var $5535d7a9ff238efe$var$load_caldav = function load_caldav() {
                             console.log(err);
                         }); //parse data
                         objects.forEach(function(i) {
-                            (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(i.data, $5535d7a9ff238efe$var$callback_caldata_loaded, false, false, i.etag, i.url, item.id, true);
+                            (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(i.data, $5535d7a9ff238efe$var$callback_caldata_loaded, false, i.etag, i.url, item.id, true);
                         });
                         document.getElementById("icon-loading").style.visibility = "hidden";
                         $5535d7a9ff238efe$var$style_calendar_cell();
@@ -42317,7 +42571,7 @@ var $5535d7a9ff238efe$var$create_caldav = function create_caldav(event_data, cal
                                 (0, $162001cafa2b40fd$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                                 setTimeout(function() {
                                     (0, $162001cafa2b40fd$export$63b4813c5280c707)("", "close");
-                                    (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
+                                    (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStartUnix", "date");
                                 }, 5000);
                             }
                         case 44:
@@ -42433,7 +42687,7 @@ var $5535d7a9ff238efe$var$delete_caldav = function delete_caldav(etag, url, acco
                             (0, $162001cafa2b40fd$export$63b4813c5280c707)("There was a problem deleting, please try again later.", "show");
                             setTimeout(function() {
                                 (0, $162001cafa2b40fd$export$63b4813c5280c707)("", "close");
-                                (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
+                                (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStartUnix", "date");
                             }, 5000);
                         case 21:
                         case "end":
@@ -42455,6 +42709,7 @@ var $5535d7a9ff238efe$var$delete_caldav = function delete_caldav(etag, url, acco
 };
 var $5535d7a9ff238efe$var$update_caldav = function update_caldav(etag, url, data, account_id) {
     (0, $162001cafa2b40fd$export$63b4813c5280c707)("Please wait...", "show");
+    console.log(etag, url, account_id);
     $5535d7a9ff238efe$export$c5541db89994d14.forEach(function(p) {
         if (p.id == account_id) {
             var client = "";
@@ -42508,24 +42763,23 @@ var $5535d7a9ff238efe$var$update_caldav = function update_caldav(etag, url, data
                             });
                         case 11:
                             result = _ctx.sent;
-                            console.log(result);
                             if (!result.ok) {
-                                _ctx.next = 32;
+                                _ctx.next = 31;
                                 break;
                             }
                             (0, $162001cafa2b40fd$export$63b4813c5280c707)("", "close");
                             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
                             $5535d7a9ff238efe$var$cache_caldav(); //get new ETAG
-                            _ctx.prev = 17;
+                            _ctx.prev = 16;
                             _ctx.t1 = (0, $ba1dd0fdf18f5321$export$2e2bcd8739ae039);
-                            _ctx.next = 21;
+                            _ctx.next = 20;
                             return client.propfind({
                                 url: result.url,
                                 props: (0, $c6dd85391fd92cc7$export$2e2bcd8739ae039)({}, "".concat((0, $a4be068310fbf330$export$60e764203870007f).DAV, ":getetag"), {}),
                                 depth: "0",
                                 headers: client.authHeaders
                             });
-                        case 21:
+                        case 20:
                             _ctx.t2 = _ctx.sent;
                             ref = (0, _ctx.t1)(_ctx.t2, 1);
                             res = ref[0];
@@ -42535,33 +42789,33 @@ var $5535d7a9ff238efe$var$update_caldav = function update_caldav(etag, url, data
                                     return item.etag;
                                 } else return item;
                             });
-                            _ctx.next = 30;
+                            _ctx.next = 29;
                             break;
-                        case 27:
-                            _ctx.prev = 27;
-                            _ctx.t3 = _ctx["catch"](17);
+                        case 26:
+                            _ctx.prev = 26;
+                            _ctx.t3 = _ctx["catch"](16);
                             console.log(_ctx.t3);
-                        case 30:
-                            _ctx.next = 33;
+                        case 29:
+                            _ctx.next = 32;
                             break;
-                        case 32:
+                        case 31:
                             {
                                 (0, $162001cafa2b40fd$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                                 setTimeout(function() {
                                     (0, $162001cafa2b40fd$export$63b4813c5280c707)("", "close");
                                 }, 5000);
                             }
-                        case 33:
-                            _ctx.next = 39;
+                        case 32:
+                            _ctx.next = 38;
                             break;
-                        case 35:
-                            _ctx.prev = 35;
+                        case 34:
+                            _ctx.prev = 34;
                             _ctx.t4 = _ctx["catch"](8);
                             (0, $162001cafa2b40fd$export$63b4813c5280c707)("There was a problem saving, please try again later.", "show");
                             setTimeout(function() {
                                 (0, $162001cafa2b40fd$export$63b4813c5280c707)("", "close");
                             }, 5000);
-                        case 39:
+                        case 38:
                         case "end":
                             return _ctx.stop();
                     }
@@ -42572,11 +42826,11 @@ var $5535d7a9ff238efe$var$update_caldav = function update_caldav(etag, url, data
                     ],
                     [
                         8,
-                        35
+                        34
                     ],
                     [
-                        17,
-                        27
+                        16,
+                        26
                     ]
                 ]);
             }))();
@@ -42595,15 +42849,14 @@ var $5535d7a9ff238efe$var$load_cached_caldav = function load_cached_caldav() {
                 }
                 w.forEach(function(b) {
                     b.objects.forEach(function(m1) {
-                        (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(m1.data, $5535d7a9ff238efe$var$callback_caldata_loaded, false, false, m1.etag, m1.url, item.id, true);
+                        (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(m1.data, $5535d7a9ff238efe$var$callback_caldata_loaded, false, m1.etag, m1.url, item.id, true);
                     });
                 });
             }).catch(function(err) {
                 console.log(err);
             });
         } catch (e) {}
-    });
-    (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
+    }); //sort_array(events, "dateStartUnix", "date");
 };
 var $5535d7a9ff238efe$var$load_subscriptions = function load_subscriptions() {
     if ($5535d7a9ff238efe$var$subscriptions == null || $5535d7a9ff238efe$var$subscriptions.lenght == -1 || $5535d7a9ff238efe$var$subscriptions == "undefined") return false;
@@ -42941,9 +43194,8 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
         var b = new Date($5535d7a9ff238efe$export$4bf9923669ad6c63[i].dateEnd).getTime();
         var c = new Date(date).getTime();
         var d3 = $5535d7a9ff238efe$export$4bf9923669ad6c63[i].rrule_;
-        if (d3 === "none" || d3 === "" || d3 === undefined) {
+        if (d3 === "none" || d3 === "" || d3 === undefined || d3 === null) {
             if (a === c || a < c && b > c) {
-                //TODO if multiday event
                 $5535d7a9ff238efe$var$slider.push($5535d7a9ff238efe$export$4bf9923669ad6c63[i]);
                 k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
             }
@@ -42994,7 +43246,7 @@ var $5535d7a9ff238efe$var$event_slider = function event_slider(date) {
     if ($5535d7a9ff238efe$var$slider.length != "") {
         $5535d7a9ff238efe$var$slider.forEach(function(item) {
             var l = "";
-            if (!item.allDay) l = item.time_start;
+            if (!item.allDay) l = $0404b7667063739a$exports.unix(item.dateStartUnix).format("HH:mm");
             document.querySelector("div#event-slider").insertAdjacentHTML("beforeend", "<article><div class='width-100'>" + item.SUMMARY + "</div><div class='width-100'>" + l + "</div></article>");
         });
         if ($5535d7a9ff238efe$var$slider >= 0) document.querySelector("div#event-slider article")[0].style.display = "block";
@@ -43271,7 +43523,7 @@ var $5535d7a9ff238efe$var$page_events = {
         return (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
             id: "events-wrapper",
             oninit: function oninit() {
-                (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStart", "date");
+                (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStartUnix", "date");
             },
             oncreate: function oncreate() {
                 $5535d7a9ff238efe$var$find_closest_date();
@@ -43307,7 +43559,7 @@ var $5535d7a9ff238efe$var$page_events = {
                         }, de),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
                             class: "time"
-                        }, item.time_start),
+                        }, $e758799baacea373$exports.unix(item.dateStartUnix).format("HH:mm")),
                         (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("h2", {
                             class: "time"
                         }, item.SUMMARY),
@@ -43519,7 +43771,6 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
                             setTimeout(function() {
                                 $5535d7a9ff238efe$export$c5541db89994d14 = [];
                                 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("accounts").then(function(value) {
-                                    console.log(value);
                                     if (value == null) {
                                         $5535d7a9ff238efe$export$c5541db89994d14 = [];
                                         return false;
@@ -43948,7 +44199,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     type: "time",
                     id: "event-time-start",
                     class: "select-box",
-                    value: new Date().getHours() + ":" + new Date().getMinutes()
+                    value: $e758799baacea373$exports().format("HH:mm")
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -43963,7 +44214,7 @@ var $5535d7a9ff238efe$var$page_add_event = {
                     type: "time",
                     id: "event-time-end",
                     class: "select-box",
-                    value: new Date().getHours() + 1 + ":" + new Date().getMinutes()
+                    value: $e758799baacea373$exports().add(1, "hour").format("HH:mm")
                 })
             ]),
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("div", {
@@ -44168,7 +44419,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     for: "event-time-start"
                 }, "Start Time"),
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
-                    placeholder: "HH:mm:ss",
+                    placeholder: "HH:mm",
                     type: "time",
                     id: "event-time-start",
                     class: "select-box",
@@ -44183,7 +44434,7 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     for: "event-time-end"
                 }, "End Time"),
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("input", {
-                    placeholder: "hh:mm:ss",
+                    placeholder: "hh:mm",
                     type: "time",
                     id: "event-time-end",
                     class: "select-box",
@@ -44251,7 +44502,9 @@ var $5535d7a9ff238efe$var$page_edit_event = {
                     id: "event-recur",
                     value: $5535d7a9ff238efe$var$update_event_date.rrule_ == "" ? "none" : $5535d7a9ff238efe$var$update_event_date.rrule_,
                     class: "select-box",
-                    oncreate: function oncreate() {}
+                    oncreate: function oncreate() {
+                        console.log("rrule ui get" + $5535d7a9ff238efe$var$update_event_date.rrule_);
+                    }
                 }, [
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("option", {
                         value: "none"
@@ -44313,7 +44566,6 @@ var $5535d7a9ff238efe$var$cb = function cb(result) {
 (0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", $5535d7a9ff238efe$var$cb);
 var $5535d7a9ff238efe$var$callback_getfile = function callback_getfile(result) {
     try {
-        console.log(result);
         (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(result, "", false, "", "", "local-id", false);
         var only_local_events = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events2) {
             return events2.id == "local-id";
@@ -44324,9 +44576,7 @@ var $5535d7a9ff238efe$var$callback_getfile = function callback_getfile(result) {
             setTimeout(function() {
                 (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_calendar");
             }, 200);
-        }).catch(function(err) {
-            console.log("ssss" + err);
-        });
+        }).catch(function(err) {});
     } catch (e) {
         alert("event could not be imported because the file content is invalid" + e);
     }
@@ -44505,7 +44755,10 @@ var $5535d7a9ff238efe$var$delete_account = function delete_account() {
     });
 }; //load indexedDB
 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("events").then(function(value) {
-    if (value != null) $5535d7a9ff238efe$export$4bf9923669ad6c63 = value; //sort_array(events, "dateStart", "date");
+    if (value != null) {
+        $5535d7a9ff238efe$export$4bf9923669ad6c63 = value;
+        (0, $162001cafa2b40fd$export$b04ad9f70842c3f1)($5535d7a9ff238efe$export$4bf9923669ad6c63, "dateStartUnix", "date");
+    }
 }).catch(function(err) {});
 (0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).getItem("subscriptions").then(function(value) {
     $5535d7a9ff238efe$var$subscriptions = value;
@@ -44682,10 +44935,12 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
     if (a != b) allDay = true;
     var rrule_convert = function rrule_convert(val) {
         var p = val;
-        var r;
-        if (p == "none") return null;
-        if (p != "none") r = "FREQ=" + val + ";UNTIL=" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end);
-        return r;
+        var r = "";
+        if (p == "none") return r;
+        if (p != "none") {
+            r = "FREQ=" + val + ";UNTIL=" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end);
+            return r;
+        }
     };
     if (validation == false) return false;
     var event = {
@@ -44693,11 +44948,12 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
         SUMMARY: document.getElementById("event-title").value,
         LOCATION: document.getElementById("event-location").value,
         DESCRIPTION: document.getElementById("event-description").value,
+        "LAST-MODIFIED": ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
         CLASS: "PRIVATE",
         DTSTAMP: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
         DTSTART: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_start),
         DTEND: ";TZID=" + $5535d7a9ff238efe$export$a5a6e0b888b2c992.timezone + ":" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end),
-        RRULE: rrule_convert(document.getElementById("event-recur").value),
+        RRULE: document.getElementById("event-recur").value == "none" ? "" : rrule_convert(document.getElementById("event-recur").value),
         rrule_: document.getElementById("event-recur").value == "" ? "none" : document.getElementById("event-recur").value,
         dateStart: document.getElementById("event-date").value,
         dateEnd: document.getElementById("event-date-end").value,
@@ -44718,7 +44974,7 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
         event.END = "VALARM";
         $5535d7a9ff238efe$var$add_alarm(calc_notification, event.SUMMARY, event.UID);
     } //todo: prepare ical data
-    var dd = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+    var dd = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nRRULE:" + event.RRULE + "\nLAST-MODIFIED" + event["LAST-MODIFIED"] + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
     if (db_id == "local-id") {
         try {
             (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(dd, "", false, "", "", "local-id", false);
@@ -44740,12 +44996,13 @@ var $5535d7a9ff238efe$var$store_event = function store_event(db_id, cal_name) {
             (0, $162001cafa2b40fd$export$6593825dc0f3a767)("no data to export", 2000);
         });
     } else {
-        var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0\nRRULE:" + event.RRULE + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
-        if (event.RRULE == null) {
+        var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + event.SUMMARY + "\nUID:" + event.UID + "\nSEQUENCE:0" + "\nRRULE: " + event.RRULE + "\nDTSTART" + event.DTSTART + "\nDTEND" + event.DTEND + "\nDTSTAMP" + event.DTSTAMP + "\nLOCATION:" + event.LOCATION + "\nDESCRIPTION:" + event.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+        if (event.RRULE == null || event.RRULE == "") {
             event_data = event_data.replace("SEQUENCE:0", "");
             event_data = event_data.replace("RRULE:null", "");
-            event_data = event_data.trim();
+            event_data = event_data.replace("RRULE:", "");
         }
+        event_data = event_data.trim();
         $5535d7a9ff238efe$var$create_caldav(event_data, event.id, cal_name, event, event.UID);
     }
     $5535d7a9ff238efe$var$style_calendar_cell();
@@ -44774,13 +45031,13 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
             if (document.getElementById("event-time-start").value != "") {
                 var n = document.getElementById("event-time-start").value;
                 if (n.length == 5) start_time = document.getElementById("event-time-start").value + ":00";
-                else start_time = document.getElementById("event-time-start").value;
+                else start_time = document.getElementById("event-time-start").value + ":00";
             }
             var end_time = "00:00:00";
             if (document.getElementById("event-time-end").value != "") {
                 var n1 = document.getElementById("event-time-end").value;
                 if (n1.length == 5) end_time = document.getElementById("event-time-end").value + ":00";
-                else end_time = document.getElementById("event-time-end").value;
+                else end_time = document.getElementById("event-time-end").value + ":00";
             }
             var convert_dt_start = document.getElementById("event-date").value + " " + start_time;
             var convert_dt_end = document.getElementById("event-date").value + " " + end_time; // notification before event
@@ -44792,13 +45049,18 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                 notification_time = $5535d7a9ff238efe$var$convert_ics_date(calc_notification.toISOString());
             }
             var rrule_convert = function rrule_convert(val) {
+                console.log("rrule" + val);
                 var p = val;
-                var r;
-                if (p == "none" || p == "") return null;
+                var r = "";
+                if (p == "none" || p == "") return r;
                 if (p != "none") r = "FREQ=" + val + ";UNTIL=" + $5535d7a9ff238efe$var$convert_ics_date(convert_dt_end);
                 return r;
             };
-            if (validation == false) return false;
+            if (validation == false) return false; //convert to unix ts
+            var dateStartUnix = new Date(document.getElementById("event-date").value).getTime();
+            dateStartUnix = Math.floor(dateStartUnix / 1000);
+            var dateEndUnix = new Date(document.getElementById("event-date-end").value).getTime();
+            dateEndUnix = Math.floor(dateEndUnix / 1000);
             index.SUMMARY = document.getElementById("event-title").value;
             index.LOCATION = document.getElementById("event-location").value;
             index.DESCRIPTION = document.getElementById("event-description").value;
@@ -44811,6 +45073,8 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
             index.dateStart = document.getElementById("event-date").value;
             index.time_start = document.getElementById("event-time-start").value;
             index.time_end = document.getElementById("event-time-end").value;
+            index.dateStartUnix = dateStartUnix;
+            index.dateEndUnix = dateEndUnix;
             index.rrule_ = document.getElementById("event-recur").value;
             index.isSubscription = false;
             index.isCaldav = account_id == "local-id" ? false : true;
@@ -44825,15 +45089,8 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                 index.ACTION = "AUDIO";
                 index.END = "VALARM";
                 $5535d7a9ff238efe$var$add_alarm(calc_notification, index.SUMMARY, index.UID);
-            } //todo: patching event
-            var dd = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART" + index.DTSTART + "\nDTEND" + index.DTEND + "\nDTSTAMP" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
+            }
             if (account_id == "local-id") {
-                try {
-                    //parse_ics(dd, "", false, "", "", "local-id", false);
-                    $5535d7a9ff238efe$export$4bf9923669ad6c63.push(event);
-                } catch (e) {
-                    console.log(e);
-                }
                 var without_subscription = $5535d7a9ff238efe$export$4bf9923669ad6c63.filter(function(events4) {
                     return events4.id == "local-id";
                 });
@@ -44848,11 +45105,12 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
                 });
             } else {
                 var event_data = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" + index.SUMMARY + "\nUID:" + index.UID + "\nSEQUENCE:0\nRRULE:" + index.RRULE + "\nDTSTART" + index.DTSTART + "\nDTEND" + index.DTEND + "\nDTSTAMP" + index.DTSTAMP + "\nLOCATION:" + index.LOCATION + "\nDESCRIPTION:" + index.DESCRIPTION + "\nEND:VEVENT\nEND:VCALENDAR";
-                if (index.RRULE == null) {
+                if (index.RRULE == null || index.RRULE == "") {
                     event_data = event_data.replace("SEQUENCE:0", "");
                     event_data = event_data.replace("RRULE:null", "");
-                    event_data = event_data.trim();
+                    event_data = event_data.replace("RRULE:", "");
                 }
+                event_data = event_data.trim();
                 $5535d7a9ff238efe$var$update_caldav(index.etag, index.url, event_data, index.id);
             }
         }
@@ -44861,7 +45119,6 @@ var $5535d7a9ff238efe$var$update_event = function update_event(account_id) {
 //DELETE EVENT
 ///////////
 var $5535d7a9ff238efe$var$delete_event = function delete_event(etag, url, account_id, uid2) {
-    console.log(etag, url, account_id, uid2);
     if (etag) $5535d7a9ff238efe$var$delete_caldav(etag, url, account_id, $5535d7a9ff238efe$export$471f7ae5c4103ae1.selected_day_id);
     else {
         console.log("local"); //remove event

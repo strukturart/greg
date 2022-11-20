@@ -28,9 +28,12 @@ import { get_time } from "./assets/js/helper.js";
 import { uid } from "uid";
 import { captureRejectionSymbol } from "events";
 import { google_cred } from "./assets/js/google_cred.js";
+import dayjsPluginUTC from "dayjs-plugin-utc";
 
 const dayjs = require("dayjs");
 const moment = require("moment-timezone");
+
+dayjs.extend(dayjsPluginUTC);
 
 export let events = [];
 export let accounts = [];
@@ -147,7 +150,6 @@ let load_caldav = function () {
             parse_ics(
               i.data,
               callback_caldata_loaded,
-              false,
               false,
               i.etag,
               i.url,
@@ -438,7 +440,7 @@ let create_caldav = function (
                 );
                 setTimeout(function () {
                   popup("", "close");
-                  sort_array(events, "dateStart", "date");
+                  sort_array(events, "dateStartUnix", "date");
                 }, 5000);
               }
             }
@@ -532,7 +534,7 @@ let delete_caldav = function (etag, url, account_id, uid) {
           );
           setTimeout(function () {
             popup("", "close");
-            sort_array(events, "dateStart", "date");
+            sort_array(events, "dateStartUnix", "date");
           }, 5000);
         }
       })();
@@ -542,6 +544,7 @@ let delete_caldav = function (etag, url, account_id, uid) {
 
 let update_caldav = function (etag, url, data, account_id) {
   popup("Please wait...", "show");
+  console.log(etag, url, account_id);
 
   accounts.forEach(function (p) {
     if (p.id == account_id) {
@@ -593,8 +596,6 @@ let update_caldav = function (etag, url, data, account_id) {
 
             headers: client.authHeaders,
           });
-
-          console.log(result);
 
           if (result.ok) {
             popup("", "close");
@@ -660,7 +661,6 @@ let load_cached_caldav = function () {
                 m.data,
                 callback_caldata_loaded,
                 false,
-                false,
                 m.etag,
                 m.url,
                 item.id,
@@ -674,7 +674,7 @@ let load_cached_caldav = function () {
         });
     } catch (e) {}
   });
-  sort_array(events, "dateStart", "date");
+  //sort_array(events, "dateStartUnix", "date");
 };
 
 let load_subscriptions = function () {
@@ -1016,6 +1016,7 @@ let rrule_check = function (date) {
       if (typeof e !== "undefined" && e !== undefined && e != null) {
         //recurrences
         //console.log(events[t].rrule_isFinite);
+
         if (events[t].rrule_json != null) {
           if (events[t].rrule_json.until == null) {
             b = new Date("3000-01-01").getTime();
@@ -1133,7 +1134,7 @@ let event_slider = function (date) {
     let c = new Date(date).getTime();
     let d = events[i].rrule_;
 
-    if (d === "none" || d === "" || d === undefined) {
+    if (d === "none" || d === "" || d === undefined || d === null) {
       if (a === c || (a < c && b > c)) {
         slider.push(events[i]);
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -1141,11 +1142,13 @@ let event_slider = function (date) {
     } else {
       //workaround if enddate is not set
       //AKA infinity
+
       if (events[i].rrule_json != null) {
         if (events[i].rrule_json.until == null) {
           b = new Date("3000-01-01").getTime();
         }
       }
+
       if (a === c || b === c || (a < c && b > c)) {
         //recurrences
 
@@ -1206,7 +1209,9 @@ let event_slider = function (date) {
   if (slider.length != "") {
     slider.forEach(function (item) {
       let l = "";
-      if (!item.allDay) l = item.time_start;
+      if (!item.allDay) {
+        l = moment.unix(item.dateStartUnix).format("HH:mm");
+      }
 
       document
         .querySelector("div#event-slider")
@@ -1617,7 +1622,7 @@ var page_events = {
       {
         id: "events-wrapper",
         oninit: function () {
-          sort_array(events, "dateStart", "date");
+          sort_array(events, "dateStartUnix", "date");
         },
 
         oncreate: function () {
@@ -1660,8 +1665,11 @@ var page_events = {
               m("div", { class: "icons-bar" }, [
                 m("img", { class: "bell", src: "assets/image/bell.svg" }),
                 m("div", { class: "date" }, de),
-
-                m("div", { class: "time" }, item.time_start),
+                m(
+                  "div",
+                  { class: "time" },
+                  dayjs.unix(item.dateStartUnix).format("HH:mm")
+                ),
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION),
@@ -1905,7 +1913,6 @@ export let page_options = {
                   localforage
                     .getItem("accounts")
                     .then(function (value) {
-                      console.log(value);
                       if (value == null) {
                         accounts = [];
                         return false;
@@ -2318,9 +2325,7 @@ var page_add_event = {
             class: "item input-parent",
             tabindex: 0,
 
-            onfocus: function () {
-              //search("close");
-            },
+            onfocus: function () {},
 
             oncreate: function ({ dom }) {
               setTimeout(function () {
@@ -2395,7 +2400,7 @@ var page_add_event = {
             id: "event-time-start",
             class: "select-box",
 
-            value: new Date().getHours() + ":" + new Date().getMinutes(),
+            value: dayjs().format("HH:mm"),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
@@ -2405,7 +2410,7 @@ var page_add_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
-            value: new Date().getHours() + 1 + ":" + new Date().getMinutes(),
+            value: dayjs().add(1, "hour").format("HH:mm"),
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -2589,22 +2594,20 @@ var page_edit_event = {
         m("div", { class: "item input-parent", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
           m("input", {
-            placeholder: "HH:mm:ss",
+            placeholder: "HH:mm",
             type: "time",
             id: "event-time-start",
             class: "select-box",
-
             value: update_event_date.time_start,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
           m("input", {
-            placeholder: "hh:mm:ss",
+            placeholder: "hh:mm",
             type: "time",
             id: "event-time-end",
             class: "select-box",
-
             value: update_event_date.time_end,
           }),
         ]),
@@ -2614,7 +2617,6 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-description",
-
             value: update_event_date.DESCRIPTION,
           }),
         ]),
@@ -2669,7 +2671,9 @@ var page_edit_event = {
                     ? "none"
                     : update_event_date.rrule_,
                 class: "select-box",
-                oncreate: function () {},
+                oncreate: function () {
+                  console.log("rrule ui get" + update_event_date.rrule_);
+                },
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2750,7 +2754,6 @@ list_files("ics", cb);
 
 let callback_getfile = function (result) {
   try {
-    console.log(result);
     parse_ics(result, "", false, "", "", "local-id", false);
 
     let only_local_events = events.filter((events) => events.id == "local-id");
@@ -2764,9 +2767,7 @@ let callback_getfile = function (result) {
           m.route.set("/page_calendar");
         }, 200);
       })
-      .catch(function (err) {
-        console.log("ssss" + err);
-      });
+      .catch(function (err) {});
   } catch (e) {
     alert(
       "event could not be imported because the file content is invalid" + e
@@ -3037,7 +3038,7 @@ localforage
   .then(function (value) {
     if (value != null) {
       events = value;
-      //sort_array(events, "dateStart", "date");
+      sort_array(events, "dateStartUnix", "date");
     }
   })
   .catch(function (err) {});
@@ -3314,14 +3315,15 @@ let store_event = function (db_id, cal_name) {
 
   let rrule_convert = function (val) {
     let p = val;
-    let r;
+    let r = "";
+
     if (p == "none") {
-      return null;
+      return r;
     }
     if (p != "none") {
       r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
+      return r;
     }
-    return r;
   };
 
   if (validation == false) return false;
@@ -3330,6 +3332,8 @@ let store_event = function (db_id, cal_name) {
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
+    "LAST-MODIFIED":
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
     CLASS: "PRIVATE",
     DTSTAMP:
       ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
@@ -3337,7 +3341,10 @@ let store_event = function (db_id, cal_name) {
       ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
     DTEND:
       ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end),
-    RRULE: rrule_convert(document.getElementById("event-recur").value),
+    RRULE:
+      document.getElementById("event-recur").value == "none"
+        ? ""
+        : rrule_convert(document.getElementById("event-recur").value),
     rrule_:
       document.getElementById("event-recur").value == ""
         ? "none"
@@ -3368,8 +3375,10 @@ let store_event = function (db_id, cal_name) {
     event.SUMMARY +
     "\nUID:" +
     event.UID +
-    "\nSEQUENCE:0\nRRULE:" +
+    "\nRRULE:" +
     event.RRULE +
+    "\nLAST-MODIFIED" +
+    event["LAST-MODIFIED"] +
     "\nDTSTART" +
     event.DTSTART +
     "\nDTEND" +
@@ -3414,7 +3423,8 @@ let store_event = function (db_id, cal_name) {
       event.SUMMARY +
       "\nUID:" +
       event.UID +
-      "\nSEQUENCE:0\nRRULE:" +
+      "\nSEQUENCE:0" +
+      "\nRRULE: " +
       event.RRULE +
       "\nDTSTART" +
       event.DTSTART +
@@ -3428,11 +3438,13 @@ let store_event = function (db_id, cal_name) {
       event.DESCRIPTION +
       "\nEND:VEVENT\nEND:VCALENDAR";
 
-    if (event.RRULE == null) {
+    if (event.RRULE == null || event.RRULE == "") {
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
-      event_data = event_data.trim();
+      event_data = event_data.replace("RRULE:", "");
     }
+    event_data = event_data.trim();
+
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
   style_calendar_cell();
@@ -3474,7 +3486,8 @@ let update_event = function (account_id) {
           start_time =
             document.getElementById("event-time-start").value + ":00";
         } else {
-          start_time = document.getElementById("event-time-start").value;
+          start_time =
+            document.getElementById("event-time-start").value + ":00";
         }
       }
 
@@ -3485,7 +3498,7 @@ let update_event = function (account_id) {
         if (n.length == 5) {
           end_time = document.getElementById("event-time-end").value + ":00";
         } else {
-          end_time = document.getElementById("event-time-end").value;
+          end_time = document.getElementById("event-time-end").value + ":00";
         }
       }
 
@@ -3511,10 +3524,11 @@ let update_event = function (account_id) {
       }
 
       let rrule_convert = function (val) {
+        console.log("rrule" + val);
         let p = val;
-        let r;
+        let r = "";
         if (p == "none" || p == "") {
-          return null;
+          return r;
         }
         if (p != "none") {
           r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
@@ -3523,6 +3537,17 @@ let update_event = function (account_id) {
       };
 
       if (validation == false) return false;
+
+      //convert to unix ts
+      let dateStartUnix = new Date(
+        document.getElementById("event-date").value
+      ).getTime();
+      dateStartUnix = Math.floor(dateStartUnix / 1000);
+
+      let dateEndUnix = new Date(
+        document.getElementById("event-date-end").value
+      ).getTime();
+      dateEndUnix = Math.floor(dateEndUnix / 1000);
 
       index.SUMMARY = document.getElementById("event-title").value;
       index.LOCATION = document.getElementById("event-location").value;
@@ -3539,6 +3564,8 @@ let update_event = function (account_id) {
       index.dateStart = document.getElementById("event-date").value;
       index.time_start = document.getElementById("event-time-start").value;
       index.time_end = document.getElementById("event-time-end").value;
+      index.dateStartUnix = dateStartUnix;
+      index.dateEndUnix = dateEndUnix;
       index.rrule_ = document.getElementById("event-recur").value;
       index.isSubscription = false;
       index.isCaldav = account_id == "local-id" ? false : true;
@@ -3556,33 +3583,7 @@ let update_event = function (account_id) {
         add_alarm(calc_notification, index.SUMMARY, index.UID);
       }
 
-      //todo: patching event
-      let dd =
-        "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
-        index.SUMMARY +
-        "\nUID:" +
-        index.UID +
-        "\nSEQUENCE:0\nRRULE:" +
-        index.RRULE +
-        "\nDTSTART" +
-        index.DTSTART +
-        "\nDTEND" +
-        index.DTEND +
-        "\nDTSTAMP" +
-        index.DTSTAMP +
-        "\nLOCATION:" +
-        index.LOCATION +
-        "\nDESCRIPTION:" +
-        index.DESCRIPTION +
-        "\nEND:VEVENT\nEND:VCALENDAR";
-
       if (account_id == "local-id") {
-        try {
-          //parse_ics(dd, "", false, "", "", "local-id", false);
-          events.push(event);
-        } catch (e) {
-          console.log(e);
-        }
         let without_subscription = events.filter(
           (events) => events.id == "local-id"
         );
@@ -3619,12 +3620,12 @@ let update_event = function (account_id) {
           "\nDESCRIPTION:" +
           index.DESCRIPTION +
           "\nEND:VEVENT\nEND:VCALENDAR";
-        if (index.RRULE == null) {
+        if (index.RRULE == null || index.RRULE == "") {
           event_data = event_data.replace("SEQUENCE:0", "");
           event_data = event_data.replace("RRULE:null", "");
-          event_data = event_data.trim();
+          event_data = event_data.replace("RRULE:", "");
         }
-
+        event_data = event_data.trim();
         update_caldav(index.etag, index.url, event_data, index.id);
       }
     }
@@ -3636,7 +3637,6 @@ let update_event = function (account_id) {
 ///////////
 
 let delete_event = function (etag, url, account_id, uid) {
-  console.log(etag, url, account_id, uid);
   if (etag) {
     delete_caldav(etag, url, account_id, status.selected_day_id);
   } else {

@@ -50,7 +50,14 @@ export let export_ical = function (filename, event_data) {
           key != "isCalDav" &&
           key != "id" &&
           key != "allDay" &&
-          key != "isCaldav"
+          key != "isCaldav" &&
+          key != "tzid" &&
+          key != "rrule_json" &&
+          key != "etag" &&
+          key != "url" &&
+          key != "id" &&
+          key != "dateStartUnix" &&
+          key != "dateEndUnix"
         ) {
           result += `${key}:${e[key]}` + "\r\n";
         }
@@ -61,9 +68,11 @@ export let export_ical = function (filename, event_data) {
     result += "END:VCALENDAR" + "\r\n";
 
     result = result.replace(/:;TZID/g, ";TZID");
-
     result = result.replace(/RRULE:null/g, "RRULE:");
+    //result = result.replace(/LAST-MODIFIED:null/g, "");
+    // result = result.replace(/(^[ \t]*\n)/gm, "");
 
+    //console.log(result);
 
     var file = new Blob([result], { type: "text/calendar" });
     var request = sdcard.addNamed(file, filename);
@@ -126,47 +135,40 @@ export let parse_ics = function (
   var comp = new ICAL.Component(jcalData);
   var vevent = comp.getAllSubcomponents("vevent");
   vevent.forEach(function (ite) {
-    let n = ite.getFirstPropertyValue("rrule");
-    let ds;
-    let dateStart, timeStart;
+    let n = "";
+    console.log(
+      "rrule ui post type" + typeof ite.getFirstPropertyValue("rrule")
+    );
+
+    console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
+
+    if (
+      typeof ite.getFirstPropertyValue("rrule") == "object" &&
+      ite.getFirstPropertyValue("rrule") != null
+    ) {
+      n = ite.getFirstPropertyValue("rrule");
+      console.log(n.freq);
+    }
+
+    let dateStart, timeStart, dateStartUnix;
     if (ite.getFirstPropertyValue("dtstart")) {
-      {
-        ds = new Date(ite.getFirstPropertyValue("dtstart"));
-      }
-
-      dateStart =
-        ds.getFullYear() +
-        "-" +
-        `0${ds.getMonth() + 1}`.slice(-2) +
-        "-" +
-        `0${ds.getDate()}`.slice(-2);
-
-      timeStart =
-        `0${ds.getHours()}`.slice(-2) +
-        ":" +
-        `0${ds.getMinutes()}`.slice(-2) +
-        ":" +
-        `0${ds.getSeconds()}`.slice(-2);
+      dateStart = dayjs(ite.getFirstPropertyValue("dtstart")).format(
+        "YYYY-MM-DD"
+      );
+      timeStart = dayjs(ite.getFirstPropertyValue("dtstart")).format(
+        "HH:mm:ss"
+      );
+      dateStartUnix =
+        new Date(ite.getFirstPropertyValue("dtstart")).getTime() / 1000;
     }
 
     //date end
-    let dateEnd, timeEnd;
+    let dateEnd, timeEnd, dateEndUnix;
     if (ite.getFirstPropertyValue("dtend")) {
-      let DTstart = new Date(ite.getFirstPropertyValue("dtend"));
-
-      dateEnd =
-        DTstart.getFullYear() +
-        "-" +
-        `0${DTstart.getMonth() + 1}`.slice(-2) +
-        "-" +
-        `0${DTstart.getDate()}`.slice(-2);
-
-      timeEnd =
-        `0${DTstart.getHours()}`.slice(-2) +
-        ":" +
-        `0${DTstart.getMinutes()}`.slice(-2) +
-        ":" +
-        `0${DTstart.getSeconds()}`.slice(-2);
+      dateEnd = dayjs(ite.getFirstPropertyValue("dtend")).format("YYYY-MM-DD");
+      timeEnd = dayjs(ite.getFirstPropertyValue("dtend")).format("HH:mm:ss");
+      dateEndUnix =
+        new Date(ite.getFirstPropertyValue("dtend")).getTime() / 1000;
     }
 
     //allDay event
@@ -181,6 +183,31 @@ export let parse_ics = function (
       }
     }
 
+    let lastmod = ite.getFirstPropertyValue("last-modified");
+
+    let dtstart = ite.getFirstPropertyValue("dtstart");
+    let dtend = ite.getFirstPropertyValue("dtend");
+
+    if (account_id == "local-id") {
+      dtstart =
+        ";TZID=" +
+        ite.getFirstPropertyValue("dtstart").timezone +
+        ":" +
+        ite.getFirstPropertyValue("dtstart").toICALString();
+
+      dtend =
+        ";TZID=" +
+        ite.getFirstPropertyValue("dtend").timezone +
+        ":" +
+        ite.getFirstPropertyValue("dtend").toICALString();
+
+      lastmod =
+        ";TZID=" +
+        ite.getFirstPropertyValue("last-modified").timezone +
+        ":" +
+        ite.getFirstPropertyValue("last-modified").toICALString();
+    }
+
     let imp = {
       BEGIN: "VEVENT",
       UID: ite.getFirstPropertyValue("uid"),
@@ -189,23 +216,25 @@ export let parse_ics = function (
       DESCRIPTION: ite.getFirstPropertyValue("description"),
       ATTACH: ite.getFirstPropertyValue("attach"),
       RRULE: ite.getFirstPropertyValue("rrule"),
-      "LAST-MODIFIED": ite.getFirstPropertyValue("last-modified"),
+      "LAST-MODIFIED": lastmod,
       CLASS: ite.getFirstPropertyValue("class"),
-      DTSTAMP: ite.getFirstPropertyValue("dtstamp"),
-      DTSTART: ite.getFirstPropertyValue("dtstart"),
-      DTEND: ite.getFirstPropertyValue("dtend"),
+      DTSTAMP: dtstart,
+      DTSTART: dtstart,
+      DTEND: dtend,
       END: "VEVENT",
-
+      tzid: ite.getFirstPropertyValue("dtstart").timezone,
       isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
       time_start: timeStart,
+      dateStartUnix: dateStartUnix,
       dateEnd: dateEnd,
       time_end: timeEnd,
+      dateEndUnix: dateEndUnix,
       alarm: "none",
-      rrule_: n ? n.freq : "",
-      rrule_json: n ? n.toJSON() : "",
+      rrule_: n.freq,
+      rrule_json: n,
 
       etag: etag,
       url: url,
