@@ -3369,7 +3369,6 @@ let store_event = function (db_id, cal_name) {
     event.END = "VALARM";
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
-  //todo: prepare ical data
   let dd =
     "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
     event.SUMMARY +
@@ -3397,7 +3396,6 @@ let store_event = function (db_id, cal_name) {
     } catch (e) {
       console.log(e);
     }
-    //events.push(event);
 
     let without_subscription = events.filter(
       (events) => events.id == "local-id"
@@ -3453,8 +3451,8 @@ let store_event = function (db_id, cal_name) {
 // ////////////
 // UPDATE EVENT
 // /////////
-
-let update_event = function (account_id) {
+//todo get/set db_id, cal_name,id
+let update_event = function (account_id, db_id) {
   let validation = true;
   if (document.getElementById("event-title").value == "") {
     toaster("Title can't be empty", 2000);
@@ -3467,170 +3465,182 @@ let update_event = function (account_id) {
       validation = false;
     }
   }
-  events.forEach(function (index) {
-    let a = new Date(document.getElementById("event-date").value).getTime();
-    let b = new Date(document.getElementById("event-date-end").value).getTime();
+  let start_time = "00:00:00";
+  if (document.getElementById("event-time-start").value != "") {
+    start_time = document.getElementById("event-time-start").value + ":00";
+  }
 
-    let multidayevent = false;
+  let end_time = "00:00:00";
+  if (document.getElementById("event-time-end").value != "") {
+    end_time = document.getElementById("event-time-end").value + ":00";
+  }
 
-    if (a != b) {
-      multidayevent = true;
+  let convert_dt_start =
+    document.getElementById("event-date").value + " " + start_time;
+
+  if (document.getElementById("event-date-end").value == "")
+    document.getElementById("event-date-end").value =
+      document.getElementById("event-date").value;
+
+  let convert_dt_end =
+    document.getElementById("event-date-end").value + " " + end_time;
+
+  // notification before event
+  let notification_time = document.getElementById(
+    "event-notification-time"
+  ).value;
+
+  let calc_notification;
+  if (notification_time != "none") {
+    calc_notification = new Date(convert_dt_start);
+    calc_notification.setMinutes(
+      calc_notification.getMinutes() - notification_time
+    );
+
+    notification_time = convert_ics_date(calc_notification.toISOString());
+  }
+
+  let allday = false;
+
+  let a = new Date(document.getElementById("event-date").value).getTime();
+  let b = new Date(document.getElementById("event-date-end").value).getTime();
+
+  if (a != b) {
+    allDay = true;
+  }
+
+  let rrule_convert = function (val) {
+    let p = val;
+    let r = "";
+
+    if (p == "none") {
+      return r;
+    }
+    if (p != "none") {
+      r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
+      return r;
+    }
+  };
+
+  if (validation == false) return false;
+  let event = {
+    UID: uid(32),
+    SUMMARY: document.getElementById("event-title").value,
+    LOCATION: document.getElementById("event-location").value,
+    DESCRIPTION: document.getElementById("event-description").value,
+    "LAST-MODIFIED":
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    CLASS: "PRIVATE",
+    DTSTAMP:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    DTSTART:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    DTEND:
+      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end),
+    RRULE:
+      document.getElementById("event-recur").value == "none"
+        ? ""
+        : rrule_convert(document.getElementById("event-recur").value),
+    rrule_:
+      document.getElementById("event-recur").value == ""
+        ? "none"
+        : document.getElementById("event-recur").value,
+    dateStart: document.getElementById("event-date").value,
+    dateEnd: document.getElementById("event-date-end").value,
+    time_start: document.getElementById("event-time-start").value,
+    time_end: document.getElementById("event-time-end").value,
+    alarm: document.getElementById("event-notification-time").value,
+    alarmTrigger: notification_time,
+    isSubscription: false,
+    isCaldav: db_id == "local-id" ? false : true,
+    ATTACH: blob,
+    id: db_id,
+    allDay: allday,
+  };
+
+  if (event.alarm != "none") {
+    event.BEGIN = "VALARM";
+    event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
+    event.ACTION = "AUDIO";
+    event.END = "VALARM";
+    add_alarm(calc_notification, event.SUMMARY, event.UID);
+  }
+  let dd =
+    "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
+    event.SUMMARY +
+    "\nUID:" +
+    event.UID +
+    "\nRRULE:" +
+    event.RRULE +
+    "\nLAST-MODIFIED" +
+    event["LAST-MODIFIED"] +
+    "\nDTSTART" +
+    event.DTSTART +
+    "\nDTEND" +
+    event.DTEND +
+    "\nDTSTAMP" +
+    event.DTSTAMP +
+    "\nLOCATION:" +
+    event.LOCATION +
+    "\nDESCRIPTION:" +
+    event.DESCRIPTION +
+    "\nEND:VEVENT\nEND:VCALENDAR";
+
+  if (db_id == "local-id") {
+    try {
+      parse_ics(dd, "", false, "", "", "local-id", false);
+    } catch (e) {
+      console.log(e);
     }
 
-    if (index.UID == status.selected_day_id) {
-      let start_time = "00:00:00";
-      if (document.getElementById("event-time-start").value != "") {
-        let n = document.getElementById("event-time-start").value;
+    let without_subscription = events.filter(
+      (events) => events.id == "local-id"
+    );
 
-        if (n.length == 5) {
-          start_time =
-            document.getElementById("event-time-start").value + ":00";
-        } else {
-          start_time =
-            document.getElementById("event-time-start").value + ":00";
-        }
-      }
-
-      let end_time = "00:00:00";
-      if (document.getElementById("event-time-end").value != "") {
-        let n = document.getElementById("event-time-end").value;
-
-        if (n.length == 5) {
-          end_time = document.getElementById("event-time-end").value + ":00";
-        } else {
-          end_time = document.getElementById("event-time-end").value + ":00";
-        }
-      }
-
-      let convert_dt_start =
-        document.getElementById("event-date").value + " " + start_time;
-
-      let convert_dt_end =
-        document.getElementById("event-date").value + " " + end_time;
-
-      // notification before event
-      let notification_time = document.getElementById(
-        "event-notification-time"
-      ).value;
-
-      let calc_notification = "";
-      if (notification_time != "none") {
-        calc_notification = new Date(convert_dt_start);
-        calc_notification.setMinutes(
-          calc_notification.getMinutes() - notification_time
-        );
-
-        notification_time = convert_ics_date(calc_notification.toISOString());
-      }
-
-      let rrule_convert = function (val) {
-        console.log("rrule" + val);
-        let p = val;
-        let r = "";
-        if (p == "none" || p == "") {
-          return r;
-        }
-        if (p != "none") {
-          r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
-        }
-        return r;
-      };
-
-      if (validation == false) return false;
-
-      //convert to unix ts
-      let dateStartUnix = new Date(
-        document.getElementById("event-date").value
-      ).getTime();
-      dateStartUnix = Math.floor(dateStartUnix / 1000);
-
-      let dateEndUnix = new Date(
-        document.getElementById("event-date-end").value
-      ).getTime();
-      dateEndUnix = Math.floor(dateEndUnix / 1000);
-
-      index.SUMMARY = document.getElementById("event-title").value;
-      index.LOCATION = document.getElementById("event-location").value;
-      index.DESCRIPTION = document.getElementById("event-description").value;
-      index.CLASS = "PRIVATE";
-      index.DTSTAMP =
-        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start);
-      index.DTSTART =
-        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start);
-      index.DTEND =
-        ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end);
-      index.RRULE = rrule_convert(document.getElementById("event-recur").value);
-      index.dateEnd = document.getElementById("event-date-end").value;
-      index.dateStart = document.getElementById("event-date").value;
-      index.time_start = document.getElementById("event-time-start").value;
-      index.time_end = document.getElementById("event-time-end").value;
-      index.dateStartUnix = dateStartUnix;
-      index.dateEndUnix = dateEndUnix;
-      index.rrule_ = document.getElementById("event-recur").value;
-      index.isSubscription = false;
-      index.isCaldav = account_id == "local-id" ? false : true;
-      index.multidayevent = multidayevent;
-      index.alarm = document.getElementById("event-notification-time").value;
-      index.alarmTrigger = notification_time;
-      if (blob != "") index.ATTACH = blob;
-
-      if (index.alarm != "none") {
-        remove_alarm(index.UID);
-        index.BEGIN = "VALARM";
-        index["TRIGGER;VALUE=DATE-TIME:"] = notification_time;
-        index.ACTION = "AUDIO";
-        index.END = "VALARM";
-        add_alarm(calc_notification, index.SUMMARY, index.UID);
-      }
-
-      if (account_id == "local-id") {
-        let without_subscription = events.filter(
-          (events) => events.id == "local-id"
-        );
-
-        localforage
-          .setItem("events", without_subscription)
-          .then(function () {
-            // clean form
-            side_toaster("<img src='assets/image/E25C.svg'", 2000);
-            m.route.set("/page_events");
-            export_ical("greg.ics", without_subscription);
-
-            clear_form();
-          })
-          .catch(function (err) {
-            side_toaster("no data to export", 2000);
-          });
-      } else {
-        let event_data =
-          "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
-          index.SUMMARY +
-          "\nUID:" +
-          index.UID +
-          "\nSEQUENCE:0\nRRULE:" +
-          index.RRULE +
-          "\nDTSTART" +
-          index.DTSTART +
-          "\nDTEND" +
-          index.DTEND +
-          "\nDTSTAMP" +
-          index.DTSTAMP +
-          "\nLOCATION:" +
-          index.LOCATION +
-          "\nDESCRIPTION:" +
-          index.DESCRIPTION +
-          "\nEND:VEVENT\nEND:VCALENDAR";
-        if (index.RRULE == null || index.RRULE == "") {
-          event_data = event_data.replace("SEQUENCE:0", "");
-          event_data = event_data.replace("RRULE:null", "");
-          event_data = event_data.replace("RRULE:", "");
-        }
-        event_data = event_data.trim();
-        update_caldav(index.etag, index.url, event_data, index.id);
-      }
+    localforage
+      .setItem("events", without_subscription)
+      .then(function () {
+        clear_form();
+        export_ical("greg.ics", without_subscription);
+        side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        setTimeout(function () {
+          m.route.set("/page_calendar");
+        }, 200);
+      })
+      .catch(function (err) {
+        console.log(err);
+        side_toaster("no data to export", 2000);
+      });
+  } else {
+    let event_data =
+      "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
+      index.SUMMARY +
+      "\nUID:" +
+      index.UID +
+      "\nSEQUENCE:0\nRRULE:" +
+      index.RRULE +
+      "\nDTSTART" +
+      index.DTSTART +
+      "\nDTEND" +
+      index.DTEND +
+      "\nDTSTAMP" +
+      index.DTSTAMP +
+      "\nLOCATION:" +
+      index.LOCATION +
+      "\nDESCRIPTION:" +
+      index.DESCRIPTION +
+      "\nEND:VEVENT\nEND:VCALENDAR";
+    if (index.RRULE == null || index.RRULE == "") {
+      event_data = event_data.replace("SEQUENCE:0", "");
+      event_data = event_data.replace("RRULE:null", "");
+      event_data = event_data.replace("RRULE:", "");
     }
-  });
+    event_data = event_data.trim();
+    update_caldav(index.etag, index.url, event_data, index.id);
+  }
 };
+
+
 
 //////////////
 //DELETE EVENT

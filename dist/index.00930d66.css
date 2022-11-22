@@ -3,17 +3,16 @@
   --color-two: yellow;
   --color-three: silver;
   --color-four: #beb9b9;
-  --color-five: rgba(214, 225, 228, .32);
-  --color-seven: rgba(101, 216, 24, .286);
-  --color-eight: rgba(47, 82, 196, .19);
+  --color-five: #d6e1e452;
+  --color-seven: #65d81849;
+  --color-eight: #2f52c430;
 }
 
 @font-face {
-  src: url("Roboto-Medium.91322885.ttf");
+  src: url("Roboto-Medium.18088f04.ttf");
 }
 
 *, :before, :after {
-  -moz-box-sizing: border-box;
   box-sizing: border-box;
   overflow-wrap: break-word;
   word-wrap: break-word;
@@ -73,7 +72,6 @@ button {
   min-height: 40px;
   background: #fff;
   border: 2px solid gray;
-  -moz-border-radius: 1px;
   border-radius: 1px;
   margin: 0 0 15px 5vw;
   padding: 5px;
@@ -93,12 +91,11 @@ button:focus {
 
 select {
   width: 90%;
-  -moz-appearance: none;
   appearance: none;
   color: #363636;
   width: 90%;
   text-align: center;
-  background: #fafafa url("E264.e4f33402.svg") 99% 80% no-repeat;
+  background: #fafafa url("E264.bce0b63c.svg") 99% 80% no-repeat;
   border: 0;
   border-bottom: 2px solid #3f3f3f;
   outline: 0;
@@ -118,7 +115,6 @@ input {
   width: 90%;
   height: 30px;
   border: 2px solid silver;
-  -moz-border-radius: 6px;
   border-radius: 6px;
   padding: 3px;
 }
@@ -145,7 +141,6 @@ label {
 .google-button {
   height: 40px;
   border: 0 solid gray;
-  -moz-border-radius: 0;
   border-radius: 0;
   outline: 0;
   position: relative;
@@ -317,20 +312,15 @@ div#popup {
 }
 
 div#popup div {
-  -moz-box-pack: center;
   justify-content: center;
-  -moz-box-align: center;
   align-items: center;
   display: flex;
 }
 
 div#popup div div {
   background: orange;
-  -moz-border-radius: 10px;
   border-radius: 10px;
-  -moz-box-pack: center;
   justify-content: center;
-  -moz-box-align: center;
   align-items: center;
   padding: 10px;
   display: flex;
@@ -433,35 +423,35 @@ div#calendar div#calendar-body div div.subscription {
 }
 
 div#calendar div#calendar-body div div div.moon-phase-0 {
-  background-image: url("moon1.e4268891.svg");
+  background-image: url("moon1.fc1afde6.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-1 {
-  background-image: url("moon2.ae40efa3.svg");
+  background-image: url("moon2.bb5a5e35.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-2 {
-  background-image: url("moon3.f830d829.svg");
+  background-image: url("moon3.3004b616.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-3 {
-  background-image: url("moon4.eae03906.svg");
+  background-image: url("moon4.3d8cf016.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-4 {
-  background-image: url("moon5.864e3993.svg");
+  background-image: url("moon5.36565dfe.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-5 {
-  background-image: url("moon6.7409cecf.svg");
+  background-image: url("moon6.a839ed96.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-6 {
-  background-image: url("moon7.be050850.svg");
+  background-image: url("moon7.27daf613.svg");
 }
 
 div#calendar div#calendar-body div div div.moon-phase-7 {
-  background-image: url("moon8.3ac887be.svg");
+  background-image: url("moon8.1692336e.svg");
 }
 
 div#calendar div#calendar-body div div div[class^="moon-phase-"] {
@@ -620,7 +610,6 @@ div#event-slider-indicator div div {
   height: 5px;
   width: 5px;
   background: #797070;
-  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
@@ -629,7 +618,6 @@ div#event-slider-indicator div div.active {
   height: 10px;
   width: 10px;
   background: #000;
-  -moz-border-radius: 50%;
   border-radius: 50%;
   margin: 0 5px 0 0;
 }
