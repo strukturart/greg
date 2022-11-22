@@ -544,7 +544,6 @@ let delete_caldav = function (etag, url, account_id, uid) {
 
 let update_caldav = function (etag, url, data, account_id) {
   popup("Please wait...", "show");
-  console.log(etag, url, account_id);
 
   accounts.forEach(function (p) {
     if (p.id == account_id) {
@@ -970,7 +969,7 @@ let event_check = function (date) {
       }
 
       if (d === "none" || d === "" || d === undefined || d === "DAILY") {
-        if (a === c || (a < c && b > c)) {
+        if (a === c || (a <= c && b >= c)) {
           feedback.event = true;
 
           if (events[t].allDay && events[t].dateEnd == date) {
@@ -1015,7 +1014,6 @@ let rrule_check = function (date) {
 
       if (typeof e !== "undefined" && e !== undefined && e != null) {
         //recurrences
-        //console.log(events[t].rrule_isFinite);
 
         if (events[t].rrule_json != null) {
           if (events[t].rrule_json.until == null) {
@@ -1135,7 +1133,7 @@ let event_slider = function (date) {
     let d = events[i].rrule_;
 
     if (d === "none" || d === "" || d === undefined || d === null) {
-      if (a === c || (a < c && b > c)) {
+      if (a === c || (a <= c && b >= c)) {
         slider.push(events[i]);
         k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
       }
@@ -2666,13 +2664,10 @@ var page_edit_event = {
               "select",
               {
                 id: "event-recur",
-                value:
-                  update_event_date.rrule_ == ""
-                    ? "none"
-                    : update_event_date.rrule_,
+                value: update_event_date.rrule_,
                 class: "select-box",
                 oncreate: function () {
-                  console.log("rrule ui get" + update_event_date.rrule_);
+                  console.log("rrule ui get" + update_event_date);
                 },
               },
               [
@@ -2715,7 +2710,13 @@ var page_edit_event = {
               focus_after_selection();
             },
             onclick: function () {
-              update_event(update_event_date.id);
+              update_event(
+                update_event_date.etag,
+                update_event_date.url,
+                update_event_date.id,
+                update_event_date.id,
+                update_event_date.UID
+              );
             },
           },
           "update"
@@ -3451,8 +3452,8 @@ let store_event = function (db_id, cal_name) {
 // ////////////
 // UPDATE EVENT
 // /////////
-//todo get/set db_id, cal_name,id
-let update_event = function (account_id, db_id) {
+let update_event = function (etag, url, id, db_id, uid) {
+  console.log(etag, url, id, db_id, uid);
   let validation = true;
   if (document.getElementById("event-title").value == "") {
     toaster("Title can't be empty", 2000);
@@ -3524,7 +3525,7 @@ let update_event = function (account_id, db_id) {
 
   if (validation == false) return false;
   let event = {
-    UID: uid(32),
+    UID: uid,
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
@@ -3586,13 +3587,16 @@ let update_event = function (account_id, db_id) {
     event.DESCRIPTION +
     "\nEND:VEVENT\nEND:VCALENDAR";
 
-  if (db_id == "local-id") {
-    try {
-      parse_ics(dd, "", false, "", "", "local-id", false);
-    } catch (e) {
-      console.log(e);
-    }
+  events = events.filter((person) => person.UID != uid);
+  //remove orginal event
+  //to replace with new content
+  try {
+    parse_ics(dd, "", false, "", "", "local-id", false);
+  } catch (e) {
+    console.log(e);
+  }
 
+  if (db_id == "local-id") {
     let without_subscription = events.filter(
       (events) => events.id == "local-id"
     );
@@ -3614,33 +3618,31 @@ let update_event = function (account_id, db_id) {
   } else {
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
-      index.SUMMARY +
+      event.SUMMARY +
       "\nUID:" +
-      index.UID +
+      event.UID +
       "\nSEQUENCE:0\nRRULE:" +
-      index.RRULE +
+      event.RRULE +
       "\nDTSTART" +
-      index.DTSTART +
+      event.DTSTART +
       "\nDTEND" +
-      index.DTEND +
+      event.DTEND +
       "\nDTSTAMP" +
-      index.DTSTAMP +
+      event.DTSTAMP +
       "\nLOCATION:" +
-      index.LOCATION +
+      event.LOCATION +
       "\nDESCRIPTION:" +
-      index.DESCRIPTION +
+      event.DESCRIPTION +
       "\nEND:VEVENT\nEND:VCALENDAR";
-    if (index.RRULE == null || index.RRULE == "") {
+    if (event.RRULE == null || event.RRULE == "") {
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
       event_data = event_data.replace("RRULE:", "");
     }
     event_data = event_data.trim();
-    update_caldav(index.etag, index.url, event_data, index.id);
+    update_caldav(etag, url, event_data, id);
   }
 };
-
-
 
 //////////////
 //DELETE EVENT
@@ -3911,6 +3913,7 @@ function shortpress_action(param) {
         }
 
         get_event_date();
+        console.log(get_event_date);
         if (document.activeElement.classList.contains("events"))
           m.route.set("/page_edit_event");
 

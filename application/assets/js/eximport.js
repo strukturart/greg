@@ -136,18 +136,22 @@ export let parse_ics = function (
   var vevent = comp.getAllSubcomponents("vevent");
   vevent.forEach(function (ite) {
     let n = "";
-    console.log(
-      "rrule ui post type" + typeof ite.getFirstPropertyValue("rrule")
-    );
 
-    console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
-
+    let rrule_freq = "none";
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
-      ite.getFirstPropertyValue("rrule") != null
+      ite.getFirstPropertyValue("rrule") != null &&
+      ite.getFirstPropertyValue("rrule").freq != null
     ) {
       n = ite.getFirstPropertyValue("rrule");
       console.log(n.freq);
+
+      console.log(
+        "rrule ui post type" + typeof ite.getFirstPropertyValue("rrule")
+      );
+
+      console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
+      rrule_freq = n.freq;
     }
 
     let dateStart, timeStart, dateStartUnix;
@@ -233,7 +237,7 @@ export let parse_ics = function (
       time_end: timeEnd,
       dateEndUnix: dateEndUnix,
       alarm: "none",
-      rrule_: n.freq,
+      rrule_: rrule_freq,
       rrule_json: n,
 
       etag: etag,
