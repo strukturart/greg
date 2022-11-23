@@ -1,6 +1,7 @@
 import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
+import { sort_array } from "./helper.js";
 
 import localforage from "localforage";
 import { events } from "../../app.js";
@@ -144,13 +145,6 @@ export let parse_ics = function (
       ite.getFirstPropertyValue("rrule").freq != null
     ) {
       n = ite.getFirstPropertyValue("rrule");
-      console.log(n.freq);
-
-      console.log(
-        "rrule ui post type" + typeof ite.getFirstPropertyValue("rrule")
-      );
-
-      console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
       rrule_freq = n.freq;
     }
 
@@ -247,6 +241,7 @@ export let parse_ics = function (
 
     events.push(imp);
   });
+  sort_array(events, "dateStartUnix", "date");
 };
 
 /////////////

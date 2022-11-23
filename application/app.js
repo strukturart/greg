@@ -43,8 +43,6 @@ let oauth_callback = "";
 
 localforage.setDriver(localforage.INDEXEDDB);
 
-let callback_caldata_loaded = function () {};
-
 let calendar_names = [
   {
     name: "local",
@@ -147,15 +145,7 @@ let load_caldav = function () {
             });
           //parse data
           objects.forEach(function (i) {
-            parse_ics(
-              i.data,
-              callback_caldata_loaded,
-              false,
-              i.etag,
-              i.url,
-              item.id,
-              true
-            );
+            parse_ics(i.data, "", false, i.etag, i.url, item.id, true);
           });
           document.getElementById("icon-loading").style.visibility = "hidden";
           style_calendar_cell();
@@ -656,15 +646,7 @@ let load_cached_caldav = function () {
           }
           w.forEach((b) => {
             b.objects.forEach((m) => {
-              parse_ics(
-                m.data,
-                callback_caldata_loaded,
-                false,
-                m.etag,
-                m.url,
-                item.id,
-                true
-              );
+              parse_ics(m.data, "", false, m.etag, m.url, item.id, true);
             });
           });
         })
@@ -673,7 +655,6 @@ let load_cached_caldav = function () {
         });
     } catch (e) {}
   });
-  //sort_array(events, "dateStartUnix", "date");
 };
 
 let load_subscriptions = function () {
@@ -904,7 +885,6 @@ let find_closest_date = function (search_term) {
   let t = 0;
 
   let f = function () {
-    console.log("result" + t);
     document
       .querySelectorAll('div#events-wrapper article[data-id="' + t + '"]')[0]
       .focus();
@@ -1249,8 +1229,8 @@ let event_slider = function (date) {
 ////
 
 let jump_to_today = function () {
-  let currentMonth = today.getMonth();
-  let currentYear = today.getFullYear();
+  currentMonth = today.getMonth();
+  currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
 
   status.selected_day = document.activeElement.getAttribute("data-date");
@@ -1439,7 +1419,10 @@ let focus_after_selection = function () {
     });
   });
 };
+
+/*--------------*/
 //autocomplete locations
+/*--------------*/
 
 let search = function (e) {
   if (e == "close") {
@@ -1614,14 +1597,12 @@ var page_calendar = {
 };
 
 var page_events = {
-  view: function (vnode) {
+  view: function () {
     return m(
       "div",
       {
         id: "events-wrapper",
-        oninit: function () {
-          sort_array(events, "dateStartUnix", "date");
-        },
+        oninit: function () {},
 
         oncreate: function () {
           find_closest_date();
@@ -1811,22 +1792,12 @@ export let page_options = {
           ),
         ]
       ),
+
       m(
         "button",
         {
           class: "item",
           tabindex: "5",
-          onclick: function () {
-            backup_events();
-          },
-        },
-        "Backup events"
-      ),
-      m(
-        "button",
-        {
-          class: "item",
-          tabindex: "6",
           onclick: function () {
             m.route.set("/page_list_files");
           },
@@ -1839,7 +1810,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "7",
+          tabindex: "6",
           onclick: function () {
             m.route.set("/page_subscriptions");
           },
@@ -1856,7 +1827,7 @@ export let page_options = {
             "data-id": item.id,
             "data-action": "delete-subscription",
 
-            tabindex: index + 7,
+            tabindex: index + 6,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1872,7 +1843,7 @@ export let page_options = {
         "button",
         {
           class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 8,
+          tabindex: subscriptions.length + 7,
           onclick: function () {
             m.route.set("/page_accounts");
           },
@@ -1898,7 +1869,7 @@ export let page_options = {
         "button",
         {
           class: "item google-button",
-          tabindex: subscriptions.length + 9,
+          tabindex: subscriptions.length + 8,
           onclick: function () {
             oauth_callback = setInterval(function () {
               if (localStorage.getItem("oauth_callback") == "true") {
@@ -1979,7 +1950,7 @@ export let page_options = {
 
       m("div", {
         id: "KaiOsAds-Wrapper",
-        tabindex: subscriptions.length + accounts.length + 9,
+        tabindex: subscriptions.length + accounts.length + 8,
         class: "flex justify-content-spacearound",
         oninit: function () {
           if (settings.ads) {
