@@ -14675,8 +14675,6 @@ function $9f0e935a15ef5a93$export$69e63ab66e4cb4c7(year, month, day) {
 
 
 
-var $aS0o5 = parcelRequire("aS0o5");
-
 
 
 
@@ -22209,9 +22207,6 @@ var $78c31c2a3de015ee$export$74efaa7af40e4235 = function parse_ics(data, callbac
         var rrule_freq = "none";
         if (typeof ite.getFirstPropertyValue("rrule") == "object" && ite.getFirstPropertyValue("rrule") != null && ite.getFirstPropertyValue("rrule").freq != null) {
             n = ite.getFirstPropertyValue("rrule");
-            console.log(n.freq);
-            console.log("rrule ui post type" + (0, $aS0o5.default)(ite.getFirstPropertyValue("rrule")));
-            console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
             rrule_freq = n.freq;
         }
         var dateStart, timeStart, dateStartUnix;
@@ -43708,6 +43703,10 @@ var $5535d7a9ff238efe$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports)))("button", {
                 class: "item",
                 tabindex: "5",
+                oncreate: function oncreate() {
+                    $5535d7a9ff238efe$var$file_list = [];
+                    (0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", $5535d7a9ff238efe$var$cb);
+                },
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($fa8308bd2c5b6d7e$exports))).route.set("/page_list_files");
                 }
@@ -44555,7 +44554,6 @@ var $5535d7a9ff238efe$var$file_list = [];
 var $5535d7a9ff238efe$var$cb = function cb(result) {
     $5535d7a9ff238efe$var$file_list.push(result);
 };
-(0, $162001cafa2b40fd$export$99c802f9c0aea792)("ics", $5535d7a9ff238efe$var$cb);
 var $5535d7a9ff238efe$var$callback_getfile = function callback_getfile(result) {
     try {
         (0, $78c31c2a3de015ee$export$74efaa7af40e4235)(result, "", false, "", "", "local-id", false);

@@ -1798,6 +1798,10 @@ export let page_options = {
         {
           class: "item",
           tabindex: "5",
+          oncreate: function () {
+            file_list = [];
+            list_files("ics", cb);
+          },
           onclick: function () {
             m.route.set("/page_list_files");
           },
@@ -2722,8 +2726,6 @@ let cb = function (result) {
   file_list.push(result);
 };
 
-list_files("ics", cb);
-
 let callback_getfile = function (result) {
   try {
     parse_ics(result, "", false, "", "", "local-id", false);
@@ -2756,7 +2758,6 @@ var page_list_files = {
         oninit: function () {
           setTimeout(function () {
             if (!document.body.classList.contains("item")) {
-              // m.route.set("/page_options");
             }
           }, 1000);
         },
@@ -3179,6 +3180,21 @@ let add_alarm = function (date, message_text, id) {
       console.log("An error occurred: " + this.error.name);
     };
   }
+
+  // KaiOs  3.xx
+
+  if ("b2g.alarmManager" in navigator) {
+    options = {
+      "date": data,
+      "data": { "note": message_text },
+      "ignoreTimezone": true,
+    };
+
+    navigator.b2g.alarmManager.add(options).then(
+      (id) => console.log("add id: " + id),
+      (err) => console.log("add err: " + err)
+    );
+  }
 };
 let remove_alarm = function (id) {
   // KaiOs  2.xx
@@ -3190,6 +3206,35 @@ let remove_alarm = function (id) {
       this.result.forEach(function (alarm) {
         if (alarm.data.event_id == id) {
           let req = navigator.mozAlarms.remove(alarm.id);
+
+          req.onsuccess = function () {
+            console.log("removed");
+          };
+
+          req.onerror = function () {
+            console.log("An error occurred: " + this.error.name);
+          };
+        } else {
+          console.log("no alarm founded");
+        }
+      });
+    };
+
+    request.onerror = function () {
+      console.log("An error occurred:", this.error.name);
+    };
+  }
+  // KaiOs  3.xx
+
+  if ("b2g.alarmManager" in navigator) {
+    let request = navigator.b2g.alarmManager.getAll();
+
+    request.onsuccess = function () {
+      this.result.forEach(function (alarm) {
+        console.log(JSON.stringify(alarm));
+
+        if (alarm.data.event_id == id) {
+          let req = navigator.b2g.alarmManager.remove(alarm.id);
 
           req.onsuccess = function () {
             console.log("removed");

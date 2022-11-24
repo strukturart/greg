@@ -2233,12 +2233,14 @@ function $b17776f098274076$export$e2a22331486dcca0(len) {
 }
 
 
-"use strict";
-(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).INDEXEDDB);
-var $5a690edfed81b18a$var$google_cred = {
+var $385d0aec979ec81d$export$1f48543aacb96c1e = {
     clientId: "762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com",
     clientSecret: "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"
 };
+
+
+"use strict";
+(0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).setDriver((0, (/*@__PURE__*/$parcel$interopDefault($9fbe31c6ff058869$exports))).INDEXEDDB);
 var $5a690edfed81b18a$var$authorizationCode = "";
 var $5a690edfed81b18a$var$get_token = function get_token() {
     var code = window.location.href;
@@ -2253,8 +2255,8 @@ var $5a690edfed81b18a$var$get_token = function get_token() {
     urlencoded.append("code", b[0]);
     urlencoded.append("grant_type", "authorization_code");
     urlencoded.append("redirect_uri", "https://greg.strukturart.com/redirect.html");
-    urlencoded.append("client_id", $5a690edfed81b18a$var$google_cred.clientId);
-    urlencoded.append("client_secret", $5a690edfed81b18a$var$google_cred.clientSecret);
+    urlencoded.append("client_id", (0, $385d0aec979ec81d$export$1f48543aacb96c1e).clientId);
+    urlencoded.append("client_secret", (0, $385d0aec979ec81d$export$1f48543aacb96c1e).clientSecret);
     var requestOptions = {
         method: "POST",
         headers: myHeaders,

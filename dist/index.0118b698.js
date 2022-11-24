@@ -14674,8 +14674,6 @@ function $4e22b52b7ebae756$export$69e63ab66e4cb4c7(year, month, day) {
 
 
 
-var $dgdNy = parcelRequire("dgdNy");
-
 
 
 
@@ -22208,9 +22206,6 @@ var $1592f8b2f8ebd4e4$export$74efaa7af40e4235 = function parse_ics(data, callbac
         var rrule_freq = "none";
         if (typeof ite.getFirstPropertyValue("rrule") == "object" && ite.getFirstPropertyValue("rrule") != null && ite.getFirstPropertyValue("rrule").freq != null) {
             n = ite.getFirstPropertyValue("rrule");
-            console.log(n.freq);
-            console.log("rrule ui post type" + (0, $dgdNy.default)(ite.getFirstPropertyValue("rrule")));
-            console.log("rrule ui post" + ite.getFirstPropertyValue("rrule"));
             rrule_freq = n.freq;
         }
         var dateStart, timeStart, dateStartUnix;
@@ -43707,6 +43702,10 @@ var $3e4edb8379ebf8a3$export$5ac699992561c201 = {
             (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports)))("button", {
                 "class": "item",
                 tabindex: "5",
+                oncreate: function oncreate() {
+                    $3e4edb8379ebf8a3$var$file_list = [];
+                    (0, $6d3f4b507512327e$export$99c802f9c0aea792)("ics", $3e4edb8379ebf8a3$var$cb);
+                },
                 onclick: function onclick() {
                     (0, (/*@__PURE__*/$parcel$interopDefault($5648d4b0c5d9d32d$exports))).route.set("/page_list_files");
                 }
@@ -44554,7 +44553,6 @@ var $3e4edb8379ebf8a3$var$file_list = [];
 var $3e4edb8379ebf8a3$var$cb = function cb(result) {
     $3e4edb8379ebf8a3$var$file_list.push(result);
 };
-(0, $6d3f4b507512327e$export$99c802f9c0aea792)("ics", $3e4edb8379ebf8a3$var$cb);
 var $3e4edb8379ebf8a3$var$callback_getfile = function callback_getfile(result) {
     try {
         (0, $1592f8b2f8ebd4e4$export$74efaa7af40e4235)(result, "", false, "", "", "local-id", false);
