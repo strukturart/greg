@@ -6,34 +6,30 @@ import { toaster } from "./assets/js/helper.js";
 import { validate } from "./assets/js/helper.js";
 import { pick_image } from "./assets/js/helper.js";
 import { get_file } from "./assets/js/helper.js";
-
 import { bottom_bar } from "./assets/js/helper.js";
 import { popup } from "./assets/js/helper.js";
 import { getMoonPhase } from "./assets/js/getMoonPhase.js";
 import { fetch_ics } from "./assets/js/eximport.js";
 import { export_ical } from "./assets/js/eximport.js";
 import { parse_ics } from "./assets/js/eximport.js";
-import { loadICS } from "./assets/js/eximport.js";
 import { start_scan } from "./assets/js/scan.js";
 import { stop_scan } from "./assets/js/scan.js";
 import m from "mithril";
 import { DAVClient } from "./assets/js/tsdav.js";
 import "url-search-params-polyfill";
 import { list_files } from "./assets/js/helper.js";
-
-import { createCalendarObject } from "./assets/js/tsdav.js";
-import { propfind } from "./assets/js/tsdav.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
 import { get_time } from "./assets/js/helper.js";
 import { uid } from "uid";
-import { captureRejectionSymbol } from "events";
 import { google_cred } from "./assets/js/google_cred.js";
 import dayjsPluginUTC from "dayjs-plugin-utc";
 
 const dayjs = require("dayjs");
 const moment = require("moment-timezone");
-
 dayjs.extend(dayjsPluginUTC);
+
+const google_oauth_url =
+  "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
 
 export let events = [];
 export let accounts = [];
@@ -68,7 +64,7 @@ let style_calendar_cell = function () {
 
 let load_caldav = function () {
   accounts.forEach(function (item) {
-    const client = "";
+    let client = "";
     if (item.type == "oauth") {
       client = new DAVClient({
         serverUrl: item.server_url,
@@ -117,6 +113,7 @@ let load_caldav = function () {
 
       try {
         document.getElementById("icon-loading").style.visibility = "visible";
+
         const calendars = await client.fetchCalendars();
         let k = [];
 
@@ -292,7 +289,6 @@ export let sync_caldav = function (callback) {
       try {
         //set calendars names
         const calendars = await client.fetchCalendars();
-
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
             calendar: calendars[i],
@@ -418,7 +414,16 @@ let create_caldav = function (
                   console.log(e);
                 }
 
-                events.push(event);
+                parse_ics(
+                  event_data,
+                  "",
+                  false,
+                  event.etag,
+                  event.url,
+                  event.id,
+                  true
+                );
+
                 popup("", "close");
                 cache_caldav();
 
@@ -874,14 +879,14 @@ getManifest(manifest);
 // finde closest event to selected date in list view
 // ////////
 
-let find_closest_date = function (search_term) {
+let find_closest_date = function () {
   let search = dayjs(status.selected_day).unix();
 
-  if (events == "") {
+  if (events.length == 0) {
     document.getElementById("events-wrapper").innerHTML =
       "you haven't made any calendar entries yet";
+    return false;
   }
-  if (events == "") return false;
   let t = 0;
 
   let f = function () {
@@ -901,8 +906,10 @@ let find_closest_date = function (search_term) {
   //smaller or first
   let gg = function () {
     try {
-      let m = events.find((event) => dayjs(event.DTSTAMP).unix() < search);
-      t = m.UID;
+      let m = events.findIndex((event) => dayjs(event.DTSTAMP).unix() < search);
+      t = events[m].UID;
+      console.log(m);
+
       f();
     } catch (e) {
       t = events[0].UID;
@@ -912,8 +919,11 @@ let find_closest_date = function (search_term) {
 
   //equal
   try {
-    let m = events.find((event) => dayjs(event.dateStart).unix() === search);
-    t = m.UID;
+    let m = events.findIndex(
+      (event) => dayjs(event.dateStart).unix() === search
+    );
+    t = events[m].UID;
+    console.log(m);
     f();
   } catch (e) {
     gg();
@@ -1595,7 +1605,6 @@ var page_calendar = {
       clear_form();
     }, 500),
 };
-
 var page_events = {
   view: function () {
     return m(
@@ -1632,17 +1641,9 @@ var page_events = {
               class: "item events " + u,
               tabindex: index,
               "data-id": item.UID,
-              "data-date": item.dateStart,
-              "data-time-start": item.time_start,
-              "data-time-end": item.time_end,
-              "data-date-end": item.dateEnd,
-              "data-rrule": item.rrule_,
-              "data-all-day": item.allDay ? "true" : "false",
-              "data-alarm": item.alarm,
             },
             [
               m("div", { class: "icons-bar" }, [
-                m("img", { class: "bell", src: "assets/image/bell.svg" }),
                 m("div", { class: "date" }, de),
                 m(
                   "div",
@@ -1902,7 +1903,7 @@ export let page_options = {
                 }, 5000);
               }
             }, 1000);
-            window.open(google_cred.url);
+            window.open(google_oauth_url);
           },
         },
         [
@@ -1913,7 +1914,7 @@ export let page_options = {
             },
             [
               m("img", {
-                src: "assets/image/google_button.svg",
+                src: "assets/image/google_button.png",
               }),
               m("span", "Sign in with Google"),
             ]
@@ -2351,7 +2352,10 @@ var page_add_event = {
               type: "date",
               id: "event-date",
               class: "select-box",
-              value: status.selected_day,
+
+              oncreate: function ({ dom }) {
+                dom.value = status.selected_day;
+              },
             }),
           ]
         ),
@@ -2373,7 +2377,9 @@ var page_add_event = {
             id: "event-time-start",
             class: "select-box",
 
-            value: dayjs().format("HH:mm"),
+            oncreate: function ({ dom }) {
+              dom.value = dayjs().format("HH:mm");
+            },
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
@@ -2383,7 +2389,10 @@ var page_add_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
-            value: dayjs().add(1, "hour").format("HH:mm"),
+
+            oncreate: function ({ dom }) {
+              dom.value = dayjs().add(1, "hour").format("HH:mm");
+            },
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -2549,7 +2558,10 @@ var page_edit_event = {
             type: "date",
             id: "event-date",
             class: "select-box",
-            value: update_event_date.dateStart,
+
+            oncreate: function ({ dom }) {
+              dom.value = update_event_date.dateStart;
+            },
           }),
         ]),
 
@@ -2561,7 +2573,9 @@ var page_edit_event = {
             id: "event-date-end",
             class: "select-box",
 
-            value: update_event_date.dateEnd,
+            oncreate: function ({ dom }) {
+              dom.value = update_event_date.dateEnd;
+            },
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
@@ -3160,6 +3174,30 @@ let nav = function (move) {
     }
   }
 };
+
+if ("b2g.alarmManager" in navigator) {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register(new URL("sw.js", import.meta.url), { type: "module" })
+      .then((registration) => {
+        registration.systemMessageManager.subscribe("alarm").then(
+          (rv) => {
+            console.log(
+              'Successfully subscribe system messages of name "alarm".'
+            );
+          },
+          (error) => {
+            console.log("Fail to subscribe system message, error: " + error);
+          }
+        );
+      });
+  }
+
+  self.onsystemmessage = (e) => {
+    console.log("receive systemmessage event on sw.js!");
+    console.log(e.data.json()); // The alarm object
+  };
+}
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
@@ -3897,6 +3935,7 @@ function shortpress_action(param) {
 
     case "SoftRight":
     case "Alt":
+    case "5":
       if (m.route.get() == "/page_calendar") {
         m.route.set("/page_options");
         return true;
@@ -3919,6 +3958,7 @@ function shortpress_action(param) {
 
     case "SoftLeft":
     case "Control":
+    case "6":
       if (m.route.get() == "/page_event_templates") {
         delete_template(document.activeElement.getAttribute("data-id"));
       }
@@ -3929,7 +3969,7 @@ function shortpress_action(param) {
         }
 
         get_event_date();
-        console.log(get_event_date);
+
         if (document.activeElement.classList.contains("events"))
           m.route.set("/page_edit_event");
 

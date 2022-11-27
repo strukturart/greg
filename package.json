@@ -49,6 +49,7 @@
     "url": "^0.11.0"
   },
   "dependencies": {
+    "@parcel/service-worker": "^2.8.0",
     "as": "^0.4.1",
     "assets": "^3.0.1",
     "dayjs": "^1.11.6",

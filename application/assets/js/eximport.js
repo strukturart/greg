@@ -5,7 +5,6 @@ import { sort_array } from "./helper.js";
 
 import localforage from "localforage";
 import { events } from "../../app.js";
-import { settings } from "../../app.js";
 
 import ICAL from "ical.js";
 
@@ -20,8 +19,6 @@ export let export_ical = function (filename, event_data) {
   var request_del = sdcard.delete(filename);
   request_del.onsuccess = function () {};
   setTimeout(function () {
-    // convert
-    let data = event_data;
     let result = "";
 
     result += "BEGIN:VCALENDAR" + "\r\n";
@@ -29,10 +26,15 @@ export let export_ical = function (filename, event_data) {
     result += "PRODID:GREG" + "\r\n";
     result += "METHOD:PUBLISHED" + "\r\n";
 
-    data.forEach((e) => {
+    event_data.forEach((e, i) => {
       let index = -1;
       for (let key in e) {
         index++;
+
+        //clean data
+        if (e[key] == null || typeof e[key] == "object")
+          event_data.splice(i, 1);
+
         if (index == 0) result += "BEGIN:VEVENT" + "\r\n";
 
         if (
@@ -69,11 +71,9 @@ export let export_ical = function (filename, event_data) {
     result += "END:VCALENDAR" + "\r\n";
 
     result = result.replace(/:;TZID/g, ";TZID");
-    result = result.replace(/RRULE:null/g, "RRULE:");
-    //result = result.replace(/LAST-MODIFIED:null/g, "");
-    // result = result.replace(/(^[ \t]*\n)/gm, "");
-
-    //console.log(result);
+    //remove empty lines
+    let regex = /^\s*$(?:\r\n?|\n)/gm;
+    result = result.replace(regex, "");
 
     var file = new Blob([result], { type: "text/calendar" });
     var request = sdcard.addNamed(file, filename);

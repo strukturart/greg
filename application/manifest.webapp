@@ -55,7 +55,7 @@
 
 
  "serviceworker": {
-      "script_url": "service-worker.js"
+      "script_url": "sw.js"
     },
 
 

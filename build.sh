@@ -11,7 +11,7 @@ mkdir ./build
 
 
 
-npm run  build --no-source-maps --no-optimize  ./ application/index.html 
+npm run  build --no-source-maps --no-optimize --public-url ./ application/index.html 
 
 cp -r ./application/assets/icons ./dist/assets/icons
 cp -r ./application/assets/image ./dist/assets/image

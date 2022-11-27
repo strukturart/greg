@@ -7,4 +7,4 @@ cp -r ./application/assets/ ./dist/
 cp ./application/oauth.html ./dist/
 cp ./application/oauth.js ./dist/
 
-parcel  --no-source-maps  --no-cache ./application/index.html
+parcel  --no-source-maps  --no-cache  ./application/index.html
