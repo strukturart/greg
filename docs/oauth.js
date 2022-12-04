@@ -2,14 +2,14 @@
 
 import localforage from "localforage";
 import { uid } from "uid";
-import { google_cred } from "./google_cred.js";
+import { google_cred } from "./assets/js/google_cred.js";
 localforage.setDriver(localforage.INDEXEDDB);
 
 let authorizationCode = "";
 
 let get_token = function () {
   let code = window.location.href;
-  console.log(code);
+  
   let r = code.split("&code=");
   let b = r[1].split("&");
 

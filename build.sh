@@ -37,6 +37,9 @@ rm ../build/greg.zip
 zip -r ../build/greg.zip ./*
 
 
+
+
+
 #create bHaCkers zip
 rm ../build/greg-omnisd.zip
 zip -r ../build/application.zip ./*
@@ -52,7 +55,14 @@ rm -fr ../greg-omnisd
 rm ../application.zip
 
 
-#github page
+#create KaiOS 3.0 app zip
+
+#rm ../build/greg-kaios3.zip
+cd ../../
+cd dist/
+rm manifest.webapp
+readlink -f .
+zip -r ../build/greg-kaios3.zip ./*
 
 exit
 

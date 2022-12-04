@@ -1,23 +1,24 @@
 {
   "name": "greg",
+  "id": "greg",
   "version": "0.0.9",
   "description": "greg",
   "lang": "en-US",
   "start_url": "/index.html",
   "icons": [
     {
-      "src": "/icons/icon-56-56.png",
+      "src": "/assets/icons/icon-56-56.png",
       "type": "image/png",
       "sizes": "56x56"
     },
     {
-      "src": "/icons/icon-112-112.png",
+      "src": "/assets/  icons/icon-112-112.png",
       "type": "image/png",
       "sizes": "112x112"
     }
   ],
   "b2g_features": {
-    "version": "0.0.1",
+    "version": "0.0.9",
     "id": "greg",
     "categories": ["utilities"],
     "type": "privileged",
@@ -38,12 +39,21 @@
       }
     ],
 
-    "redirects": [
-      {
-        "from": "https://greg.strukturart.com/redirect.html",
-        "to": "/oauth.html"
+    "serviceworker": {
+      "script_url": "sw.js"
+    },
+
+    "activities": {
+      "kaiteCallback": {
+        "filters": {
+          "code": {
+            "required": true
+          }
+        },
+        "returnValue": true
       }
-    ],
+    },
+
     "permissions": {
       "desktop-notification": {
         "description": "Needed to fire system notifications"
