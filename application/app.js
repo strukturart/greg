@@ -29,7 +29,7 @@ const moment = require("moment-timezone");
 dayjs.extend(dayjsPluginUTC);
 
 const google_oauth_url =
-  "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
+  "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar &redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
 
 export let events = [];
 export let accounts = [];
@@ -3175,29 +3175,13 @@ let nav = function (move) {
   }
 };
 
-if ("b2g.alarmManager" in navigator) {
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker
-      .register(new URL("sw.js", import.meta.url), { type: "module" })
-      .then((registration) => {
-        registration.systemMessageManager.subscribe("alarm").then(
-          (rv) => {
-            console.log(
-              'Successfully subscribe system messages of name "alarm".'
-            );
-          },
-          (error) => {
-            console.log("Fail to subscribe system message, error: " + error);
-          }
-        );
-      });
-  }
-
-  self.onsystemmessage = (e) => {
-    console.log("receive systemmessage event on sw.js!");
-    console.log(e.data.json()); // The alarm object
-  };
+//if ("b2g.alarmManager" in navigator) {
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register(new URL("sw.js", import.meta.url), { type: "module" })
+    .then((registration) => {});
 }
+//}
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
@@ -3229,8 +3213,8 @@ let add_alarm = function (date, message_text, id) {
     };
 
     navigator.b2g.alarmManager.add(options).then(
-      (id) => console.log("add id: " + id),
-      (err) => console.log("add err: " + err)
+      (id) => alert("add id: " + id),
+      (err) => alert("add err: " + err)
     );
   }
 };

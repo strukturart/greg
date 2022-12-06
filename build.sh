@@ -33,8 +33,10 @@ cp ./application/oauth.js ./docs/
 #!/bin/bash
 #create default app zip
 cd dist/
+mv manifest.webmanifest ../
 rm ../build/greg.zip
 zip -r ../build/greg.zip ./*
+mv  ../manifest.webmanifest ./
 
 
 
@@ -60,10 +62,9 @@ rm ../application.zip
 #rm ../build/greg-kaios3.zip
 cd ../../
 cd dist/
-rm manifest.webapp
-readlink -f .
+mv manifest.webapp ../
 zip -r ../build/greg-kaios3.zip ./*
-
+mv  ../manifest.webapp ./
 exit
 
 

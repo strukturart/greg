@@ -177,20 +177,21 @@ label {
 
 button.google-button:focus {
   outline: 3px solid #4285f4 !important;
+  color: white !important;
 }
 
 .google-button span {
   padding: 5px;
   position: absolute;
   right: 10px;
-  top: 4px;
+  top: 5px;
 }
 
 .google-button img {
   position: absolute;
-  width: 40px;
-  left: -1px;
-  top: 0px;
+  width: 36px;
+  left: 1.5px;
+  top: 1.5px;
 }
 
 .caldav-button img {
