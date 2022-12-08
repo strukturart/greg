@@ -1,3 +1,5 @@
+//const bc = new BroadcastChannel("channel");
+
 self.addEventListener("install", (event) => {
   console.log("SW", "install", location.protocol, event);
 });
@@ -7,20 +9,29 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", function (event) {
-  // do nothing here, just log all the network requests
-  console.log(event.request.url);
+  bc.postMessage("yeah fetch fetch");
 });
 
 self.onsystemmessage = (evt) => {
-  alert("Receive systemmessage event with name: " + evt.name);
   console.log(" message data: " + evt.data);
   console.log("  data detail:");
-  try {
-    console.log(evt.data.json());
-  } catch (err) {
-    console.log(err);
-  }
+
+  self.registration.showNotification("Alarm", {
+    body: "Buzz! Buzz!",
+    tag: "vibration-sample",
+  });
+
+  // bc.postMessage("notification");
 };
+
+/*
+  self.registration.showNotification("Vibration Sample", {
+    body: "Buzz! Buzz!",
+    vibrate: [200, 100, 200, 100, 200, 100, 200],
+    tag: "vibration-sample",
+  });
+
+*/
 
 /*
 

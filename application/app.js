@@ -3175,13 +3175,36 @@ let nav = function (move) {
   }
 };
 
-//if ("b2g.alarmManager" in navigator) {
+const bc = new BroadcastChannel("channel");
+
+bc.onmessage = (event) => {
+  console.log("hello: " + event.data);
+  if (event.data == "notification") {
+    new Notification("Vibration Sample", {
+      body: "Buzz! Buzz!",
+      vibrate: [200, 100, 200, 100, 200, 100, 200],
+      tag: "vibration-sample",
+    });
+  }
+};
+
+//
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register(new URL("sw.js", import.meta.url), { type: "module" })
-    .then((registration) => {});
+    .then((registration) => {
+      if ("b2g.alarmManager" in navigator) {
+        registration.systemMessageManager.subscribe("alarm").then(
+          (rv) => {
+            alert('Successfully subscribe system messages of name "alarm".');
+          },
+          (error) => {
+            alert("Fail to subscribe system message, error: " + error);
+          }
+        );
+      }
+    });
 }
-//}
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
