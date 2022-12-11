@@ -5,23 +5,20 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("SW", "activate", OFFLINE_VERSION, event);
+  console.log("SW", "activate", event);
 });
 
 self.addEventListener("fetch", function (event) {
-  bc.postMessage("yeah fetch fetch");
+  // bc.postMessage("yeah fetch fetch");
 });
 
 self.onsystemmessage = (evt) => {
-  console.log(" message data: " + evt.data);
-  console.log("  data detail:");
+  console.log("message data: " + evt.data);
 
   self.registration.showNotification("Alarm", {
     body: "Buzz! Buzz!",
     tag: "vibration-sample",
   });
-
-  // bc.postMessage("notification");
 };
 
 /*
@@ -32,7 +29,7 @@ self.onsystemmessage = (evt) => {
   });
 
 */
-
+// bc.postMessage("notification");
 /*
 
 self.onsystemmessage = (evt) => {

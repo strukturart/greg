@@ -129,8 +129,10 @@ export let parse_ics = function (
   etag,
   url,
   account_id,
-  isCaldav
+  isCaldav,
+  alarm
 ) {
+  console.log(alarm);
   var jcalData = ICAL.parse(data);
 
   var comp = new ICAL.Component(jcalData);
@@ -230,7 +232,7 @@ export let parse_ics = function (
       dateEnd: dateEnd,
       time_end: timeEnd,
       dateEndUnix: dateEndUnix,
-      alarm: "none",
+      alarm: alarm ? alarm : "none",
       rrule_: rrule_freq,
       rrule_json: n,
 

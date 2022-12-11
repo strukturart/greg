@@ -29,7 +29,7 @@ const moment = require("moment-timezone");
 dayjs.extend(dayjsPluginUTC);
 
 const google_oauth_url =
-  "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar &redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
+  "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
 
 export let events = [];
 export let accounts = [];
@@ -673,24 +673,22 @@ let load_subscriptions = function () {
   for (let i = 0; i < subscriptions.length; i++) {
     fetch_ics(subscriptions[i].url, "", subscriptions[i].id);
   }
-  setTimeout(() => {
-    jump_to_today();
-    sort_array(events, "dateStart", "date");
-  }, 1000);
-
-  event_slider(document.activeElement.getAttribute("data-date"));
-  if (document.activeElement.hasAttribute("data-date"))
-    status.selected_day = document.activeElement.getAttribute("data-date");
 };
+
+setTimeout(() => {
+  event_slider(document.activeElement.getAttribute("data-date"));
+
+  document.activeElement.hasAttribute("data-date")
+    ? (status.selected_day = document.activeElement.getAttribute("data-date"))
+    : "";
+  jump_to_today();
+  sort_array(events, "dateStart", "date");
+}, 1000);
 
 export let sync_caldav_callback = function (o) {
   if (o.updated.length > 0) {
     let without_cached = events.filter((events) => events.isCaldav == false);
-
     events = without_cached;
-
-    console.log("must be synced" + events);
-
     load_caldav();
   }
 };
@@ -1242,9 +1240,11 @@ let jump_to_today = function () {
   currentMonth = today.getMonth();
   currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
-
-  status.selected_day = document.activeElement.getAttribute("data-date");
-  event_slider(status.selected_day);
+  setTimeout(() => {
+    status.selected_day = document.activeElement.getAttribute("data-date");
+    event_slider(status.selected_day);
+    console.log(status.selected_day);
+  }, 1000);
 };
 
 function next() {
@@ -1553,6 +1553,9 @@ var page_calendar = {
         [m("div", { id: "slider-inner", class: "flex" })]
       ),
     ]);
+  },
+  onbeforeremove: () => {
+    status.selected_day = document.activeElement.getAttribute("data-date");
   },
   oncreate: ({ dom }) =>
     setTimeout(function () {
@@ -2585,7 +2588,10 @@ var page_edit_event = {
             type: "time",
             id: "event-time-start",
             class: "select-box",
-            value: update_event_date.time_start,
+            value:
+              update_event_date.time_start.length == 8
+                ? update_event_date.time_start.slice(0, -3)
+                : update_event_date.time_start,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
@@ -2595,7 +2601,10 @@ var page_edit_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
-            value: update_event_date.time_end,
+            value:
+              update_event_date.time_end.length == 8
+                ? update_event_date.time_end.slice(0, -3)
+                : update_event_date.time_end,
           }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -3341,6 +3350,10 @@ let store_event = function (db_id, cal_name) {
     end_time = document.getElementById("event-time-end").value + ":00";
   }
 
+  var time1Date = new Date("01/01/2000 " + start_time);
+  var time2Date = new Date("01/01/2000 " + end_time);
+  console.log(time2Date + ",," + time1Date);
+
   let convert_dt_start =
     document.getElementById("event-date").value + " " + start_time;
 
@@ -3355,6 +3368,8 @@ let store_event = function (db_id, cal_name) {
   let notification_time = document.getElementById(
     "event-notification-time"
   ).value;
+
+  let bn = notification_time;
 
   let calc_notification;
   if (notification_time != "none") {
@@ -3373,6 +3388,20 @@ let store_event = function (db_id, cal_name) {
 
   if (a != b) {
     allDay = true;
+  }
+
+  if (start_time != "" && end_time != "") {
+    var time1Date = new Date(
+      document.getElementById("event-date").value + " " + start_time
+    );
+    var time2Date = new Date(
+      document.getElementById("event-date-end").value + " " + end_time
+    );
+    console.log(time2Date + ",," + time1Date);
+    if (time2Date < time1Date) {
+      toaster("The time is not correct.", 2000);
+      validation = false;
+    }
   }
 
   let rrule_convert = function (val) {
@@ -3454,7 +3483,7 @@ let store_event = function (db_id, cal_name) {
 
   if (db_id == "local-id") {
     try {
-      parse_ics(dd, "", false, "", "", "local-id", false);
+      parse_ics(dd, "", false, "", "", "local-id", false, bn);
     } catch (e) {
       console.log(e);
     }
@@ -3514,7 +3543,6 @@ let store_event = function (db_id, cal_name) {
 // UPDATE EVENT
 // /////////
 let update_event = function (etag, url, id, db_id, uid) {
-  console.log(etag, url, id, db_id, uid);
   let validation = true;
   if (document.getElementById("event-title").value == "") {
     toaster("Title can't be empty", 2000);
@@ -3560,6 +3588,8 @@ let update_event = function (etag, url, id, db_id, uid) {
     );
 
     notification_time = convert_ics_date(calc_notification.toISOString());
+
+    console.log("nf time" + notification_time);
   }
 
   let allday = false;
@@ -3625,6 +3655,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
     event.ACTION = "AUDIO";
     event.END = "VALARM";
+    remove_alarm(event.uid);
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
   let dd =
@@ -3652,7 +3683,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   //remove orginal event
   //to replace with new content
   try {
-    parse_ics(dd, "", false, "", "", "local-id", false);
+    parse_ics(dd, "", false, "", "", "local-id", false, event.alarm);
   } catch (e) {
     console.log(e);
   }
