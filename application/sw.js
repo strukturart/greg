@@ -1,18 +1,20 @@
-//const bc = new BroadcastChannel("channel");
-
+const bc = new BroadcastChannel("channel");
+//bc.postMessage("hello");
 self.addEventListener("install", (event) => {
   console.log("SW", "install", location.protocol, event);
+  bc.postMessage("install");
 });
 
 self.addEventListener("activate", (event) => {
   console.log("SW", "activate", event);
+  bc.postMessage("activate");
 });
 
 self.addEventListener("fetch", function (event) {
   // bc.postMessage("yeah fetch fetch");
 });
-
 self.onsystemmessage = (evt) => {
+  bc.postMessage(evt);
   console.log("message data: " + evt.data);
 
   self.registration.showNotification("Alarm", {

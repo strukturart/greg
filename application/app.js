@@ -35,6 +35,13 @@ export let events = [];
 export let accounts = [];
 export let event_templates = [];
 
+window.onerror = function (msg, url, linenumber) {
+  alert(
+    "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
+  );
+
+  return true;
+};
 let oauth_callback = "";
 
 localforage.setDriver(localforage.INDEXEDDB);
@@ -1614,11 +1621,9 @@ var page_events = {
       "div",
       {
         id: "events-wrapper",
-        oninit: function () {},
 
         oncreate: function () {
-          find_closest_date();
-
+          //find_closest_date();
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
@@ -1839,7 +1844,6 @@ export let page_options = {
             onblur: function () {
               bottom_bar("", "", "");
             },
-            onfocus: function () {},
           },
           item.name
         );
@@ -1967,11 +1971,11 @@ export let page_options = {
             document.querySelector("h2.ads-title").remove();
           }
         },
-        oncreate: function () {},
+
         onfocus: function () {
           bottom_bar("", "<img src='assets/image/eye.svg'>", "");
         },
-        onblur: function () {},
+
         onkeypress: function (event) {
           bottom_bar("", "", "");
           if (event.keyCode == 13) {
@@ -2056,8 +2060,6 @@ var page_edit_account = {
         {
           class: "item input-parent",
           tabindex: "0",
-
-          oninit: function () {},
 
           oncreate: function ({ dom }) {
             dom.focus();
@@ -2301,8 +2303,6 @@ var page_add_event = {
           {
             class: "item input-parent",
             tabindex: 0,
-
-            onfocus: function () {},
 
             oncreate: function ({ dom }) {
               setTimeout(function () {
@@ -2764,7 +2764,9 @@ let callback_getfile = function (result) {
           m.route.set("/page_calendar");
         }, 200);
       })
-      .catch(function (err) {});
+      .catch(function (err) {
+        console.log(err);
+      });
   } catch (e) {
     alert(
       "event could not be imported because the file content is invalid" + e
@@ -2839,7 +2841,6 @@ var page_event_templates = {
                 selected_template = item.id;
                 m.route.set("/page_add_event");
               },
-              onfocus: function () {},
               oncreate: function ({ dom }) {
                 if (index == 0) {
                   dom.focus();
@@ -3176,28 +3177,16 @@ let nav = function (move) {
   });
 
   if (m.route.get() == "/page_calendar" || m.route.get() == "/page_events") {
-    if (targetElement.hasAttribute("data-date")) {
+    try {
       status.selected_day = targetElement.getAttribute("data-date");
       status.selected_day_id = targetElement.getAttribute("data-id");
       event_slider(status.selected_day);
-    }
-  }
-};
-
-const bc = new BroadcastChannel("channel");
-
-bc.onmessage = (event) => {
-  console.log("hello: " + event.data);
-  if (event.data == "notification") {
-    new Notification("Vibration Sample", {
-      body: "Buzz! Buzz!",
-      vibrate: [200, 100, 200, 100, 200, 100, 200],
-      tag: "vibration-sample",
-    });
+    } catch (e) {}
   }
 };
 
 //
+/*
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register(new URL("sw.js", import.meta.url), { type: "module" })
@@ -3215,6 +3204,40 @@ if ("serviceWorker" in navigator) {
     });
 }
 
+*/
+
+try {
+  navigator.serviceWorker
+    .register(new URL("sw.js", import.meta.url), { type: "module" })
+    .then((registration) => {
+      if ("b2g.alarmManager" in navigator) {
+        registration.systemMessageManager.subscribe("alarm").then(
+          (rv) => {
+            alert('Successfully subscribe system messages of name "alarm".');
+          },
+          (error) => {
+            alert("Fail to subscribe system message, error: " + error);
+          }
+        );
+      }
+    });
+} catch (e) {
+  alert(e);
+}
+
+const bc = new BroadcastChannel("channel");
+
+bc.onmessage = (event) => {
+  alert("hello: " + event.data);
+  if (event.data == "notification") {
+    new Notification("Vibration Sample", {
+      body: "Buzz! Buzz!",
+      vibrate: [200, 100, 200, 100, 200, 100, 200],
+      tag: "vibration-sample",
+    });
+  }
+};
+
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
   if (navigator.mozAlarms) {
@@ -3224,11 +3247,11 @@ let add_alarm = function (date, message_text, id) {
       event_id: id,
     };
 
-    // The "honorTimezone" string is what make the alarm honoring it
-
     var request = navigator.mozAlarms.add(date, "honorTimezone", data);
 
-    request.onsuccess = function () {};
+    request.onsuccess = function () {
+      console.log("");
+    };
 
     request.onerror = function () {
       console.log("An error occurred: " + this.error.name);
@@ -3237,17 +3260,34 @@ let add_alarm = function (date, message_text, id) {
 
   // KaiOs  3.xx
 
-  if ("b2g.alarmManager" in navigator) {
-    options = {
-      "date": data,
+  try {
+    let options = {
+      "date": date,
       "data": { "note": message_text },
-      "ignoreTimezone": true,
+      "ignoreTimezone": false,
     };
 
     navigator.b2g.alarmManager.add(options).then(
       (id) => alert("add id: " + id),
       (err) => alert("add err: " + err)
     );
+  } catch (e) {
+    alert(e);
+  }
+
+  if ("b2g.alarmManager" in navigator) {
+    /*
+    let options = {
+      "date": date,
+      "data": { "note": message_text },
+      "ignoreTimezone": false,
+    };
+
+    navigator.b2g.alarmManager.add(options).then(
+      (id) => alert("add id: " + id),
+      (err) => alert("add err: " + err)
+    );
+    */
   }
 };
 let remove_alarm = function (id) {
@@ -3352,7 +3392,6 @@ let store_event = function (db_id, cal_name) {
 
   var time1Date = new Date("01/01/2000 " + start_time);
   var time2Date = new Date("01/01/2000 " + end_time);
-  console.log(time2Date + ",," + time1Date);
 
   let convert_dt_start =
     document.getElementById("event-date").value + " " + start_time;
@@ -3381,7 +3420,7 @@ let store_event = function (db_id, cal_name) {
     notification_time = convert_ics_date(calc_notification.toISOString());
   }
 
-  let allday = false;
+  let allDay = false;
 
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
@@ -3973,7 +4012,6 @@ function shortpress_action(param) {
 
     case "SoftRight":
     case "Alt":
-    case "5":
       if (m.route.get() == "/page_calendar") {
         m.route.set("/page_options");
         return true;
@@ -3996,7 +4034,6 @@ function shortpress_action(param) {
 
     case "SoftLeft":
     case "Control":
-    case "6":
       if (m.route.get() == "/page_event_templates") {
         delete_template(document.activeElement.getAttribute("data-id"));
       }
@@ -4091,6 +4128,7 @@ function shortpress_action(param) {
       }
 
       if (events != "") {
+        alert(events);
         if (
           m.route.get() == "/page_calendar" ||
           m.route.get() == "/page_events"
