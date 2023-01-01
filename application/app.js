@@ -35,13 +35,6 @@ export let events = [];
 export let accounts = [];
 export let event_templates = [];
 
-window.onerror = function (msg, url, linenumber) {
-  alert(
-    "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
-  );
-
-  return true;
-};
 let oauth_callback = "";
 
 localforage.setDriver(localforage.INDEXEDDB);
@@ -1281,7 +1274,7 @@ let highlight_current_day = function () {
     document
       .querySelectorAll("div#calendar div.calendar-head div")
       [s].classList.add("active");
-  }, 500);
+  }, 1000);
 };
 
 //////////////
@@ -1404,7 +1397,6 @@ let showCalendar = function (month, year) {
 
     //add row
     tbl.appendChild(row);
-    highlight_current_day();
   }
 
   document.querySelectorAll(".item")[0].focus();
@@ -1412,10 +1404,11 @@ let showCalendar = function (month, year) {
 
   // highlight current day
   if (today.getMonth() == month && today.getFullYear() == year) {
-    highlight_current_day();
     document.querySelectorAll(".item")[currentDay - 1].focus();
     document.querySelectorAll(".item")[currentDay - 1].classList.add("today");
   }
+
+  highlight_current_day();
 };
 
 let clear_form = function () {
@@ -1567,9 +1560,10 @@ var page_calendar = {
   oncreate: ({ dom }) =>
     setTimeout(function () {
       dom.focus();
+
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
-
+      console.log(status);
       bottom_bar(
         "<img src='assets/image/add.svg'>",
         "<img src='assets/image/list.svg'>",
@@ -1621,9 +1615,16 @@ var page_events = {
       "div",
       {
         id: "events-wrapper",
+        onremove: () => {
+          status.selected_day =
+            document.activeElement.getAttribute("data-date");
 
+          status.selected_day_id =
+            document.activeElement.getAttribute("data-id");
+        },
         oncreate: function () {
-          //find_closest_date();
+          find_closest_date();
+
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
@@ -1642,13 +1643,14 @@ var page_events = {
           } else {
             de = dayjs(item.dateStart).format(settings.dateformat);
           }
-          u = item.isSubscription ? "subscription" : "";
+          let u = item.isSubscription ? "subscription" : "";
           return m(
             "article",
             {
               class: "item events " + u,
               tabindex: index,
               "data-id": item.UID,
+              "data-date": item.dateStart,
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -3117,7 +3119,7 @@ let nav = function (move) {
   let items = 0;
 
   if (m.route.get() == "/page_calendar") {
-    highlight_current_day();
+    //highlight_current_day();
   }
 
   if (
@@ -3204,27 +3206,25 @@ if ("serviceWorker" in navigator) {
     });
 }
 
-*/
+
 
 try {
   navigator.serviceWorker
     .register(new URL("sw.js", import.meta.url), { type: "module" })
     .then((registration) => {
-      if ("b2g.alarmManager" in navigator) {
-        registration.systemMessageManager.subscribe("alarm").then(
-          (rv) => {
-            alert('Successfully subscribe system messages of name "alarm".');
-          },
-          (error) => {
-            alert("Fail to subscribe system message, error: " + error);
-          }
-        );
-      }
+      registration.systemMessageManager.subscribe("alarm").then(
+        (rv) => {
+          alert('Successfully subscribe system messages of name "alarm".');
+        },
+        (error) => {
+          alert("Fail to subscribe system message, error: " + error);
+        }
+      );
     });
 } catch (e) {
   alert(e);
 }
-
+*/
 const bc = new BroadcastChannel("channel");
 
 bc.onmessage = (event) => {
@@ -3489,7 +3489,7 @@ let store_event = function (db_id, cal_name) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allday,
+    allDay: allDay,
   };
 
   if (event.alarm != "none") {
@@ -3990,14 +3990,14 @@ function shortpress_action(param) {
       break;
 
     case "1":
-      previous();
+      if (m.route.get() == "/page_calendar") previous();
       break;
     case "3":
-      next();
+      if (m.route.get() == "/page_calendar") next();
       break;
 
     case "2":
-      slider_navigation();
+      if (m.route.get() == "/page_calendar") slider_navigation();
       break;
 
     case "#":
@@ -4123,12 +4123,11 @@ function shortpress_action(param) {
 
       //toggle month/events
       if (m.route.get() == "/page_edit_event") return false;
-      if (events == "") {
+      if (events.lenght == 0) {
         side_toaster("There are no calendar entries to display", 3000);
       }
 
-      if (events != "") {
-        alert(events);
+      if (events.length > 0) {
         if (
           m.route.get() == "/page_calendar" ||
           m.route.get() == "/page_events"
