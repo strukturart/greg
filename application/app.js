@@ -1746,7 +1746,7 @@ export let page_options = {
                   focus_after_selection();
                   if (settings.dateformat == "") {
                     document.querySelector("#event-date-format").value =
-                      "YY-mm-dd";
+                      "YYYY-mm-dd";
                   } else {
                     document.querySelector("#event-date-format").value =
                       settings.dateformat;
@@ -1755,7 +1755,7 @@ export let page_options = {
               },
             },
             [
-              m("option", { value: "YY-MM-DD" }, "YYYY-MM-DD"),
+              m("option", { value: "YYYY-MM-DD" }, "YYYY-MM-DD"),
               m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY"),
             ]
           ),
@@ -2752,6 +2752,7 @@ let cb = function (result) {
 };
 
 let callback_getfile = function (result) {
+  alert(result);
   try {
     parse_ics(result, "", false, "", "", "local-id", false);
 
@@ -2760,7 +2761,7 @@ let callback_getfile = function (result) {
     localforage
       .setItem("events", only_local_events)
       .then(function () {
-        export_ical("greg.ics", only_local_events);
+        export_ical("others/greg.ics", only_local_events);
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -2782,12 +2783,6 @@ var page_list_files = {
       "div",
       {
         id: "options",
-        oninit: function () {
-          setTimeout(function () {
-            if (!document.body.classList.contains("item")) {
-            }
-          }, 1000);
-        },
       },
       [
         file_list.map(function (e, index) {
@@ -3118,10 +3113,6 @@ let nav = function (move) {
   let next = currentIndex + move;
   let items = 0;
 
-  if (m.route.get() == "/page_calendar") {
-    //highlight_current_day();
-  }
-
   if (
     m.route.get() == "/page_calendar" ||
     m.route.get() == "/page_options" ||
@@ -3188,33 +3179,27 @@ let nav = function (move) {
 };
 
 //
-/*
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register(new URL("sw.js", import.meta.url), { type: "module" })
-    .then((registration) => {
-      if ("b2g.alarmManager" in navigator) {
-        registration.systemMessageManager.subscribe("alarm").then(
-          (rv) => {
-            alert('Successfully subscribe system messages of name "alarm".');
-          },
-          (error) => {
-            alert("Fail to subscribe system message, error: " + error);
-          }
-        );
-      }
-    });
-}
-
-
 
 try {
   navigator.serviceWorker
-    .register(new URL("sw.js", import.meta.url), { type: "module" })
+    .register(new URL("sw.js", import.meta.url), {
+      type: "module",
+      scope: "/",
+    })
     .then((registration) => {
       registration.systemMessageManager.subscribe("alarm").then(
         (rv) => {
-          alert('Successfully subscribe system messages of name "alarm".');
+          console.log(
+            'Successfully subscribe system messages of name "alarm".'
+          );
+        },
+        (error) => {
+          console.log("Fail to subscribe system message, error: " + error);
+        }
+      );
+      registration.systemMessageManager.subscribe("activity").then(
+        (rv) => {
+          alert('Successfully subscribe system messages of name "activity".');
         },
         (error) => {
           alert("Fail to subscribe system message, error: " + error);
@@ -3224,26 +3209,13 @@ try {
 } catch (e) {
   alert(e);
 }
-*/
-const bc = new BroadcastChannel("channel");
-
-bc.onmessage = (event) => {
-  alert("hello: " + event.data);
-  if (event.data == "notification") {
-    new Notification("Vibration Sample", {
-      body: "Buzz! Buzz!",
-      vibrate: [200, 100, 200, 100, 200, 100, 200],
-      tag: "vibration-sample",
-    });
-  }
-};
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
   if (navigator.mozAlarms) {
     // This is arbitrary data pass to the alarm
     var data = {
-      foo: message_text,
+      note: message_text,
       event_id: id,
     };
 
@@ -3268,26 +3240,11 @@ let add_alarm = function (date, message_text, id) {
     };
 
     navigator.b2g.alarmManager.add(options).then(
-      (id) => alert("add id: " + id),
-      (err) => alert("add err: " + err)
+      (id) => console.log("add id: " + id),
+      (err) => console.log("add err: " + err)
     );
   } catch (e) {
     alert(e);
-  }
-
-  if ("b2g.alarmManager" in navigator) {
-    /*
-    let options = {
-      "date": date,
-      "data": { "note": message_text },
-      "ignoreTimezone": false,
-    };
-
-    navigator.b2g.alarmManager.add(options).then(
-      (id) => alert("add id: " + id),
-      (err) => alert("add err: " + err)
-    );
-    */
   }
 };
 let remove_alarm = function (id) {
@@ -3320,7 +3277,7 @@ let remove_alarm = function (id) {
   }
   // KaiOs  3.xx
 
-  if ("b2g.alarmManager" in navigator) {
+  try {
     let request = navigator.b2g.alarmManager.getAll();
 
     request.onsuccess = function () {
@@ -3342,10 +3299,8 @@ let remove_alarm = function (id) {
         }
       });
     };
-
-    request.onerror = function () {
-      console.log("An error occurred:", this.error.name);
-    };
+  } catch (e) {
+    alert(e);
   }
 };
 
@@ -3535,7 +3490,7 @@ let store_event = function (db_id, cal_name) {
       .setItem("events", without_subscription)
       .then(function () {
         clear_form();
-        export_ical("greg.ics", without_subscription);
+        export_ical("others/greg.ics", without_subscription);
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -3736,7 +3691,7 @@ let update_event = function (etag, url, id, db_id, uid) {
       .setItem("events", without_subscription)
       .then(function () {
         clear_form();
-        export_ical("greg.ics", without_subscription);
+        export_ical("others/greg.ics", without_subscription);
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -3797,7 +3752,7 @@ let delete_event = function (etag, url, account_id, uid) {
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        export_ical("greg.ics", value);
+        export_ical("others/greg.ics", value);
         side_toaster("event deleted", 2000);
         m.route.set("/page_calendar");
       })
@@ -3823,8 +3778,8 @@ let import_event_callback = function (id, date) {
 
   localforage
     .setItem("events", without_subscription)
-    .then(function (value) {
-      export_ical("greg.ics", without_subscription);
+    .then(function () {
+      export_ical("others/greg.ics", without_subscription);
     })
     .catch(function (err) {
       side_toaster("no data to export", 2000);
@@ -3916,7 +3871,7 @@ let backup_events = function () {
   localforage
     .getItem("events")
     .then(function (value) {
-      export_ical("greg.ics", only_local_events);
+      export_ical("others/greg.ics", only_local_events);
     })
     .catch(function (err) {
       console.log(err);
@@ -4226,3 +4181,15 @@ document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
+
+window.onerror = function (msg, url, linenumber) {
+  alert(
+    "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
+  );
+  return true;
+};
+
+const channel = new BroadcastChannel("sw-messages");
+channel.addEventListener("message", (event) => {
+  alert(JSON.stringify(event.data));
+});

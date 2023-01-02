@@ -1,0 +1,121 @@
+/*GENERAL*/
+
+:root {
+  --color-one: black;
+  --color-two: yellow;
+  --color-three: silver;
+  --color-four: rgb(190, 185, 185);
+  --color-five: rgba(214, 225, 228, 0.322);
+  --color-seven: rgba(101, 216, 24, 0.288);
+  --color-eight: rgba(47, 82, 196, 0.188);
+}
+
+@font-face {
+  font-family: "Lato-Regular";
+  src: url("../fonts/Lato-Regular.ttf");
+}
+
+*,
+*:before,
+*:after {
+  border: 0px;
+  padding: 0px;
+  margin: 0px;
+  box-sizing: border-box;
+
+  /* Careful, this breaks the word wherever it is without a hyphen */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+
+  /* Adds a hyphen where the word breaks */
+  -webkit-hyphens: auto;
+  -ms-hyphens: auto;
+  -moz-hyphens: auto;
+  hyphens: auto;
+}
+
+:focus {
+  outline: none;
+  background: var(--color-four);
+}
+
+::-moz-focus-inner {
+  border: 0;
+}
+
+.debug {
+  outline: 1px solid red;
+}
+
+body {
+  font-family: "Lato-Regular";
+  font-weight: 100;
+  position: relative;
+  margin: 0px;
+  padding: 0px;
+  overflow: scroll;
+  font-size: 1rem;
+}
+
+h1 {
+  font-size: 3rem;
+  margin: 20px 0 20px 0;
+}
+
+h2 {
+  font-size: 2.5rem;
+  margin: 20px 0 20px 0;
+  color: rgb(34, 44, 44);
+}
+
+h3 {
+  font-size: 2rem;
+  margin: 20px 0 20px 0;
+  color: rgb(34, 44, 44);
+}
+
+h3 {
+  font-size: 1.8rem;
+  margin: 20px 0 20px 0;
+}
+
+h4 {
+  font-size: 1.4rem;
+  margin: 20px 0 20px 0;
+}
+
+img {
+  max-width: 90vw;
+  height: auto;
+  display: block;
+}
+p {
+  margin: 10px 0 10px 0;
+}
+
+img[src=""] {
+  display: none;
+}
+
+img[src=" "] {
+  display: none;
+}
+
+button {
+  font-size: 1rem;
+  background: rgb(255, 255, 255);
+  padding: 7px;
+  width: 90vw;
+  margin: 0 0 15px 5vw;
+  color: black;
+  border-radius: 10px;
+  border: 3px solid gray;
+}
+
+section {
+  margin: 60px 0 60px 0;
+}
+
+main {
+  padding: 20px 0 20px 0;
+}
