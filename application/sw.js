@@ -24,18 +24,18 @@ self.onsystemmessage = (evt) => {
 
   try {
     const serviceHandler = () => {
-
       if (evt.name === "activity") {
         handler = evt.data.webActivityRequestHandler();
         const { name: activityName, data: activityData } = handler.source;
         if (activityName == "greg-oauth") {
-          channel.postMessage({ title: "yeah"+activityData });
-/*
-          clients.openWindow("/index.html");
-          const { code } = activityData;
-          const url = `/index.html?code=${code}`;
-          clients.openWindow(url);
-          */
+          let code = activityData.code;
+
+          const url = "/oauth.html?code=" + code;
+          // clients.openWindow(url);
+
+          channel.postMessage({
+            oaut_success: url,
+          });
         }
       }
     };

@@ -439,20 +439,22 @@ export function get_file(filename, cb) {
 
   try {
     var sdcard = navigator.b2g.getDeviceStorage("sdcard");
-    var request = sdcard.get(filename);
+    var request = sdcard.get(filename).then(function (r) {
+      let reader = new FileReader();
 
-    let reader = new FileReader();
+      reader.onerror = function (event) {
+        alert(event);
+        reader.abort();
+      };
 
-    reader.onerror = function (event) {
-      alert(event);
-      reader.abort();
-    };
+      reader.onloadend = function (event) {
+        alert(reader.result);
 
-    reader.onloadend = function (event) {
-      cb(reader.result);
-    };
+        cb(reader.result);
+      };
 
-    reader.readAsText(request.result);
+      reader.readAsText(request.result);
+    });
   } catch (e) {
     alert(e);
   }

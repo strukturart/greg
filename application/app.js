@@ -3176,9 +3176,9 @@ let nav = function (move) {
       event_slider(status.selected_day);
     } catch (e) {}
   }
-};
 
-//
+  if (m.route.get() == "/page_calendar") highlight_current_day();
+};
 
 try {
   navigator.serviceWorker
@@ -4191,5 +4191,6 @@ window.onerror = function (msg, url, linenumber) {
 
 const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {
-  alert(JSON.stringify(event.data));
+  //callback from Google OAuth
+  if (event.data.oaut_success) window.open(event.data.oaut_success);
 });
