@@ -430,7 +430,8 @@ div#calendar div#calendar-body div div {
 }
 
 div#calendar div#calendar-body div div.today {
-  background: rgb(120, 183, 255);
+  background: rgb(120, 183, 255) !important;
+  font-weight: bold;
 }
 
 div#calendar div#calendar-body :focus span {

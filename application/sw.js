@@ -1,11 +1,12 @@
-//const bc = new BroadcastChannel("channel");
+const channel = new BroadcastChannel("sw-messages");
+//channel.postMessage({ title: "Hello from SW" });
 
 self.addEventListener("install", (event) => {
-  console.log("SW", "install", location.protocol, event);
+  // channel.postMessage("install");
 });
 
 self.addEventListener("activate", (event) => {
-  console.log("SW", "activate", event);
+  // bc.postMessage("activate");
 });
 
 self.addEventListener("fetch", function (event) {
@@ -13,42 +14,29 @@ self.addEventListener("fetch", function (event) {
 });
 
 self.onsystemmessage = (evt) => {
-  console.log("message data: " + evt.data);
+  try {
+    let m = evt.data.json();
+    self.registration.showNotification("Greg", {
+      body: m.data.note,
+      vibrate: [200, 100, 200, 100, 200, 100, 200],
+    });
+  } catch (e) {}
 
-  self.registration.showNotification("Alarm", {
-    body: "Buzz! Buzz!",
-    tag: "vibration-sample",
-  });
-};
+  try {
+    const serviceHandler = () => {
+      if (evt.name === "activity") {
+        handler = evt.data.webActivityRequestHandler();
+        const { name: activityName, data: activityData } = handler.source;
+        if (activityName == "greg-oauth") {
+          let code = activityData.code;
 
-/*
-  self.registration.showNotification("Vibration Sample", {
-    body: "Buzz! Buzz!",
-    vibrate: [200, 100, 200, 100, 200, 100, 200],
-    tag: "vibration-sample",
-  });
-
-*/
-// bc.postMessage("notification");
-/*
-
-self.onsystemmessage = (evt) => {
-  alert("receive systemmessage event on sw.js!");
-  console.log(evt.data.json());
-
-  const serviceHandler = () => {
-    if (evt.name === "activity") {
-      console.warn("About to handle activity.");
-      handler = evt.data.webActivityRequestHandler();
-      const { name: activityName, data: activityData } = handler.source;
-      if (activityName === "kaiteCallback") {
-        const { code } = activityData;
-        const url = `/index.html?code=${code}`;
-        clients.openWindow(url);
-        //todo get token
+          const url = "/oauth.html?code=" + code;
+          channel.postMessage({
+            oauth_success: url,
+          });
+        }
       }
-    }
-  };
-  evt.waitUntil(serviceHandler());
+    };
+    evt.waitUntil(serviceHandler());
+  } catch (e) {}
 };
-*/
