@@ -123,8 +123,6 @@ export let validate = function (url) {
 
 export let getManifest = function (callback) {
   if (!navigator.mozApps) {
-    //let t = document.getElementById("kaisos-ads");
-    //t.remove();
     return false;
   }
   let self = navigator.mozApps.getSelf();
@@ -326,57 +324,60 @@ export let deleteFile = function (storage, path, notification) {
 };
 
 export let list_files = function (filetype, callback) {
-  if (!navigator.getDeviceStorage) return false;
-  var d = navigator.getDeviceStorage("sdcard");
-  var t = false;
-  var cursor = d.enumerate();
+  try {
+    var d = navigator.getDeviceStorage("sdcard");
+    var t = false;
+    var cursor = d.enumerate();
 
-  cursor.onsuccess = function () {
-    if (!this.result) {
-      console.log("finished");
-    }
-
-    if (cursor.result.name !== null) {
-      var file = cursor.result;
-      let n = file.name.split(".");
-      let file_type = n[n.length - 1];
-
-      if (file_type == filetype) {
-        callback(file.name);
-        t = true;
+    cursor.onsuccess = function () {
+      if (!this.result) {
+        console.log("finished");
       }
-      this.continue();
-    }
-  };
 
-  cursor.onerror = function () {
-    console.warn("No file found: " + this.error);
-  };
+      if (cursor.result.name !== null) {
+        var file = cursor.result;
+        let n = file.name.split(".");
+        let file_type = n[n.length - 1];
+
+        if (file_type == filetype) {
+          callback(file.name);
+          t = true;
+        }
+        this.continue();
+      }
+    };
+
+    cursor.onerror = function () {
+      console.warn("No file found: " + this.error);
+    };
+  } catch (e) {
+    console.log(e);
+  }
+  if ("b2g" in navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var iterable = sdcard.enumerate();
+      async function printAllFiles() {
+        for await (let file of iterable) {
+          let n = file.name.split(".");
+          let file_type = n[n.length - 1];
+
+          if (file_type == filetype) {
+            callback(file.name);
+            t = true;
+          }
+        }
+      }
+      printAllFiles();
+    } catch (e) {
+      console.log(e);
+    }
+  }
 };
 
 //polyfill
 if (window.NodeList && !NodeList.prototype.forEach) {
   NodeList.prototype.forEach = Array.prototype.forEach;
-}
-
-function hashCode(str) {
-  var hash = 0;
-  for (var i = 0; i < str.length; i++) {
-    hash = ~~((hash << 5) - hash + str.charCodeAt(i));
-  }
-  return hash;
-}
-
-function intToRGB(i) {
-  var c = (i & 0x00ffffff).toString(16).toUpperCase();
-
-  return "00000".substring(0, 6 - c.length) + c;
-}
-
-function getRandomInteger(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min)) + min;
 }
 
 function share(url) {
@@ -395,16 +396,6 @@ function share(url) {
   };
 }
 
-//check if internet connection
-function check_iconnection() {
-  function updateOfflineStatus() {
-    toaster("Your Browser is offline", 15000);
-    return false;
-  }
-
-  window.addEventListener("offline", updateOfflineStatus);
-}
-
 function delete_file(filename) {
   var sdcard = navigator.getDeviceStorages("sdcard");
   var request = sdcard[1].delete(filename);
@@ -419,29 +410,54 @@ function delete_file(filename) {
 }
 
 export function get_file(filename, cb) {
-  var sdcard = navigator.getDeviceStorage("sdcard");
-  var request = sdcard.get(filename);
+  try {
+    var sdcard = navigator.getDeviceStorage("sdcard");
+    var request = sdcard.get(filename);
 
-  request.onsuccess = function () {
-    var file = this.result;
+    request.onsuccess = function () {
+      var file = this.result;
 
-    let reader = new FileReader();
+      let reader = new FileReader();
 
-    reader.onerror = function (event) {
-      helper.toaster("can't read file", 3000);
-      reader.abort();
+      reader.onerror = function (event) {
+        helper.toaster("can't read file", 3000);
+        reader.abort();
+      };
+
+      reader.onloadend = function (event) {
+        cb(reader.result);
+      };
+
+      reader.readAsText(file);
     };
 
-    reader.onloadend = function (event) {
-      cb(reader.result);
+    request.onerror = function () {
+      alert("Unable to get the file: " + this.error);
     };
+  } catch (e) {
+    console.log(e);
+  }
+  if ("b2g" in navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var request = sdcard.get(filename).then(function (r) {
+        let reader = new FileReader();
 
-    reader.readAsText(file);
-  };
+        reader.onerror = function (event) {
+          console.log("filereader error: " + event);
+          reader.abort();
+        };
 
-  request.onerror = function () {
-    alert("Unable to get the file: " + this.error);
-  };
+        reader.onloadend = function (event) {
+          cb(reader.result);
+        };
+
+        reader.readAsText(r);
+      });
+    } catch (e) {
+      alert(e);
+    }
+  }
 }
 
 function write_file(data, filename) {

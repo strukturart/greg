@@ -16,7 +16,7 @@
 		"url": "https://github.com/strukturart/greg"
 	},
 	"dependencies": {
-		"ads-sdk": "1.5.0"
+		"ads-sdk": "1.5.8"
 	},
 
 	"locales": {
@@ -65,9 +65,7 @@
 		"desktop-notification": {
 			"description": "Needed to fire system notifications"
 		},
-		"alarms": {
-			"description": "Required to schedule alarms"
-		},
+	
 		"mobiledata": {},
 		"wifidata": {},
 		"calllog": {},
@@ -86,8 +84,5 @@
 			"description": "Required to load remote content"
 		}
 	}
-
-
-
 
 }

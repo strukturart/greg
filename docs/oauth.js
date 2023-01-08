@@ -8,18 +8,15 @@ localforage.setDriver(localforage.INDEXEDDB);
 let authorizationCode = "";
 
 let get_token = function () {
-  let code = window.location.href;
-  
-  let r = code.split("&code=");
-  let b = r[1].split("&");
+  var urlParams = new URLSearchParams(window.location.search);
+  const authorizationCode = urlParams.get("code");
 
-  localStorage.setItem("authorizationCode", b[0]);
-  authorizationCode = b[0];
   var myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
   var urlencoded = new URLSearchParams();
-  urlencoded.append("code", b[0]);
+  //urlencoded.append("code", b[0]);
+  urlencoded.append("code", authorizationCode);
   urlencoded.append("grant_type", "authorization_code");
   urlencoded.append(
     "redirect_uri",
@@ -71,7 +68,7 @@ get_token().then((result) => {
             "Account successfully added to greg";
           localStorage.setItem("oauth_callback", "true");
           setTimeout(function () {
-            self.close();
+            window.close();
           }, 3000);
         })
         .catch(function (err) {

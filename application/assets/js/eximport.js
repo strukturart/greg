@@ -12,12 +12,24 @@ const dayjs = require("dayjs");
 var moment = require("moment-timezone");
 
 export let export_ical = function (filename, event_data) {
-  if (!navigator.getDeviceStorage) return false;
+  try {
+    var sdcard = navigator.getDeviceStorage("sdcard");
 
-  var sdcard = navigator.getDeviceStorage("sdcard");
+    var request_del = sdcard.delete(filename);
+    request_del.onsuccess = function () {
+      console.log("error delete");
+    };
+  } catch (e) {
+    // alert(e);
+  }
 
-  var request_del = sdcard.delete(filename);
-  request_del.onsuccess = function () {};
+  try {
+    var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+    var request_del = sdcard.delete(filename);
+  } catch (e) {
+    alert(e);
+  }
+
   setTimeout(function () {
     let result = "";
 
@@ -76,14 +88,37 @@ export let export_ical = function (filename, event_data) {
     result = result.replace(regex, "");
 
     var file = new Blob([result], { type: "text/calendar" });
-    var request = sdcard.addNamed(file, filename);
-    request.onsuccess = function () {
-      side_toaster("<img src='assets/image/E25C.svg'>", 2500);
-    };
+    try {
+      var sdcard = navigator.getDeviceStorage("sdcard");
 
-    request.onerror = function () {
-      toaster("Unable to write the file", 2000);
-    };
+      var request = sdcard.addNamed(file, filename);
+      request.onsuccess = function () {
+        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+      };
+
+      request.onerror = function () {
+        toaster("Unable to write the file", 2000);
+      };
+    } catch (e) {
+      // alert(e);
+    }
+
+    //KaiOS 3.x
+
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var request = sdcard.addNamed(file, filename);
+
+      request.onsuccess = function () {
+        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+      };
+
+      request.onerror = function () {
+        toaster("Unable to write the file", 2000);
+      };
+    } catch (e) {
+      alert(e);
+    }
   }, 2000);
 };
 
