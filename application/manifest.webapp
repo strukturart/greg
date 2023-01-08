@@ -16,7 +16,7 @@
 		"url": "https://github.com/strukturart/greg"
 	},
 	"dependencies": {
-		"ads-sdk": "1.5.0"
+		"ads-sdk": "1.5.8"
 	},
 
 	"locales": {

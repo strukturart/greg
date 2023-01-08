@@ -752,22 +752,6 @@ let store_event_as_template = function (title, description, location) {
     });
 };
 
-let months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 let subscriptions = [];
 
 let today = new Date();
@@ -785,11 +769,13 @@ export let status = {
 
 export let settings = {
   default_notification: "none",
-  ads: "",
+  ads: true,
   timezone: moment.tz.guess(),
   dateformat: "YYYY-MM-DD",
+  firstday: "sunday",
 };
 let blob = "";
+let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 let load_settings = function () {
   localforage
@@ -797,13 +783,19 @@ let load_settings = function () {
     .then(function (value) {
       if (value == null) return false;
       settings = value;
+      if (settings.firstday == "sunday" || settings.firstday == undefined) {
+        weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      } else {
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      }
+      document.querySelectorAll(".calendar-head div").forEach(function (e, i) {
+        e.innerText = weekday[i];
+      });
     })
     .catch(function (err) {
       console.log(err);
     });
 };
-
-load_settings();
 
 //ads || ads free
 
@@ -846,7 +838,8 @@ let load_ads = function () {
   document.head.appendChild(js);
 };
 
-//KaioOs ads
+//KaiOS ads
+let self;
 let getManifest = function (callback) {
   if (!navigator.mozApps) {
     return false;
@@ -858,7 +851,6 @@ let getManifest = function (callback) {
   self.onerror = function () {};
 };
 
-let self;
 //KaiOs store true||false
 function manifest(a) {
   self = a.origin;
@@ -870,8 +862,9 @@ function manifest(a) {
     settings.ads = false;
   }
 }
-
-getManifest(manifest);
+try {
+  getManifest(manifest);
+} catch (e) {}
 
 // ////////
 // finde closest event to selected date in list view
@@ -1243,7 +1236,6 @@ let jump_to_today = function () {
   setTimeout(() => {
     status.selected_day = document.activeElement.getAttribute("data-date");
     event_slider(status.selected_day);
-    console.log(status.selected_day);
   }, 1000);
 };
 
@@ -1262,6 +1254,7 @@ function previous() {
 }
 
 let highlight_current_day = function () {
+  if (m.route.get() != "/page_calendar") return false;
   setTimeout(function () {
     document
       .querySelectorAll("div#calendar div.calendar-head div")
@@ -1276,6 +1269,23 @@ let highlight_current_day = function () {
       [s].classList.add("active");
   }, 1000);
 };
+
+load_settings();
+
+let months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 //////////////
 //BUILD CALENDAR
@@ -1303,9 +1313,17 @@ Date.prototype.getWeek = function () {
     )
   );
 };
-
+//https://medium.com/@nitinpatel_20236/challenge-of-building-a-calendar-with-pure-javascript-a86f1303267d
 let showCalendar = function (month, year) {
   let firstDay = new Date(year, month).getDay();
+  if (settings.firstday == "monday") {
+    if (firstDay == 0) {
+      firstDay = 6;
+    } else {
+      firstDay = firstDay - 1;
+    }
+  }
+
   let daysInMonth = 32 - new Date(year, month, 32).getDate();
 
   let tbl = document.getElementById("calendar-body");
@@ -1496,97 +1514,103 @@ var root = document.getElementById("app");
 
 var page_calendar = {
   view: function () {
-    return m("div", { class: "width-100 height-100", id: "calendar" }, [
-      m("div", { class: "flex justify-content-spacebetween", id: "" }, [
-        m("h3", {
-          class: "card-header",
-          id: "monthAndYear",
-        }),
+    return m(
+      "div",
+      {
+        class: "width-100 height-100",
+        id: "calendar",
+        oninit: function () {
+          load_settings();
+        },
+      },
+      [
+        m("div", { class: "flex justify-content-spacebetween", id: "" }, [
+          m("h3", {
+            class: "card-header",
+            id: "monthAndYear",
+          }),
 
-        m("img", {
-          id: "icon-loading",
-          src: "./assets/image/E252.svg",
-          alt: "loading",
-        }),
+          m("img", {
+            id: "icon-loading",
+            src: "./assets/image/E252.svg",
+            alt: "loading",
+          }),
+          m(
+            "div",
+            {
+              id: "time",
+              oncreate: function () {
+                document.getElementById("time").innerText = get_time();
+              },
+            },
+            "time is relative"
+          ),
+        ]),
+
         m(
           "div",
           {
-            id: "time",
-            oncreate: function (e) {
-              document.getElementById("time").innerText = get_time();
-            },
+            class: "calendar-head flex width-100",
           },
-          "time is relative"
-        ),
-      ]),
 
-      m(
-        "div",
-        {
-          class: "calendar-head flex width-100",
-        },
-        [
-          m("div", "Sun"),
-          m("div", "Mon"),
-          m("div", "Tue"),
-          m("div", "Wed"),
-          m("div", "Thu"),
-          m("div", "Fri"),
-          m("div", "Sat"),
-        ]
-      ),
-      m("div", { id: "calendar-body" }),
-      m(
-        "div",
-        {
-          id: "event-slider-indicator",
-          class: "flex width-100 justify-content-spacearound",
-        },
-        [m("div", { class: "flex justify-content-spacearound" })]
-      ),
-      m(
-        "div",
-        {
-          id: "event-slider",
-          class: "flex",
-        },
-        [m("div", { id: "slider-inner", class: "flex" })]
-      ),
-    ]);
+          [
+            m("div", weekday[0]),
+            m("div", weekday[1]),
+            m("div", weekday[2]),
+            m("div", weekday[3]),
+            m("div", weekday[4]),
+            m("div", weekday[5]),
+            m("div", weekday[6]),
+          ]
+        ),
+        m("div", { id: "calendar-body" }),
+        m(
+          "div",
+          {
+            id: "event-slider-indicator",
+            class: "flex width-100 justify-content-spacearound",
+          },
+          [m("div", { class: "flex justify-content-spacearound" })]
+        ),
+        m(
+          "div",
+          {
+            id: "event-slider",
+            class: "flex",
+          },
+          [m("div", { id: "slider-inner", class: "flex" })]
+        ),
+      ]
+    );
   },
   onbeforeremove: () => {
     status.selected_day = document.activeElement.getAttribute("data-date");
   },
-  oncreate: ({ dom }) =>
+  oncreate: () => {
     setTimeout(function () {
-      dom.focus();
-
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
-      console.log(status);
       bottom_bar(
         "<img src='assets/image/add.svg'>",
         "<img src='assets/image/list.svg'>",
         "<img src='assets/image/option.svg'>"
       );
-      if (status.selected_day != "") {
+      if (status.selected_day != undefined) {
         let t = new Date(status.selected_day);
         currentMonth = t.getMonth();
         currentYear = t.getFullYear();
+
+        let k = status.selected_day;
+
+        document
+          .querySelectorAll("div#calendar-body div.item")
+          .forEach(function (item) {
+            if (item.getAttribute("data-date") == k && k != undefined) {
+              item.focus();
+              event_slider(k);
+            }
+          });
       }
-
-      let k = status.selected_day;
-
-      document
-        .querySelectorAll("div#calendar-body div.item")
-        .forEach(function (item) {
-          if (item.getAttribute("data-date") == k) {
-            item.focus();
-            event_slider(k);
-          }
-        });
-
-      showCalendar(currentMonth, currentYear);
 
       if (document.activeElement.hasAttribute("data-date"))
         status.selected_day = document.activeElement.getAttribute("data-date");
@@ -1607,7 +1631,8 @@ var page_calendar = {
         });
 
       clear_form();
-    }, 500),
+    }, 1000);
+  },
 };
 var page_events = {
   view: function () {
@@ -1766,8 +1791,50 @@ export let page_options = {
         "div",
         {
           class: "item input-parent",
-          id: "event-notification-time-wrapper",
+          id: "firs-day-of-the-week-box",
           tabindex: "4",
+        },
+        [
+          m("label", { for: "first-day-of-the-week" }, "first day of the week"),
+          m(
+            "select",
+            {
+              id: "first-day-of-the-week",
+              class: "select-box",
+              onchange: function () {
+                store_settings();
+              },
+              oncreate: function () {
+                console.log(settings);
+                setTimeout(function () {
+                  focus_after_selection();
+                  if (
+                    settings.firstday == "" ||
+                    settings.firstday == undefined
+                  ) {
+                    document.querySelector("#first-day-of-the-week").value =
+                      "sunday";
+                  } else {
+                    document.querySelector("#first-day-of-the-week").value =
+                      settings.firstday;
+                  }
+                }, 1000);
+              },
+            },
+            [
+              m("option", { value: "sunday" }, "Sunday"),
+              m("option", { value: "monday" }, "Monday"),
+            ]
+          ),
+        ]
+      ),
+
+      m(
+        "div",
+        {
+          class: "item input-parent",
+          id: "event-notification-time-wrapper",
+          tabindex: "5",
         },
         [
           m("label", { for: "default-notification" }, "default Notification"),
@@ -1808,7 +1875,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "5",
+          tabindex: "6",
           oncreate: function () {
             file_list = [];
             list_files("ics", cb);
@@ -1825,7 +1892,7 @@ export let page_options = {
         "button",
         {
           class: "item",
-          tabindex: "6",
+          tabindex: "7",
           onclick: function () {
             m.route.set("/page_subscriptions");
           },
@@ -1842,7 +1909,7 @@ export let page_options = {
             "data-id": item.id,
             "data-action": "delete-subscription",
 
-            tabindex: index + 6,
+            tabindex: index + 7,
             onblur: function () {
               bottom_bar("", "", "");
             },
@@ -1857,7 +1924,7 @@ export let page_options = {
         "button",
         {
           class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 7,
+          tabindex: subscriptions.length + 8,
           onclick: function () {
             m.route.set("/page_accounts");
           },
@@ -1883,7 +1950,7 @@ export let page_options = {
         "button",
         {
           class: "item google-button",
-          tabindex: subscriptions.length + 8,
+          tabindex: subscriptions.length + 9,
           onclick: function () {
             oauth_callback = setInterval(function () {
               if (localStorage.getItem("oauth_callback") == "true") {
@@ -1964,7 +2031,7 @@ export let page_options = {
 
       m("div", {
         id: "KaiOsAds-Wrapper",
-        tabindex: subscriptions.length + accounts.length + 8,
+        tabindex: subscriptions.length + accounts.length + 9,
         class: "flex justify-content-spacearound",
         oninit: function () {
           if (settings.ads) {
@@ -2785,6 +2852,7 @@ var page_list_files = {
         id: "options",
       },
       [
+        m("h2", { class: "text-center", id: "file-head" }, "files"),
         file_list.map(function (e, index) {
           let fn = e.split("/");
           fn = fn[fn.length - 1];
@@ -2874,10 +2942,11 @@ let store_settings = function () {
   ).value;
 
   settings.dateformat = document.getElementById("event-date-format").value;
+  settings.firstday = document.getElementById("first-day-of-the-week").value;
 
   localforage
     .setItem("settings", settings)
-    .then(function (value) {
+    .then(function () {
       side_toaster("settings saved", 2000);
     })
     .catch(function (err) {
@@ -3177,7 +3246,7 @@ let nav = function (move) {
     } catch (e) {}
   }
 
-  if (m.route.get() == "/page_calendar") highlight_current_day();
+  highlight_current_day();
 };
 
 try {
@@ -3198,16 +3267,12 @@ try {
         }
       );
       registration.systemMessageManager.subscribe("activity").then(
-        (rv) => {
-          alert('Successfully subscribe system messages of name "activity".');
-        },
-        (error) => {
-          alert("Fail to subscribe system message, error: " + error);
-        }
+        (rv) => {},
+        (error) => {}
       );
     });
 } catch (e) {
-  alert(e);
+  console.log(e);
 }
 
 let add_alarm = function (date, message_text, id) {
@@ -4179,18 +4244,24 @@ function handleKeyUp(evt) {
 
 document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
-
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
-
+/*
 window.onerror = function (msg, url, linenumber) {
   alert(
     "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
   );
   return true;
 };
+*/
 
 const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {
   //callback from Google OAuth
-  if (event.data.oaut_success) window.open(event.data.oaut_success);
+  //ugly method to open a new window, because a window from sw clients.open can no longer be closed
+  const l = event.data.oauth_success;
+  if (event.data.oauth_success) {
+    setTimeout(() => {
+      window.open(l);
+    }, 5000);
+  }
 });

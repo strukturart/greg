@@ -32,9 +32,8 @@ self.onsystemmessage = (evt) => {
 
           const url = "/oauth.html?code=" + code;
           // clients.openWindow(url);
-
           channel.postMessage({
-            oaut_success: url,
+            oauth_success: url,
           });
         }
       }

@@ -353,24 +353,25 @@ export let list_files = function (filetype, callback) {
   } catch (e) {
     console.log(e);
   }
+  if ("b2g" in navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var iterable = sdcard.enumerate();
+      async function printAllFiles() {
+        for await (let file of iterable) {
+          let n = file.name.split(".");
+          let file_type = n[n.length - 1];
 
-  try {
-    var sdcard = navigator.b2g.getDeviceStorage("sdcard");
-    var iterable = sdcard.enumerate();
-    async function printAllFiles() {
-      for await (let file of iterable) {
-        let n = file.name.split(".");
-        let file_type = n[n.length - 1];
-
-        if (file_type == filetype) {
-          callback(file.name);
-          t = true;
+          if (file_type == filetype) {
+            callback(file.name);
+            t = true;
+          }
         }
       }
+      printAllFiles();
+    } catch (e) {
+      console.log(e);
     }
-    printAllFiles();
-  } catch (e) {
-    console.log(e);
   }
 };
 
@@ -436,27 +437,26 @@ export function get_file(filename, cb) {
   } catch (e) {
     console.log(e);
   }
+  if ("b2g" in navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var request = sdcard.get(filename).then(function (r) {
+        let reader = new FileReader();
 
-  try {
-    var sdcard = navigator.b2g.getDeviceStorage("sdcard");
-    var request = sdcard.get(filename).then(function (r) {
-      let reader = new FileReader();
+        reader.onerror = function (event) {
+          console.log("filereader error: " + event);
+          reader.abort();
+        };
 
-      reader.onerror = function (event) {
-        alert(event);
-        reader.abort();
-      };
+        reader.onloadend = function (event) {
+          cb(reader.result);
+        };
 
-      reader.onloadend = function (event) {
-        alert(reader.result);
-
-        cb(reader.result);
-      };
-
-      reader.readAsText(request.result);
-    });
-  } catch (e) {
-    alert(e);
+        reader.readAsText(r);
+      });
+    } catch (e) {
+      alert(e);
+    }
   }
 }
 
