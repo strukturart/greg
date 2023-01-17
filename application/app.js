@@ -28,6 +28,7 @@ const dayjs = require("dayjs");
 const moment = require("moment-timezone");
 dayjs.extend(dayjsPluginUTC);
 
+const debug = false;
 const google_oauth_url =
   "https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent";
 
@@ -3571,7 +3572,7 @@ let store_event = function (db_id, cal_name) {
       "\nUID:" +
       event.UID +
       "\nSEQUENCE:0" +
-      "\nRRULE: " +
+      "\nRRULE:" +
       event.RRULE +
       "\nDTSTART" +
       event.DTSTART +
@@ -4244,14 +4245,14 @@ function handleKeyUp(evt) {
 document.addEventListener("keydown", handleKeyDown);
 document.addEventListener("keyup", handleKeyUp);
 document.addEventListener("visibilitychange", handleVisibilityChange, false);
-/*
-window.onerror = function (msg, url, linenumber) {
-  alert(
-    "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
-  );
-  return true;
-};
-*/
+if (debug) {
+  window.onerror = function (msg, url, linenumber) {
+    alert(
+      "Error message: " + msg + "\nURL: " + url + "\nLine Number: " + linenumber
+    );
+    return true;
+  };
+}
 
 const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {

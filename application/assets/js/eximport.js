@@ -350,6 +350,10 @@ function share(url, name) {
 export function loadICS(filename, callback) {
   var sdcard = navigator.getDeviceStorage("sdcard");
 
+  if ("b2g" in navigator) {
+    sdcard = navigator.b2g.getDeviceStorage("sdcard");
+  }
+
   var request = sdcard.get(filename);
 
   request.onsuccess = function () {
