@@ -2,11 +2,11 @@ const channel = new BroadcastChannel("sw-messages");
 //channel.postMessage({ title: "Hello from SW" });
 
 self.addEventListener("install", (event) => {
-  // channel.postMessage("install");
+  channel.postMessage("install");
 });
 
 self.addEventListener("activate", (event) => {
-  // bc.postMessage("activate");
+  bc.postMessage("activate");
 });
 
 self.addEventListener("fetch", function (event) {
@@ -18,7 +18,6 @@ self.onsystemmessage = (evt) => {
     let m = evt.data.json();
     self.registration.showNotification("Greg", {
       body: m.data.note,
-      vibrate: [200, 100, 200, 100, 200, 100, 200],
     });
   } catch (e) {}
 

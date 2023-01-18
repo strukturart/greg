@@ -2,9 +2,6 @@
 
 # Greg
 
-![badge-release](https://img.shields.io/github/v/release/strukturart/greg?include_prereleases&style=plastic)
-[![badge-bhackers](https://img.shields.io/badge/bHackers-bHackerStore-orange)](https://store.bananahackers.net/#greg)
-![badge-download(https://img.shields.io/badge/bHackers-bHackerStore-orange)]()
 An easy to use calendar for KaiOs
 
 ![image-1](/images/mockup.png)
@@ -37,7 +34,6 @@ at nextcloud as follows:
 - moon phases
 
 I tested subscribing to calendar with google calendar. you have the possibility to subscribe to public calendars and private calendars, in the google calendar settings you will find an ID that you can enter in greg (by hand or qr code).
-
 
 ## How to install
 

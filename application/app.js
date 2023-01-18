@@ -114,7 +114,6 @@ let load_caldav = function () {
 
       try {
         document.getElementById("icon-loading").style.visibility = "visible";
-
         const calendars = await client.fetchCalendars();
         let k = [];
 
@@ -687,9 +686,13 @@ setTimeout(() => {
 }, 1000);
 
 export let sync_caldav_callback = function (o) {
+  console.log(o);
   if (o.updated.length > 0) {
-    let without_cached = events.filter((events) => events.isCaldav == false);
+    let without_cached = events.filter((e) => e.isCaldav === false);
     events = without_cached;
+    console.log("hey" + events);
+
+    //store data before sync
     load_caldav();
   }
 };
@@ -998,8 +1001,11 @@ let rrule_check = function (date) {
         //recurrences
 
         if (events[t].rrule_json != null) {
+          //endless || with end
           if (events[t].rrule_json.until == null) {
             b = new Date("3000-01-01").getTime();
+          } else {
+            b = new Date(events[t].rrule_json.until).getTime();
           }
         }
 
@@ -1012,7 +1018,7 @@ let rrule_check = function (date) {
               feedback.event = true;
               feedback.rrule = true;
               t = events.length;
-              return false;
+              return feedback;
             }
           }
 
@@ -1168,8 +1174,7 @@ let event_slider = function (date) {
 
         if (d == "MONTHLY") {
           if (
-            new Date(item[i].item.dateStart).getDate() ==
-            new Date(date).getDate()
+            new Date(events[i].dateStart).getDate() == new Date(date).getDate()
           ) {
             slider.push(events[i]);
             k.insertAdjacentHTML("beforeend", "<div class='indicator'></div>");
@@ -1264,11 +1269,14 @@ let highlight_current_day = function () {
       });
 
     let s = document.activeElement.getAttribute("data-day");
+    settings.firstday == "monday" ? (s = s - 1) : s;
 
-    document
-      .querySelectorAll("div#calendar div.calendar-head div")
-      [s].classList.add("active");
-  }, 1000);
+    if (s) {
+      document
+        .querySelectorAll("div#calendar div.calendar-head div")
+        [s].classList.add("active");
+    }
+  }, 200);
 };
 
 load_settings();
@@ -1596,12 +1604,13 @@ var page_calendar = {
         "<img src='assets/image/list.svg'>",
         "<img src='assets/image/option.svg'>"
       );
+      let k;
       if (status.selected_day != undefined) {
         let t = new Date(status.selected_day);
         currentMonth = t.getMonth();
         currentYear = t.getFullYear();
 
-        let k = status.selected_day;
+        k = status.selected_day;
 
         document
           .querySelectorAll("div#calendar-body div.item")
@@ -3249,35 +3258,35 @@ let nav = function (move) {
   highlight_current_day();
 };
 
-try {
-  navigator.serviceWorker
-    .register(new URL("sw.js", import.meta.url), {
-      type: "module",
-      scope: "/",
-    })
-    .then((registration) => {
-      registration.systemMessageManager.subscribe("alarm").then(
-        (rv) => {
-          console.log(
-            'Successfully subscribe system messages of name "alarm".'
-          );
-        },
-        (error) => {
-          console.log("Fail to subscribe system message, error: " + error);
-        }
-      );
-      registration.systemMessageManager.subscribe("activity").then(
-        (rv) => {},
-        (error) => {}
-      );
-    });
-} catch (e) {
-  console.log(e);
+if ("b2g" in Navigator) {
+  try {
+    navigator.serviceWorker
+      .register(new URL("sw.js", import.meta.url), {
+        type: "module",
+        scope: "/",
+      })
+      .then((registration) => {
+        registration.systemMessageManager.subscribe("alarm").then(
+          (rv) => {
+            alert('Successfully subscribe system messages of name "alarm".');
+          },
+          (error) => {
+            console.log("Fail to subscribe system message, error: " + error);
+          }
+        );
+        registration.systemMessageManager.subscribe("activity").then(
+          (rv) => {},
+          (error) => {}
+        );
+      });
+  } catch (e) {
+    console.log(e);
+  }
 }
 
 let add_alarm = function (date, message_text, id) {
   // KaiOs  2.xx
-  if (navigator.mozAlarms) {
+  if ("mozAlarms" in navigator) {
     // This is arbitrary data pass to the alarm
     var data = {
       note: message_text,
@@ -3287,7 +3296,7 @@ let add_alarm = function (date, message_text, id) {
     var request = navigator.mozAlarms.add(date, "honorTimezone", data);
 
     request.onsuccess = function () {
-      console.log("");
+      console.log("alarm set");
     };
 
     request.onerror = function () {
@@ -3296,20 +3305,21 @@ let add_alarm = function (date, message_text, id) {
   }
 
   // KaiOs  3.xx
+  if ("b2g" in navigator) {
+    try {
+      let options = {
+        "date": date,
+        "data": { "note": message_text },
+        "ignoreTimezone": false,
+      };
 
-  try {
-    let options = {
-      "date": date,
-      "data": { "note": message_text },
-      "ignoreTimezone": false,
-    };
-
-    navigator.b2g.alarmManager.add(options).then(
-      (id) => console.log("add id: " + id),
-      (err) => console.log("add err: " + err)
-    );
-  } catch (e) {
-    alert(e);
+      navigator.b2g.alarmManager.add(options).then(
+        (id) => console.log("add id: " + id),
+        (err) => console.log("add err: " + err)
+      );
+    } catch (e) {
+      alert(e);
+    }
   }
 };
 let remove_alarm = function (id) {
@@ -3341,31 +3351,32 @@ let remove_alarm = function (id) {
     };
   }
   // KaiOs  3.xx
+  if ("b2g" in navigator) {
+    try {
+      let request = navigator.b2g.alarmManager.getAll();
 
-  try {
-    let request = navigator.b2g.alarmManager.getAll();
+      request.onsuccess = function () {
+        this.result.forEach(function (alarm) {
+          console.log(JSON.stringify(alarm));
 
-    request.onsuccess = function () {
-      this.result.forEach(function (alarm) {
-        console.log(JSON.stringify(alarm));
+          if (alarm.data.event_id == id) {
+            let req = navigator.b2g.alarmManager.remove(alarm.id);
 
-        if (alarm.data.event_id == id) {
-          let req = navigator.b2g.alarmManager.remove(alarm.id);
+            req.onsuccess = function () {
+              console.log("removed");
+            };
 
-          req.onsuccess = function () {
-            console.log("removed");
-          };
-
-          req.onerror = function () {
-            console.log("An error occurred: " + this.error.name);
-          };
-        } else {
-          console.log("no alarm founded");
-        }
-      });
-    };
-  } catch (e) {
-    alert(e);
+            req.onerror = function () {
+              console.log("An error occurred: " + this.error.name);
+            };
+          } else {
+            console.log("no alarm founded");
+          }
+        });
+      };
+    } catch (e) {
+      alert(e);
+    }
   }
 };
 
@@ -3384,6 +3395,35 @@ let convert_ics_date = function (t) {
   nn = nn.replace(" ", "T");
   return nn;
 };
+
+const days = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+
+let rrule_convert = function (val, date_end, date_start) {
+  let p = val;
+  let r = "";
+  let f = days[new Date(date_start).getDay()];
+  console.log(f);
+
+  if (p == "none") {
+    return r;
+  }
+  if (p != "none") {
+    r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(date_end);
+
+    if (val == "WEEKLY") {
+      r =
+        "FREQ=" +
+        val +
+        ";INTERVAL=1;BYDAY=" +
+        f +
+        ";UNTIL=" +
+        convert_ics_date(date_end);
+    }
+    return r;
+  }
+};
+
+//todo if is rrule enddate == startdate
 
 let export_data = [];
 
@@ -3423,6 +3463,9 @@ let store_event = function (db_id, cal_name) {
   let convert_dt_end =
     document.getElementById("event-date-end").value + " " + end_time;
 
+  let rrule_dt_end =
+    document.getElementById("event-date").value + " " + end_time;
+
   // notification before event
   let notification_time = document.getElementById(
     "event-notification-time"
@@ -3456,25 +3499,14 @@ let store_event = function (db_id, cal_name) {
     var time2Date = new Date(
       document.getElementById("event-date-end").value + " " + end_time
     );
-    console.log(time2Date + ",," + time1Date);
     if (time2Date < time1Date) {
-      toaster("The time is not correct.", 2000);
+      toaster(
+        "The time is not correct.Do you want to set the time to the next day? please change the date",
+        3000
+      );
       validation = false;
     }
   }
-
-  let rrule_convert = function (val) {
-    let p = val;
-    let r = "";
-
-    if (p == "none") {
-      return r;
-    }
-    if (p != "none") {
-      r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
-      return r;
-    }
-  };
 
   if (validation == false) return false;
   let event = {
@@ -3494,7 +3526,11 @@ let store_event = function (db_id, cal_name) {
     RRULE:
       document.getElementById("event-recur").value == "none"
         ? ""
-        : rrule_convert(document.getElementById("event-recur").value),
+        : rrule_convert(
+            document.getElementById("event-recur").value,
+            convert_dt_end,
+            document.getElementById("event-date").value
+          ),
     rrule_:
       document.getElementById("event-recur").value == ""
         ? "none"
@@ -3517,7 +3553,11 @@ let store_event = function (db_id, cal_name) {
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
     event.ACTION = "AUDIO";
     event.END = "VALARM";
-    add_alarm(calc_notification, event.SUMMARY, event.UID);
+    try {
+      add_alarm(calc_notification, event.SUMMARY, event.UID);
+    } catch (e) {
+      console.log(e);
+    }
   }
   let dd =
     "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
@@ -3566,12 +3606,17 @@ let store_event = function (db_id, cal_name) {
         side_toaster("no data to export", 2000);
       });
   } else {
+    //caldav
+    //rrule event should end on the same day, but rrule.until should set the end date
+    if (event.RRULE != null || event.RRULE != "") {
+      event.DTEND =
+        ";TZID=" + settings.timezone + ":" + convert_ics_date(rrule_dt_end);
+    }
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
       event.SUMMARY +
       "\nUID:" +
       event.UID +
-      "\nSEQUENCE:0" +
       "\nRRULE:" +
       event.RRULE +
       "\nDTSTART" +
@@ -3591,6 +3636,7 @@ let store_event = function (db_id, cal_name) {
       event_data = event_data.replace("RRULE:null", "");
       event_data = event_data.replace("RRULE:", "");
     }
+
     event_data = event_data.trim();
 
     create_caldav(event_data, event.id, cal_name, event, event.UID);
@@ -3634,6 +3680,9 @@ let update_event = function (etag, url, id, db_id, uid) {
   let convert_dt_end =
     document.getElementById("event-date-end").value + " " + end_time;
 
+  let rrule_dt_end =
+    document.getElementById("event-date").value + " " + end_time;
+
   // notification before event
   let notification_time = document.getElementById(
     "event-notification-time"
@@ -3647,11 +3696,9 @@ let update_event = function (etag, url, id, db_id, uid) {
     );
 
     notification_time = convert_ics_date(calc_notification.toISOString());
-
-    console.log("nf time" + notification_time);
   }
 
-  let allday = false;
+  let allDay = false;
 
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
@@ -3659,19 +3706,6 @@ let update_event = function (etag, url, id, db_id, uid) {
   if (a != b) {
     allDay = true;
   }
-
-  let rrule_convert = function (val) {
-    let p = val;
-    let r = "";
-
-    if (p == "none") {
-      return r;
-    }
-    if (p != "none") {
-      r = "FREQ=" + val + ";UNTIL=" + convert_ics_date(convert_dt_end);
-      return r;
-    }
-  };
 
   if (validation == false) return false;
   let event = {
@@ -3691,7 +3725,11 @@ let update_event = function (etag, url, id, db_id, uid) {
     RRULE:
       document.getElementById("event-recur").value == "none"
         ? ""
-        : rrule_convert(document.getElementById("event-recur").value),
+        : rrule_convert(
+            document.getElementById("event-recur").value,
+            convert_dt_end,
+            document.getElementById("event-date").value
+          ),
     rrule_:
       document.getElementById("event-recur").value == ""
         ? "none"
@@ -3706,7 +3744,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allday,
+    allDay: allDay,
   };
 
   if (event.alarm != "none") {
@@ -3767,12 +3805,19 @@ let update_event = function (etag, url, id, db_id, uid) {
         side_toaster("no data to export", 2000);
       });
   } else {
+    //caldav
+    //rrule event should end on the same day, but rrule.until should set the end date
+
+    if (event.RRULE != null || event.RRULE != "") {
+      event.DTEND =
+        ";TZID=" + settings.timezone + ":" + convert_ics_date(rrule_dt_end);
+    }
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
       event.SUMMARY +
       "\nUID:" +
       event.UID +
-      "\nSEQUENCE:0\nRRULE:" +
+      "\nRRULE:" +
       event.RRULE +
       "\nDTSTART" +
       event.DTSTART +
@@ -4143,9 +4188,6 @@ function shortpress_action(param) {
 
       //toggle month/events
       if (m.route.get() == "/page_edit_event") return false;
-      if (events.lenght == 0) {
-        side_toaster("There are no calendar entries to display", 3000);
-      }
 
       if (events.length > 0) {
         if (
@@ -4156,6 +4198,9 @@ function shortpress_action(param) {
             ? m.route.set("/page_events")
             : m.route.set("/page_calendar");
         }
+      } else {
+        if (m.route.get() == "/page_calendar")
+          side_toaster("There are no calendar entries to display", 3000);
       }
       break;
 
@@ -4258,6 +4303,7 @@ const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
+  alert(event.data);
   const l = event.data.oauth_success;
   if (event.data.oauth_success) {
     setTimeout(() => {

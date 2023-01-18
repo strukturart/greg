@@ -82,7 +82,10 @@
 		},
 		"systemXHR": {
 			"description": "Required to load remote content"
-		}
+		},
+		 "alarms": {
+      "description": "Required to schedule alarms"
+    }
 	}
 
 }

@@ -17,17 +17,18 @@ export let export_ical = function (filename, event_data) {
 
     var request_del = sdcard.delete(filename);
     request_del.onsuccess = function () {
-      console.log("error delete");
+      console.log("file deleted");
     };
   } catch (e) {
     // alert(e);
   }
-
-  try {
-    var sdcard = navigator.b2g.getDeviceStorage("sdcard");
-    var request_del = sdcard.delete(filename);
-  } catch (e) {
-    alert(e);
+  if ("b2g" in Navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+      var request_del = sdcard.delete(filename);
+    } catch (e) {
+      console.log(e);
+    }
   }
 
   setTimeout(function () {
@@ -100,24 +101,25 @@ export let export_ical = function (filename, event_data) {
         toaster("Unable to write the file", 2000);
       };
     } catch (e) {
-      // alert(e);
+      console.log(e);
     }
 
     //KaiOS 3.x
+    if ("b2g" in Navigator) {
+      try {
+        var sdcard = navigator.b2g.getDeviceStorage("sdcard");
+        var request = sdcard.addNamed(file, filename);
 
-    try {
-      var sdcard = navigator.b2g.getDeviceStorage("sdcard");
-      var request = sdcard.addNamed(file, filename);
+        request.onsuccess = function () {
+          side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+        };
 
-      request.onsuccess = function () {
-        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
-      };
-
-      request.onerror = function () {
-        toaster("Unable to write the file", 2000);
-      };
-    } catch (e) {
-      alert(e);
+        request.onerror = function () {
+          toaster("Unable to write the file", 2000);
+        };
+      } catch (e) {
+        console.log(e);
+      }
     }
   }, 2000);
 };
@@ -167,13 +169,13 @@ export let parse_ics = function (
   isCaldav,
   alarm
 ) {
-  console.log(alarm);
   var jcalData = ICAL.parse(data);
 
   var comp = new ICAL.Component(jcalData);
   var vevent = comp.getAllSubcomponents("vevent");
   vevent.forEach(function (ite) {
     let n = "";
+    let rr_until = "";
 
     let rrule_freq = "none";
     if (
@@ -182,6 +184,10 @@ export let parse_ics = function (
       ite.getFirstPropertyValue("rrule").freq != null
     ) {
       n = ite.getFirstPropertyValue("rrule");
+      if (n.until != null) {
+        rr_until = n.until;
+      }
+
       rrule_freq = n.freq;
     }
 
@@ -204,6 +210,12 @@ export let parse_ics = function (
       timeEnd = dayjs(ite.getFirstPropertyValue("dtend")).format("HH:mm:ss");
       dateEndUnix =
         new Date(ite.getFirstPropertyValue("dtend")).getTime() / 1000;
+
+      if (rr_until != "") {
+        dateEnd = dayjs(n.until).format("YYYY-MM-DD");
+        timeEnd = dayjs(n.until).format("HH:mm:ss");
+        dateEndUnix = new Date(n.until).getTime() / 1000;
+      }
     }
 
     //allDay event
@@ -350,7 +362,7 @@ function share(url, name) {
 export function loadICS(filename, callback) {
   var sdcard = navigator.getDeviceStorage("sdcard");
 
-  if ("b2g" in navigator) {
+  if ("b2g" in Navigator) {
     sdcard = navigator.b2g.getDeviceStorage("sdcard");
   }
 

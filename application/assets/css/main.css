@@ -32,6 +32,7 @@
   -ms-hyphens: auto;
   -moz-hyphens: auto;
   hyphens: auto;
+  font-family: "Roboto";
 }
 
 :focus {
@@ -132,6 +133,7 @@ select {
   text-align: center;
   position: relative;
   background: #fafafa url("../image/E264.svg") no-repeat 99% 80%;
+  font-family: "Roboto";
 }
 
 textarea {
@@ -139,6 +141,15 @@ textarea {
   width: 90%;
   padding: 3px;
   border: 1px solid silver;
+  font-family: "Roboto";
+}
+
+form {
+  font-family: "Roboto";
+}
+
+input {
+  font-family: "Roboto";
 }
 
 input {
