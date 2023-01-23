@@ -2,11 +2,11 @@ const channel = new BroadcastChannel("sw-messages");
 //channel.postMessage({ title: "Hello from SW" });
 
 self.addEventListener("install", (event) => {
-  channel.postMessage("install");
+  //channel.postMessage("install");
 });
 
 self.addEventListener("activate", (event) => {
-  bc.postMessage("activate");
+ // bc.postMessage("activate");
 });
 
 self.addEventListener("fetch", function (event) {

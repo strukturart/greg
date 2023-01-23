@@ -55,6 +55,8 @@ let style_calendar_cell = function () {
 
     if (event_check(p).event == true) {
       e.classList.add("event");
+    } else {
+      if (e.classList.contains("event")) e.classList.remove("event");
     }
 
     if (rrule_check(p).rrule) {
@@ -708,11 +710,14 @@ localforage
     }
     accounts = value;
     load_cached_caldav();
-    sync_caldav(sync_caldav_callback);
   })
   .catch(function (err) {
     console.log(err);
   });
+
+setTimeout(() => {
+  sync_caldav(sync_caldav_callback);
+}, 10000);
 
 //get event data
 let get_event_date = function () {
@@ -736,6 +741,7 @@ localforage
     console.log(err);
   });
 
+//store templates
 let store_event_as_template = function (title, description, location) {
   let m = {
     id: uid(32),
@@ -1462,6 +1468,7 @@ let focus_after_selection = function () {
 /*--------------*/
 
 let search = function (e) {
+  console.log("start search");
   if (e == "close") {
     document.querySelectorAll(".search-item").forEach(function (e) {
       e.remove();
@@ -1490,9 +1497,13 @@ let search = function (e) {
     e.remove();
   });
 
-  const matches = events.filter(
-    (val) => val.LOCATION.toLowerCase().indexOf(e.target.value) > -1
-  );
+  const matches = events.filter(function (val, i) {
+    if (events[i].LOCATION != "") {
+      if (events[i].LOCATION.toLowerCase().indexOf(e.target.value) > -1) {
+        return events[i].LOCATION;
+      }
+    }
+  });
 
   if (matches.length === 0 || e.target.value == "") {
     document.querySelectorAll(".search-item").forEach(function (e) {
@@ -2631,7 +2642,6 @@ var page_edit_event = {
             value: update_event_date.LOCATION,
           }),
         ]),
-        m("div", { id: "search-result" }),
 
         m("div", { class: "item input-parent", tabindex: "2" }, [
           m("label", { for: "event-date" }, "Start Date"),
@@ -3864,7 +3874,7 @@ let delete_event = function (etag, url, account_id, uid) {
       .then(function (value) {
         export_ical("others/greg.ics", value);
         side_toaster("event deleted", 2000);
-        m.route.set("/page_calendar");
+        m.route.set("/page_events");
       })
       .catch(function (err) {
         // This code runs if there were any errors
@@ -4303,7 +4313,6 @@ const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
-  alert(event.data);
   const l = event.data.oauth_success;
   if (event.data.oauth_success) {
     setTimeout(() => {
