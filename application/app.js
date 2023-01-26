@@ -953,6 +953,7 @@ let event_check = function (date) {
         feedback.event = true;
         t = events.length;
         let m = events.filter(
+          // (event) => new Date(event.dateStart).getTime() == c
           (event) => new Date(event.dateStart).getTime() == c
         );
         feedback.count = m.length;
@@ -1032,6 +1033,12 @@ let rrule_check = function (date) {
             feedback.rrule = true;
             feedback.event = true;
             t = events.length;
+            /*to do detect mulievents
+            let m = events.filter(
+              (event) => new Date(event.dateEnd).getTime() == c
+            );
+            feedback.count = m.length;
+            */
             return feedback;
           }
 
@@ -1407,6 +1414,7 @@ let showCalendar = function (month, year) {
 
           if (rrule_check(p).rrule == true) {
             cell.classList.add("event");
+            if (rrule_check(p).count > 1) cell.classList.add("multievent");
           }
         }
 
