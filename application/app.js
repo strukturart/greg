@@ -52,7 +52,7 @@ let calendar_names = [
 let style_calendar_cell = function () {
   document.querySelectorAll("div.calendar-cell").forEach(function (e) {
     let p = e.getAttribute("data-date");
-
+    /*
     if (event_check(p).event == true) {
       e.classList.add("event");
     } else {
@@ -61,6 +61,22 @@ let style_calendar_cell = function () {
 
     if (rrule_check(p).rrule) {
       e.classList.add("event");
+    }
+    */
+
+    if (event_check(p).event == true) {
+      e.classList.add("event");
+      if (event_check(p).multidayevent == true) e.classList.add("multievent");
+    } else {
+      if (e.classList.contains("event")) e.classList.remove("event");
+    }
+
+    
+    if (event_check(p).eevent == true) e.classList.add("event");
+
+    if (rrule_check(p).rrule == true) {
+      e.classList.add("event");
+      if (rrule_check(p).count > 1) e.classList.add("multievent");
     }
   });
 };
@@ -935,9 +951,34 @@ let find_closest_date = function () {
 let event_check = function (date) {
   let feedback = {
     event: false,
-    count: 0,
+    multidayevent: false,
   };
 
+  let k = events.filter(
+    (event) => new Date(event.dateStart).getTime() == new Date(date).getTime()
+  );
+  if (k.length > 0) {
+    feedback.event = true;
+  }
+  if (k.length > 1) {
+    feedback.multidayevent = true;
+  }
+  //event start!= end
+  let s = events.filter(
+    (event) =>
+      new Date(event.dateStart).getTime() <= new Date(date).getTime() &&
+      new Date(event.dateEnd).getTime() >= new Date(date).getTime() &&
+      event.rrule_ == "none"
+  );
+
+  if (s.length > 0) {
+    feedback.eevent = true;
+  }
+  //several events in one day
+  if (s.length > 1) {
+    feedback.multidayevent = true;
+  }
+  /*
   for (let t = 0; t < events.length; t++) {
     if (typeof events[t] === "object") {
       feedback.event = false;
@@ -948,17 +989,6 @@ let event_check = function (date) {
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
       let d = events[t].rrule_;
-
-      if (a === c) {
-        feedback.event = true;
-        t = events.length;
-        let m = events.filter(
-          // (event) => new Date(event.dateStart).getTime() == c
-          (event) => new Date(event.dateStart).getTime() == c
-        );
-        feedback.count = m.length;
-        return feedback;
-      }
 
       if (d === "none" || d === "" || d === undefined || d === "DAILY") {
         if (a === c || (a <= c && b >= c)) {
@@ -977,6 +1007,9 @@ let event_check = function (date) {
       }
     }
   }
+*/
+  console.log(feedback);
+
   return feedback;
 };
 
@@ -993,7 +1026,6 @@ let rrule_check = function (date) {
   for (let t = 0; t < events.length; t++) {
     if (typeof events[t] === "object") {
       feedback.event = false;
-      feedback.subscription = false;
       feedback.multidayevent = false;
       feedback.rrule = false;
       feedback.date = date;
@@ -1027,19 +1059,6 @@ let rrule_check = function (date) {
               t = events.length;
               return feedback;
             }
-          }
-
-          if (d == "DAILY") {
-            feedback.rrule = true;
-            feedback.event = true;
-            t = events.length;
-            /*to do detect mulievents
-            let m = events.filter(
-              (event) => new Date(event.dateEnd).getTime() == c
-            );
-            feedback.count = m.length;
-            */
-            return feedback;
           }
 
           if (d == "WEEKLY") {
@@ -1407,15 +1426,19 @@ let showCalendar = function (month, year) {
 
         // check if has event
         if (events.length > 0) {
+          /*
           if (event_check(p).event == true) {
             cell.classList.add("event");
-            if (event_check(p).count > 1) cell.classList.add("multievent");
+            if (event_check(p).multidayevent == true)
+              cell.classList.add("multievent");
           }
+          if (event_check(p).eevent == true) cell.classList.add("event");
 
           if (rrule_check(p).rrule == true) {
             cell.classList.add("event");
             if (rrule_check(p).count > 1) cell.classList.add("multievent");
           }
+          */
         }
 
         cell.classList.add("item");
@@ -1450,6 +1473,7 @@ let showCalendar = function (month, year) {
   }
 
   highlight_current_day();
+  style_calendar_cell();
 };
 
 let clear_form = function () {
