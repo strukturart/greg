@@ -45,40 +45,30 @@ let calendar_names = [
     name: "local",
     id: "local-id",
     data: "",
-    type: "local",
-  },
+    type: "local"
+  }
 ];
 
 let style_calendar_cell = function () {
-  document.querySelectorAll("div.calendar-cell").forEach(function (e) {
-    let p = e.getAttribute("data-date");
-    /*
-    if (event_check(p).event == true) {
-      e.classList.add("event");
-    } else {
-      if (e.classList.contains("event")) e.classList.remove("event");
-    }
+  if (events.length > 0) {
+    document.querySelectorAll("div.calendar-cell").forEach(function (e) {
+      let p = e.getAttribute("data-date");
 
-    if (rrule_check(p).rrule) {
-      e.classList.add("event");
-    }
-    */
+      if (event_check(p).event == true) {
+        e.classList.add("event");
+        if (event_check(p).multidayevent == true) e.classList.add("multievent");
+      } else {
+        if (e.classList.contains("event")) e.classList.remove("event");
+      }
 
-    if (event_check(p).event == true) {
-      e.classList.add("event");
-      if (event_check(p).multidayevent == true) e.classList.add("multievent");
-    } else {
-      if (e.classList.contains("event")) e.classList.remove("event");
-    }
+      if (event_check(p).eevent == true) e.classList.add("event");
 
-    
-    if (event_check(p).eevent == true) e.classList.add("event");
-
-    if (rrule_check(p).rrule == true) {
-      e.classList.add("event");
-      if (rrule_check(p).count > 1) e.classList.add("multievent");
-    }
-  });
+      if (rrule_check(p).rrule == true) {
+        e.classList.add("event");
+        if (rrule_check(p).count > 1) e.classList.add("multievent");
+      }
+    });
+  }
 };
 
 let load_caldav = function () {
@@ -93,20 +83,20 @@ let load_caldav = function () {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: "https://greg.strukturart.com/redirect.html"
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password,
+          password: item.password
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     }
 
@@ -137,7 +127,7 @@ let load_caldav = function () {
 
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
+            calendar: calendars[i]
           });
           //cache data
           let data_to_store = {
@@ -145,7 +135,7 @@ let load_caldav = function () {
             syncToken: calendars[i].syncToken,
             ctag: calendars[i].ctag,
             url: calendars[i].url,
-            objects: objects,
+            objects: objects
           };
 
           k.push(data_to_store);
@@ -162,10 +152,13 @@ let load_caldav = function () {
           objects.forEach(function (i) {
             parse_ics(i.data, "", false, i.etag, i.url, item.id, true);
           });
+
           document.getElementById("icon-loading").style.visibility = "hidden";
-          style_calendar_cell();
-          side_toaster("Data loaded", 3000);
         }
+
+        // load_cached_caldav();
+        style_calendar_cell();
+        side_toaster("Data loaded", 3000);
       } catch (e) {
         document.getElementById("icon-loading").style.visibility = "hidden";
 
@@ -188,20 +181,20 @@ let cache_caldav = function () {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: "https://greg.strukturart.com/redirect.html"
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password,
+          password: item.password
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     }
 
@@ -231,7 +224,7 @@ let cache_caldav = function () {
 
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
+            calendar: calendars[i]
           });
           //cache data
           let data_to_store = {
@@ -239,7 +232,7 @@ let cache_caldav = function () {
             syncToken: calendars[i].syncToken,
             ctag: calendars[i].ctag,
             url: calendars[i].url,
-            objects: objects,
+            objects: objects
           };
 
           k.push(data_to_store);
@@ -274,20 +267,20 @@ export let sync_caldav = function (callback) {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: "https://greg.strukturart.com/redirect.html"
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password,
+          password: item.password
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav",
+        defaultAccountType: "caldav"
       });
     }
 
@@ -309,12 +302,12 @@ export let sync_caldav = function (callback) {
         const calendars = await client.fetchCalendars();
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
+            calendar: calendars[i]
           });
           calendar_names.push({
             name: calendars[i].displayName,
             url: calendars[i].url,
-            id: item.id,
+            id: item.id
           });
         }
 
@@ -329,11 +322,11 @@ export let sync_caldav = function (callback) {
                 ctag: value[i].ctag,
                 syncToken: value[i].syncToken,
                 displayName: value[i].displayName,
-                objects: value[i].objects,
-              },
+                objects: value[i].objects
+              }
             ],
             detailedResult: true,
-            headers: client.authHeaders,
+            headers: client.authHeaders
           };
           try {
             const ma = await client.syncCalendars(s);
@@ -370,20 +363,20 @@ let create_caldav = function (
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: "https://greg.strukturart.com/redirect.html"
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       } else {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
             username: p.user,
-            password: p.password,
+            password: p.password
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       }
       (async () => {
@@ -409,8 +402,8 @@ let create_caldav = function (
                 iCalString: event_data,
                 headers: {
                   "content-type": "text/calendar; charset=utf-8",
-                  authorization: client.authHeaders.authorization,
-                },
+                  authorization: client.authHeaders.authorization
+                }
               });
 
               if (result.ok) {
@@ -418,10 +411,10 @@ let create_caldav = function (
                   const [res] = await client.propfind({
                     url: result.url,
                     props: {
-                      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                      [`${DAVNamespaceShort.DAV}:getetag`]: {}
                     },
                     depth: "0",
-                    headers: client.authHeaders,
+                    headers: client.authHeaders
                   });
 
                   event.etag = res.props.getetag;
@@ -479,20 +472,20 @@ let delete_caldav = function (etag, url, account_id, uid) {
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: "https://greg.strukturart.com/redirect.html"
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       } else {
         client = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
             username: item.user,
-            password: item.password,
+            password: item.password
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       }
       (async () => {
@@ -512,9 +505,9 @@ let delete_caldav = function (etag, url, account_id, uid) {
           const result = await client.deleteCalendarObject({
             calendarObject: {
               url: url,
-              etag: etag,
+              etag: etag
             },
-            headers: client.authHeaders,
+            headers: client.authHeaders
           });
 
           if (result.ok) {
@@ -570,20 +563,20 @@ let update_caldav = function (etag, url, data, account_id) {
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: "https://greg.strukturart.com/redirect.html"
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       } else {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
             username: p.user,
-            password: p.password,
+            password: p.password
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav",
+          defaultAccountType: "caldav"
         });
       }
       (async () => {
@@ -603,25 +596,24 @@ let update_caldav = function (etag, url, data, account_id) {
             calendarObject: {
               url: url,
               data: data,
-              etag: etag,
+              etag: etag
             },
 
-            headers: client.authHeaders,
+            headers: client.authHeaders
           });
 
           if (result.ok) {
             popup("", "close");
             m.route.set("/page_calendar");
-            cache_caldav();
             //get new ETAG
             try {
               const [res] = await client.propfind({
                 url: result.url,
                 props: {
-                  [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                  [`${DAVNamespaceShort.DAV}:getetag`]: {}
                 },
                 depth: "0",
-                headers: client.authHeaders,
+                headers: client.authHeaders
               });
 
               events.map((item) => {
@@ -632,10 +624,12 @@ let update_caldav = function (etag, url, data, account_id) {
                   return item;
                 }
               });
+              cache_caldav();
             } catch (e) {
               console.log(e);
             }
           } else {
+            console.log(JSON.stringify(result));
             popup(
               "There was a problem saving, please try again later.",
               "show"
@@ -672,6 +666,7 @@ let load_cached_caldav = function () {
               parse_ics(m.data, "", false, m.etag, m.url, item.id, true);
             });
           });
+          style_calendar_cell();
         })
         .catch(function (err) {
           console.log(err);
@@ -704,32 +699,33 @@ setTimeout(() => {
 }, 1000);
 
 export let sync_caldav_callback = function (o) {
-  console.log(o);
   if (o.updated.length > 0) {
-    let without_cached = events.filter((e) => e.isCaldav === false);
-    events = without_cached;
-    console.log("hey" + events);
+    //remove cached date before update
+    events = events.filter((e) => e.isCaldav == false);
+    console.log(JSON.stringify(events));
 
-    //store data before sync
-    load_caldav();
+    setTimeout(function () {
+      load_caldav();
+    }, 1000);
   }
 };
 
 //load accounts data
-
-localforage
-  .getItem("accounts")
-  .then(function (value) {
-    if (value == null) {
-      accounts = [];
-      return false;
-    }
-    accounts = value;
-    load_cached_caldav();
-  })
-  .catch(function (err) {
-    console.log(err);
-  });
+setTimeout(() => {
+  localforage
+    .getItem("accounts")
+    .then(function (value) {
+      if (value == null) {
+        accounts = [];
+        return false;
+      }
+      accounts = value;
+      load_cached_caldav();
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+}, 3200);
 
 setTimeout(() => {
   sync_caldav(sync_caldav_callback);
@@ -763,7 +759,7 @@ let store_event_as_template = function (title, description, location) {
     id: uid(32),
     title: title,
     description: description,
-    location: location,
+    location: location
   };
   event_templates.push(m);
 
@@ -790,7 +786,7 @@ let update_event_date;
 export let status = {
   selected_day: "",
   visible: false,
-  update_event_id: "",
+  update_event_id: ""
 };
 
 export let settings = {
@@ -798,7 +794,7 @@ export let settings = {
   ads: true,
   timezone: moment.tz.guess(),
   dateformat: "YYYY-MM-DD",
-  firstday: "sunday",
+  firstday: "sunday"
 };
 let blob = "";
 let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -854,18 +850,17 @@ let load_ads = function () {
         // Ad is ready to be displayed
         // calling 'display' will display the ad
         ad.call("display", {
-          navClass: "item",
+          navClass: "item"
           //tabIndex: 0,
           //display: "block",
         });
-      },
+      }
     });
   };
   document.head.appendChild(js);
 };
 
 //KaiOS ads
-let self;
 let getManifest = function (callback) {
   if (!navigator.mozApps) {
     return false;
@@ -917,7 +912,7 @@ let find_closest_date = function () {
     document.activeElement.parentNode.scrollBy({
       left: 0,
       top: elY - window.innerHeight / 2,
-      behavior: "smooth",
+      behavior: "smooth"
     });
   };
   //smaller or first
@@ -951,11 +946,15 @@ let find_closest_date = function () {
 let event_check = function (date) {
   let feedback = {
     event: false,
-    multidayevent: false,
+    multidayevent: false
   };
 
   let k = events.filter(
-    (event) => new Date(event.dateStart).getTime() == new Date(date).getTime()
+    (event) =>
+      new Date(event.dateStart).getTime() == new Date(date).getTime() ||
+      (new Date(event.dateStart).getTime() <= new Date(date).getTime() &&
+        new Date(event.dateEnd).getTime() >= new Date(date).getTime() &&
+        event.rrule_ == "none")
   );
   if (k.length > 0) {
     feedback.event = true;
@@ -963,52 +962,6 @@ let event_check = function (date) {
   if (k.length > 1) {
     feedback.multidayevent = true;
   }
-  //event start!= end
-  let s = events.filter(
-    (event) =>
-      new Date(event.dateStart).getTime() <= new Date(date).getTime() &&
-      new Date(event.dateEnd).getTime() >= new Date(date).getTime() &&
-      event.rrule_ == "none"
-  );
-
-  if (s.length > 0) {
-    feedback.eevent = true;
-  }
-  //several events in one day
-  if (s.length > 1) {
-    feedback.multidayevent = true;
-  }
-  /*
-  for (let t = 0; t < events.length; t++) {
-    if (typeof events[t] === "object") {
-      feedback.event = false;
-      feedback.subscription = false;
-      feedback.multidayevent = false;
-      feedback.rrule = false;
-      let a = new Date(events[t].dateStart).getTime();
-      let b = new Date(events[t].dateEnd).getTime();
-      let c = new Date(date).getTime();
-      let d = events[t].rrule_;
-
-      if (d === "none" || d === "" || d === undefined || d === "DAILY") {
-        if (a === c || (a <= c && b >= c)) {
-          feedback.event = true;
-
-          if (events[t].allDay && events[t].dateEnd == date) {
-            feedback.event = false;
-          }
-
-          if (events[t].time_end == "00:00:00" && events[t].allDay) {
-            feedback.event = false;
-          }
-
-          return feedback;
-        }
-      }
-    }
-  }
-*/
-  console.log(feedback);
 
   return feedback;
 };
@@ -1020,7 +973,7 @@ let rrule_check = function (date) {
     event: false,
     subscription: false,
     multidayevent: false,
-    rrule: "none",
+    rrule: "none"
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -1059,6 +1012,9 @@ let rrule_check = function (date) {
               t = events.length;
               return feedback;
             }
+          }
+
+          if (d == "DAILY") {
           }
 
           if (d == "WEEKLY") {
@@ -1301,12 +1257,20 @@ let highlight_current_day = function () {
       });
 
     let s = document.activeElement.getAttribute("data-day");
-    settings.firstday == "monday" ? (s = s - 1) : s;
 
     if (s) {
-      document
-        .querySelectorAll("div#calendar div.calendar-head div")
-        [s].classList.add("active");
+      if (settings.firstday == "monday") {
+        s = s - 1;
+        console.log(s);
+        if (s == -1) s = 6;
+        document
+          .querySelectorAll("div#calendar div.calendar-head div")
+          [s].classList.add("active");
+      } else {
+        document
+          .querySelectorAll("div#calendar div.calendar-head div")
+          [s].classList.add("active");
+      }
     }
   }, 200);
 };
@@ -1325,7 +1289,7 @@ let months = [
   "Sep",
   "Oct",
   "Nov",
-  "Dec",
+  "Dec"
 ];
 
 //////////////
@@ -1424,23 +1388,6 @@ let showCalendar = function (month, year) {
 
         cell.setAttribute("data-index", new Date(p).toISOString());
 
-        // check if has event
-        if (events.length > 0) {
-          /*
-          if (event_check(p).event == true) {
-            cell.classList.add("event");
-            if (event_check(p).multidayevent == true)
-              cell.classList.add("multievent");
-          }
-          if (event_check(p).eevent == true) cell.classList.add("event");
-
-          if (rrule_check(p).rrule == true) {
-            cell.classList.add("event");
-            if (rrule_check(p).count > 1) cell.classList.add("multievent");
-          }
-          */
-        }
-
         cell.classList.add("item");
         row.appendChild(cell);
 
@@ -1451,10 +1398,17 @@ let showCalendar = function (month, year) {
     // add weeknumbers
     let week = document.createElement("span");
     week.classList.add("weeknumber");
+    let f = () => {
+      let k = "";
+      if (settings.firstday == "monday") {
+        k = new Date(year, month, date - 1).getWeek();
+      } else {
+        k = new Date(year, month, date).getWeek();
+      }
+      return k;
+    };
 
-    let weekText = document.createTextNode(
-      new Date(year, month, date).getWeek()
-    );
+    let weekText = document.createTextNode(f());
 
     week.appendChild(weekText);
     row.appendChild(week);
@@ -1573,19 +1527,19 @@ var page_calendar = {
         id: "calendar",
         oninit: function () {
           load_settings();
-        },
+        }
       },
       [
         m("div", { class: "flex justify-content-spacebetween", id: "" }, [
           m("h3", {
             class: "card-header",
-            id: "monthAndYear",
+            id: "monthAndYear"
           }),
 
           m("img", {
             id: "icon-loading",
             src: "./assets/image/E252.svg",
-            alt: "loading",
+            alt: "loading"
           }),
           m(
             "div",
@@ -1593,16 +1547,16 @@ var page_calendar = {
               id: "time",
               oncreate: function () {
                 document.getElementById("time").innerText = get_time();
-              },
+              }
             },
             "time is relative"
-          ),
+          )
         ]),
 
         m(
           "div",
           {
-            class: "calendar-head flex width-100",
+            class: "calendar-head flex width-100"
           },
 
           [
@@ -1612,7 +1566,7 @@ var page_calendar = {
             m("div", weekday[3]),
             m("div", weekday[4]),
             m("div", weekday[5]),
-            m("div", weekday[6]),
+            m("div", weekday[6])
           ]
         ),
         m("div", { id: "calendar-body" }),
@@ -1620,7 +1574,7 @@ var page_calendar = {
           "div",
           {
             id: "event-slider-indicator",
-            class: "flex width-100 justify-content-spacearound",
+            class: "flex width-100 justify-content-spacearound"
           },
           [m("div", { class: "flex justify-content-spacearound" })]
         ),
@@ -1628,10 +1582,10 @@ var page_calendar = {
           "div",
           {
             id: "event-slider",
-            class: "flex",
+            class: "flex"
           },
           [m("div", { id: "slider-inner", class: "flex" })]
-        ),
+        )
       ]
     );
   },
@@ -1685,7 +1639,7 @@ var page_calendar = {
 
       clear_form();
     }, 1000);
-  },
+  }
 };
 var page_events = {
   view: function () {
@@ -1708,7 +1662,7 @@ var page_events = {
             "<img src='assets/image/calendar.svg'>",
             ""
           );
-        },
+        }
       },
       [
         events.map(function (item, index) {
@@ -1728,7 +1682,7 @@ var page_events = {
               class: "item events " + u,
               tabindex: index,
               "data-id": item.UID,
-              "data-date": item.dateStart,
+              "data-date": item.dateStart
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -1740,375 +1694,389 @@ var page_events = {
                 ),
                 m("h2", { class: "time" }, item.SUMMARY),
                 m("div", item.LOCATION),
-                m("div", { class: "description" }, item.DESCRIPTION),
-              ]),
+                m("div", { class: "description" }, item.DESCRIPTION)
+              ])
             ]
           );
-        }),
+        })
       ]
     );
-  },
+  }
 };
 
 export let page_options = {
   view: function () {
-    return m("div", { id: "options" }, [
-      m("h2", { class: "item", tabIndex: 0 }, "Key assignment"),
+    return m(
+      "div",
+      {
+        id: "options",
+        oncreate: () => {
+          if (settings.ads) load_ads();
+        }
+      },
+      [
+        m("h2", { class: "item", tabIndex: 0 }, "Key assignment"),
 
-      m(
-        "ul",
-        {
-          id: "keys",
-          class: "item",
-          tabindex: "1",
-          oncreate: function ({ dom }) {
-            bottom_bar("", "", "");
+        m(
+          "ul",
+          {
+            id: "keys",
+            class: "item",
+            tabindex: "1",
+            oncreate: function ({ dom }) {
+              bottom_bar("", "", "");
 
-            document.querySelectorAll(".select-box").forEach(function (e) {
-              e.addEventListener("keypress", function () {
-                setTimeout(function () {
-                  e.parentElement.focus();
-                }, 200);
+              document.querySelectorAll(".select-box").forEach(function (e) {
+                e.addEventListener("keypress", function () {
+                  setTimeout(function () {
+                    e.parentElement.focus();
+                  }, 200);
+                });
               });
-            });
 
-            dom.focus();
+              dom.focus();
+            }
           },
-        },
-        [
-          m("li", [m("span", "1 & 3")], "Months"),
-          m("li", [m("span", "2")], "Event slider"),
-          m("li", [m("span", "Enter")], "Events/Month"),
-          m("li", [m("span", "#")], "Moon"),
-          m("li", [m("span", "*")], "Jump to today"),
-          m(
-            "li",
-            [m("span", "SoftLeft longpress")],
-            "create event from template"
-          ),
-          m(
-            "li",
-            [m("span", { class: "keys-current-day" }, "")],
-            "current day"
-          ),
-          m(
-            "li",
-            [m("span", { class: "keys-day-event" }, "")],
-            "day with event"
-          ),
-        ]
-      ),
-      m("h2", { class: "item", tabindex: "2" }, "settings"),
-      m("div", { class: "text-center" }, "Timezone: " + settings.timezone),
+          [
+            m("li", [m("span", "1 & 3")], "Months"),
+            m("li", [m("span", "2")], "Event slider"),
+            m("li", [m("span", "Enter")], "Events/Month"),
+            m("li", [m("span", "#")], "Moon"),
+            m("li", [m("span", "*")], "Jump to today"),
+            m(
+              "li",
+              [m("span", "SoftLeft longpress")],
+              "create event from template"
+            ),
+            m(
+              "li",
+              [m("span", { class: "keys-current-day" }, "")],
+              "current day"
+            ),
+            m(
+              "li",
+              [m("span", { class: "keys-day-event" }, "")],
+              "day with event"
+            )
+          ]
+        ),
+        m("h2", { class: "item", tabindex: "2" }, "settings"),
+        m("div", { class: "text-center" }, "Timezone: " + settings.timezone),
 
-      m(
-        "div",
-        {
-          class: "item input-parent",
-          id: "event-date-format-box",
-          tabindex: "3",
-        },
-        [
-          m("label", { for: "event-date-format" }, "dateformat"),
-          m(
-            "select",
-            {
-              id: "event-date-format",
-              class: "select-box",
-              onchange: function () {
-                store_settings();
-              },
-              oncreate: function () {
-                load_settings();
-                setTimeout(function () {
-                  focus_after_selection();
-                  if (settings.dateformat == "") {
-                    document.querySelector("#event-date-format").value =
-                      "YYYY-mm-dd";
-                  } else {
-                    document.querySelector("#event-date-format").value =
-                      settings.dateformat;
-                  }
-                }, 1000);
-              },
-            },
-            [
-              m("option", { value: "YYYY-MM-DD" }, "YYYY-MM-DD"),
-              m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY"),
-            ]
-          ),
-        ]
-      ),
-
-      m(
-        "div",
-        {
-          class: "item input-parent",
-          id: "firs-day-of-the-week-box",
-          tabindex: "4",
-        },
-        [
-          m("label", { for: "first-day-of-the-week" }, "first day of the week"),
-          m(
-            "select",
-            {
-              id: "first-day-of-the-week",
-              class: "select-box",
-              onchange: function () {
-                store_settings();
-              },
-              oncreate: function () {
-                console.log(settings);
-                setTimeout(function () {
-                  focus_after_selection();
-                  if (
-                    settings.firstday == "" ||
-                    settings.firstday == undefined
-                  ) {
-                    document.querySelector("#first-day-of-the-week").value =
-                      "sunday";
-                  } else {
-                    document.querySelector("#first-day-of-the-week").value =
-                      settings.firstday;
-                  }
-                }, 1000);
-              },
-            },
-            [
-              m("option", { value: "sunday" }, "Sunday"),
-              m("option", { value: "monday" }, "Monday"),
-            ]
-          ),
-        ]
-      ),
-
-      m(
-        "div",
-        {
-          class: "item input-parent",
-          id: "event-notification-time-wrapper",
-          tabindex: "5",
-        },
-        [
-          m("label", { for: "default-notification" }, "default Notification"),
-          m(
-            "select",
-            {
-              id: "default-notification-time",
-              class: "select-box",
-              onchange: function () {
-                store_settings();
-              },
-              oncreate: function () {
-                load_settings();
-                setTimeout(function () {
-                  focus_after_selection();
-                  if (settings.default_notification == "") {
-                    document.querySelector("#default-notification-time").value =
-                      "none";
-                  } else {
-                    document.querySelector("#default-notification-time").value =
-                      settings.default_notification;
-                  }
-                }, 1000);
-              },
-            },
-            [
-              m("option", { value: "none" }, "none"),
-              m("option", { value: "5" }, "5 minutes"),
-              m("option", { value: "10" }, "10 minutes"),
-              m("option", { value: "30" }, "30 minutes"),
-              m("option", { value: "1440" }, "1 Day"),
-            ]
-          ),
-        ]
-      ),
-
-      m(
-        "button",
-        {
-          class: "item",
-          tabindex: "6",
-          oncreate: function () {
-            file_list = [];
-            list_files("ics", cb);
+        m(
+          "div",
+          {
+            class: "item input-parent",
+            id: "event-date-format-box",
+            tabindex: "3"
           },
-          onclick: function () {
-            m.route.set("/page_list_files");
-          },
-        },
-        "Import events"
-      ),
-      m("h2", "Subscriptions"),
+          [
+            m("label", { for: "event-date-format" }, "dateformat"),
+            m(
+              "select",
+              {
+                id: "event-date-format",
+                class: "select-box",
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  load_settings();
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (settings.dateformat == "") {
+                      document.querySelector("#event-date-format").value =
+                        "YYYY-mm-dd";
+                    } else {
+                      document.querySelector("#event-date-format").value =
+                        settings.dateformat;
+                    }
+                  }, 1000);
+                }
+              },
+              [
+                m("option", { value: "YYYY-MM-DD" }, "YYYY-MM-DD"),
+                m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY")
+              ]
+            )
+          ]
+        ),
 
-      m(
-        "button",
-        {
-          class: "item",
-          tabindex: "7",
-          onclick: function () {
-            m.route.set("/page_subscriptions");
+        m(
+          "div",
+          {
+            class: "item input-parent",
+            id: "firs-day-of-the-week-box",
+            tabindex: "4"
           },
-        },
-        "add subscription"
-      ),
-      m("div", { id: "subscription-text" }, "Your subscriptions"),
+          [
+            m(
+              "label",
+              { for: "first-day-of-the-week" },
+              "first day of the week"
+            ),
+            m(
+              "select",
+              {
+                id: "first-day-of-the-week",
+                class: "select-box",
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  console.log(settings);
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (
+                      settings.firstday == "" ||
+                      settings.firstday == undefined
+                    ) {
+                      document.querySelector("#first-day-of-the-week").value =
+                        "sunday";
+                    } else {
+                      document.querySelector("#first-day-of-the-week").value =
+                        settings.firstday;
+                    }
+                  }, 1000);
+                }
+              },
+              [
+                m("option", { value: "sunday" }, "Sunday"),
+                m("option", { value: "monday" }, "Monday")
+              ]
+            )
+          ]
+        ),
 
-      subscriptions.map(function (item, index) {
-        return m(
+        m(
+          "div",
+          {
+            class: "item input-parent",
+            id: "event-notification-time-wrapper",
+            tabindex: "5"
+          },
+          [
+            m("label", { for: "default-notification" }, "default Notification"),
+            m(
+              "select",
+              {
+                id: "default-notification-time",
+                class: "select-box",
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  load_settings();
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (settings.default_notification == "") {
+                      document.querySelector(
+                        "#default-notification-time"
+                      ).value = "none";
+                    } else {
+                      document.querySelector(
+                        "#default-notification-time"
+                      ).value = settings.default_notification;
+                    }
+                  }, 1000);
+                }
+              },
+              [
+                m("option", { value: "none" }, "none"),
+                m("option", { value: "5" }, "5 minutes"),
+                m("option", { value: "10" }, "10 minutes"),
+                m("option", { value: "30" }, "30 minutes"),
+                m("option", { value: "1440" }, "1 Day")
+              ]
+            )
+          ]
+        ),
+
+        m(
           "button",
           {
-            class: "item subscriptions-item",
-            "data-id": item.id,
-            "data-action": "delete-subscription",
-
-            tabindex: index + 7,
-            onblur: function () {
-              bottom_bar("", "", "");
+            class: "item",
+            tabindex: "6",
+            oncreate: function () {
+              file_list = [];
+              list_files("ics", cb);
             },
+            onclick: function () {
+              m.route.set("/page_list_files");
+            }
           },
-          item.name
-        );
-      }),
+          "Import events"
+        ),
+        m("h2", "Subscriptions"),
 
-      m("h2", "Accounts"),
-
-      m(
-        "button",
-        {
-          class: "item  google-button caldav-button",
-          tabindex: subscriptions.length + 8,
-          onclick: function () {
-            m.route.set("/page_accounts");
-          },
-        },
-
-        [
-          m(
-            "div",
-            {
-              class: "flex  align-item-center justify-content-spacebetween ",
-            },
-            [
-              m("img", {
-                src: "assets/image/caldav.png",
-              }),
-              m("span", "CalDAV Account"),
-            ]
-          ),
-        ]
-      ),
-
-      m(
-        "button",
-        {
-          class: "item google-button",
-          tabindex: subscriptions.length + 9,
-          onclick: function () {
-            oauth_callback = setInterval(function () {
-              if (localStorage.getItem("oauth_callback") == "true") {
-                m.route.set("/page_calendar");
-                //stop interval
-                clearInterval(oauth_callback);
-                //load accounts
-                setTimeout(function () {
-                  accounts = [];
-                  localforage
-                    .getItem("accounts")
-                    .then(function (value) {
-                      if (value == null) {
-                        accounts = [];
-                        return false;
-                      }
-                      accounts = value;
-                      side_toaster(
-                        "the calendar events will be loaded the next time the app is restarted",
-                        30000
-                      );
-                    })
-                    .catch(function (err) {
-                      console.log(err);
-                    });
-                }, 5000);
-              }
-            }, 1000);
-            window.open(google_oauth_url);
-          },
-        },
-        [
-          m(
-            "div",
-            {
-              class: "flex justify-content-spacebetween align-item-center ",
-            },
-            [
-              m("img", {
-                src: "assets/image/google_button.png",
-              }),
-              m("span", "Sign in with Google"),
-            ]
-          ),
-        ]
-      ),
-      m("div", { id: "subscription-text" }, "Your accounts"),
-
-      accounts.map(function (item, index) {
-        return m(
+        m(
           "button",
           {
-            class: "item subscriptions-item",
-            "data-id": item.id,
-            "data-account-type": item.type,
-            "data-action": "edit-delete-account",
+            class: "item",
+            tabindex: "7",
+            onclick: function () {
+              m.route.set("/page_subscriptions");
+            }
+          },
+          "add subscription"
+        ),
+        m("div", { id: "subscription-text" }, "Your subscriptions"),
 
-            tabindex: index + subscriptions.length + 8,
-            onblur: function () {
-              bottom_bar("", "", "");
-            },
-            onfocus: function () {
-              if (item.type == "oauth") {
-                bottom_bar("<img src='assets/image/delete.svg'>", "", "");
-              } else {
-                bottom_bar(
-                  "<img src='assets/image/delete.svg'>",
-                  "",
-                  "<img src='assets/image/pencil.svg'>"
-                );
+        subscriptions.map(function (item, index) {
+          return m(
+            "button",
+            {
+              class: "item subscriptions-item",
+              "data-id": item.id,
+              "data-action": "delete-subscription",
+
+              tabindex: index + 7,
+              onblur: function () {
+                bottom_bar("", "", "");
               }
             },
+            item.name
+          );
+        }),
+
+        m("h2", "Accounts"),
+
+        m(
+          "button",
+          {
+            class: "item  google-button caldav-button",
+            tabindex: subscriptions.length + 8,
+            onclick: function () {
+              m.route.set("/page_accounts");
+            }
           },
-          item.name
-        );
-      }),
-      m("h2", { class: "ads-title" }, "Ads"),
 
-      m("div", {
-        id: "KaiOsAds-Wrapper",
-        tabindex: subscriptions.length + accounts.length + 9,
-        class: "flex justify-content-spacearound",
-        oninit: function () {
-          if (settings.ads) {
-            load_ads();
-          } else {
-            document.querySelector("h2.ads-title").remove();
+          [
+            m(
+              "div",
+              {
+                class: "flex  align-item-center justify-content-spacebetween "
+              },
+              [
+                m("img", {
+                  src: "assets/image/caldav.png"
+                }),
+                m("span", "CalDAV Account")
+              ]
+            )
+          ]
+        ),
+
+        m(
+          "button",
+          {
+            class: "item google-button",
+            tabindex: subscriptions.length + 9,
+            onclick: function () {
+              oauth_callback = setInterval(function () {
+                if (localStorage.getItem("oauth_callback") == "true") {
+                  m.route.set("/page_calendar");
+                  //stop interval
+                  clearInterval(oauth_callback);
+                  //load accounts
+                  setTimeout(function () {
+                    accounts = [];
+                    localforage
+                      .getItem("accounts")
+                      .then(function (value) {
+                        if (value == null) {
+                          accounts = [];
+                          return false;
+                        }
+                        accounts = value;
+                        side_toaster(
+                          "the calendar events will be loaded the next time the app is restarted",
+                          30000
+                        );
+                      })
+                      .catch(function (err) {
+                        console.log(err);
+                      });
+                  }, 5000);
+                }
+              }, 1000);
+              window.open(google_oauth_url);
+            }
+          },
+          [
+            m(
+              "div",
+              {
+                class: "flex justify-content-spacebetween align-item-center "
+              },
+              [
+                m("img", {
+                  src: "assets/image/google_button.png"
+                }),
+                m("span", "Sign in with Google")
+              ]
+            )
+          ]
+        ),
+        m("div", { id: "subscription-text" }, "Your accounts"),
+
+        accounts.map(function (item, index) {
+          return m(
+            "button",
+            {
+              class: "item subscriptions-item",
+              "data-id": item.id,
+              "data-account-type": item.type,
+              "data-action": "edit-delete-account",
+
+              tabindex: index + subscriptions.length + 8,
+              onblur: function () {
+                bottom_bar("", "", "");
+              },
+              onfocus: function () {
+                if (item.type == "oauth") {
+                  bottom_bar("<img src='assets/image/delete.svg'>", "", "");
+                } else {
+                  bottom_bar(
+                    "<img src='assets/image/delete.svg'>",
+                    "",
+                    "<img src='assets/image/pencil.svg'>"
+                  );
+                }
+              }
+            },
+            item.name
+          );
+        }),
+        m("h2", { class: "ads-title" }, "Ads"),
+
+        m("div", {
+          id: "KaiOsAds-Wrapper",
+          tabindex: subscriptions.length + accounts.length + 9,
+          class: "flex justify-content-spacearound",
+          oninit: function () {
+            if (settings.ads) {
+            } else {
+              document.querySelector("h2.ads-title").remove();
+            }
+          },
+
+          onfocus: function () {
+            bottom_bar("", "<img src='assets/image/eye.svg'>", "");
+          },
+
+          onkeypress: function (event) {
+            bottom_bar("", "", "");
+            if (event.keyCode == 13) {
+            }
           }
-        },
-
-        onfocus: function () {
-          bottom_bar("", "<img src='assets/image/eye.svg'>", "");
-        },
-
-        onkeypress: function (event) {
-          bottom_bar("", "", "");
-          if (event.keyCode == 13) {
-          }
-        },
-      }),
-    ]);
+        })
+      ]
+    );
   },
   oncreate: function () {
     bottom_bar("", "", "");
-  },
+  }
 };
 
 var page_subscriptions = {
@@ -2121,15 +2089,15 @@ var page_subscriptions = {
           tabindex: "0",
           oncreate: function ({ dom }) {
             dom.focus();
-          },
+          }
         },
         [
           m("label", { for: "description" }, "subscription name"),
           m("input", {
             placeholder: "Name",
             type: "text",
-            id: "cal-subs-name",
-          }),
+            id: "cal-subs-name"
+          })
         ]
       ),
       m(
@@ -2140,7 +2108,7 @@ var page_subscriptions = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "subscription url"),
@@ -2154,8 +2122,8 @@ var page_subscriptions = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2165,12 +2133,12 @@ var page_subscriptions = {
           tabindex: "2",
           onclick: function () {
             store_subscription();
-          },
+          }
         },
         "save"
-      ),
+      )
     ]);
-  },
+  }
 };
 
 let update_account;
@@ -2185,7 +2153,7 @@ var page_edit_account = {
 
           oncreate: function ({ dom }) {
             dom.focus();
-          },
+          }
         },
         [
           m("label", { for: "description" }, "account name"),
@@ -2193,8 +2161,8 @@ var page_edit_account = {
             placeholder: "Name",
             type: "text",
             id: "account-name",
-            value: update_account.name,
-          }),
+            value: update_account.name
+          })
         ]
       ),
       m(
@@ -2205,7 +2173,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "server"),
@@ -2221,8 +2189,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2233,7 +2201,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "username"),
@@ -2249,8 +2217,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2261,7 +2229,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "password"),
@@ -2277,8 +2245,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2288,12 +2256,12 @@ var page_edit_account = {
           tabindex: "4",
           onclick: function () {
             store_account(true, status.edit_account_id);
-          },
+          }
         },
         "update"
-      ),
+      )
     ]);
-  },
+  }
 };
 
 var page_accounts = {
@@ -2306,15 +2274,15 @@ var page_accounts = {
           tabindex: "0",
           oncreate: function ({ dom }) {
             dom.focus();
-          },
+          }
         },
         [
           m("label", { for: "description" }, "account name"),
           m("input", {
             placeholder: "Name",
             type: "text",
-            id: "account-name",
-          }),
+            id: "account-name"
+          })
         ]
       ),
       m(
@@ -2325,7 +2293,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "server"),
@@ -2339,8 +2307,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2351,7 +2319,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "username"),
@@ -2365,8 +2333,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
 
@@ -2378,7 +2346,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          },
+          }
         },
         [
           m("label", { for: "description" }, "password"),
@@ -2392,8 +2360,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            },
-          }),
+            }
+          })
         ]
       ),
       m(
@@ -2403,12 +2371,12 @@ var page_accounts = {
           tabindex: "4",
           onclick: function () {
             store_account();
-          },
+          }
         },
         "save"
-      ),
+      )
     ]);
-  },
+  }
 };
 
 var page_add_event = {
@@ -2417,7 +2385,7 @@ var page_add_event = {
       "div",
       {
         id: "add-edit-event",
-        tabindex: "0",
+        tabindex: "0"
       },
       [
         m(
@@ -2432,7 +2400,7 @@ var page_add_event = {
                 bottom_bar("", "", "");
                 settings.timezone = moment.tz.guess();
               }, 500);
-            },
+            }
           },
           [
             m("label", { for: "event-title" }, "title"),
@@ -2443,8 +2411,8 @@ var page_add_event = {
               oncreate: function () {
                 load_settings();
                 load_template_data();
-              },
-            }),
+              }
+            })
           ]
         ),
 
@@ -2456,8 +2424,8 @@ var page_add_event = {
             id: "event-location",
             oninput: function (m) {
               search(m);
-            },
-          }),
+            }
+          })
         ]),
         m("div", { id: "search-result" }),
 
@@ -2468,7 +2436,7 @@ var page_add_event = {
             tabindex: "2",
             onfocus: function () {
               search("close");
-            },
+            }
           },
           [
             m("label", { for: "event-date" }, "Start Date"),
@@ -2480,8 +2448,8 @@ var page_add_event = {
 
               oncreate: function ({ dom }) {
                 dom.value = status.selected_day;
-              },
-            }),
+              }
+            })
           ]
         ),
 
@@ -2491,8 +2459,8 @@ var page_add_event = {
             placeholder: settings.dateformat,
             type: "date",
             id: "event-date-end",
-            class: "select-box",
-          }),
+            class: "select-box"
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
@@ -2504,8 +2472,8 @@ var page_add_event = {
 
             oncreate: function ({ dom }) {
               dom.value = dayjs().format("HH:mm");
-            },
-          }),
+            }
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
@@ -2517,16 +2485,16 @@ var page_add_event = {
 
             oncreate: function ({ dom }) {
               dom.value = dayjs().add(1, "hour").format("HH:mm");
-            },
-          }),
+            }
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
           m("label", { for: "event-description" }, "Description"),
           m("input", {
             placeholder: "",
             type: "text",
-            id: "event-description",
-          }),
+            id: "event-description"
+          })
         ]),
 
         m(
@@ -2534,7 +2502,7 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-notification-time-wrapper",
-            tabindex: "7",
+            tabindex: "7"
           },
           [
             m("label", { for: "notification" }, "Notification"),
@@ -2549,7 +2517,7 @@ var page_add_event = {
                     document.querySelector("#event-notification-time").value =
                       settings.default_notification;
                   }, 2000);
-                },
+                }
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2557,9 +2525,9 @@ var page_add_event = {
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
                 m("option", { value: "60" }, "60 minutes"),
-                m("option", { value: "1440" }, "1 Day"),
+                m("option", { value: "1440" }, "1 Day")
               ]
-            ),
+            )
           ]
         ),
 
@@ -2568,7 +2536,7 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-recur-wrapper",
-            tabindex: "8",
+            tabindex: "8"
           },
           [
             m("label", { for: "event-recur" }, "Recur"),
@@ -2578,8 +2546,8 @@ var page_add_event = {
               m("option", { value: "WEEKLY" }, "Weekly"),
               m("option", { value: "BIWEEKLY" }, "Biweekly"),
               m("option", { value: "MONTHLY" }, "Monthly"),
-              m("option", { value: "YEARLY" }, "Yearly"),
-            ]),
+              m("option", { value: "YEARLY" }, "Yearly")
+            ])
           ]
         ),
 
@@ -2588,7 +2556,7 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-calendar-wrapper",
-            tabindex: "9",
+            tabindex: "9"
           },
           [
             m("label", { for: "notification" }, "Calendars"),
@@ -2598,12 +2566,12 @@ var page_add_event = {
                   "option",
                   {
                     value: item.id,
-                    "data-calendar-data": item.data,
+                    "data-calendar-data": item.data
                   },
                   item.name
                 );
-              }),
-            ]),
+              })
+            ])
           ]
         ),
 
@@ -2622,16 +2590,16 @@ var page_add_event = {
                 n.options[n.selectedIndex].value,
                 n.options[n.selectedIndex].text
               );
-            },
+            }
           },
           "save"
-        ),
+        )
       ]
     );
   },
   oncreate: function () {
     bottom_bar("", "", "");
-  },
+  }
 };
 
 var page_edit_event = {
@@ -2639,7 +2607,7 @@ var page_edit_event = {
     return m(
       "div",
       {
-        id: "add-edit-event",
+        id: "add-edit-event"
       },
       [
         m(
@@ -2652,7 +2620,7 @@ var page_edit_event = {
                 dom.focus();
                 bottom_bar("", "", "");
               }, 500);
-            },
+            }
           },
           [
             m("label", { for: "event-title" }, "title"),
@@ -2660,8 +2628,8 @@ var page_edit_event = {
               placeholder: "",
               type: "text",
               id: "event-title",
-              value: update_event_date.SUMMARY,
-            }),
+              value: update_event_date.SUMMARY
+            })
           ]
         ),
 
@@ -2671,8 +2639,8 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-location",
-            value: update_event_date.LOCATION,
-          }),
+            value: update_event_date.LOCATION
+          })
         ]),
 
         m("div", { class: "item input-parent", tabindex: "2" }, [
@@ -2685,8 +2653,8 @@ var page_edit_event = {
 
             oncreate: function ({ dom }) {
               dom.value = update_event_date.dateStart;
-            },
-          }),
+            }
+          })
         ]),
 
         m("div", { class: "item input-parent", tabindex: "3" }, [
@@ -2699,8 +2667,8 @@ var page_edit_event = {
 
             oncreate: function ({ dom }) {
               dom.value = update_event_date.dateEnd;
-            },
-          }),
+            }
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
@@ -2712,8 +2680,8 @@ var page_edit_event = {
             value:
               update_event_date.time_start.length == 8
                 ? update_event_date.time_start.slice(0, -3)
-                : update_event_date.time_start,
-          }),
+                : update_event_date.time_start
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
@@ -2725,8 +2693,8 @@ var page_edit_event = {
             value:
               update_event_date.time_end.length == 8
                 ? update_event_date.time_end.slice(0, -3)
-                : update_event_date.time_end,
-          }),
+                : update_event_date.time_end
+          })
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
           m("label", { for: "event-description" }, "Description"),
@@ -2734,8 +2702,8 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-description",
-            value: update_event_date.DESCRIPTION,
-          }),
+            value: update_event_date.DESCRIPTION
+          })
         ]),
 
         m(
@@ -2743,7 +2711,7 @@ var page_edit_event = {
           {
             class: "item input-parent",
             id: "event-notification-time-wrapper",
-            tabindex: "7",
+            tabindex: "7"
           },
           [
             m("label", { for: "notification" }, "Notification"),
@@ -2751,7 +2719,7 @@ var page_edit_event = {
               "select",
               {
                 id: "event-notification-time",
-                class: "select-box",
+                class: "select-box"
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2759,9 +2727,9 @@ var page_edit_event = {
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
                 m("option", { value: "60" }, "60 minutes"),
-                m("option", { value: "1440" }, "1 Day"),
+                m("option", { value: "1440" }, "1 Day")
               ]
-            ),
+            )
           ]
         ),
 
@@ -2774,7 +2742,7 @@ var page_edit_event = {
             oncreate: function () {
               document.querySelector("#event-notification-time").value =
                 update_event_date.alarm;
-            },
+            }
           },
           [
             m("label", { for: "event-recur" }, "Recur"),
@@ -2787,7 +2755,7 @@ var page_edit_event = {
                 class: "select-box",
                 oncreate: function () {
                   console.log("rrule ui get" + update_event_date);
-                },
+                }
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2795,9 +2763,9 @@ var page_edit_event = {
                 m("option", { value: "WEEKLY" }, "Weekly"),
                 m("option", { value: "BIWEEKLY" }, "Biweekly"),
                 m("option", { value: "MONTHLY" }, "Monthly"),
-                m("option", { value: "YEARLY" }, "Yearly"),
+                m("option", { value: "YEARLY" }, "Yearly")
               ]
-            ),
+            )
           ]
         ),
 
@@ -2814,7 +2782,7 @@ var page_edit_event = {
                 update_event_date.id,
                 update_event_date.UID
               );
-            },
+            }
           },
           "delete"
         ),
@@ -2836,7 +2804,7 @@ var page_edit_event = {
                 update_event_date.id,
                 update_event_date.UID
               );
-            },
+            }
           },
           "update"
         ),
@@ -2856,13 +2824,13 @@ var page_edit_event = {
                 document.getElementById("event-description").value,
                 document.getElementById("event-location").value
               );
-            },
+            }
           },
           "save as template"
-        ),
+        )
       ]
     );
-  },
+  }
 };
 let file_list = [];
 
@@ -2900,7 +2868,7 @@ var page_list_files = {
     return m(
       "div",
       {
-        id: "options",
+        id: "options"
       },
       [
         m("h2", { class: "text-center", id: "file-head" }, "files"),
@@ -2921,14 +2889,14 @@ var page_list_files = {
               tabIndex: index,
               onclick: function () {
                 get_file(e, callback_getfile);
-              },
+              }
             },
             fn
           );
-        }),
+        })
       ]
     );
-  },
+  }
 };
 
 let selected_template;
@@ -2944,7 +2912,7 @@ var page_event_templates = {
             "<img src='assets/image/add.svg'>",
             ""
           );
-        },
+        }
       },
       [
         m("h2", { class: "text-center" }, "Templates"),
@@ -2963,14 +2931,14 @@ var page_event_templates = {
                 }
               },
               tabIndex: index,
-              "data-id": item.id,
+              "data-id": item.id
             },
             item.title
           );
-        }),
+        })
       ]
     );
-  },
+  }
 };
 
 m.route(root, "/page_calendar", {
@@ -2983,7 +2951,7 @@ m.route(root, "/page_calendar", {
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
   "/page_event_templates": page_event_templates,
-  "/page_list_files": page_list_files,
+  "/page_list_files": page_list_files
 });
 m.route.prefix = "#";
 
@@ -3018,7 +2986,7 @@ let store_subscription = function () {
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
-      id: id,
+      id: id
     });
 
     document.querySelector("input#cal-subs-name").val = "";
@@ -3064,7 +3032,7 @@ let store_account = function (edit, id) {
         user: document.getElementById("account-username").value,
         password: document.getElementById("account-password").value,
         name: document.getElementById("account-name").value,
-        id: id,
+        id: id
       });
     } else {
       accounts.push({
@@ -3072,7 +3040,7 @@ let store_account = function (edit, id) {
         user: document.getElementById("account-username").value,
         password: document.getElementById("account-password").value,
         name: document.getElementById("account-name").value,
-        id: uid(32),
+        id: uid(32)
       });
     }
 
@@ -3286,7 +3254,7 @@ let nav = function (move) {
   document.activeElement.parentNode.scrollBy({
     left: 0,
     top: elY - window.innerHeight / 2,
-    behavior: "smooth",
+    behavior: "smooth"
   });
 
   if (m.route.get() == "/page_calendar" || m.route.get() == "/page_events") {
@@ -3305,7 +3273,7 @@ if ("b2g" in Navigator) {
     navigator.serviceWorker
       .register(new URL("sw.js", import.meta.url), {
         type: "module",
-        scope: "/",
+        scope: "/"
       })
       .then((registration) => {
         registration.systemMessageManager.subscribe("alarm").then(
@@ -3332,7 +3300,7 @@ let add_alarm = function (date, message_text, id) {
     // This is arbitrary data pass to the alarm
     var data = {
       note: message_text,
-      event_id: id,
+      event_id: id
     };
 
     var request = navigator.mozAlarms.add(date, "honorTimezone", data);
@@ -3350,9 +3318,9 @@ let add_alarm = function (date, message_text, id) {
   if ("b2g" in navigator) {
     try {
       let options = {
-        "date": date,
-        "data": { "note": message_text },
-        "ignoreTimezone": false,
+        date: date,
+        data: { note: message_text },
+        ignoreTimezone: false
       };
 
       navigator.b2g.alarmManager.add(options).then(
@@ -3587,7 +3555,7 @@ let store_event = function (db_id, cal_name) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allDay,
+    allDay: allDay
   };
 
   if (event.alarm != "none") {
@@ -3786,7 +3754,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allDay,
+    allDay: allDay
   };
 
   if (event.alarm != "none") {
@@ -3875,8 +3843,9 @@ let update_event = function (etag, url, id, db_id, uid) {
     if (event.RRULE == null || event.RRULE == "") {
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
-      event_data = event_data.replace("RRULE:", "");
+      event_data = event_data.replace("\nRRULE:", "");
     }
+    event_data = event_data.replace("\n\n", "\n");
     event_data = event_data.trim();
     update_caldav(etag, url, event_data, id);
   }

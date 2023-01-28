@@ -2,7 +2,6 @@ import { list_files } from "./helper.js";
 import { toaster } from "./helper.js";
 import { side_toaster } from "./helper.js";
 import { sort_array } from "./helper.js";
-
 import localforage from "localforage";
 import { events } from "../../app.js";
 
@@ -282,7 +281,6 @@ export let parse_ics = function (
       alarm: alarm ? alarm : "none",
       rrule_: rrule_freq,
       rrule_json: n,
-
       etag: etag,
       url: url,
       id: account_id,
