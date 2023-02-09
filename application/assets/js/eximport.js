@@ -4,7 +4,6 @@ import { side_toaster } from "./helper.js";
 import { sort_array } from "./helper.js";
 import localforage from "localforage";
 import { events } from "../../app.js";
-
 import ICAL from "ical.js";
 
 const dayjs = require("dayjs");
@@ -168,7 +167,13 @@ export let parse_ics = function (
   isCaldav,
   alarm
 ) {
-  var jcalData = ICAL.parse(data);
+  let jcalData 
+  try {
+    jcalData = ICAL.parse(data);
+} catch (e) {
+  console.log("parser error"+e)
+}
+
 
   var comp = new ICAL.Component(jcalData);
   var vevent = comp.getAllSubcomponents("vevent");
@@ -176,7 +181,6 @@ export let parse_ics = function (
     let n = "";
     let rr_until = "";
 
-    let rrule_freq = "none";
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
       ite.getFirstPropertyValue("rrule") != null &&
@@ -187,7 +191,7 @@ export let parse_ics = function (
         rr_until = n.until;
       }
 
-      rrule_freq = n.freq;
+      
     }
 
     let dateStart, timeStart, dateStartUnix;
@@ -230,7 +234,6 @@ export let parse_ics = function (
     }
 
     let lastmod = ite.getFirstPropertyValue("last-modified");
-
     let dtstart = ite.getFirstPropertyValue("dtstart");
     let dtend = ite.getFirstPropertyValue("dtend");
 
@@ -273,13 +276,12 @@ export let parse_ics = function (
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
-      time_start: timeStart,
       dateStartUnix: dateStartUnix,
-      dateEnd: dateEnd,
-      time_end: timeEnd,
       dateEndUnix: dateEndUnix,
+      dateEnd: dateEnd,
+      time_start: timeStart,
+      time_end: timeEnd,
       alarm: alarm ? alarm : "none",
-      rrule_: rrule_freq,
       rrule_json: n,
       etag: etag,
       url: url,

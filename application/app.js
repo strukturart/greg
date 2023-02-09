@@ -954,7 +954,7 @@ let event_check = function (date) {
       new Date(event.dateStart).getTime() == new Date(date).getTime() ||
       (new Date(event.dateStart).getTime() <= new Date(date).getTime() &&
         new Date(event.dateEnd).getTime() >= new Date(date).getTime() &&
-        event.rrule_ == "none")
+        event.rrule_json.freq == undefined)
   );
   if (k.length > 0) {
     feedback.event = true;
@@ -986,7 +986,7 @@ let rrule_check = function (date) {
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
-      let d = events[t].rrule_;
+      let d = events[t].rrule_json.freq;
       let e = events[t].RRULE;
 
       if (typeof e !== "undefined" && e !== undefined && e != null) {
@@ -1106,7 +1106,7 @@ let event_slider = function (date) {
     let a = new Date(events[i].dateStart).getTime();
     let b = new Date(events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
-    let d = events[i].rrule_;
+    let d = events[i].rrule_json.freq;
 
     if (d === "none" || d === "" || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
@@ -1666,7 +1666,17 @@ var page_events = {
       },
       [
         events.map(function (item, index) {
-          let de = "";
+          let de,
+            se = "";
+
+          //all day
+          if (item.allDay) {
+            se = "all day";
+          } else {
+            se = dayjs.unix(item.dateStartUnix).format("HH:mm");
+          }
+
+          //date
           if (item.dateStart != item.dateEnd && !item.allDay) {
             de =
               dayjs(item.dateStart).format(settings.dateformat) +
@@ -1675,11 +1685,13 @@ var page_events = {
           } else {
             de = dayjs(item.dateStart).format(settings.dateformat);
           }
+
           let u = item.isSubscription ? "subscription" : "";
+          let a = item.allDay ? "allDay" : "";
           return m(
             "article",
             {
-              class: "item events " + u,
+              class: "item events " + u + " " + a,
               tabindex: index,
               "data-id": item.UID,
               "data-date": item.dateStart
@@ -1687,13 +1699,9 @@ var page_events = {
             [
               m("div", { class: "icons-bar" }, [
                 m("div", { class: "date" }, de),
-                m(
-                  "div",
-                  { class: "time" },
-                  dayjs.unix(item.dateStartUnix).format("HH:mm")
-                ),
-                m("h2", { class: "time" }, item.SUMMARY),
-                m("div", item.LOCATION),
+                m("div", { class: "time" }, se),
+                m("h2", { class: "summary" }, item.SUMMARY),
+                m("div", { class: "location" }, item.LOCATION),
                 m("div", { class: "description" }, item.DESCRIPTION)
               ])
             ]
@@ -2513,7 +2521,6 @@ var page_add_event = {
                 class: "select-box",
                 oncreate: function () {
                   setTimeout(function () {
-                    console.log(settings.default_notification);
                     document.querySelector("#event-notification-time").value =
                       settings.default_notification;
                   }, 2000);
@@ -2536,7 +2543,12 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-recur-wrapper",
-            tabindex: "8"
+            tabindex: "8",
+            oncreate: function () {
+              setTimeout(function () {
+                document.querySelector("#event-recur").value = "none";
+              }, 1000);
+            }
           },
           [
             m("label", { for: "event-recur" }, "Recur"),
@@ -2751,11 +2763,8 @@ var page_edit_event = {
               "select",
               {
                 id: "event-recur",
-                value: update_event_date.rrule_,
-                class: "select-box",
-                oncreate: function () {
-                  console.log("rrule ui get" + update_event_date);
-                }
+                value: update_event_date.rrule_json.freq ?? "none",
+                class: "select-box"
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -3412,7 +3421,6 @@ let rrule_convert = function (val, date_end, date_start) {
   let p = val;
   let r = "";
   let f = days[new Date(date_start).getDay()];
-  console.log(f);
 
   if (p == "none") {
     return r;
@@ -3541,10 +3549,7 @@ let store_event = function (db_id, cal_name) {
             convert_dt_end,
             document.getElementById("event-date").value
           ),
-    rrule_:
-      document.getElementById("event-recur").value == ""
-        ? "none"
-        : document.getElementById("event-recur").value,
+
     dateStart: document.getElementById("event-date").value,
     dateEnd: document.getElementById("event-date-end").value,
     time_start: document.getElementById("event-time-start").value,
@@ -3670,6 +3675,7 @@ let update_event = function (etag, url, id, db_id, uid) {
       validation = false;
     }
   }
+
   let start_time = "00:00:00";
   if (document.getElementById("event-time-start").value != "") {
     start_time = document.getElementById("event-time-start").value + ":00";
@@ -3740,10 +3746,7 @@ let update_event = function (etag, url, id, db_id, uid) {
             convert_dt_end,
             document.getElementById("event-date").value
           ),
-    rrule_:
-      document.getElementById("event-recur").value == ""
-        ? "none"
-        : document.getElementById("event-recur").value,
+
     dateStart: document.getElementById("event-date").value,
     dateEnd: document.getElementById("event-date-end").value,
     time_start: document.getElementById("event-time-start").value,
