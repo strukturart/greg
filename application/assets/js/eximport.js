@@ -24,9 +24,7 @@ export let export_ical = function (filename, event_data) {
     try {
       var sdcard = navigator.b2g.getDeviceStorage("sdcard");
       var request_del = sdcard.delete(filename);
-    } catch (e) {
-      console.log(e);
-    }
+    } catch (e) {}
   }
 
   setTimeout(function () {
@@ -36,15 +34,18 @@ export let export_ical = function (filename, event_data) {
     result += "VERSION:2.0" + "\r\n";
     result += "PRODID:GREG" + "\r\n";
     result += "METHOD:PUBLISHED" + "\r\n";
-
+    console.log(event_data);
     event_data.forEach((e, i) => {
       let index = -1;
       for (let key in e) {
         index++;
 
         //clean data
-        if (e[key] == null || typeof e[key] == "object")
-          event_data.splice(i, 1);
+        if (e[key] == null || typeof e[key] == "object") {
+          console.log(e.RRULE);
+
+          e.RRULE = "";
+        }
 
         if (index == 0) result += "BEGIN:VEVENT" + "\r\n";
 
@@ -60,7 +61,6 @@ export let export_ical = function (filename, event_data) {
           key != "isSubscription" &&
           key != "multidayevent" &&
           key != "alarmTrigger" &&
-          key != "rrule_" &&
           key != "isCalDav" &&
           key != "id" &&
           key != "allDay" &&
@@ -82,6 +82,9 @@ export let export_ical = function (filename, event_data) {
     result += "END:VCALENDAR" + "\r\n";
 
     result = result.replace(/:;TZID/g, ";TZID");
+    result = result.replace(/RRULE:FREQ=null/g, "RRULE:");
+    result = result.replace(/: undefined/g, "RRULE:");
+
     //remove empty lines
     let regex = /^\s*$(?:\r\n?|\n)/gm;
     result = result.replace(regex, "");
@@ -167,19 +170,21 @@ export let parse_ics = function (
   isCaldav,
   alarm
 ) {
-  let jcalData 
+  let jcalData;
   try {
     jcalData = ICAL.parse(data);
-} catch (e) {
-  console.log("parser error"+e)
-}
-
+  } catch (e) {
+    console.log("parser error" + e);
+  }
 
   var comp = new ICAL.Component(jcalData);
+
   var vevent = comp.getAllSubcomponents("vevent");
   vevent.forEach(function (ite) {
     let n = "";
     let rr_until = "";
+
+    //todo recognize date without time specification
 
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
@@ -190,8 +195,6 @@ export let parse_ics = function (
       if (n.until != null) {
         rr_until = n.until;
       }
-
-      
     }
 
     let dateStart, timeStart, dateStartUnix;
@@ -229,6 +232,7 @@ export let parse_ics = function (
       ite.getFirstPropertyValue("dtstart")
     ) {
       if (timeStart == timeEnd) {
+        console.log("allday" + ite);
         allday = true;
       }
     }
@@ -264,9 +268,9 @@ export let parse_ics = function (
       LOCATION: ite.getFirstPropertyValue("location"),
       DESCRIPTION: ite.getFirstPropertyValue("description"),
       ATTACH: ite.getFirstPropertyValue("attach"),
-      RRULE: ite.getFirstPropertyValue("rrule"),
+      RRULE: ite.getFirstPropertyValue("rrule") ?? "",
       "LAST-MODIFIED": lastmod,
-      CLASS: ite.getFirstPropertyValue("class"),
+      CLASS: ite.getFirstPropertyValue("class") ?? "",
       DTSTAMP: dtstart,
       DTSTART: dtstart,
       DTEND: dtend,
@@ -285,7 +289,7 @@ export let parse_ics = function (
       rrule_json: n,
       etag: etag,
       url: url,
-      id: account_id,
+      id: account_id
     };
 
     events.push(imp);
@@ -347,8 +351,8 @@ function share(url, name) {
       type: "text/calendar",
       number: 1,
       blobs: [url],
-      filenames: [name],
-    },
+      filenames: [name]
+    }
   });
 
   activity.onsuccess = function () {};

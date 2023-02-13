@@ -3,6 +3,7 @@
 	"name": "greg",
 	"id":"greg",
 	"categories": ["utilities"],
+	"subtitle": "easy to use calendar",
 	"description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars or connect to nextcloud(caldav). you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #",
 	"launch_path": "/index.html",
 	"type": "privileged",

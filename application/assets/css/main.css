@@ -531,6 +531,11 @@ span.weeknumber {
   right: 0;
 }
 
+span.active {
+  font-weight: bold;
+  color: rgb(33, 197, 170);
+}
+
 div#add-edit-event {
   position: absolute;
   z-index: 2;

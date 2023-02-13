@@ -72,6 +72,9 @@ let style_calendar_cell = function () {
 };
 
 let load_caldav = function () {
+  //clear events
+  events = events.filter((e) => e.isCaldav == false);
+  //load data from every account
   accounts.forEach(function (item) {
     let client = "";
     if (item.type == "oauth") {
@@ -156,7 +159,6 @@ let load_caldav = function () {
           document.getElementById("icon-loading").style.visibility = "hidden";
         }
 
-        // load_cached_caldav();
         style_calendar_cell();
         side_toaster("Data loaded", 3000);
       } catch (e) {
@@ -330,7 +332,14 @@ export let sync_caldav = function (callback) {
           };
           try {
             const ma = await client.syncCalendars(s);
-            callback(ma);
+
+            if (ma.updated.length > 0) {
+              console.log(item.id + "should update");
+
+              i = value.lenght;
+              callback(ma);
+              break;
+            }
           } catch (e) {
             console.log(e);
           }
@@ -650,6 +659,7 @@ let update_caldav = function (etag, url, data, account_id) {
 };
 
 let load_cached_caldav = function () {
+  console.log("loaded");
   accounts.forEach(function (item) {
     try {
       localforage
@@ -661,11 +671,13 @@ let load_cached_caldav = function () {
             load_caldav();
             return false;
           }
+
           w.forEach((b) => {
             b.objects.forEach((m) => {
               parse_ics(m.data, "", false, m.etag, m.url, item.id, true);
             });
           });
+
           style_calendar_cell();
         })
         .catch(function (err) {
@@ -699,15 +711,7 @@ setTimeout(() => {
 }, 1000);
 
 export let sync_caldav_callback = function (o) {
-  if (o.updated.length > 0) {
-    //remove cached date before update
-    events = events.filter((e) => e.isCaldav == false);
-    console.log(JSON.stringify(events));
-
-    setTimeout(function () {
-      load_caldav();
-    }, 1000);
-  }
+  load_caldav();
 };
 
 //load accounts data
@@ -725,11 +729,11 @@ setTimeout(() => {
     .catch(function (err) {
       console.log(err);
     });
-}, 3200);
+}, 200);
 
 setTimeout(() => {
   sync_caldav(sync_caldav_callback);
-}, 10000);
+}, 5000);
 
 //get event data
 let get_event_date = function () {
@@ -1258,10 +1262,16 @@ let highlight_current_day = function () {
 
     let s = document.activeElement.getAttribute("data-day");
 
+    document.querySelectorAll("span.weeknumber").forEach((e) => {
+      e.classList.remove("active");
+    });
+
     if (s) {
       if (settings.firstday == "monday") {
         s = s - 1;
-        console.log(s);
+        let k = document.activeElement.closest("div.row");
+        k.querySelector("span.weeknumber").classList.add("active");
+
         if (s == -1) s = 6;
         document
           .querySelectorAll("div#calendar div.calendar-head div")
@@ -1347,6 +1357,7 @@ let showCalendar = function (month, year) {
     let row = document.createElement("div");
     row.classList.add("flex");
     row.classList.add("row");
+    row.setAttribute("data-weeknumber", i);
     row.classList.add("width-100");
 
     // creating individual cells, filing them up with data.
@@ -2856,7 +2867,7 @@ let callback_getfile = function (result) {
     localforage
       .setItem("events", only_local_events)
       .then(function () {
-        export_ical("others/greg.ics", only_local_events);
+        backup_events();
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -3610,7 +3621,7 @@ let store_event = function (db_id, cal_name) {
       .setItem("events", without_subscription)
       .then(function () {
         clear_form();
-        export_ical("others/greg.ics", without_subscription);
+        backup_events();
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -3807,7 +3818,7 @@ let update_event = function (etag, url, id, db_id, uid) {
       .setItem("events", without_subscription)
       .then(function () {
         clear_form();
-        export_ical("others/greg.ics", without_subscription);
+        backup_events();
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set("/page_calendar");
@@ -3876,7 +3887,7 @@ let delete_event = function (etag, url, account_id, uid) {
     localforage
       .setItem("events", without_subscription)
       .then(function (value) {
-        export_ical("others/greg.ics", value);
+        backup_events();
         side_toaster("event deleted", 2000);
         m.route.set("/page_events");
       })
@@ -3990,16 +4001,21 @@ function longpress_action(param) {
 }
 
 let backup_events = function () {
-  let only_local_events = events.filter((events) => events.id == "local-id");
-
   localforage
     .getItem("events")
     .then(function (value) {
-      export_ical("others/greg.ics", only_local_events);
+      console.log(value);
+      let only_local_events = value.filter((events) => events.id == "local-id");
+
+      try {
+        export_ical("others/greg.ics", value);
+      } catch (e) {
+        console.log(e);
+      }
     })
     .catch(function (err) {
+      // This code runs if there were any errors
       console.log(err);
-      side_toaster("no data to export", 2000);
     });
 };
 
