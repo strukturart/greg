@@ -61,7 +61,7 @@ let style_calendar_cell = function () {
         if (e.classList.contains("event")) e.classList.remove("event");
       }
 
-      if (event_check(p).eevent == true) e.classList.add("event");
+      // if (event_check(p).event == true) e.classList.add("event");
 
       if (rrule_check(p).rrule == true) {
         e.classList.add("event");
@@ -592,6 +592,7 @@ let update_caldav = function (etag, url, data, account_id) {
         try {
           await client.login();
         } catch (e) {
+          console.log(e);
           if (e.message == "Invalid credentials")
             toaster(
               "there was a problem logging into your account " +
@@ -1187,7 +1188,7 @@ let event_slider = function (date) {
     slider.forEach(function (item) {
       let l = "";
       if (!item.allDay) {
-        l = moment.unix(item.dateStartUnix).format("HH:mm");
+        l = dayjs.unix(item.dateStartUnix).format("HH:mm");
       }
 
       document
@@ -3419,10 +3420,19 @@ let remove_alarm = function (id) {
 // /////////////
 // /////////////
 
-let convert_ics_date = function (t) {
+let convert_ics_date = function (t, ful) {
   let nn = t.replace(/-/g, "");
   nn = nn.replace(/:/g, "");
   nn = nn.replace(" ", "T");
+
+  if (ful) {
+    let w = nn.split("T");
+    nn = ";VALUE=DATE:" + w[0];
+  }
+  if (!ful) {
+    nn = ":" + nn;
+  }
+
   return nn;
 };
 
@@ -3729,10 +3739,23 @@ let update_event = function (etag, url, id, db_id, uid) {
 
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
+  let c = start_time;
+  let d = end_time;
 
-  if (a != b) {
+  if (a == b && c == d) {
     allDay = true;
   }
+
+  let lastmod =
+    ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start);
+  let dtstamp =
+    ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start);
+
+  let dtstart =
+    ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start, allDay);
+
+  let dtend =
+    ";TZID=" + settings.timezone + convert_ics_date(convert_dt_end, allDay);
 
   if (validation == false) return false;
   let event = {
@@ -3740,15 +3763,11 @@ let update_event = function (etag, url, id, db_id, uid) {
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
-    "LAST-MODIFIED":
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
     CLASS: "PRIVATE",
-    DTSTAMP:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
-    DTSTART:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
-    DTEND:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end),
+    "LAST-MODIFIED": lastmod,
+    DTSTAMP: dtstamp,
+    DTSTART: dtstart,
+    DTEND: dtend,
     RRULE:
       document.getElementById("event-recur").value == "none"
         ? ""
@@ -3760,8 +3779,10 @@ let update_event = function (etag, url, id, db_id, uid) {
 
     dateStart: document.getElementById("event-date").value,
     dateEnd: document.getElementById("event-date-end").value,
-    time_start: document.getElementById("event-time-start").value,
-    time_end: document.getElementById("event-time-end").value,
+    time_start:
+      allDay == false ? document.getElementById("event-time-start").value : "",
+    time_end:
+      allDay == false ? document.getElementById("event-time-end").value : "",
     alarm: document.getElementById("event-notification-time").value,
     alarmTrigger: notification_time,
     isSubscription: false,
@@ -3770,6 +3791,8 @@ let update_event = function (etag, url, id, db_id, uid) {
     id: db_id,
     allDay: allDay
   };
+
+  console.log(event);
 
   if (event.alarm != "none") {
     event.BEGIN = "VALARM";
@@ -3803,10 +3826,12 @@ let update_event = function (etag, url, id, db_id, uid) {
   events = events.filter((person) => person.UID != uid);
   //remove orginal event
   //to replace with new content
+
   try {
-    parse_ics(dd, "", false, "", "", "local-id", false, event.alarm);
+    parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
+    style_calendar_cell();
   } catch (e) {
-    console.log(e);
+    console.log("error parsing" + e);
   }
 
   if (db_id == "local-id") {
@@ -3834,7 +3859,7 @@ let update_event = function (etag, url, id, db_id, uid) {
 
     if (event.RRULE != null || event.RRULE != "") {
       event.DTEND =
-        ";TZID=" + settings.timezone + ":" + convert_ics_date(rrule_dt_end);
+        ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
@@ -3861,6 +3886,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     }
     event_data = event_data.replace("\n\n", "\n");
     event_data = event_data.trim();
+    console.log(event_data);
     update_caldav(etag, url, event_data, id);
   }
 };

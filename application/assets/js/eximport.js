@@ -184,8 +184,6 @@ export let parse_ics = function (
     let n = "";
     let rr_until = "";
 
-    //todo recognize date without time specification
-
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
       ite.getFirstPropertyValue("rrule") != null &&
@@ -228,13 +226,25 @@ export let parse_ics = function (
     let allday = false;
 
     if (
-      ite.getFirstPropertyValue("dtend") &&
-      ite.getFirstPropertyValue("dtstart")
+      ite.getFirstPropertyValue("dtstart").isDate &&
+      ite.getFirstPropertyValue("dtend").isDate
     ) {
-      if (timeStart == timeEnd) {
-        console.log("allday" + ite);
-        allday = true;
-      }
+      allday = true;
+
+      //allDay hack
+      //the end date of an allday event is moved to the next day, i don't know why. hence this ugly correction
+      //start
+      let k = ite.getFirstPropertyValue("dtstart").toJSDate();
+      dateStart = dayjs(k).format("YYYY-MM-DD");
+      timeStart = dayjs(k).format("HH:mm:ss");
+      dateStartUnix = k.getTime() / 1000;
+
+      //end
+      let f = ite.getFirstPropertyValue("dtend").toJSDate();
+      f = new Date(dayjs(f).subtract(1, "day"));
+      dateEnd = dayjs(f).format("YYYY-MM-DD");
+      timeEnd = dayjs(f).format("HH:mm:ss");
+      dateEndUnix = f.getTime() / 1000;
     }
 
     let lastmod = ite.getFirstPropertyValue("last-modified");
