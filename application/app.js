@@ -2482,7 +2482,55 @@ var page_add_event = {
             class: "select-box"
           })
         ]),
-        m("div", { class: "item input-parent", tabindex: "4" }, [
+
+        m(
+          "div",
+          {
+            class: "item input-parent flex  justify-content-center",
+            tabindex: "4"
+          },
+          [
+            m("label", { for: "event-all-day" }, "All Day"),
+            m("input", {
+              type: "checkbox",
+              id: "event-all-day",
+              class: "check-box",
+              onfocus: function (e) {
+                if (e.target.checked == false) {
+                  setTimeout(function () {
+                    //alert(document.activeElement);
+
+                    document.querySelector(".check-box").parentElement.focus();
+                  }, 400);
+
+                  document.querySelectorAll(".time").forEach((n) => {
+                    n.style.display = "none";
+                    n.classList.remove("item");
+
+                    set_tabindex();
+                  });
+                } else {
+                  setTimeout(function () {
+                    document.querySelector(".check-box").parentElement.focus();
+                  }, 400);
+
+                  document.querySelectorAll(".time").forEach((n) => {
+                    n.style.display = "block";
+                    n.classList.add("item");
+
+                    set_tabindex();
+                  });
+                }
+              }
+            }),
+            m("div", { class: "ckb-wrapper" }, [
+              m("div", { class: "ckb-icon" }),
+              m("div", { class: "toogle-button" })
+            ])
+          ]
+        ),
+
+        m("div", { class: "item input-parent time", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
           m("input", {
             placeholder: "hh:mm",
@@ -2495,7 +2543,7 @@ var page_add_event = {
             }
           })
         ]),
-        m("div", { class: "item input-parent", tabindex: "5" }, [
+        m("div", { class: "item input-parent time", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
           m("input", {
             placeholder: "hh:mm",
@@ -2508,6 +2556,7 @@ var page_add_event = {
             }
           })
         ]),
+
         m("div", { class: "item input-parent", tabindex: "6" }, [
           m("label", { for: "event-description" }, "Description"),
           m("input", {
@@ -2607,6 +2656,7 @@ var page_add_event = {
             class: "item save-button",
             oncreate: function () {
               focus_after_selection();
+              set_tabindex();
             },
             onclick: function () {
               let n = document.getElementById("event-calendar");
@@ -2641,6 +2691,8 @@ var page_edit_event = {
             tabindex: 0,
             oncreate: function ({ dom }) {
               setTimeout(function () {
+                console.log(update_event_date.allDay);
+
                 dom.focus();
                 bottom_bar("", "", "");
               }, 500);
@@ -2694,7 +2746,54 @@ var page_edit_event = {
             }
           })
         ]),
+
         m("div", { class: "item input-parent", tabindex: "4" }, [
+          m("label", { for: "event-all-day" }, "All Day"),
+          m("input", {
+            type: "checkbox",
+            id: "event-all-day",
+            class: "check-box",
+            oncreate: function () {
+              if (update_event_date.allDay == true) {
+                document.querySelector("#event-all-day").checked = true;
+
+                document.querySelectorAll(".time").forEach((e) => {
+                  e.style.display = "none";
+                  e.classList.remove("item");
+
+                  set_tabindex();
+                });
+              }
+            },
+            onfocus: function (e) {
+              if (e.target.checked == false) {
+                setTimeout(function () {
+                  e.focus();
+                }, 1000);
+
+                document.querySelectorAll(".time").forEach((e) => {
+                  e.style.display = "none";
+                  e.classList.remove("item");
+
+                  set_tabindex();
+                });
+              } else {
+                setTimeout(function () {
+                  e.focus();
+                }, 1000);
+
+                document.querySelectorAll(".time").forEach((e) => {
+                  e.style.display = "block";
+                  e.classList.add("item");
+
+                  set_tabindex();
+                });
+              }
+            }
+          })
+        ]),
+
+        m("div", { class: "item input-parent time", tabindex: "4" }, [
           m("label", { for: "event-time-start" }, "Start Time"),
           m("input", {
             placeholder: "HH:mm",
@@ -2707,7 +2806,7 @@ var page_edit_event = {
                 : update_event_date.time_start
           })
         ]),
-        m("div", { class: "item input-parent", tabindex: "5" }, [
+        m("div", { class: "item input-parent time", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
           m("input", {
             placeholder: "hh:mm",
@@ -3207,9 +3306,9 @@ let load_template_data = function () {
 /////////////////
 ///NAVIGATION
 /////////////////
-let mmm = document.querySelectorAll("div#calendar div.calendar-head div");
 
 let nav = function (move) {
+  set_tabindex();
   if (
     document.activeElement.nodeName == "SELECT" ||
     document.activeElement.type == "date" ||
@@ -3247,7 +3346,7 @@ let nav = function (move) {
     m.route.get() == "/page_edit_event"
   ) {
     let b = document.activeElement.parentNode;
-    items = b.querySelectorAll(".item");
+    items = document.querySelectorAll(".item");
 
     if (document.activeElement.parentNode.classList.contains("input-parent")) {
       document.activeElement.parentNode.focus();
@@ -3523,11 +3622,17 @@ let store_event = function (db_id, cal_name) {
   }
 
   let allDay = false;
-
+  /*
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
+  let c = start_time;
+  let d = end_time;
 
-  if (a != b) {
+  if (a == b && c == d) {
+    allDay = true;
+  }
+*/
+  if (document.getElementById("event-all-day").checked == true) {
     allDay = true;
   }
 
@@ -3554,14 +3659,13 @@ let store_event = function (db_id, cal_name) {
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
     "LAST-MODIFIED":
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+      ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start),
     CLASS: "PRIVATE",
-    DTSTAMP:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+    DTSTAMP: ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start),
     DTSTART:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_start),
+      ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start, allDay),
     DTEND:
-      ";TZID=" + settings.timezone + ":" + convert_ics_date(convert_dt_end),
+      ";TZID=" + settings.timezone + convert_ics_date(convert_dt_end, allDay),
     RRULE:
       document.getElementById("event-recur").value == "none"
         ? ""
@@ -3646,7 +3750,7 @@ let store_event = function (db_id, cal_name) {
     //rrule event should end on the same day, but rrule.until should set the end date
     if (event.RRULE != null || event.RRULE != "") {
       event.DTEND =
-        ";TZID=" + settings.timezone + ":" + convert_ics_date(rrule_dt_end);
+        ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
@@ -3736,13 +3840,17 @@ let update_event = function (etag, url, id, db_id, uid) {
   }
 
   let allDay = false;
-
+  /*
   let a = new Date(document.getElementById("event-date").value).getTime();
   let b = new Date(document.getElementById("event-date-end").value).getTime();
   let c = start_time;
   let d = end_time;
 
   if (a == b && c == d) {
+    allDay = true;
+  }
+*/
+  if (document.getElementById("event-all-day").checked == true) {
     allDay = true;
   }
 
@@ -3791,8 +3899,6 @@ let update_event = function (etag, url, id, db_id, uid) {
     id: db_id,
     allDay: allDay
   };
-
-  console.log(event);
 
   if (event.alarm != "none") {
     event.BEGIN = "VALARM";
@@ -3961,6 +4067,12 @@ let set_datetime_form = function () {
 
   document.getElementById("event-time-start").value = p;
   document.getElementById("event-time-end").value = pp;
+};
+
+let set_tabindex = () => {
+  document.querySelectorAll(".item").forEach((e, i) => {
+    e.setAttribute("tabindex", i);
+  });
 };
 
 let pick_image_callback = function (resultBlob) {
@@ -4210,6 +4322,13 @@ function shortpress_action(param) {
 
       if (document.activeElement.classList.contains("input-parent")) {
         document.activeElement.children[1].focus();
+
+        if (document.activeElement.classList.contains("check-box")) {
+          document.activeElement.checked == true
+            ? (document.activeElement.checked = false)
+            : (document.activeElement.checked = true);
+        }
+
         return true;
       }
 

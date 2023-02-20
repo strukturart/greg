@@ -160,6 +160,62 @@ input {
   border-radius: 6px;
 }
 
+input[type="checkbox"] {
+  border: 0px solid white;
+  width: 40px;
+}
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  background: #fcfff4;
+  border-radius: 50px;
+  opacity: 0;
+}
+
+div.ckb-wrapper {
+  width: 40px;
+  height: 20px;
+  margin: 0 0 0 -12px;
+  position: absolute;
+  left: 50%;
+  top: 45px;
+}
+
+div.ckb-icon {
+  background: rgb(182, 187, 180);
+  width: 50px;
+  height: 24px;
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  margin-top: -10px;
+  opacity: 0.6;
+  border-radius: 15%;
+}
+
+div.toogle-button {
+  background: rgb(128, 129, 126);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  position: absolute;
+
+  right: 34px;
+  top: 50%;
+  margin-top: -6px;
+  z-index: 3;
+}
+
+input[type="checkbox"]:checked ~ div.ckb-wrapper > div.ckb-icon {
+  opacity: 1;
+  background: rgb(226, 223, 223);
+}
+
+input[type="checkbox"]:checked ~ div.ckb-wrapper > div.toogle-button {
+  right: 8px;
+  background: rgb(34, 33, 33);
+}
+
 label {
   display: block;
   width: 100%;
@@ -171,6 +227,7 @@ label {
   padding: 15px;
   margin: 0 0 20px 0;
   width: 100%;
+  position: relative;
 }
 
 .input-parent:focus {
