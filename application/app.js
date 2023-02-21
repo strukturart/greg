@@ -403,7 +403,6 @@ let create_caldav = function (
         try {
           const calendars = await client.fetchCalendars();
           for (let i = 0; i < calendars.length; i++) {
-            console.log(calendars[i].displayName, calendars[i].url);
             if (calendars[i].displayName == calendar_name) {
               const result = await client.createCalendarObject({
                 calendar: calendars[i],
@@ -1465,47 +1464,19 @@ let focus_after_selection = function () {
 //autocomplete locations
 /*--------------*/
 
-let search = function (e) {
-  console.log("start search");
-  if (e == "close") {
-    document.querySelectorAll(".search-item").forEach(function (e) {
-      e.remove();
-    });
-    document.querySelectorAll(".item").forEach(function (e, index) {
-      e.tabIndex = index;
-    });
-    return false;
-  }
-
-  if (e == "click") {
-    document.getElementById("event-location").value =
-      document.activeElement.innerText;
-
-    document.getElementById("event-location").focus();
-    document.querySelectorAll(".search-item").forEach(function (e) {
-      e.remove();
-    });
-
-    document.querySelectorAll(".item").forEach(function (e, index) {
-      e.tabIndex = index;
-    });
-  }
+let autocomplete = function (e) {
   let myList = document.getElementById("search-result");
   document.querySelectorAll(".search-item").forEach(function (e) {
     e.remove();
   });
 
-  const matches = events.filter(function (val, i) {
-    if (events[i].LOCATION != "") {
-      if (events[i].LOCATION.toLowerCase().indexOf(e.target.value) > -1) {
-        return events[i].LOCATION;
-      }
-    }
+  let matches = events.filter(function (val, i) {
+    if (events[i].LOCATION.indexOf(e) >= 0) return events[i];
   });
 
-  if (matches.length === 0 || e.target.value == "") {
+  if (matches.length === 0 || e == "") {
     document.querySelectorAll(".search-item").forEach(function (e) {
-      e.remove();
+      // e.remove();
     });
     return;
   }
@@ -1521,6 +1492,28 @@ let search = function (e) {
       e.tabIndex = index;
     });
   });
+
+  document.querySelectorAll(".search-item").forEach(function (e) {
+    e.addEventListener("focus", function () {
+      document.getElementById("event-location").value =
+        document.activeElement.innerText;
+    });
+  });
+
+  if (e == "close") {
+    document.querySelectorAll(".search-item").forEach(function (e) {
+      e.remove();
+    });
+    document.querySelectorAll(".item").forEach(function (e, index) {
+      e.tabIndex = index;
+    });
+    return false;
+  }
+
+  if (e == "click") {
+    set_tabindex();
+    document.querySelectorAll(".item").forEach(function (e, index) {});
+  }
 };
 /*
 ///////////////////
@@ -2423,7 +2416,7 @@ var page_add_event = {
             }
           },
           [
-            m("label", { for: "event-title" }, "title"),
+            m("label", { for: "event-title" }, "Title"),
             m("input", {
               placeholder: "",
               type: "text",
@@ -2443,7 +2436,7 @@ var page_add_event = {
             type: "text",
             id: "event-location",
             oninput: function (m) {
-              search(m);
+              autocomplete(m.target.value);
             }
           })
         ]),
@@ -2455,7 +2448,7 @@ var page_add_event = {
             class: "item input-parent",
             tabindex: "2",
             onfocus: function () {
-              search("close");
+              autocomplete("close");
             }
           },
           [
@@ -2498,12 +2491,12 @@ var page_add_event = {
               onfocus: function (e) {
                 if (e.target.checked == false) {
                   setTimeout(function () {
-                    //alert(document.activeElement);
-
                     document.querySelector(".check-box").parentElement.focus();
-                  }, 400);
+                  }, 300);
 
                   document.querySelectorAll(".time").forEach((n) => {
+                    document.querySelector("#event-time-start").value = "01:00";
+                    document.querySelector("#event-time-end").value = "01:00";
                     n.style.display = "none";
                     n.classList.remove("item");
 
@@ -2512,7 +2505,7 @@ var page_add_event = {
                 } else {
                   setTimeout(function () {
                     document.querySelector(".check-box").parentElement.focus();
-                  }, 400);
+                  }, 300);
 
                   document.querySelectorAll(".time").forEach((n) => {
                     n.style.display = "block";
@@ -2699,7 +2692,7 @@ var page_edit_event = {
             }
           },
           [
-            m("label", { for: "event-title" }, "title"),
+            m("label", { for: "event-title" }, "Title"),
             m("input", {
               placeholder: "",
               type: "text",
@@ -2769,18 +2762,20 @@ var page_edit_event = {
               if (e.target.checked == false) {
                 setTimeout(function () {
                   e.focus();
-                }, 1000);
+                }, 300);
 
                 document.querySelectorAll(".time").forEach((e) => {
                   e.style.display = "none";
                   e.classList.remove("item");
+                  document.querySelector("#event-time-start").value = "01:00";
+                  document.querySelector("#event-time-end").value = "01:00";
 
                   set_tabindex();
                 });
               } else {
                 setTimeout(function () {
                   e.focus();
-                }, 1000);
+                }, 300);
 
                 document.querySelectorAll(".time").forEach((e) => {
                   e.style.display = "block";
@@ -2790,7 +2785,11 @@ var page_edit_event = {
                 });
               }
             }
-          })
+          }),
+          m("div", { class: "ckb-wrapper" }, [
+            m("div", { class: "ckb-icon" }),
+            m("div", { class: "toogle-button" })
+          ])
         ]),
 
         m("div", { class: "item input-parent time", tabindex: "4" }, [
@@ -3622,16 +3621,7 @@ let store_event = function (db_id, cal_name) {
   }
 
   let allDay = false;
-  /*
-  let a = new Date(document.getElementById("event-date").value).getTime();
-  let b = new Date(document.getElementById("event-date-end").value).getTime();
-  let c = start_time;
-  let d = end_time;
 
-  if (a == b && c == d) {
-    allDay = true;
-  }
-*/
   if (document.getElementById("event-all-day").checked == true) {
     allDay = true;
   }
@@ -3645,7 +3635,7 @@ let store_event = function (db_id, cal_name) {
     );
     if (time2Date < time1Date) {
       toaster(
-        "The time is not correct.Do you want to set the time to the next day? please change the date",
+        "The time is not correct. Do you want to set the time to the next day? please change the date",
         3000
       );
       validation = false;
@@ -3687,6 +3677,8 @@ let store_event = function (db_id, cal_name) {
     id: db_id,
     allDay: allDay
   };
+
+  console.log(event);
 
   if (event.alarm != "none") {
     event.BEGIN = "VALARM";
@@ -3779,6 +3771,8 @@ let store_event = function (db_id, cal_name) {
 
     event_data = event_data.trim();
 
+    console.log(event_data);
+
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
   style_calendar_cell();
@@ -3840,16 +3834,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   }
 
   let allDay = false;
-  /*
-  let a = new Date(document.getElementById("event-date").value).getTime();
-  let b = new Date(document.getElementById("event-date-end").value).getTime();
-  let c = start_time;
-  let d = end_time;
 
-  if (a == b && c == d) {
-    allDay = true;
-  }
-*/
   if (document.getElementById("event-all-day").checked == true) {
     allDay = true;
   }
@@ -4333,7 +4318,7 @@ function shortpress_action(param) {
       }
 
       if (document.activeElement.classList.contains("search-item")) {
-        search("click");
+        autocomplete("click");
         return true;
       }
 
