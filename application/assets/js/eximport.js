@@ -301,7 +301,7 @@ export let parse_ics = function (
       url: url,
       id: account_id
     };
-
+    if (ite.getFirstPropertyValue("summary") == "test-p") console.log(data);
     events.push(imp);
   });
   sort_array(events, "dateStartUnix", "date");

@@ -3566,6 +3566,13 @@ let export_data = [];
 
 let store_event = function (db_id, cal_name) {
   let validation = true;
+
+  let allDay = false;
+
+  if (document.getElementById("event-all-day").checked == true) {
+    allDay = true;
+  }
+
   if (document.getElementById("event-title").value == "") {
     toaster("Title can't be empty", 2000);
     validation = false;
@@ -3599,6 +3606,17 @@ let store_event = function (db_id, cal_name) {
 
   let convert_dt_end =
     document.getElementById("event-date-end").value + " " + end_time;
+  //todo
+  if (allDay) {
+    let h = dayjs(
+      document.getElementById("event-date-end").value + " " + end_time
+    )
+      .add(1, "day")
+      .format("YYYY-MM-DD hh:mm:ss");
+
+    console.log(document.getElementById("event-date-end").value + "/" + h);
+    convert_dt_end = h;
+  }
 
   let rrule_dt_end =
     document.getElementById("event-date").value + " " + end_time;
@@ -3618,12 +3636,6 @@ let store_event = function (db_id, cal_name) {
     );
 
     notification_time = convert_ics_date(calc_notification.toISOString());
-  }
-
-  let allDay = false;
-
-  if (document.getElementById("event-all-day").checked == true) {
-    allDay = true;
   }
 
   if (start_time != "" && end_time != "") {
@@ -3740,10 +3752,12 @@ let store_event = function (db_id, cal_name) {
   } else {
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
-    if (event.RRULE != null || event.RRULE != "") {
+
+    if (event.RRULE != "") {
       event.DTEND =
         ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
+
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
       event.SUMMARY +
