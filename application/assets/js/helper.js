@@ -54,7 +54,7 @@ let notify = function (param_title, param_text, param_silent) {
   var options = {
     body: param_text,
     silent: param_silent,
-    requireInteraction: false,
+    requireInteraction: false
     //actions: [{ action: "test", title: "test" }],
   };
 
@@ -80,7 +80,7 @@ let notify = function (param_title, param_text, param_silent) {
 export let pushLocalNotification = function (title, body) {
   window.Notification.requestPermission().then((result) => {
     var notification = new window.Notification(title, {
-      body: body,
+      body: body
       //requireInteraction: true,
     });
 
@@ -107,7 +107,6 @@ export let pushLocalNotification = function (title, body) {
 };
 if (navigator.mozSetMessageHandler) {
   navigator.mozSetMessageHandler("alarm", function (message) {
-    console.log(JSON.stringify(message));
     pushLocalNotification("Greg", message.data.foo);
   });
 }
@@ -288,8 +287,8 @@ export let pick_image = function (cb) {
   var activity = new MozActivity({
     name: "pick",
     data: {
-      type: ["image/png", "image/jpg", "image/jpeg"],
-    },
+      type: ["image/png", "image/jpg", "image/jpeg"]
+    }
   });
 
   activity.onsuccess = function () {
@@ -385,8 +384,8 @@ function share(url) {
     name: "share",
     data: {
       type: "url",
-      url: url,
-    },
+      url: url
+    }
   });
 
   activity.onsuccess = function () {};
@@ -463,7 +462,7 @@ export function get_file(filename, cb) {
 function write_file(data, filename) {
   var sdcard = navigator.getDeviceStorages("sdcard");
   var file = new Blob([data], {
-    type: "text/plain",
+    type: "text/plain"
   });
   var request = sdcard[1].addNamed(file, filename);
 

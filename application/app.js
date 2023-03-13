@@ -3397,7 +3397,9 @@ if ("b2g" in Navigator) {
       .then((registration) => {
         registration.systemMessageManager.subscribe("alarm").then(
           (rv) => {
-            alert('Successfully subscribe system messages of name "alarm".');
+            console.log(
+              'Successfully subscribe system messages of name "alarm".'
+            );
           },
           (error) => {
             console.log("Fail to subscribe system message, error: " + error);
@@ -3606,7 +3608,7 @@ let store_event = function (db_id, cal_name) {
 
   let convert_dt_end =
     document.getElementById("event-date-end").value + " " + end_time;
-  //todo
+  //allDay set end day
   if (allDay) {
     let h = dayjs(
       document.getElementById("event-date-end").value + " " + end_time
@@ -3853,6 +3855,18 @@ let update_event = function (etag, url, id, db_id, uid) {
     allDay = true;
   }
 
+  //allDay set end day
+  if (allDay) {
+    let h = dayjs(
+      document.getElementById("event-date-end").value + " " + end_time
+    )
+      .add(1, "day")
+      .format("YYYY-MM-DD hh:mm:ss");
+
+    convert_dt_end = h;
+    console.log(h);
+  }
+
   let lastmod =
     ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start);
   let dtstamp =
@@ -3931,15 +3945,21 @@ let update_event = function (etag, url, id, db_id, uid) {
   events = events.filter((person) => person.UID != uid);
   //remove orginal event
   //to replace with new content
-
+  /*
   try {
     parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
     style_calendar_cell();
   } catch (e) {
     console.log("error parsing" + e);
   }
-
+*/
   if (db_id == "local-id") {
+    try {
+      parse_ics(dd, "", false, "", "", "local-id", false, bn);
+    } catch (e) {
+      console.log(e);
+    }
+
     let without_subscription = events.filter(
       (events) => events.id == "local-id"
     );
@@ -3959,10 +3979,16 @@ let update_event = function (etag, url, id, db_id, uid) {
         side_toaster("no data to export", 2000);
       });
   } else {
+    try {
+      parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
+      style_calendar_cell();
+    } catch (e) {
+      console.log("error parsing" + e);
+    }
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
 
-    if (event.RRULE != null || event.RRULE != "") {
+    if (event.RRULE != "") {
       event.DTEND =
         ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
