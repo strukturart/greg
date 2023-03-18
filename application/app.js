@@ -45,8 +45,8 @@ let calendar_names = [
     name: "local",
     id: "local-id",
     data: "",
-    type: "local"
-  }
+    type: "local",
+  },
 ];
 
 let style_calendar_cell = function () {
@@ -60,8 +60,6 @@ let style_calendar_cell = function () {
       } else {
         if (e.classList.contains("event")) e.classList.remove("event");
       }
-
-      // if (event_check(p).event == true) e.classList.add("event");
 
       if (rrule_check(p).rrule == true) {
         e.classList.add("event");
@@ -86,20 +84,20 @@ let load_caldav = function () {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html"
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password
+          password: item.password,
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     }
 
@@ -130,7 +128,7 @@ let load_caldav = function () {
 
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i]
+            calendar: calendars[i],
           });
           //cache data
           let data_to_store = {
@@ -138,7 +136,7 @@ let load_caldav = function () {
             syncToken: calendars[i].syncToken,
             ctag: calendars[i].ctag,
             url: calendars[i].url,
-            objects: objects
+            objects: objects,
           };
 
           k.push(data_to_store);
@@ -183,20 +181,20 @@ let cache_caldav = function () {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html"
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password
+          password: item.password,
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     }
 
@@ -226,7 +224,7 @@ let cache_caldav = function () {
 
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i]
+            calendar: calendars[i],
           });
           //cache data
           let data_to_store = {
@@ -234,7 +232,7 @@ let cache_caldav = function () {
             syncToken: calendars[i].syncToken,
             ctag: calendars[i].ctag,
             url: calendars[i].url,
-            objects: objects
+            objects: objects,
           };
 
           k.push(data_to_store);
@@ -269,20 +267,20 @@ export let sync_caldav = function (callback) {
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html"
+          redirectUrl: "https://greg.strukturart.com/redirect.html",
         },
         authMethod: "Oauth",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     } else {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
-          password: item.password
+          password: item.password,
         },
         authMethod: "Basic",
-        defaultAccountType: "caldav"
+        defaultAccountType: "caldav",
       });
     }
 
@@ -304,12 +302,12 @@ export let sync_caldav = function (callback) {
         const calendars = await client.fetchCalendars();
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i]
+            calendar: calendars[i],
           });
           calendar_names.push({
             name: calendars[i].displayName,
             url: calendars[i].url,
-            id: item.id
+            id: item.id,
           });
         }
 
@@ -324,11 +322,11 @@ export let sync_caldav = function (callback) {
                 ctag: value[i].ctag,
                 syncToken: value[i].syncToken,
                 displayName: value[i].displayName,
-                objects: value[i].objects
-              }
+                objects: value[i].objects,
+              },
             ],
             detailedResult: true,
-            headers: client.authHeaders
+            headers: client.authHeaders,
           };
           try {
             const ma = await client.syncCalendars(s);
@@ -372,20 +370,20 @@ let create_caldav = function (
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html"
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       } else {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
             username: p.user,
-            password: p.password
+            password: p.password,
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       }
       (async () => {
@@ -410,8 +408,8 @@ let create_caldav = function (
                 iCalString: event_data,
                 headers: {
                   "content-type": "text/calendar; charset=utf-8",
-                  authorization: client.authHeaders.authorization
-                }
+                  authorization: client.authHeaders.authorization,
+                },
               });
 
               if (result.ok) {
@@ -419,10 +417,10 @@ let create_caldav = function (
                   const [res] = await client.propfind({
                     url: result.url,
                     props: {
-                      [`${DAVNamespaceShort.DAV}:getetag`]: {}
+                      [`${DAVNamespaceShort.DAV}:getetag`]: {},
                     },
                     depth: "0",
-                    headers: client.authHeaders
+                    headers: client.authHeaders,
                   });
 
                   event.etag = res.props.getetag;
@@ -480,20 +478,20 @@ let delete_caldav = function (etag, url, account_id, uid) {
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html"
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       } else {
         client = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
             username: item.user,
-            password: item.password
+            password: item.password,
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       }
       (async () => {
@@ -513,9 +511,9 @@ let delete_caldav = function (etag, url, account_id, uid) {
           const result = await client.deleteCalendarObject({
             calendarObject: {
               url: url,
-              etag: etag
+              etag: etag,
             },
-            headers: client.authHeaders
+            headers: client.authHeaders,
           });
 
           if (result.ok) {
@@ -571,20 +569,20 @@ let update_caldav = function (etag, url, data, account_id) {
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html"
+            redirectUrl: "https://greg.strukturart.com/redirect.html",
           },
           authMethod: "Oauth",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       } else {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
             username: p.user,
-            password: p.password
+            password: p.password,
           },
           authMethod: "Basic",
-          defaultAccountType: "caldav"
+          defaultAccountType: "caldav",
         });
       }
       (async () => {
@@ -605,10 +603,10 @@ let update_caldav = function (etag, url, data, account_id) {
             calendarObject: {
               url: url,
               data: data,
-              etag: etag
+              etag: etag,
             },
 
-            headers: client.authHeaders
+            headers: client.authHeaders,
           });
 
           if (result.ok) {
@@ -619,10 +617,10 @@ let update_caldav = function (etag, url, data, account_id) {
               const [res] = await client.propfind({
                 url: result.url,
                 props: {
-                  [`${DAVNamespaceShort.DAV}:getetag`]: {}
+                  [`${DAVNamespaceShort.DAV}:getetag`]: {},
                 },
                 depth: "0",
-                headers: client.authHeaders
+                headers: client.authHeaders,
               });
 
               events.map((item) => {
@@ -763,7 +761,7 @@ let store_event_as_template = function (title, description, location) {
     id: uid(32),
     title: title,
     description: description,
-    location: location
+    location: location,
   };
   event_templates.push(m);
 
@@ -790,7 +788,7 @@ let update_event_date;
 export let status = {
   selected_day: "",
   visible: false,
-  update_event_id: ""
+  update_event_id: "",
 };
 
 export let settings = {
@@ -798,7 +796,7 @@ export let settings = {
   ads: true,
   timezone: moment.tz.guess(),
   dateformat: "YYYY-MM-DD",
-  firstday: "sunday"
+  firstday: "sunday",
 };
 let blob = "";
 let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -854,11 +852,11 @@ let load_ads = function () {
         // Ad is ready to be displayed
         // calling 'display' will display the ad
         ad.call("display", {
-          navClass: "item"
+          navClass: "item",
           //tabIndex: 0,
           //display: "block",
         });
-      }
+      },
     });
   };
   document.head.appendChild(js);
@@ -916,7 +914,7 @@ let find_closest_date = function () {
     document.activeElement.parentNode.scrollBy({
       left: 0,
       top: elY - window.innerHeight / 2,
-      behavior: "smooth"
+      behavior: "smooth",
     });
   };
   //smaller or first
@@ -950,7 +948,7 @@ let find_closest_date = function () {
 let event_check = function (date) {
   let feedback = {
     event: false,
-    multidayevent: false
+    multidayevent: false,
   };
 
   let k = events.filter(
@@ -977,7 +975,7 @@ let rrule_check = function (date) {
     event: false,
     subscription: false,
     multidayevent: false,
-    rrule: "none"
+    rrule: "none",
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -1299,7 +1297,7 @@ let months = [
   "Sep",
   "Oct",
   "Nov",
-  "Dec"
+  "Dec",
 ];
 
 //////////////
@@ -1330,6 +1328,11 @@ Date.prototype.getWeek = function () {
 };
 //https://medium.com/@nitinpatel_20236/challenge-of-building-a-calendar-with-pure-javascript-a86f1303267d
 let showCalendar = function (month, year) {
+  // filing data about month and in the page via DOM.
+
+  document.getElementById("monthAndYear").textContent =
+    months[month] + " " + year;
+
   let firstDay = new Date(year, month).getDay();
   if (settings.firstday == "monday") {
     if (firstDay == 0) {
@@ -1345,10 +1348,6 @@ let showCalendar = function (month, year) {
 
   // clearing all previous cells
   tbl.innerHTML = "";
-
-  // filing data about month and in the page via DOM.
-  document.getElementById("monthAndYear").innerHTML =
-    months[month] + " " + year;
 
   // creating all cells
   let date = 1;
@@ -1532,19 +1531,19 @@ var page_calendar = {
         id: "calendar",
         oninit: function () {
           load_settings();
-        }
+        },
       },
       [
         m("div", { class: "flex justify-content-spacebetween", id: "" }, [
           m("h3", {
             class: "card-header",
-            id: "monthAndYear"
+            id: "monthAndYear",
           }),
 
           m("img", {
             id: "icon-loading",
             src: "./assets/image/E252.svg",
-            alt: "loading"
+            alt: "loading",
           }),
           m(
             "div",
@@ -1552,16 +1551,16 @@ var page_calendar = {
               id: "time",
               oncreate: function () {
                 document.getElementById("time").innerText = get_time();
-              }
+              },
             },
             "time is relative"
-          )
+          ),
         ]),
 
         m(
           "div",
           {
-            class: "calendar-head flex width-100"
+            class: "calendar-head flex width-100",
           },
 
           [
@@ -1571,7 +1570,7 @@ var page_calendar = {
             m("div", weekday[3]),
             m("div", weekday[4]),
             m("div", weekday[5]),
-            m("div", weekday[6])
+            m("div", weekday[6]),
           ]
         ),
         m("div", { id: "calendar-body" }),
@@ -1579,7 +1578,7 @@ var page_calendar = {
           "div",
           {
             id: "event-slider-indicator",
-            class: "flex width-100 justify-content-spacearound"
+            class: "flex width-100 justify-content-spacearound",
           },
           [m("div", { class: "flex justify-content-spacearound" })]
         ),
@@ -1587,15 +1586,18 @@ var page_calendar = {
           "div",
           {
             id: "event-slider",
-            class: "flex"
+            class: "flex",
           },
           [m("div", { id: "slider-inner", class: "flex" })]
-        )
+        ),
       ]
     );
   },
   onbeforeremove: () => {
     status.selected_day = document.activeElement.getAttribute("data-date");
+  },
+  oninit: () => {
+    clear_form();
   },
   oncreate: () => {
     setTimeout(function () {
@@ -1606,46 +1608,24 @@ var page_calendar = {
         "<img src='assets/image/list.svg'>",
         "<img src='assets/image/option.svg'>"
       );
-      let k;
-      if (status.selected_day != undefined) {
-        let t = new Date(status.selected_day);
-        currentMonth = t.getMonth();
-        currentYear = t.getFullYear();
-
-        k = status.selected_day;
-
-        document
-          .querySelectorAll("div#calendar-body div.item")
-          .forEach(function (item) {
-            if (item.getAttribute("data-date") == k && k != undefined) {
-              item.focus();
-              event_slider(k);
-            }
-          });
-      }
-
-      if (document.activeElement.hasAttribute("data-date"))
-        status.selected_day = document.activeElement.getAttribute("data-date");
 
       let t = new Date(status.selected_day);
       currentMonth = t.getMonth();
       currentYear = t.getFullYear();
-
       showCalendar(currentMonth, currentYear);
 
       document
         .querySelectorAll("div#calendar-body div.item")
         .forEach(function (item) {
-          if (item.getAttribute("data-date") == k) {
+          if (item.getAttribute("data-date") == status.selected_day) {
             item.focus();
-            event_slider(k);
+            event_slider(status.selected_day);
           }
         });
-
-      clear_form();
-    }, 1000);
-  }
+    }, 100);
+  },
 };
+
 var page_events = {
   view: function () {
     return m(
@@ -1667,7 +1647,7 @@ var page_events = {
             "<img src='assets/image/calendar.svg'>",
             ""
           );
-        }
+        },
       },
       [
         events.map(function (item, index) {
@@ -1699,7 +1679,7 @@ var page_events = {
               class: "item events " + u + " " + a,
               tabindex: index,
               "data-id": item.UID,
-              "data-date": item.dateStart
+              "data-date": item.dateStart,
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -1707,14 +1687,14 @@ var page_events = {
                 m("div", { class: "time" }, se),
                 m("h2", { class: "summary" }, item.SUMMARY),
                 m("div", { class: "location" }, item.LOCATION),
-                m("div", { class: "description" }, item.DESCRIPTION)
-              ])
+                m("div", { class: "description" }, item.DESCRIPTION),
+              ]),
             ]
           );
-        })
+        }),
       ]
     );
-  }
+  },
 };
 
 export let page_options = {
@@ -1725,7 +1705,7 @@ export let page_options = {
         id: "options",
         oncreate: () => {
           if (settings.ads) load_ads();
-        }
+        },
       },
       [
         m("h2", { class: "item", tabIndex: 0 }, "Key assignment"),
@@ -1748,7 +1728,7 @@ export let page_options = {
               });
 
               dom.focus();
-            }
+            },
           },
           [
             m("li", [m("span", "1 & 3")], "Months"),
@@ -1770,7 +1750,13 @@ export let page_options = {
               "li",
               [m("span", { class: "keys-day-event" }, "")],
               "day with event"
-            )
+            ),
+
+            m(
+              "li",
+              [m("span", { class: "keys-day-multi-event" }, "")],
+              "day with several events"
+            ),
           ]
         ),
         m("h2", { class: "item", tabindex: "2" }, "settings"),
@@ -1781,7 +1767,7 @@ export let page_options = {
           {
             class: "item input-parent",
             id: "event-date-format-box",
-            tabindex: "3"
+            tabindex: "3",
           },
           [
             m("label", { for: "event-date-format" }, "dateformat"),
@@ -1805,13 +1791,13 @@ export let page_options = {
                         settings.dateformat;
                     }
                   }, 1000);
-                }
+                },
               },
               [
                 m("option", { value: "YYYY-MM-DD" }, "YYYY-MM-DD"),
-                m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY")
+                m("option", { value: "DD.MM.YYYY" }, "DD.MM.YYYY"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -1820,7 +1806,7 @@ export let page_options = {
           {
             class: "item input-parent",
             id: "firs-day-of-the-week-box",
-            tabindex: "4"
+            tabindex: "4",
           },
           [
             m(
@@ -1851,13 +1837,13 @@ export let page_options = {
                         settings.firstday;
                     }
                   }, 1000);
-                }
+                },
               },
               [
                 m("option", { value: "sunday" }, "Sunday"),
-                m("option", { value: "monday" }, "Monday")
+                m("option", { value: "monday" }, "Monday"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -1866,7 +1852,7 @@ export let page_options = {
           {
             class: "item input-parent",
             id: "event-notification-time-wrapper",
-            tabindex: "5"
+            tabindex: "5",
           },
           [
             m("label", { for: "default-notification" }, "default Notification"),
@@ -1892,16 +1878,16 @@ export let page_options = {
                       ).value = settings.default_notification;
                     }
                   }, 1000);
-                }
+                },
               },
               [
                 m("option", { value: "none" }, "none"),
                 m("option", { value: "5" }, "5 minutes"),
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
-                m("option", { value: "1440" }, "1 Day")
+                m("option", { value: "1440" }, "1 Day"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -1916,7 +1902,7 @@ export let page_options = {
             },
             onclick: function () {
               m.route.set("/page_list_files");
-            }
+            },
           },
           "Import events"
         ),
@@ -1929,7 +1915,7 @@ export let page_options = {
             tabindex: "7",
             onclick: function () {
               m.route.set("/page_subscriptions");
-            }
+            },
           },
           "add subscription"
         ),
@@ -1946,7 +1932,7 @@ export let page_options = {
               tabindex: index + 7,
               onblur: function () {
                 bottom_bar("", "", "");
-              }
+              },
             },
             item.name
           );
@@ -1961,22 +1947,22 @@ export let page_options = {
             tabindex: subscriptions.length + 8,
             onclick: function () {
               m.route.set("/page_accounts");
-            }
+            },
           },
 
           [
             m(
               "div",
               {
-                class: "flex  align-item-center justify-content-spacebetween "
+                class: "flex  align-item-center justify-content-spacebetween ",
               },
               [
                 m("img", {
-                  src: "assets/image/caldav.png"
+                  src: "assets/image/caldav.png",
                 }),
-                m("span", "CalDAV Account")
+                m("span", "CalDAV Account"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -2014,21 +2000,21 @@ export let page_options = {
                 }
               }, 1000);
               window.open(google_oauth_url);
-            }
+            },
           },
           [
             m(
               "div",
               {
-                class: "flex justify-content-spacebetween align-item-center "
+                class: "flex justify-content-spacebetween align-item-center ",
               },
               [
                 m("img", {
-                  src: "assets/image/google_button.png"
+                  src: "assets/image/google_button.png",
                 }),
-                m("span", "Sign in with Google")
+                m("span", "Sign in with Google"),
               ]
-            )
+            ),
           ]
         ),
         m("div", { id: "subscription-text" }, "Your accounts"),
@@ -2056,7 +2042,7 @@ export let page_options = {
                     "<img src='assets/image/pencil.svg'>"
                   );
                 }
-              }
+              },
             },
             item.name
           );
@@ -2082,14 +2068,14 @@ export let page_options = {
             bottom_bar("", "", "");
             if (event.keyCode == 13) {
             }
-          }
-        })
+          },
+        }),
       ]
     );
   },
   oncreate: function () {
     bottom_bar("", "", "");
-  }
+  },
 };
 
 var page_subscriptions = {
@@ -2102,15 +2088,15 @@ var page_subscriptions = {
           tabindex: "0",
           oncreate: function ({ dom }) {
             dom.focus();
-          }
+          },
         },
         [
           m("label", { for: "description" }, "subscription name"),
           m("input", {
             placeholder: "Name",
             type: "text",
-            id: "cal-subs-name"
-          })
+            id: "cal-subs-name",
+          }),
         ]
       ),
       m(
@@ -2121,7 +2107,7 @@ var page_subscriptions = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "subscription url"),
@@ -2135,8 +2121,8 @@ var page_subscriptions = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2146,12 +2132,12 @@ var page_subscriptions = {
           tabindex: "2",
           onclick: function () {
             store_subscription();
-          }
+          },
         },
         "save"
-      )
+      ),
     ]);
-  }
+  },
 };
 
 let update_account;
@@ -2166,7 +2152,7 @@ var page_edit_account = {
 
           oncreate: function ({ dom }) {
             dom.focus();
-          }
+          },
         },
         [
           m("label", { for: "description" }, "account name"),
@@ -2174,8 +2160,8 @@ var page_edit_account = {
             placeholder: "Name",
             type: "text",
             id: "account-name",
-            value: update_account.name
-          })
+            value: update_account.name,
+          }),
         ]
       ),
       m(
@@ -2186,7 +2172,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "server"),
@@ -2202,8 +2188,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2214,7 +2200,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "username"),
@@ -2230,8 +2216,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2242,7 +2228,7 @@ var page_edit_account = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "password"),
@@ -2258,8 +2244,8 @@ var page_edit_account = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2269,12 +2255,12 @@ var page_edit_account = {
           tabindex: "4",
           onclick: function () {
             store_account(true, status.edit_account_id);
-          }
+          },
         },
         "update"
-      )
+      ),
     ]);
-  }
+  },
 };
 
 var page_accounts = {
@@ -2287,15 +2273,15 @@ var page_accounts = {
           tabindex: "0",
           oncreate: function ({ dom }) {
             dom.focus();
-          }
+          },
         },
         [
           m("label", { for: "description" }, "account name"),
           m("input", {
             placeholder: "Name",
             type: "text",
-            id: "account-name"
-          })
+            id: "account-name",
+          }),
         ]
       ),
       m(
@@ -2306,7 +2292,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "server"),
@@ -2320,8 +2306,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2332,7 +2318,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "username"),
@@ -2346,8 +2332,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
 
@@ -2359,7 +2345,7 @@ var page_accounts = {
 
           onblur: function () {
             bottom_bar("", "", "");
-          }
+          },
         },
         [
           m("label", { for: "description" }, "password"),
@@ -2373,8 +2359,8 @@ var page_accounts = {
             },
             onblur: function () {
               bottom_bar("", "", "");
-            }
-          })
+            },
+          }),
         ]
       ),
       m(
@@ -2384,12 +2370,12 @@ var page_accounts = {
           tabindex: "4",
           onclick: function () {
             store_account();
-          }
+          },
         },
         "save"
-      )
+      ),
     ]);
-  }
+  },
 };
 
 var page_add_event = {
@@ -2398,7 +2384,7 @@ var page_add_event = {
       "div",
       {
         id: "add-edit-event",
-        tabindex: "0"
+        tabindex: "0",
       },
       [
         m(
@@ -2413,7 +2399,7 @@ var page_add_event = {
                 bottom_bar("", "", "");
                 settings.timezone = moment.tz.guess();
               }, 500);
-            }
+            },
           },
           [
             m("label", { for: "event-title" }, "Title"),
@@ -2424,8 +2410,8 @@ var page_add_event = {
               oncreate: function () {
                 load_settings();
                 load_template_data();
-              }
-            })
+              },
+            }),
           ]
         ),
 
@@ -2437,8 +2423,8 @@ var page_add_event = {
             id: "event-location",
             oninput: function (m) {
               autocomplete(m.target.value);
-            }
-          })
+            },
+          }),
         ]),
         m("div", { id: "search-result" }),
 
@@ -2449,7 +2435,7 @@ var page_add_event = {
             tabindex: "2",
             onfocus: function () {
               autocomplete("close");
-            }
+            },
           },
           [
             m("label", { for: "event-date" }, "Start Date"),
@@ -2461,8 +2447,8 @@ var page_add_event = {
 
               oncreate: function ({ dom }) {
                 dom.value = status.selected_day;
-              }
-            })
+              },
+            }),
           ]
         ),
 
@@ -2472,15 +2458,15 @@ var page_add_event = {
             placeholder: settings.dateformat,
             type: "date",
             id: "event-date-end",
-            class: "select-box"
-          })
+            class: "select-box",
+          }),
         ]),
 
         m(
           "div",
           {
             class: "item input-parent flex  justify-content-center",
-            tabindex: "4"
+            tabindex: "4",
           },
           [
             m("label", { for: "event-all-day" }, "All Day"),
@@ -2514,12 +2500,12 @@ var page_add_event = {
                     set_tabindex();
                   });
                 }
-              }
+              },
             }),
             m("div", { class: "ckb-wrapper" }, [
               m("div", { class: "ckb-icon" }),
-              m("div", { class: "toogle-button" })
-            ])
+              m("div", { class: "toogle-button" }),
+            ]),
           ]
         ),
 
@@ -2533,8 +2519,8 @@ var page_add_event = {
 
             oncreate: function ({ dom }) {
               dom.value = dayjs().format("HH:mm");
-            }
-          })
+            },
+          }),
         ]),
         m("div", { class: "item input-parent time", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
@@ -2546,8 +2532,8 @@ var page_add_event = {
 
             oncreate: function ({ dom }) {
               dom.value = dayjs().add(1, "hour").format("HH:mm");
-            }
-          })
+            },
+          }),
         ]),
 
         m("div", { class: "item input-parent", tabindex: "6" }, [
@@ -2555,8 +2541,8 @@ var page_add_event = {
           m("input", {
             placeholder: "",
             type: "text",
-            id: "event-description"
-          })
+            id: "event-description",
+          }),
         ]),
 
         m(
@@ -2564,7 +2550,7 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-notification-time-wrapper",
-            tabindex: "7"
+            tabindex: "7",
           },
           [
             m("label", { for: "notification" }, "Notification"),
@@ -2578,7 +2564,7 @@ var page_add_event = {
                     document.querySelector("#event-notification-time").value =
                       settings.default_notification;
                   }, 2000);
-                }
+                },
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2586,9 +2572,9 @@ var page_add_event = {
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
                 m("option", { value: "60" }, "60 minutes"),
-                m("option", { value: "1440" }, "1 Day")
+                m("option", { value: "1440" }, "1 Day"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -2602,7 +2588,7 @@ var page_add_event = {
               setTimeout(function () {
                 document.querySelector("#event-recur").value = "none";
               }, 1000);
-            }
+            },
           },
           [
             m("label", { for: "event-recur" }, "Recur"),
@@ -2612,8 +2598,8 @@ var page_add_event = {
               m("option", { value: "WEEKLY" }, "Weekly"),
               m("option", { value: "BIWEEKLY" }, "Biweekly"),
               m("option", { value: "MONTHLY" }, "Monthly"),
-              m("option", { value: "YEARLY" }, "Yearly")
-            ])
+              m("option", { value: "YEARLY" }, "Yearly"),
+            ]),
           ]
         ),
 
@@ -2622,7 +2608,7 @@ var page_add_event = {
           {
             class: "item input-parent",
             id: "event-calendar-wrapper",
-            tabindex: "9"
+            tabindex: "9",
           },
           [
             m("label", { for: "notification" }, "Calendars"),
@@ -2632,12 +2618,12 @@ var page_add_event = {
                   "option",
                   {
                     value: item.id,
-                    "data-calendar-data": item.data
+                    "data-calendar-data": item.data,
                   },
                   item.name
                 );
-              })
-            ])
+              }),
+            ]),
           ]
         ),
 
@@ -2657,16 +2643,16 @@ var page_add_event = {
                 n.options[n.selectedIndex].value,
                 n.options[n.selectedIndex].text
               );
-            }
+            },
           },
           "save"
-        )
+        ),
       ]
     );
   },
   oncreate: function () {
     bottom_bar("", "", "");
-  }
+  },
 };
 
 var page_edit_event = {
@@ -2674,7 +2660,7 @@ var page_edit_event = {
     return m(
       "div",
       {
-        id: "add-edit-event"
+        id: "add-edit-event",
       },
       [
         m(
@@ -2689,7 +2675,7 @@ var page_edit_event = {
                 dom.focus();
                 bottom_bar("", "", "");
               }, 500);
-            }
+            },
           },
           [
             m("label", { for: "event-title" }, "Title"),
@@ -2697,8 +2683,8 @@ var page_edit_event = {
               placeholder: "",
               type: "text",
               id: "event-title",
-              value: update_event_date.SUMMARY
-            })
+              value: update_event_date.SUMMARY,
+            }),
           ]
         ),
 
@@ -2708,8 +2694,8 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-location",
-            value: update_event_date.LOCATION
-          })
+            value: update_event_date.LOCATION,
+          }),
         ]),
 
         m("div", { class: "item input-parent", tabindex: "2" }, [
@@ -2722,8 +2708,8 @@ var page_edit_event = {
 
             oncreate: function ({ dom }) {
               dom.value = update_event_date.dateStart;
-            }
-          })
+            },
+          }),
         ]),
 
         m("div", { class: "item input-parent", tabindex: "3" }, [
@@ -2736,8 +2722,8 @@ var page_edit_event = {
 
             oncreate: function ({ dom }) {
               dom.value = update_event_date.dateEnd;
-            }
-          })
+            },
+          }),
         ]),
 
         m("div", { class: "item input-parent", tabindex: "4" }, [
@@ -2784,12 +2770,12 @@ var page_edit_event = {
                   set_tabindex();
                 });
               }
-            }
+            },
           }),
           m("div", { class: "ckb-wrapper" }, [
             m("div", { class: "ckb-icon" }),
-            m("div", { class: "toogle-button" })
-          ])
+            m("div", { class: "toogle-button" }),
+          ]),
         ]),
 
         m("div", { class: "item input-parent time", tabindex: "4" }, [
@@ -2802,8 +2788,8 @@ var page_edit_event = {
             value:
               update_event_date.time_start.length == 8
                 ? update_event_date.time_start.slice(0, -3)
-                : update_event_date.time_start
-          })
+                : update_event_date.time_start,
+          }),
         ]),
         m("div", { class: "item input-parent time", tabindex: "5" }, [
           m("label", { for: "event-time-end" }, "End Time"),
@@ -2815,8 +2801,8 @@ var page_edit_event = {
             value:
               update_event_date.time_end.length == 8
                 ? update_event_date.time_end.slice(0, -3)
-                : update_event_date.time_end
-          })
+                : update_event_date.time_end,
+          }),
         ]),
         m("div", { class: "item input-parent", tabindex: "6" }, [
           m("label", { for: "event-description" }, "Description"),
@@ -2824,8 +2810,8 @@ var page_edit_event = {
             placeholder: "",
             type: "text",
             id: "event-description",
-            value: update_event_date.DESCRIPTION
-          })
+            value: update_event_date.DESCRIPTION,
+          }),
         ]),
 
         m(
@@ -2833,7 +2819,7 @@ var page_edit_event = {
           {
             class: "item input-parent",
             id: "event-notification-time-wrapper",
-            tabindex: "7"
+            tabindex: "7",
           },
           [
             m("label", { for: "notification" }, "Notification"),
@@ -2841,7 +2827,7 @@ var page_edit_event = {
               "select",
               {
                 id: "event-notification-time",
-                class: "select-box"
+                class: "select-box",
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2849,9 +2835,9 @@ var page_edit_event = {
                 m("option", { value: "10" }, "10 minutes"),
                 m("option", { value: "30" }, "30 minutes"),
                 m("option", { value: "60" }, "60 minutes"),
-                m("option", { value: "1440" }, "1 Day")
+                m("option", { value: "1440" }, "1 Day"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -2864,7 +2850,7 @@ var page_edit_event = {
             oncreate: function () {
               document.querySelector("#event-notification-time").value =
                 update_event_date.alarm;
-            }
+            },
           },
           [
             m("label", { for: "event-recur" }, "Recur"),
@@ -2874,7 +2860,7 @@ var page_edit_event = {
               {
                 id: "event-recur",
                 value: update_event_date.rrule_json.freq ?? "none",
-                class: "select-box"
+                class: "select-box",
               },
               [
                 m("option", { value: "none" }, "none"),
@@ -2882,9 +2868,9 @@ var page_edit_event = {
                 m("option", { value: "WEEKLY" }, "Weekly"),
                 m("option", { value: "BIWEEKLY" }, "Biweekly"),
                 m("option", { value: "MONTHLY" }, "Monthly"),
-                m("option", { value: "YEARLY" }, "Yearly")
+                m("option", { value: "YEARLY" }, "Yearly"),
               ]
-            )
+            ),
           ]
         ),
 
@@ -2901,7 +2887,7 @@ var page_edit_event = {
                 update_event_date.id,
                 update_event_date.UID
               );
-            }
+            },
           },
           "delete"
         ),
@@ -2923,7 +2909,7 @@ var page_edit_event = {
                 update_event_date.id,
                 update_event_date.UID
               );
-            }
+            },
           },
           "update"
         ),
@@ -2943,13 +2929,13 @@ var page_edit_event = {
                 document.getElementById("event-description").value,
                 document.getElementById("event-location").value
               );
-            }
+            },
           },
           "save as template"
-        )
+        ),
       ]
     );
-  }
+  },
 };
 let file_list = [];
 
@@ -2987,7 +2973,7 @@ var page_list_files = {
     return m(
       "div",
       {
-        id: "options"
+        id: "options",
       },
       [
         m("h2", { class: "text-center", id: "file-head" }, "files"),
@@ -3008,14 +2994,14 @@ var page_list_files = {
               tabIndex: index,
               onclick: function () {
                 get_file(e, callback_getfile);
-              }
+              },
             },
             fn
           );
-        })
+        }),
       ]
     );
-  }
+  },
 };
 
 let selected_template;
@@ -3031,7 +3017,7 @@ var page_event_templates = {
             "<img src='assets/image/add.svg'>",
             ""
           );
-        }
+        },
       },
       [
         m("h2", { class: "text-center" }, "Templates"),
@@ -3050,14 +3036,14 @@ var page_event_templates = {
                 }
               },
               tabIndex: index,
-              "data-id": item.id
+              "data-id": item.id,
             },
             item.title
           );
-        })
+        }),
       ]
     );
-  }
+  },
 };
 
 m.route(root, "/page_calendar", {
@@ -3070,7 +3056,7 @@ m.route(root, "/page_calendar", {
   "/page_accounts": page_accounts,
   "/page_edit_account": page_edit_account,
   "/page_event_templates": page_event_templates,
-  "/page_list_files": page_list_files
+  "/page_list_files": page_list_files,
 });
 m.route.prefix = "#";
 
@@ -3105,7 +3091,7 @@ let store_subscription = function () {
     subscriptions.push({
       url: document.getElementById("cal-subs-url").value,
       name: document.getElementById("cal-subs-name").value,
-      id: id
+      id: id,
     });
 
     document.querySelector("input#cal-subs-name").val = "";
@@ -3151,7 +3137,7 @@ let store_account = function (edit, id) {
         user: document.getElementById("account-username").value,
         password: document.getElementById("account-password").value,
         name: document.getElementById("account-name").value,
-        id: id
+        id: id,
       });
     } else {
       accounts.push({
@@ -3159,7 +3145,7 @@ let store_account = function (edit, id) {
         user: document.getElementById("account-username").value,
         password: document.getElementById("account-password").value,
         name: document.getElementById("account-name").value,
-        id: uid(32)
+        id: uid(32),
       });
     }
 
@@ -3373,7 +3359,7 @@ let nav = function (move) {
   document.activeElement.parentNode.scrollBy({
     left: 0,
     top: elY - window.innerHeight / 2,
-    behavior: "smooth"
+    behavior: "smooth",
   });
 
   if (m.route.get() == "/page_calendar" || m.route.get() == "/page_events") {
@@ -3392,7 +3378,7 @@ if ("b2g" in Navigator) {
     navigator.serviceWorker
       .register(new URL("sw.js", import.meta.url), {
         type: "module",
-        scope: "/"
+        scope: "/",
       })
       .then((registration) => {
         registration.systemMessageManager.subscribe("alarm").then(
@@ -3421,7 +3407,7 @@ let add_alarm = function (date, message_text, id) {
     // This is arbitrary data pass to the alarm
     var data = {
       note: message_text,
-      event_id: id
+      event_id: id,
     };
 
     var request = navigator.mozAlarms.add(date, "honorTimezone", data);
@@ -3441,7 +3427,7 @@ let add_alarm = function (date, message_text, id) {
       let options = {
         date: date,
         data: { note: message_text },
-        ignoreTimezone: false
+        ignoreTimezone: false,
       };
 
       navigator.b2g.alarmManager.add(options).then(
@@ -3689,7 +3675,7 @@ let store_event = function (db_id, cal_name) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allDay
+    allDay: allDay,
   };
 
   console.log(event);
@@ -3910,7 +3896,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
-    allDay: allDay
+    allDay: allDay,
   };
 
   if (event.alarm != "none") {
@@ -3945,14 +3931,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   events = events.filter((person) => person.UID != uid);
   //remove orginal event
   //to replace with new content
-  /*
-  try {
-    parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
-    style_calendar_cell();
-  } catch (e) {
-    console.log("error parsing" + e);
-  }
-*/
+
   if (db_id == "local-id") {
     try {
       parse_ics(dd, "", false, "", "", "local-id", false, bn);

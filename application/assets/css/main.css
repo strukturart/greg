@@ -32,7 +32,7 @@
   -ms-hyphens: auto;
   -moz-hyphens: auto;
   hyphens: auto;
-  font-family: "Roboto";
+  font-family: "Roboto" !important;
 }
 
 :focus {
@@ -49,7 +49,7 @@
 }
 html,
 body {
-  font-family: "Roboto";
+  font-family: "Roboto" !important;
 
   font-weight: 100;
   position: relative;
@@ -103,6 +103,7 @@ button {
   border: 2px solid gray;
   font-weight: 700;
   min-height: 40px;
+  font-family: "Roboto" !important;
 }
 
 button img {
@@ -158,6 +159,7 @@ input {
   padding: 3px;
   border: 2px solid silver;
   border-radius: 6px;
+  font-family: "Roboto" !important;
 }
 
 input[type="checkbox"] {
@@ -224,7 +226,7 @@ label {
   font-weight: bold;
 }
 .input-parent {
-  padding: 15px;
+  padding: 15px !important;
   margin: 0 0 20px 0;
   width: 100%;
   position: relative;
@@ -836,15 +838,16 @@ div#options div#subscription-text {
   text-align: center;
 }
 ul#keys li span {
-  display: block;
-
   font-weight: bold;
-  margin: 0px 0 0px 0;
+  margin: 0px 0 0px 0px;
+  padding: 0px 10px 0 0px;
 }
 
 div#options ul#keys li {
   margin: 0 0 0px 0;
-  padding: 5px 0 10px 10px;
+  padding: 5px 0 5px 10px;
+  font-size: 0.9rem;
+  border: 1px dotted silver;
 }
 
 div#options ul#keys:focus {
@@ -852,7 +855,7 @@ div#options ul#keys:focus {
 }
 
 div#options ul#keys {
-  margin: 0 0 20px 0;
+  margin: -10px 0 20px 0;
 }
 
 ul#keys li:first-child {
@@ -870,20 +873,25 @@ div#options h2 {
 }
 
 div#options li span.keys-day-event {
-  min-width: 20px;
   width: 20px;
+  height: 20px;
   background: pink;
-  padding: 5px;
-  margin: 0 40px 0 0;
+  margin: 0 20px 0 0;
+}
+
+div#options li span.keys-day-multi-event {
+  width: 20px;
+  height: 20px;
+  background: LightSalmon !important;
+  margin: 0 20px 0 0;
 }
 
 div#options li span.keys-current-day {
-  min-width: 20px;
+  height: 20px;
   width: 20px;
   background: rgb(120, 183, 255);
   background-size: 10%;
-  padding: 5px;
-  margin: 0 40px 0 0;
+  margin: 0 20px 0 0;
 }
 
 div#subscription-form {
