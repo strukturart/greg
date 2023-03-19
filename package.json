@@ -54,6 +54,7 @@
     "assets": "^3.0.1",
     "dayjs": "^1.11.6",
     "dayjs-plugin-utc": "^0.1.2",
+    "fast-sort": "^3.2.1",
     "ical.js": "^1.5.0",
     "jsqr": "^1.4.0",
     "localforage": "^1.10.0",

@@ -20,8 +20,7 @@ import "url-search-params-polyfill";
 import { list_files } from "./assets/js/helper.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
 import { get_time } from "./assets/js/helper.js";
-import { getManifest } from "./assets/js/ads.js";
-
+import { getManifest, load_ads, manifest } from "./assets/js/ads.js";
 import { uid } from "uid";
 import { google_cred } from "./assets/js/google_cred.js";
 import dayjsPluginUTC from "dayjs-plugin-utc";
@@ -486,7 +485,7 @@ let create_caldav = function (
                   popup("", "close");
                   // sort_array(events, "dateStartUnix", "date");
                   try {
-                    sort_array(events, "dateStartUnix", "date");
+                    sort_array(events, "dateStartUnix", "number");
                   } catch (e) {
                     alert(e);
                   }
@@ -585,7 +584,7 @@ let delete_caldav = function (etag, url, account_id, uid) {
             popup("", "close");
             // sort_array(events, "dateStartUnix", "date");
             try {
-              sort_array(events, "dateStartUnix", "date");
+              sort_array(events, "dateStartUnix", "number");
             } catch (e) {
               alert(e);
             }
@@ -747,7 +746,7 @@ setTimeout(() => {
   jump_to_today();
 
   try {
-    sort_array(events, "dateStartUnix", "date");
+    sort_array(events, "dateStartUnix", "number");
   } catch (e) {}
 }, 1000);
 
@@ -1663,7 +1662,9 @@ export let page_options = {
       {
         id: "options",
         oncreate: () => {
-          if (settings.ads) load_ads();
+          if (settings.ads) {
+            load_ads();
+          }
         },
       },
       [
@@ -3186,7 +3187,7 @@ localforage
       events = value;
       // sort_array(events, "dateStartUnix", "date");
       try {
-        sort_array(events, "dateStartUnix", "date");
+        sort_array(events, "dateStartUnix", "number");
       } catch (e) {
         alert(e);
       }

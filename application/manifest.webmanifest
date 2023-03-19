@@ -6,6 +6,9 @@
   "start_url": "/index.html",
   "short_name": "Greg",
   "categories": ["utilities"],
+  "theme_color": "#ffffff",
+  "orientation": "natural",
+
 
   "icons": [
     {
@@ -27,7 +30,7 @@
     "core": true,
     "type": "privileged",
     "display": "fullscreen",
-    "theme_color": "#ffffff",
+   
 
     "developer": {
       "name": "strukturart",

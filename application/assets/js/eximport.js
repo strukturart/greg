@@ -309,6 +309,11 @@ export let parse_ics = function (
     events.push(imp);
   });
   //sort_array(events, "dateStartUnix", "date");
+  try {
+    sort_array(events, "dateStartUnix", "number");
+  } catch (e) {
+    alert(e);
+  }
 };
 
 /////////////
