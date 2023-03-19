@@ -841,13 +841,19 @@ ul#keys li span {
   font-weight: bold;
   margin: 0px 0 0px 0px;
   padding: 0px 10px 0 0px;
+  position: absolute;
+  left: 10px;
+  max-width: 80px;
 }
 
 div#options ul#keys li {
   margin: 0 0 0px 0;
-  padding: 5px 0 5px 10px;
+  padding: 5px 0 5px 90px;
   font-size: 0.9rem;
-  border: 1px dotted silver;
+}
+
+div#options ul#keys li:nth-child(6) {
+  height: 60px;
 }
 
 div#options ul#keys:focus {
@@ -864,12 +870,13 @@ ul#keys li:first-child {
 }
 
 div#options h2 {
-  background: rgb(230, 230, 230);
+  background: rgb(123, 128, 123);
   min-width: 100vw;
   width: 100vw;
   font-weight: bold;
   padding: 10px;
   margin: 0px 0 10px 0;
+  color: white;
 }
 
 div#options li span.keys-day-event {

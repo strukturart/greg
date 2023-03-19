@@ -20,6 +20,8 @@ import "url-search-params-polyfill";
 import { list_files } from "./assets/js/helper.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
 import { get_time } from "./assets/js/helper.js";
+import { getManifest } from "./assets/js/ads.js";
+
 import { uid } from "uid";
 import { google_cred } from "./assets/js/google_cred.js";
 import dayjsPluginUTC from "dayjs-plugin-utc";
@@ -48,6 +50,38 @@ let calendar_names = [
     type: "local",
   },
 ];
+
+export let months = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+export let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export let status = {
+  selected_day: dayjs().format("YYYY-MM-DD"),
+  visible: false,
+  update_event_id: "",
+};
+
+export let settings = {
+  default_notification: "none",
+  ads: true,
+  timezone: moment.tz.guess(),
+  dateformat: "YYYY-MM-DD",
+  firstday: "sunday",
+};
+let blob = "";
 
 let style_calendar_cell = function () {
   if (events.length > 0) {
@@ -161,8 +195,6 @@ let load_caldav = function () {
         side_toaster("Data loaded", 3000);
       } catch (e) {
         document.getElementById("icon-loading").style.visibility = "hidden";
-
-        console.log(e);
       }
     })();
   });
@@ -452,7 +484,12 @@ let create_caldav = function (
                 );
                 setTimeout(function () {
                   popup("", "close");
-                  sort_array(events, "dateStartUnix", "date");
+                  // sort_array(events, "dateStartUnix", "date");
+                  try {
+                    sort_array(events, "dateStartUnix", "date");
+                  } catch (e) {
+                    alert(e);
+                  }
                 }, 5000);
               }
             }
@@ -546,7 +583,12 @@ let delete_caldav = function (etag, url, account_id, uid) {
           );
           setTimeout(function () {
             popup("", "close");
-            sort_array(events, "dateStartUnix", "date");
+            // sort_array(events, "dateStartUnix", "date");
+            try {
+              sort_array(events, "dateStartUnix", "date");
+            } catch (e) {
+              alert(e);
+            }
           }, 5000);
         }
       })();
@@ -657,7 +699,6 @@ let update_caldav = function (etag, url, data, account_id) {
 };
 
 let load_cached_caldav = function () {
-  console.log("loaded");
   accounts.forEach(function (item) {
     try {
       localforage
@@ -698,14 +739,16 @@ let load_subscriptions = function () {
   }
 };
 
-setTimeout(() => {
-  event_slider(document.activeElement.getAttribute("data-date"));
+//status.selected_day = dayjs().format("YYYY-MM-DD");
 
-  document.activeElement.hasAttribute("data-date")
-    ? (status.selected_day = document.activeElement.getAttribute("data-date"))
-    : "";
+setTimeout(() => {
+  event_slider(status.selected_day);
+
   jump_to_today();
-  sort_array(events, "dateStart", "date");
+
+  try {
+    sort_array(events, "dateStartUnix", "date");
+  } catch (e) {}
 }, 1000);
 
 export let sync_caldav_callback = function (o) {
@@ -785,22 +828,6 @@ let currentDay = today.getDate();
 
 let update_event_date;
 
-export let status = {
-  selected_day: "",
-  visible: false,
-  update_event_id: "",
-};
-
-export let settings = {
-  default_notification: "none",
-  ads: true,
-  timezone: moment.tz.guess(),
-  dateformat: "YYYY-MM-DD",
-  firstday: "sunday",
-};
-let blob = "";
-let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 let load_settings = function () {
   localforage
     .getItem("settings")
@@ -823,68 +850,6 @@ let load_settings = function () {
 
 //ads || ads free
 
-let load_ads = function () {
-  var js = document.createElement("script");
-  js.type = "text/javascript";
-  js.src = "assets/js/kaiads.v5.min.js";
-
-  js.onload = function () {
-    getKaiAd({
-      publisher: "4408b6fa-4e1d-438f-af4d-f3be2fa97208",
-      app: "greg",
-      slot: "greg",
-      test: 0,
-      timeout: 10000,
-      h: 100,
-      w: 240,
-      container: document.getElementById("KaiOsAds-Wrapper"),
-      onerror: (err) => console.error("Error:", err),
-      onready: (ad) => {
-        // user clicked the ad
-        ad.on("click", () => console.log("click event"));
-
-        // user closed the ad (currently only with fullscreen)
-        ad.on("close", () => console.log("close event"));
-
-        // the ad succesfully displayed
-        ad.on("display", () => console.log("display event"));
-
-        // Ad is ready to be displayed
-        // calling 'display' will display the ad
-        ad.call("display", {
-          navClass: "item",
-          //tabIndex: 0,
-          //display: "block",
-        });
-      },
-    });
-  };
-  document.head.appendChild(js);
-};
-
-//KaiOS ads
-let getManifest = function (callback) {
-  if (!navigator.mozApps) {
-    return false;
-  }
-  let self = navigator.mozApps.getSelf();
-  self.onsuccess = function () {
-    callback(self.result);
-  };
-  self.onerror = function () {};
-};
-
-//KaiOs store true||false
-function manifest(a) {
-  self = a.origin;
-  document.getElementById("version").innerText =
-    "Version: " + a.manifest.version;
-  if (a.installOrigin == "app://kaios-plus.kaiostech.com") {
-    settings.ads = true;
-  } else {
-    settings.ads = false;
-  }
-}
 try {
   getManifest(manifest);
 } catch (e) {}
@@ -937,7 +902,7 @@ let find_closest_date = function () {
       (event) => dayjs(event.dateStart).unix() === search
     );
     t = events[m].UID;
-    console.log(m);
+
     f();
   } catch (e) {
     gg();
@@ -1230,7 +1195,7 @@ let jump_to_today = function () {
   currentYear = today.getFullYear();
   showCalendar(currentMonth, currentYear);
   setTimeout(() => {
-    status.selected_day = document.activeElement.getAttribute("data-date");
+    status.selected_day = dayjs().format("YYYY-MM-DD");
     event_slider(status.selected_day);
   }, 1000);
 };
@@ -1252,53 +1217,40 @@ function previous() {
 let highlight_current_day = function () {
   if (m.route.get() != "/page_calendar") return false;
   setTimeout(function () {
+    //reset weekday
     document
       .querySelectorAll("div#calendar div.calendar-head div")
       .forEach(function (e) {
         e.classList.remove("active");
       });
-
-    let s = document.activeElement.getAttribute("data-day");
-
+    //reset weeknumber
     document.querySelectorAll("span.weeknumber").forEach((e) => {
       e.classList.remove("active");
     });
 
-    if (s) {
-      if (settings.firstday == "monday") {
-        s = s - 1;
-        let k = document.activeElement.closest("div.row");
-        k.querySelector("span.weeknumber").classList.add("active");
+    let p = document.activeElement.getAttribute("data-date");
 
-        if (s == -1) s = 6;
-        document
-          .querySelectorAll("div#calendar div.calendar-head div")
-          [s].classList.add("active");
-      } else {
-        document
-          .querySelectorAll("div#calendar div.calendar-head div")
-          [s].classList.add("active");
-      }
+    const d = new Date(p);
+    let s = d.getDay();
+    let k = document.activeElement.closest("div.row");
+    k.querySelector("span.weeknumber").classList.add("active");
+
+    if (settings.firstday == "monday") {
+      s = s - 1;
+
+      if (s == -1) s = 6;
+      document
+        .querySelectorAll("div#calendar div.calendar-head div")
+        [s].classList.add("active");
+    } else {
+      document
+        .querySelectorAll("div#calendar div.calendar-head div")
+        [s].classList.add("active");
     }
   }, 200);
 };
 
 load_settings();
-
-let months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
 
 //////////////
 //BUILD CALENDAR
@@ -1389,14 +1341,14 @@ let showCalendar = function (month, year) {
         let p = year + "-" + mmonth + "-" + day;
 
         const d = new Date(p);
-        cell.setAttribute("data-day", d.getDay());
+        //cell.setAttribute("data-day", d.getDay());
 
         moon.classList.add("moon-phase-" + getMoonPhase(year, month, date));
         cell.appendChild(moon);
 
         cell.setAttribute("data-date", p);
 
-        cell.setAttribute("data-index", new Date(p).toISOString());
+        //cell.setAttribute("data-index", new Date(p).toISOString());
 
         cell.classList.add("item");
         row.appendChild(cell);
@@ -1447,6 +1399,10 @@ let clear_form = function () {
     blob = "";
   });
 };
+
+/*--------------*/
+//after select element KaiOS specific
+/*--------------*/
 
 let focus_after_selection = function () {
   if (document.querySelectorAll(".select-box") == null) return false;
@@ -1531,14 +1487,19 @@ var page_calendar = {
         id: "calendar",
         oninit: function () {
           load_settings();
+          clear_form();
         },
       },
       [
         m("div", { class: "flex justify-content-spacebetween", id: "" }, [
-          m("h3", {
-            class: "card-header",
-            id: "monthAndYear",
-          }),
+          m(
+            "h3",
+            {
+              class: "card-header",
+              id: "monthAndYear",
+            },
+            ""
+          ),
 
           m("img", {
             id: "icon-loading",
@@ -1596,9 +1557,7 @@ var page_calendar = {
   onbeforeremove: () => {
     status.selected_day = document.activeElement.getAttribute("data-date");
   },
-  oninit: () => {
-    clear_form();
-  },
+
   oncreate: () => {
     setTimeout(function () {
       if (document.activeElement.hasAttribute("data-date"))
@@ -1622,7 +1581,7 @@ var page_calendar = {
             event_slider(status.selected_day);
           }
         });
-    }, 100);
+    }, 200);
   },
 };
 
@@ -1759,7 +1718,7 @@ export let page_options = {
             ),
           ]
         ),
-        m("h2", { class: "item", tabindex: "2" }, "settings"),
+        m("h2", { class: "item", tabindex: "2" }, "Settings"),
         m("div", { class: "text-center" }, "Timezone: " + settings.timezone),
 
         m(
@@ -3225,7 +3184,12 @@ localforage
   .then(function (value) {
     if (value != null) {
       events = value;
-      sort_array(events, "dateStartUnix", "date");
+      // sort_array(events, "dateStartUnix", "date");
+      try {
+        sort_array(events, "dateStartUnix", "date");
+      } catch (e) {
+        alert(e);
+      }
     }
   })
   .catch(function (err) {});
@@ -3241,10 +3205,7 @@ localforage
     }
     load_subscriptions();
   })
-  .catch(function (err) {
-    // This code runs if there were any errors
-    console.log(err);
-  });
+  .catch(function (err) {});
 
 function handleVisibilityChange() {
   if (document.visibilityState === "hidden") {
@@ -3678,8 +3639,6 @@ let store_event = function (db_id, cal_name) {
     allDay: allDay,
   };
 
-  console.log(event);
-
   if (event.alarm != "none") {
     event.BEGIN = "VALARM";
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
@@ -3820,7 +3779,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   let rrule_dt_end =
     document.getElementById("event-date").value + " " + end_time;
 
-  // notification before event
+  //notification before event
   let notification_time = document.getElementById(
     "event-notification-time"
   ).value;
@@ -3996,7 +3955,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     }
     event_data = event_data.replace("\n\n", "\n");
     event_data = event_data.trim();
-    console.log(event_data);
+
     update_caldav(etag, url, event_data, id);
   }
 };

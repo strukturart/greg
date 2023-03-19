@@ -184,6 +184,10 @@ export let parse_ics = function (
     let n = "";
     let rr_until = "";
 
+    let f = ite.getFirstPropertyValue("dtstart");
+
+    console.log(f);
+
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
       ite.getFirstPropertyValue("rrule") != null &&
@@ -196,6 +200,7 @@ export let parse_ics = function (
     }
 
     let dateStart, timeStart, dateStartUnix;
+
     if (ite.getFirstPropertyValue("dtstart")) {
       dateStart = dayjs(ite.getFirstPropertyValue("dtstart")).format(
         "YYYY-MM-DD"
@@ -270,7 +275,7 @@ export let parse_ics = function (
         ":" +
         ite.getFirstPropertyValue("last-modified").toICALString();
     }
-
+    //todo remove more key:values
     let imp = {
       BEGIN: "VEVENT",
       UID: ite.getFirstPropertyValue("uid"),
@@ -285,13 +290,13 @@ export let parse_ics = function (
       DTSTART: dtstart,
       DTEND: dtend,
       END: "VEVENT",
-      tzid: ite.getFirstPropertyValue("dtstart").timezone,
+      // tzid: ite.getFirstPropertyValue("dtstart").timezone,
       isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
       dateStartUnix: dateStartUnix,
-      dateEndUnix: dateEndUnix,
+      //dateEndUnix: dateEndUnix,
       dateEnd: dateEnd,
       time_start: timeStart,
       time_end: timeEnd,
@@ -299,12 +304,11 @@ export let parse_ics = function (
       rrule_json: n,
       etag: etag,
       url: url,
-      id: account_id
+      id: account_id,
     };
-    if (ite.getFirstPropertyValue("summary") == "test-p") console.log(data);
     events.push(imp);
   });
-  sort_array(events, "dateStartUnix", "date");
+  //sort_array(events, "dateStartUnix", "date");
 };
 
 /////////////
@@ -361,8 +365,8 @@ function share(url, name) {
       type: "text/calendar",
       number: 1,
       blobs: [url],
-      filenames: [name]
-    }
+      filenames: [name],
+    },
   });
 
   activity.onsuccess = function () {};
