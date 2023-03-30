@@ -2419,6 +2419,10 @@ var page_add_event = {
             type: "date",
             id: "event-date-end",
             class: "select-box",
+
+            oncreate: function ({ dom }) {
+              dom.min = status.selected_day;
+            },
           }),
         ]),
 
@@ -2489,6 +2493,21 @@ var page_add_event = {
             type: "time",
             id: "event-time-end",
             class: "select-box",
+            onblur: function (e) {
+              //compare times
+              let m = document.querySelector("#event-date").value;
+              let mm =
+                document.querySelector("#event-date-end").value != ""
+                  ? document.querySelector("#event-date-end").value
+                  : document.querySelector("#event-date").value;
+
+              let l = dayjs(
+                m + " " + document.querySelector("#event-time-start").value
+              );
+              let ll = dayjs(mm + " " + e.target.value);
+              if (ll.isAfter(l) == false)
+                side_toaster("something is wrong with the time", 2000);
+            },
 
             oncreate: function ({ dom }) {
               dom.value = dayjs().add(1, "hour").format("HH:mm");
@@ -2630,8 +2649,6 @@ var page_edit_event = {
             tabindex: 0,
             oncreate: function ({ dom }) {
               setTimeout(function () {
-                console.log(update_event_date.allDay);
-
                 dom.focus();
                 bottom_bar("", "", "");
               }, 500);
