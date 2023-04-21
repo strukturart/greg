@@ -178,15 +178,24 @@ export let parse_ics = function (
   }
 
   var comp = new ICAL.Component(jcalData);
+  //console.log(comp);
+
+  var valarm = comp.getAllSubcomponents("VALARM");
+  valarm.forEach(function (ite) {
+    //console.log(ite);
+  });
 
   var vevent = comp.getAllSubcomponents("vevent");
+  let calendar_name = "";
+  try {
+    calendar_name = comp.jCal[1][3][3];
+  } catch (e) {}
+
   vevent.forEach(function (ite) {
     let n = "";
     let rr_until = "";
 
     let f = ite.getFirstPropertyValue("dtstart");
-
-    console.log(f);
 
     if (
       typeof ite.getFirstPropertyValue("rrule") == "object" &&
@@ -290,13 +299,11 @@ export let parse_ics = function (
       DTSTART: dtstart,
       DTEND: dtend,
       END: "VEVENT",
-      // tzid: ite.getFirstPropertyValue("dtstart").timezone,
       isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
       dateStartUnix: dateStartUnix,
-      //dateEndUnix: dateEndUnix,
       dateEnd: dateEnd,
       time_start: timeStart,
       time_end: timeEnd,
@@ -304,15 +311,15 @@ export let parse_ics = function (
       rrule_json: n,
       etag: etag,
       url: url,
+      calendar_name: calendar_name,
       id: account_id,
     };
     events.push(imp);
   });
-  //sort_array(events, "dateStartUnix", "date");
   try {
     sort_array(events, "dateStartUnix", "number");
   } catch (e) {
-    alert(e);
+    console.log(e);
   }
 };
 

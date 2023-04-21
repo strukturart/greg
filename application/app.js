@@ -37,18 +37,40 @@ export let events = [];
 export let accounts = [];
 export let event_templates = [];
 
+const google_acc = {
+  token_url: "https://oauth2.googleapis.com/token",
+  redirect_url: "https://greg.strukturart.com/redirect.html",
+};
+
 let oauth_callback = "";
 
 localforage.setDriver(localforage.INDEXEDDB);
 
-let calendar_names = [
-  {
-    name: "local",
-    id: "local-id",
-    data: "",
-    type: "local",
-  },
-];
+//set default local calendar
+let calendar_names;
+localforage
+  .keys()
+  .then(function (keys) {
+    if (keys.indexOf("calendarNames") == -1) {
+      calendar_names = [
+        {
+          name: "local",
+          id: "local-id",
+          data: "",
+          type: "local",
+        },
+      ];
+      localforage.setItem("calendarNames", calendar_names);
+    } else {
+      localforage.getItem("calendarNames").then(function (e) {
+        calendar_names = e;
+        console.log(calendar_names);
+      });
+    }
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
 
 export let months = [
   "Jan",
@@ -69,8 +91,10 @@ export let weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export let status = {
   selected_day: dayjs().format("YYYY-MM-DD"),
+  selected_day_id: "",
   visible: false,
   update_event_id: "",
+  event_calendar_changed: false,
 };
 
 export let settings = {
@@ -84,21 +108,24 @@ let blob = "";
 
 let style_calendar_cell = function () {
   if (events.length > 0) {
-    document.querySelectorAll("div.calendar-cell").forEach(function (e) {
-      let p = e.getAttribute("data-date");
+    try {
+      document.querySelectorAll("div.calendar-cell").forEach(function (e) {
+        let p = e.getAttribute("data-date");
 
-      if (event_check(p).event == true) {
-        e.classList.add("event");
-        if (event_check(p).multidayevent == true) e.classList.add("multievent");
-      } else {
-        if (e.classList.contains("event")) e.classList.remove("event");
-      }
+        if (event_check(p).event == true) {
+          e.classList.add("event");
+          if (event_check(p).multidayevent == true)
+            e.classList.add("multievent");
+        } else {
+          if (e.classList.contains("event")) e.classList.remove("event");
+        }
 
-      if (rrule_check(p).rrule == true) {
-        e.classList.add("event");
-        if (rrule_check(p).count > 1) e.classList.add("multievent");
-      }
-    });
+        if (rrule_check(p).rrule == true) {
+          e.classList.add("event");
+          if (rrule_check(p).count > 1) e.classList.add("multievent");
+        }
+      });
+    } catch (e) {}
   }
 };
 
@@ -112,12 +139,12 @@ let load_caldav = function () {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
-          tokenUrl: "https://oauth2.googleapis.com/token",
+          tokenUrl: google_acc.token_url,
           refreshToken: item.tokens.refresh_token,
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: google_acc.redirect_url,
         },
         authMethod: "Oauth",
         defaultAccountType: "caldav",
@@ -155,7 +182,8 @@ let load_caldav = function () {
       }
 
       try {
-        document.getElementById("icon-loading").style.visibility = "visible";
+        if (m.route.get() == "/page_calendar")
+          document.getElementById("icon-loading").style.visibility = "visible";
         const calendars = await client.fetchCalendars();
         let k = [];
 
@@ -187,13 +215,15 @@ let load_caldav = function () {
             parse_ics(i.data, "", false, i.etag, i.url, item.id, true);
           });
 
-          document.getElementById("icon-loading").style.visibility = "hidden";
+          if (m.route.get() == "/page_calendar")
+            document.getElementById("icon-loading").style.visibility = "hidden";
         }
 
         style_calendar_cell();
         side_toaster("Data loaded", 3000);
       } catch (e) {
-        document.getElementById("icon-loading").style.visibility = "hidden";
+        if (m.route.get() == "/page_calendar")
+          document.getElementById("icon-loading").style.visibility = "hidden";
       }
     })();
   });
@@ -207,12 +237,12 @@ let cache_caldav = function () {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
-          tokenUrl: "https://oauth2.googleapis.com/token",
+          tokenUrl: google_acc.token_url,
           refreshToken: item.tokens.refresh_token,
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: google_acc.redirect_url,
         },
         authMethod: "Oauth",
         defaultAccountType: "caldav",
@@ -293,12 +323,12 @@ export let sync_caldav = function (callback) {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
-          tokenUrl: "https://oauth2.googleapis.com/token",
+          tokenUrl: google_acc.token_url,
           refreshToken: item.tokens.refresh_token,
           clientId: google_cred.clientId,
           clientSecret: google_cred.clientSecret,
           authorizationCode: item.authorizationCode,
-          redirectUrl: "https://greg.strukturart.com/redirect.html",
+          redirectUrl: google_acc.redirect_url,
         },
         authMethod: "Oauth",
         defaultAccountType: "caldav",
@@ -331,15 +361,29 @@ export let sync_caldav = function (callback) {
       try {
         //set calendars names
         const calendars = await client.fetchCalendars();
+        let cn = [
+          {
+            name: "local",
+            id: "local-id",
+            data: "",
+            type: "local",
+          },
+        ];
         for (let i = 0; i < calendars.length; i++) {
           const objects = await client.fetchCalendarObjects({
             calendar: calendars[i],
           });
-          calendar_names.push({
+          cn.push({
             name: calendars[i].displayName,
             url: calendars[i].url,
             id: item.id,
           });
+        }
+        //compare calendar list
+        //if != update list
+        if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
+          side_toaster("the calendar list has been updated", 2000);
+          localforage.setItem("calendarNames", cn);
         }
 
         const value = await localforage.getItem(item.id);
@@ -396,12 +440,12 @@ let create_caldav = function (
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
-            tokenUrl: "https://oauth2.googleapis.com/token",
+            tokenUrl: google_acc.token_url,
             refreshToken: p.tokens.refresh_token,
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: google_acc.redirect_url,
           },
           authMethod: "Oauth",
           defaultAccountType: "caldav",
@@ -509,12 +553,12 @@ let delete_caldav = function (etag, url, account_id, uid) {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
-            tokenUrl: "https://oauth2.googleapis.com/token",
+            tokenUrl: google_acc.token_url,
             refreshToken: p.tokens.refresh_token,
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: google_acc.redirect_url,
           },
           authMethod: "Oauth",
           defaultAccountType: "caldav",
@@ -553,17 +597,21 @@ let delete_caldav = function (etag, url, account_id, uid) {
           });
 
           if (result.ok) {
-            popup("", "close");
-            let temp = events;
-            events = "";
-
-            events = temp.filter((person) => person.UID != uid);
+            // events = events.filter((e) => e.UID != uid);
+            console.log(uid);
+            for (var i = 0; i < events.length; i++) {
+              if (events[i].UID == uid) {
+                events.splice(i, 1);
+                console.log("deleted");
+                break;
+              }
+            }
             remove_alarm(uid);
             cache_caldav();
-
             clear_form();
-
+            style_calendar_cell();
             m.route.set("/page_calendar");
+            popup("", "close");
           } else {
             popup(
               "There was a problem deleting, please try again later.",
@@ -582,11 +630,10 @@ let delete_caldav = function (etag, url, account_id, uid) {
           );
           setTimeout(function () {
             popup("", "close");
-            // sort_array(events, "dateStartUnix", "date");
             try {
               sort_array(events, "dateStartUnix", "number");
             } catch (e) {
-              alert(e);
+              console.log(e);
             }
           }, 5000);
         }
@@ -605,12 +652,12 @@ let update_caldav = function (etag, url, data, account_id) {
         client = new DAVClient({
           serverUrl: p.server_url,
           credentials: {
-            tokenUrl: "https://oauth2.googleapis.com/token",
+            tokenUrl: google_acc.token_url,
             refreshToken: p.tokens.refresh_token,
             clientId: google_cred.clientId,
             clientSecret: google_cred.clientSecret,
             authorizationCode: p.authorizationCode,
-            redirectUrl: "https://greg.strukturart.com/redirect.html",
+            redirectUrl: google_acc.redirect_url,
           },
           authMethod: "Oauth",
           defaultAccountType: "caldav",
@@ -737,8 +784,6 @@ let load_subscriptions = function () {
     fetch_ics(subscriptions[i].url, "", subscriptions[i].id);
   }
 };
-
-//status.selected_day = dayjs().format("YYYY-MM-DD");
 
 setTimeout(() => {
   event_slider(status.selected_day);
@@ -1145,8 +1190,8 @@ let event_slider = function (date) {
     }
   }
 
-  if (slider.length != "") {
-    slider.forEach(function (item) {
+  if (slider.length >= 0) {
+    slider.forEach(function (item, i) {
       let l = "";
       if (!item.allDay) {
         l = dayjs.unix(item.dateStartUnix).format("HH:mm");
@@ -1156,22 +1201,23 @@ let event_slider = function (date) {
         .querySelector("div#event-slider")
         .insertAdjacentHTML(
           "beforeend",
-          "<article><div class='width-100'>" +
+          "<article data-uid='" +
+            item.UID +
+            "'><div class='width-100'>" +
             item.SUMMARY +
             "</div><div class='width-100'>" +
             l +
             "</div></article>"
         );
     });
-    if (slider >= 0) {
-      document.querySelector("div#event-slider article")[0].style.display =
-        "block";
-    }
 
-    if (slider >= 0) {
-      document.querySelectorAll(
-        "div#event-slider .indicator"
-      )[0].style.classList.add = "active";
+    if (slider.length > 0) {
+      try {
+        document.querySelectorAll("div#event-slider article")[0].style.display =
+          "block";
+      } catch (e) {
+        alert(e);
+      }
     }
   }
 
@@ -1182,6 +1228,10 @@ let event_slider = function (date) {
     document.getElementById("event-slider-indicator").style.opacity = 0;
   } else {
     document.getElementById("event-slider-indicator").style.opacity = 1;
+    document.querySelector("div#event-slider article").style.display = "block";
+    document
+      .querySelectorAll("div#event-slider .indicator")[0]
+      .style.classList.add("active");
   }
 };
 
@@ -1693,6 +1743,7 @@ export let page_options = {
           [
             m("li", [m("span", "1 & 3")], "Months"),
             m("li", [m("span", "2")], "Event slider"),
+            m("li", [m("span", "5")], "Edit event"),
             m("li", [m("span", "Enter")], "Events/Month"),
             m("li", [m("span", "#")], "Moon"),
             m("li", [m("span", "*")], "Jump to today"),
@@ -1866,13 +1917,25 @@ export let page_options = {
           },
           "Import events"
         ),
-        m("h2", "Subscriptions"),
 
         m(
           "button",
           {
             class: "item",
             tabindex: "7",
+            onclick: function () {
+              load_caldav();
+            },
+          },
+          "Reload all events"
+        ),
+        m("h2", "Subscriptions"),
+
+        m(
+          "button",
+          {
+            class: "item",
+            tabindex: "8",
             onclick: function () {
               m.route.set("/page_subscriptions");
             },
@@ -1889,7 +1952,7 @@ export let page_options = {
               "data-id": item.id,
               "data-action": "delete-subscription",
 
-              tabindex: index + 7,
+              tabindex: index + 8,
               onblur: function () {
                 bottom_bar("", "", "");
               },
@@ -1904,7 +1967,7 @@ export let page_options = {
           "button",
           {
             class: "item  google-button caldav-button",
-            tabindex: subscriptions.length + 8,
+            tabindex: subscriptions.length + 9,
             onclick: function () {
               m.route.set("/page_accounts");
             },
@@ -1930,7 +1993,7 @@ export let page_options = {
           "button",
           {
             class: "item google-button",
-            tabindex: subscriptions.length + 9,
+            tabindex: subscriptions.length + 10,
             onclick: function () {
               oauth_callback = setInterval(function () {
                 if (localStorage.getItem("oauth_callback") == "true") {
@@ -2590,7 +2653,7 @@ var page_add_event = {
             tabindex: "9",
           },
           [
-            m("label", { for: "notification" }, "Calendars"),
+            m("label", { for: "event-calendar" }, "Calendars"),
             m("select", { id: "event-calendar", class: "select-box" }, [
               calendar_names.map(function (item, index) {
                 return m(
@@ -2633,7 +2696,6 @@ var page_add_event = {
     bottom_bar("", "", "");
   },
 };
-
 var page_edit_event = {
   view: function () {
     return m(
@@ -2822,6 +2884,46 @@ var page_edit_event = {
           "div",
           {
             class: "item input-parent",
+            id: "event-calendar-wrapper",
+            tabindex: "9",
+          },
+          [
+            m("label", { for: "event-calendar" }, "Calendars"),
+            m(
+              "select",
+              {
+                id: "event-calendar",
+                class: "select-box",
+                onchange: () => {
+                  status.event_calendar_changed = true;
+                },
+              },
+              [
+                calendar_names.map(function (item, index) {
+                  let t = "";
+                  if (update_event_date.calendar_name == item.name) {
+                    t = "selected";
+                  }
+
+                  return m(
+                    "option",
+                    {
+                      value: item.id,
+                      selected: t,
+                      "data-calendar-data": item.data,
+                    },
+                    item.name
+                  );
+                }),
+              ]
+            ),
+          ]
+        ),
+
+        m(
+          "div",
+          {
+            class: "item input-parent",
             id: "event-recur-wrapper",
             tabindex: "8",
             oncreate: function () {
@@ -2858,6 +2960,7 @@ var page_edit_event = {
             id: "delete-event",
             class: "item",
             onclick: function () {
+              console.log(update_event_date.UID);
               delete_event(
                 update_event_date.etag,
                 update_event_date.url,
@@ -2879,13 +2982,32 @@ var page_edit_event = {
               focus_after_selection();
             },
             onclick: function () {
-              update_event(
-                update_event_date.etag,
-                update_event_date.url,
-                update_event_date.id,
-                update_event_date.id,
-                update_event_date.UID
-              );
+              if (!status.event_calendar_changed) {
+                update_event(
+                  update_event_date.etag,
+                  update_event_date.url,
+                  update_event_date.id,
+                  update_event_date.id,
+                  update_event_date.UID,
+                  update_event_date.calendar_name
+                );
+              }
+              if (status.event_calendar_changed) {
+                //you can cut bread nice and fine with a knife, or just tear it into pieces.
+                let n = document.getElementById("event-calendar");
+                store_event(
+                  n.options[n.selectedIndex].value,
+                  n.options[n.selectedIndex].text
+                );
+                setTimeout(() => {
+                  delete_event(
+                    update_event_date.etag,
+                    update_event_date.url,
+                    update_event_date.id,
+                    update_event_date.UID
+                  );
+                }, 1000);
+              }
             },
           },
           "update"
@@ -3750,8 +3872,6 @@ let store_event = function (db_id, cal_name) {
 
     event_data = event_data.trim();
 
-    console.log(event_data);
-
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
   style_calendar_cell();
@@ -3873,6 +3993,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     isCaldav: db_id == "local-id" ? false : true,
     ATTACH: blob,
     id: db_id,
+    calendar_name: document.getElementById("event-calendar").value,
     allDay: allDay,
   };
 
@@ -3881,7 +4002,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
     event.ACTION = "AUDIO";
     event.END = "VALARM";
-    remove_alarm(event.uid);
+    remove_alarm(event.UID);
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
   let dd =
@@ -3984,9 +4105,8 @@ let update_event = function (etag, url, id, db_id, uid) {
 
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
-    delete_caldav(etag, url, account_id, status.selected_day_id);
+    delete_caldav(etag, url, account_id, uid);
   } else {
-    console.log("local");
     //remove event
     events = events.filter((person) => person.UID != uid);
     remove_alarm(uid);
@@ -4007,7 +4127,6 @@ let delete_event = function (etag, url, account_id, uid) {
       .catch(function (err) {
         // This code runs if there were any errors
         console.log(err);
-        side_toaster("no data to export", 2000);
       });
   }
 };
@@ -4034,23 +4153,7 @@ let import_event_callback = function (id, date) {
     });
 };
 
-let set_datetime_form = function () {
-  let d = new Date();
-  let d_h = `0${d.getHours()}`.slice(-2);
-  let d_m = `0${d.getMinutes()}`.slice(-2);
-  let p = d_h + ":" + d_m;
-
-  let d_h_ = `0${d.getHours() + 1}`.slice(-2);
-  let d_m_ = `0${d.getMinutes()}`.slice(-2);
-  if (d_h_ > 23) d_h_ = "23";
-
-  let pp = d_h_ + ":" + d_m_;
-
-  document.getElementById("event-time-start").value = p;
-  document.getElementById("event-time-end").value = pp;
-};
-
-let set_tabindex = () => {
+export let set_tabindex = () => {
   document.querySelectorAll(".item").forEach((e, i) => {
     e.setAttribute("tabindex", i);
   });
@@ -4212,6 +4315,24 @@ function shortpress_action(param) {
 
     case "2":
       if (m.route.get() == "/page_calendar") slider_navigation();
+      break;
+
+    case "5":
+      if (m.route.get() == "/page_calendar") {
+        let n = "";
+        let f = document.querySelectorAll("#event-slider article");
+        f.forEach((e, i) => {
+          if (e.style.display == "block") n = e;
+          if (f.length - 1 == i) {
+            update_event_date = events.filter(function (arr) {
+              return arr.UID == n.getAttribute("data-uid");
+            })[0];
+
+            m.route.set("/page_edit_event");
+          }
+        });
+      }
+
       break;
 
     case "#":
