@@ -4,7 +4,6 @@ import localforage from "localforage";
 import { side_toaster, sort_array } from "./assets/js/helper.js";
 import { toaster } from "./assets/js/helper.js";
 import { validate } from "./assets/js/helper.js";
-import { pick_image } from "./assets/js/helper.js";
 import { get_file } from "./assets/js/helper.js";
 import { bottom_bar } from "./assets/js/helper.js";
 import { popup } from "./assets/js/helper.js";
@@ -19,7 +18,6 @@ import { DAVClient } from "./assets/js/tsdav.js";
 import "url-search-params-polyfill";
 import { list_files } from "./assets/js/helper.js";
 import { DAVNamespaceShort } from "./assets/js/tsdav.js";
-import { get_time } from "./assets/js/helper.js";
 import { getManifest, load_ads, manifest } from "./assets/js/ads.js";
 import { uid } from "uid";
 import { google_cred } from "./assets/js/google_cred.js";
@@ -47,10 +45,12 @@ let oauth_callback = "";
 localforage.setDriver(localforage.INDEXEDDB);
 
 //set default local calendar
+
 let calendar_names;
-localforage
-  .keys()
-  .then(function (keys) {
+
+async function loadCalendarNames() {
+  try {
+    const keys = await localforage.keys();
     if (keys.indexOf("calendarNames") == -1) {
       calendar_names = [
         {
@@ -60,17 +60,18 @@ localforage
           type: "local",
         },
       ];
-      localforage.setItem("calendarNames", calendar_names);
+      await localforage.setItem("calendarNames", calendar_names);
     } else {
-      localforage.getItem("calendarNames").then(function (e) {
-        calendar_names = e;
-        console.log(calendar_names);
-      });
+      const e = await localforage.getItem("calendarNames");
+      calendar_names = e;
+      console.log(calendar_names);
     }
-  })
-  .catch(function (err) {
+  } catch (err) {
     console.log(err);
-  });
+  }
+}
+
+loadCalendarNames();
 
 export let months = [
   "Jan",
@@ -95,6 +96,8 @@ export let status = {
   visible: false,
   update_event_id: "",
   event_calendar_changed: false,
+  startup: false,
+  sortEvents: "startDate",
 };
 
 export let settings = {
@@ -129,13 +132,14 @@ let style_calendar_cell = function () {
   }
 };
 
-let load_caldav = function () {
-  //clear events
-  events = events.filter((e) => e.isCaldav == false);
-  //load data from every account
-  accounts.forEach(function (item) {
-    let client = "";
-    if (item.type == "oauth") {
+async function load_caldav() {
+  // Clear events
+  events = events.filter((e) => !e.isCaldav);
+
+  // Load data from every account
+  for (const item of accounts) {
+    let client;
+    if (item.type === "oauth") {
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
@@ -161,73 +165,70 @@ let load_caldav = function () {
       });
     }
 
-    (async () => {
-      try {
-        await client.login();
-      } catch (e) {
-        if (e.message == "Network request failed") {
-          toaster(
-            "the data of the accounts" + item.name + " could not be loaded",
-            5000
-          );
-        }
-
-        if (e.message == "Invalid credentials")
-          toaster(
-            "there was a problem logging into your account " +
-              item.name +
-              " please check your account details",
-            5000
-          );
+    try {
+      await client.login();
+    } catch (e) {
+      if (e.message === "Network request failed") {
+        toaster(
+          `The data of the account ${item.name} could not be loaded`,
+          5000
+        );
       }
 
-      try {
-        if (m.route.get() == "/page_calendar")
-          document.getElementById("icon-loading").style.visibility = "visible";
-        const calendars = await client.fetchCalendars();
-        let k = [];
+      if (e.message === "Invalid credentials") {
+        toaster(
+          `There was a problem logging into your account ${item.name}. Please check your account details.`,
+          5000
+        );
+      }
+    }
 
-        for (let i = 0; i < calendars.length; i++) {
-          const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
-          });
-          //cache data
-          let data_to_store = {
-            displayName: calendars[i].displayName,
-            syncToken: calendars[i].syncToken,
-            ctag: calendars[i].ctag,
-            url: calendars[i].url,
-            objects: objects,
-          };
+    try {
+      if (m.route.get() === "/page_calendar") {
+        document.getElementById("icon-loading").style.visibility = "visible";
+      }
 
-          k.push(data_to_store);
+      const calendars = await client.fetchCalendars();
+      const dataToCache = [];
 
-          localforage
-            .setItem(item.id, k)
-            .then(function () {
-              console.log("data cached");
-            })
-            .catch(function (err) {
-              console.log(err);
-            });
-          //parse data
-          objects.forEach(function (i) {
-            parse_ics(i.data, "", false, i.etag, i.url, item.id, true);
-          });
+      for (const calendar of calendars) {
+        const objects = await client.fetchCalendarObjects({ calendar });
+        const dataToStore = {
+          displayName: calendar.displayName,
+          syncToken: calendar.syncToken,
+          ctag: calendar.ctag,
+          url: calendar.url,
+          objects: objects,
+        };
 
-          if (m.route.get() == "/page_calendar")
-            document.getElementById("icon-loading").style.visibility = "hidden";
+        dataToCache.push(dataToStore);
+
+        try {
+          await localforage.setItem(item.id, dataToCache);
+          console.log("Data cached");
+        } catch (err) {
+          console.log(err);
         }
 
-        style_calendar_cell();
-        side_toaster("Data loaded", 3000);
-      } catch (e) {
-        if (m.route.get() == "/page_calendar")
-          document.getElementById("icon-loading").style.visibility = "hidden";
+        // Parse data
+        for (const obj of objects) {
+          parse_ics(obj.data, "", false, obj.etag, obj.url, item.id, true);
+        }
       }
-    })();
-  });
-};
+
+      if (m.route.get() === "/page_calendar") {
+        document.getElementById("icon-loading").style.visibility = "hidden";
+      }
+
+      style_calendar_cell();
+      side_toaster("Data loaded", 3000);
+    } catch (e) {
+      if (m.route.get() === "/page_calendar") {
+        document.getElementById("icon-loading").style.visibility = "hidden";
+      }
+    }
+  }
+}
 
 let cache_caldav = function () {
   accounts.forEach(function (item) {
@@ -527,7 +528,6 @@ let create_caldav = function (
                 );
                 setTimeout(function () {
                   popup("", "close");
-                  // sort_array(events, "dateStartUnix", "date");
                   try {
                     sort_array(events, "dateStartUnix", "number");
                   } catch (e) {
@@ -744,32 +744,28 @@ let update_caldav = function (etag, url, data, account_id) {
   });
 };
 
-let load_cached_caldav = function () {
-  accounts.forEach(function (item) {
+const load_cached_caldav = async () => {
+  for (const item of accounts) {
     try {
-      localforage
-        .getItem(item.id)
-        .then(function (w) {
-          //when never cached
-          //load content
-          if (w == null) {
-            load_caldav();
-            return false;
-          }
+      const w = await localforage.getItem(item.id);
 
-          w.forEach((b) => {
-            b.objects.forEach((m) => {
-              parse_ics(m.data, "", false, m.etag, m.url, item.id, true);
-            });
-          });
+      // Load content if never cached
+      if (w === null) {
+        load_caldav();
+        return false;
+      }
 
-          style_calendar_cell();
-        })
-        .catch(function (err) {
-          console.log(err);
-        });
-    } catch (e) {}
-  });
+      for (const b of w) {
+        for (const m of b.objects) {
+          parse_ics(m.data, "", false, m.etag, m.url, item.id, true);
+        }
+      }
+
+      style_calendar_cell();
+    } catch (e) {
+      console.log(e);
+    }
+  }
 };
 
 let load_subscriptions = function () {
@@ -785,40 +781,9 @@ let load_subscriptions = function () {
   }
 };
 
-setTimeout(() => {
-  event_slider(status.selected_day);
-
-  jump_to_today();
-
-  try {
-    sort_array(events, "dateStartUnix", "number");
-  } catch (e) {}
-}, 1000);
-
 export let sync_caldav_callback = function (o) {
   load_caldav();
 };
-
-//load accounts data
-setTimeout(() => {
-  localforage
-    .getItem("accounts")
-    .then(function (value) {
-      if (value == null) {
-        accounts = [];
-        return false;
-      }
-      accounts = value;
-      load_cached_caldav();
-    })
-    .catch(function (err) {
-      console.log(err);
-    });
-}, 200);
-
-setTimeout(() => {
-  sync_caldav(sync_caldav_callback);
-}, 5000);
 
 //get event data
 let get_event_date = function () {
@@ -901,18 +866,19 @@ try {
 // ////////
 // finde closest event to selected date in list view
 // ////////
+const find_closest_date = function (date) {
+  let search;
+  search = date ? dayjs().unix() : dayjs(status.selected_day).unix();
 
-let find_closest_date = function () {
-  let search = dayjs(status.selected_day).unix();
-
-  if (events.length == 0) {
+  if (events.length === 0) {
     document.getElementById("events-wrapper").innerHTML =
-      "you haven't made any calendar entries yet";
+      "You haven't made any calendar entries yet.";
     return false;
   }
+
   let t = 0;
 
-  let f = function () {
+  let focusAndScroll = function () {
     document
       .querySelectorAll('div#events-wrapper article[data-id="' + t + '"]')[0]
       .focus();
@@ -926,53 +892,53 @@ let find_closest_date = function () {
       behavior: "smooth",
     });
   };
-  //smaller or first
-  let gg = function () {
+
+  let smallerOrFirst = function () {
     try {
       let m = events.findIndex((event) => dayjs(event.DTSTAMP).unix() < search);
       t = events[m].UID;
       console.log(m);
 
-      f();
+      focusAndScroll();
     } catch (e) {
       t = events[0].UID;
-      f();
+      focusAndScroll();
     }
   };
 
-  //equal
   try {
     let m = events.findIndex(
       (event) => dayjs(event.dateStart).unix() === search
     );
     t = events[m].UID;
 
-    f();
+    focusAndScroll();
   } catch (e) {
-    gg();
+    smallerOrFirst();
   }
 };
 
-// check if has event
-let event_check = function (date) {
+const event_check = function (date) {
   let feedback = {
     event: false,
     multidayevent: false,
   };
 
-  let k = events.filter(
-    (event) =>
-      new Date(event.dateStart).getTime() == new Date(date).getTime() ||
-      (new Date(event.dateStart).getTime() <= new Date(date).getTime() &&
-        new Date(event.dateEnd).getTime() >= new Date(date).getTime() &&
-        event.rrule_json.freq == undefined)
-  );
-  if (k.length > 0) {
-    feedback.event = true;
-  }
-  if (k.length > 1) {
-    feedback.multidayevent = true;
-  }
+  let k = events.filter((event) => {
+    const eventStartTime = new Date(event.dateStart).getTime();
+    const eventEndTime = new Date(event.dateEnd).getTime();
+    const targetTime = new Date(date).getTime();
+
+    return (
+      eventStartTime === targetTime ||
+      (eventStartTime <= targetTime &&
+        eventEndTime >= targetTime &&
+        event.rrule_json.freq === undefined)
+    );
+  });
+
+  feedback.event = k.length > 0;
+  feedback.multidayevent = k.length > 1;
 
   return feedback;
 };
@@ -1299,8 +1265,6 @@ let highlight_current_day = function () {
   }, 200);
 };
 
-load_settings();
-
 //////////////
 //BUILD CALENDAR
 //////////////
@@ -1444,7 +1408,6 @@ let showCalendar = function (month, year) {
 let clear_form = function () {
   document.querySelectorAll("div#add-edit-event input").forEach(function (e) {
     e.value = "";
-    // document.getElementById("form-image").src = "";
     blob = "";
   });
 };
@@ -1560,7 +1523,8 @@ var page_calendar = {
             {
               id: "time",
               oncreate: function () {
-                document.getElementById("time").innerText = get_time();
+                document.getElementById("time").innerText =
+                  dayjs().format("hh:mm");
               },
             },
             "time is relative"
@@ -1630,6 +1594,30 @@ var page_calendar = {
             event_slider(status.selected_day);
           }
         });
+      //run only once
+      if (status.startup == false) {
+        event_slider(status.selected_day);
+        jump_to_today();
+
+        //load accounts data
+        setTimeout(() => {
+          localforage
+            .getItem("accounts")
+            .then(function (value) {
+              if (value == null) {
+                accounts = [];
+                return false;
+              }
+              accounts = value;
+              load_cached_caldav();
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
+        }, 200);
+
+        status.startup = true;
+      }
     }, 200);
   },
 };
@@ -1653,7 +1641,7 @@ var page_events = {
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
-            ""
+            "<img src='assets/image/E257.svg'>"
           );
         },
       },
@@ -2960,7 +2948,6 @@ var page_edit_event = {
             id: "delete-event",
             class: "item",
             onclick: function () {
-              console.log(update_event_date.UID);
               delete_event(
                 update_event_date.etag,
                 update_event_date.url,
@@ -3262,6 +3249,11 @@ let store_account = function (edit, id) {
     toaster("Please enter a name and a valid url", 2000);
   }
 };
+
+//check if calendar has updated
+setTimeout(() => {
+  sync_caldav(sync_caldav_callback);
+}, 5000);
 
 let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
@@ -3658,11 +3650,11 @@ let store_event = function (db_id, cal_name) {
 
   let allDay = false;
 
-  if (document.getElementById("event-all-day").checked == true) {
+  if (document.getElementById("event-all-day").checked === true) {
     allDay = true;
   }
 
-  if (document.getElementById("event-title").value == "") {
+  if (document.getElementById("event-title").value === "") {
     toaster("Title can't be empty", 2000);
     validation = false;
   }
@@ -3673,15 +3665,14 @@ let store_event = function (db_id, cal_name) {
       validation = false;
     }
   }
-  let start_time = "00:00:00";
-  if (document.getElementById("event-time-start").value != "") {
-    start_time = document.getElementById("event-time-start").value + ":00";
-  }
 
-  let end_time = "00:00:00";
-  if (document.getElementById("event-time-end").value != "") {
-    end_time = document.getElementById("event-time-end").value + ":00";
-  }
+  const startTimeInput = document.getElementById("event-time-start");
+  const start_time = startTimeInput.value
+    ? `${startTimeInput.value}:00`
+    : "00:00:00";
+
+  const endTimeInput = document.getElementById("event-time-end");
+  const end_time = endTimeInput.value ? `${endTimeInput.value}:00` : "00:00:00";
 
   var time1Date = new Date("01/01/2000 " + start_time);
   var time2Date = new Date("01/01/2000 " + end_time);
@@ -3718,7 +3709,7 @@ let store_event = function (db_id, cal_name) {
   let bn = notification_time;
 
   let calc_notification;
-  if (notification_time != "none") {
+  if (notification_time !== "none") {
     calc_notification = new Date(convert_dt_start);
     calc_notification.setMinutes(
       calc_notification.getMinutes() - notification_time
@@ -3743,7 +3734,7 @@ let store_event = function (db_id, cal_name) {
     }
   }
 
-  if (validation == false) return false;
+  if (validation === false) return false;
   let event = {
     UID: uid(32),
     SUMMARY: document.getElementById("event-title").value,
@@ -3779,7 +3770,7 @@ let store_event = function (db_id, cal_name) {
     allDay: allDay,
   };
 
-  if (event.alarm != "none") {
+  if (event.alarm !== "none") {
     event.BEGIN = "VALARM";
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
     event.ACTION = "AUDIO";
@@ -3790,6 +3781,7 @@ let store_event = function (db_id, cal_name) {
       console.log(e);
     }
   }
+
   let dd =
     "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
     event.SUMMARY +
@@ -3845,6 +3837,15 @@ let store_event = function (db_id, cal_name) {
         ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
 
+    if (event.alarm !== "none") {
+      event.BEGIN = "VALARM";
+      event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
+      event.ACTION = "AUDIO";
+      event.END = "VALARM";
+    }
+
+    const alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
+
     let event_data =
       "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
       event.SUMMARY +
@@ -3862,15 +3863,18 @@ let store_event = function (db_id, cal_name) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
-      "\nEND:VEVENT\nEND:VCALENDAR";
+      "\nEND:VEVENT" +
+      alarm +
+      "\nEND:VCALENDAR";
 
-    if (event.RRULE == null || event.RRULE == "") {
+    if (!event.RRULE) {
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
       event_data = event_data.replace("RRULE:", "");
     }
 
     event_data = event_data.trim();
+    console.log(event_data);
 
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
@@ -3947,7 +3951,6 @@ let update_event = function (etag, url, id, db_id, uid) {
       .format("YYYY-MM-DD hh:mm:ss");
 
     convert_dt_end = h;
-    console.log(h);
   }
 
   let lastmod =
@@ -3997,14 +4000,16 @@ let update_event = function (etag, url, id, db_id, uid) {
     allDay: allDay,
   };
 
-  if (event.alarm != "none") {
+  if (event.alarm !== "none") {
     event.BEGIN = "VALARM";
     event["TRIGGER;VALUE=DATE-TIME"] = notification_time;
     event.ACTION = "AUDIO";
     event.END = "VALARM";
+
     remove_alarm(event.UID);
     add_alarm(calc_notification, event.SUMMARY, event.UID);
   }
+
   let dd =
     "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:" +
     event.SUMMARY +
@@ -4032,7 +4037,7 @@ let update_event = function (etag, url, id, db_id, uid) {
 
   if (db_id == "local-id") {
     try {
-      parse_ics(dd, "", false, "", "", "local-id", false, bn);
+      parse_ics(dd, "", false, "", "", "local-id", false, event.alarm);
     } catch (e) {
       console.log(e);
     }
@@ -4064,8 +4069,9 @@ let update_event = function (etag, url, id, db_id, uid) {
     }
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
+    const alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
 
-    if (event.RRULE != "") {
+    if (event.RRULE !== "") {
       event.DTEND =
         ";TZID=" + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
@@ -4086,7 +4092,9 @@ let update_event = function (etag, url, id, db_id, uid) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
-      "\nEND:VEVENT\nEND:VCALENDAR";
+      "\nEND:VEVENT" +
+      alarm +
+      "\nEND:VCALENDAR";
     if (event.RRULE == null || event.RRULE == "") {
       event_data = event_data.replace("SEQUENCE:0", "");
       event_data = event_data.replace("RRULE:null", "");
@@ -4159,23 +4167,20 @@ export let set_tabindex = () => {
   });
 };
 
-let pick_image_callback = function (resultBlob) {
-  let t = document.getElementById("form-image");
+const sort_events = () => {
+  if (status.sortEvents == "startDate") {
+    sort_array(events, "lastmod", "date");
+    document.activeElement.parentElement.firstChild.focus();
+    side_toaster("the last modified ones now appear at the top", 6000);
+    status.sortEvents = "lastmod";
+  } else {
+    sort_array(events, "DTSTART", "date");
+    document.activeElement.parentElement.firstChild.focus();
+    side_toaster("the date start ones now appear at the top", 6000);
+    status.sortEvents = "startDate";
+  }
 
-  t.src = URL.createObjectURL(resultBlob);
-  document.getElementById("form-image-wrapper").classList.add("item");
-
-  document
-    .querySelectorAll("div#add-edit-event .item")
-    .forEach(function (i, p) {
-      i.setAttribute("tabindex", p);
-    });
-
-  let fr = new FileReader();
-  fr.onload = function () {
-    blob = fr.result;
-  };
-  fr.readAsDataURL(resultBlob);
+  m.redraw();
 };
 
 // ////////////////////////////
@@ -4253,7 +4258,12 @@ let stop_scan_callback = function () {
 function shortpress_action(param) {
   switch (param.key) {
     case "*":
-      jump_to_today();
+      if (m.route.get() == "/page_calendar") {
+        jump_to_today();
+      }
+      if (m.route.get() == "/page_events") {
+        find_closest_date(true);
+      }
 
       break;
 
@@ -4349,6 +4359,11 @@ function shortpress_action(param) {
     case "Alt":
       if (m.route.get() == "/page_calendar") {
         m.route.set("/page_options");
+        return true;
+      }
+
+      if (m.route.get() == "/page_events") {
+        sort_events();
         return true;
       }
 

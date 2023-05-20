@@ -7,7 +7,6 @@ import { events } from "../../app.js";
 import ICAL from "ical.js";
 
 const dayjs = require("dayjs");
-var moment = require("moment-timezone");
 
 export let export_ical = function (filename, event_data) {
   try {
@@ -300,6 +299,7 @@ export let parse_ics = function (
       DTEND: dtend,
       END: "VEVENT",
       isSubscription: isSubscription,
+      lastmod: lastmod,
       isCaldav: isCaldav,
       allDay: allday,
       dateStart: dateStart,
@@ -307,7 +307,7 @@ export let parse_ics = function (
       dateEnd: dateEnd,
       time_start: timeStart,
       time_end: timeEnd,
-      alarm: alarm ? alarm : "none",
+      alarm: alarm || "none",
       rrule_json: n,
       etag: etag,
       url: url,

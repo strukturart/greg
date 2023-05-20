@@ -1,60 +1,27 @@
 "use strict";
 
-export const get_time = function () {
-  let a = new Date();
+export function sort_array(arr, itemKey, type) {
+  const sortFunction = (a, b) => {
+    if (type === "date") {
+      return new Date(b[itemKey]) - new Date(a[itemKey]);
+    } else if (type === "number") {
+      return b[itemKey] - a[itemKey];
+    } else if (type === "string") {
+      return a[itemKey].localeCompare(b[itemKey], undefined, {
+        sensitivity: "base",
+      });
+    }
+  };
 
-  let time =
-    `0${a.getHours()}`.slice(-2) + ":" + `0${a.getMinutes()}`.slice(-2);
-
-  return time;
-};
-
-export let sort_array = function (arr, item_key, type) {
-  if (type == "date") {
-    arr.sort((a, b) => {
-      let da = new Date(a[item_key]).getTime(),
-        db = new Date(b[item_key]).getTime();
-      return db - da;
-    });
-  }
-
-  //sort by number
-  if (type == "number") {
-    arr.sort((a, b) => {
-      return b[item_key] - a[item_key];
-    });
-  }
-  //sort by string
-  if (type == "string") {
-    arr.sort((a, b) => {
-      let fa = a[item_key].toLowerCase(),
-        fb = b[item_key].toLowerCase();
-
-      if (fa < fb) {
-        return -1;
-      }
-      if (fa > fb) {
-        return 1;
-      }
-      return 0;
-    });
-  }
-};
-
-export let uid = function () {
-  function _p8(s) {
-    var p = (Math.random().toString(16) + "000000000").substr(2, 8);
-    return s ? "-" + p.substr(0, 4) + "-" + p.substr(4, 4) : p;
-  }
-  return "greg@" + _p8() + _p8(true) + _p8(true) + _p8();
-};
+  arr.sort(sortFunction);
+}
 
 export let notification = "";
 let notify = function (param_title, param_text, param_silent) {
   var options = {
     body: param_text,
     silent: param_silent,
-    requireInteraction: false
+    requireInteraction: false,
     //actions: [{ action: "test", title: "test" }],
   };
 
@@ -80,7 +47,7 @@ let notify = function (param_title, param_text, param_silent) {
 export let pushLocalNotification = function (title, body) {
   window.Notification.requestPermission().then((result) => {
     var notification = new window.Notification(title, {
-      body: body
+      body: body,
       //requireInteraction: true,
     });
 
@@ -228,10 +195,6 @@ export let top_bar = function (left, center, right) {
   }
 };
 
-let add_script = function (script) {
-  document.body.appendChild(document.createElement("script")).src = script;
-};
-
 let lock;
 export let screenlock = function (stat) {
   if (typeof window.navigator.requestWakeLock === "undefined") {
@@ -252,43 +215,13 @@ export let screenlock = function (stat) {
   }
 };
 
-//goodbye
-
-export let goodbye = function () {
-  document.getElementById("goodbye").style.display = "block";
-  bottom_bar("", "", "");
-
-  if (localStorage.clickcount) {
-    localStorage.clickcount = Number(localStorage.clickcount) + 1;
-  } else {
-    localStorage.clickcount = 1;
-  }
-
-  if (localStorage.clickcount == 300000) {
-    message();
-  } else {
-    document.getElementById("ciao").style.display = "block";
-    setTimeout(function () {
-      window.close();
-    }, 2000);
-  }
-
-  function message() {
-    document.getElementById("donation").style.display = "block";
-    setTimeout(function () {
-      localStorage.clickcount = 1;
-
-      window.close();
-    }, 3000);
-  }
-};
 //pick image
 export let pick_image = function (cb) {
   var activity = new MozActivity({
     name: "pick",
     data: {
-      type: ["image/png", "image/jpg", "image/jpeg"]
-    }
+      type: ["image/png", "image/jpg", "image/jpeg"],
+    },
   });
 
   activity.onsuccess = function () {
@@ -384,8 +317,8 @@ function share(url) {
     name: "share",
     data: {
       type: "url",
-      url: url
-    }
+      url: url,
+    },
   });
 
   activity.onsuccess = function () {};
@@ -462,7 +395,7 @@ export function get_file(filename, cb) {
 function write_file(data, filename) {
   var sdcard = navigator.getDeviceStorages("sdcard");
   var file = new Blob([data], {
-    type: "text/plain"
+    type: "text/plain",
   });
   var request = sdcard[1].addNamed(file, filename);
 
