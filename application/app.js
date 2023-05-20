@@ -4342,7 +4342,6 @@ function shortpress_action(param) {
           }
         });
       }
-
       break;
 
     case "#":
