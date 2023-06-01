@@ -290,7 +290,7 @@ export let parse_ics = function (
       SUMMARY: ite.getFirstPropertyValue("summary"),
       LOCATION: ite.getFirstPropertyValue("location"),
       DESCRIPTION: ite.getFirstPropertyValue("description"),
-      //CATEGORIES: ite.getFirstPropertyValue("categories") ?? "",
+      CATEGORIES: ite.getFirstPropertyValue("categories") ?? "",
       ATTACH: ite.getFirstPropertyValue("attach"),
       RRULE: ite.getFirstPropertyValue("rrule") ?? "",
       "LAST-MODIFIED": lastmod,

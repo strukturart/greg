@@ -3825,6 +3825,8 @@ let store_event = function (db_id, cal_name) {
     event.LOCATION +
     "\nDESCRIPTION:" +
     event.DESCRIPTION +
+    "\nCATEGORIES:" +
+    event.CATEGORIES +
     "\nEND:VEVENT\nEND:VCALENDAR";
 
   if (db_id == "local-id") {
@@ -3887,6 +3889,8 @@ let store_event = function (db_id, cal_name) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
+      "\nCATEGORIES:" +
+      event.CATEGORIES +
       "\nEND:VEVENT" +
       alarm +
       "\nEND:VCALENDAR";
@@ -4057,6 +4061,8 @@ let update_event = function (etag, url, id, db_id, uid) {
     event.LOCATION +
     "\nDESCRIPTION:" +
     event.DESCRIPTION +
+    "\nCATEGORIES:" +
+    event.CATEGORIES +
     "\nEND:VEVENT\nEND:VCALENDAR";
 
   events = events.filter((person) => person.UID != uid);
@@ -4120,6 +4126,8 @@ let update_event = function (etag, url, id, db_id, uid) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
+      "\nCATEGORIES:" +
+      event.CATEGORIES +
       "\nEND:VEVENT" +
       alarm +
       "\nEND:VCALENDAR";
