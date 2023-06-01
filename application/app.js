@@ -3776,7 +3776,11 @@ let store_event = function (db_id, cal_name) {
     event.ACTION = "AUDIO";
     event.END = "VALARM";
     try {
-      add_alarm(calc_notification, event.SUMMARY, event.UID);
+      add_alarm(
+        calc_notification,
+        event.SUMMARY + " " + event.time_start ?? "",
+        event.UID
+      );
     } catch (e) {
       console.log(e);
     }
@@ -4007,7 +4011,11 @@ let update_event = function (etag, url, id, db_id, uid) {
     event.END = "VALARM";
 
     remove_alarm(event.UID);
-    add_alarm(calc_notification, event.SUMMARY, event.UID);
+    add_alarm(
+      calc_notification,
+      event.SUMMARY + " " + event.time_start ?? "",
+      event.UID
+    );
   }
 
   let dd =

@@ -74,7 +74,7 @@ export let pushLocalNotification = function (title, body) {
 };
 if (navigator.mozSetMessageHandler) {
   navigator.mozSetMessageHandler("alarm", function (message) {
-    pushLocalNotification("Greg", message.data.foo);
+    pushLocalNotification("Greg", message.data.note);
   });
 }
 

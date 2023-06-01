@@ -6,7 +6,7 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
- // bc.postMessage("activate");
+  // bc.postMessage("activate");
 });
 
 self.addEventListener("fetch", function (event) {
