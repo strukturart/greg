@@ -2575,6 +2575,15 @@ var page_add_event = {
           }),
         ]),
 
+        m("div", { class: "item input-parent", tabindex: "6" }, [
+          m("label", { for: "event-category" }, "Category"),
+          m("input", {
+            placeholder: "",
+            type: "text",
+            id: "event-category",
+          }),
+        ]),
+
         m(
           "div",
           {
@@ -2838,6 +2847,16 @@ var page_edit_event = {
             type: "text",
             id: "event-description",
             value: update_event_date.DESCRIPTION,
+          }),
+        ]),
+
+        m("div", { class: "item input-parent", tabindex: "6" }, [
+          m("label", { for: "event-category" }, "Category"),
+          m("input", {
+            placeholder: "",
+            type: "text",
+            id: "event-category",
+            value: update_event_date.CATEGORIES,
           }),
         ]),
 
@@ -3740,6 +3759,7 @@ let store_event = function (db_id, cal_name) {
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
+    CATEGORIES: document.getElementById("event-category").value,
     "LAST-MODIFIED":
       ";TZID=" + settings.timezone + convert_ics_date(convert_dt_start),
     CLASS: "PRIVATE",
