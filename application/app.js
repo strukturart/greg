@@ -35,6 +35,8 @@ export let events = [];
 export let accounts = [];
 export let event_templates = [];
 
+export let search_history = [];
+
 const google_acc = {
   token_url: "https://oauth2.googleapis.com/token",
   redirect_url: "https://greg.strukturart.com/redirect.html",
@@ -64,7 +66,6 @@ async function loadCalendarNames() {
     } else {
       const e = await localforage.getItem("calendarNames");
       calendar_names = e;
-      console.log(calendar_names);
     }
   } catch (err) {
     console.log(err);
@@ -597,8 +598,6 @@ let delete_caldav = function (etag, url, account_id, uid) {
           });
 
           if (result.ok) {
-            // events = events.filter((e) => e.UID != uid);
-            console.log(uid);
             for (var i = 0; i < events.length; i++) {
               if (events[i].UID == uid) {
                 events.splice(i, 1);
@@ -1412,6 +1411,21 @@ let clear_form = function () {
   });
 };
 
+let search_events = (term) => {
+  let k = term.toUpperCase();
+  document.querySelectorAll("#events-wrapper article").forEach((v, i) => {
+    if (
+      v.getAttribute("data-summary").indexOf(k) >= 0 ||
+      v.getAttribute("data-category").indexOf(k) >= 0
+    ) {
+      v.style.display = "block";
+    } else {
+      v.style.display = "none";
+    }
+  });
+  set_tabindex();
+};
+
 /*--------------*/
 //after select element KaiOS specific
 /*--------------*/
@@ -1627,6 +1641,7 @@ var page_events = {
     return m(
       "div",
       {
+        class: "flex",
         id: "events-wrapper",
         onremove: () => {
           status.selected_day =
@@ -1645,6 +1660,22 @@ var page_events = {
           );
         },
       },
+      m("input", {
+        type: "search",
+        class: "width-90 item",
+        id: "search",
+        tabIndex: 0,
+        onfocus: () => {
+          window.scroll({
+            top: 20,
+            left: 0,
+            behavior: "smooth",
+          });
+        },
+        oninput: () => {
+          search_events(document.activeElement.value);
+        },
+      }),
       [
         events.map(function (item, index) {
           let de,
@@ -1673,9 +1704,11 @@ var page_events = {
             "article",
             {
               class: "item events " + u + " " + a,
-              tabindex: index,
+              tabindex: index + 1,
               "data-id": item.UID,
               "data-date": item.dateStart,
+              "data-category": item.CATEGORIES.toUpperCase() ?? "",
+              "data-summary": item.SUMMARY.toUpperCase() ?? "",
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -1822,7 +1855,6 @@ export let page_options = {
                   store_settings();
                 },
                 oncreate: function () {
-                  console.log(settings);
                   setTimeout(function () {
                     focus_after_selection();
                     if (
@@ -1913,6 +1945,7 @@ export let page_options = {
             tabindex: "7",
             onclick: function () {
               load_caldav();
+              side_toaster("all events are reloaded", 4000);
             },
           },
           "Reload all events"
@@ -2072,8 +2105,9 @@ export let page_options = {
           },
 
           onfocus: function () {
-            bottom_bar("", "<img src='assets/image/eye.svg'>", "");
+            bottom_bar("", "", "");
           },
+          onblur: function () {},
 
           onkeypress: function (event) {
             bottom_bar("", "", "");
@@ -3335,7 +3369,6 @@ localforage
   .then(function (value) {
     if (value != null) {
       events = value;
-      // sort_array(events, "dateStartUnix", "date");
       try {
         sort_array(events, "dateStartUnix", "number");
       } catch (e) {
@@ -3426,7 +3459,8 @@ let nav = function (move) {
     m.route.get() == "/page_list_files"
   ) {
     let b = document.activeElement.parentNode.parentNode;
-    items = b.querySelectorAll(".item");
+    items = b.querySelectorAll('.item:not([style*="display: none"]');
+    console.log(items);
   }
 
   if (
@@ -3442,7 +3476,6 @@ let nav = function (move) {
     m.route.get() == "/page_add_event" ||
     m.route.get() == "/page_edit_event"
   ) {
-    let b = document.activeElement.parentNode;
     items = document.querySelectorAll(".item");
 
     if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -3825,6 +3858,8 @@ let store_event = function (db_id, cal_name) {
     event.LOCATION +
     "\nDESCRIPTION:" +
     event.DESCRIPTION +
+    "\nCATEGORIES:" +
+    event.CATEGORIES +
     "\nEND:VEVENT\nEND:VCALENDAR";
 
   if (db_id == "local-id") {
@@ -3887,6 +3922,8 @@ let store_event = function (db_id, cal_name) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
+      "\nCATEGORIES:" +
+      event.CATEGORIES +
       "\nEND:VEVENT" +
       alarm +
       "\nEND:VCALENDAR";
@@ -3994,6 +4031,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     SUMMARY: document.getElementById("event-title").value,
     LOCATION: document.getElementById("event-location").value,
     DESCRIPTION: document.getElementById("event-description").value,
+    CATEGORIES: document.getElementById("event-category").value,
     CLASS: "PRIVATE",
     "LAST-MODIFIED": lastmod,
     DTSTAMP: dtstamp,
@@ -4057,6 +4095,8 @@ let update_event = function (etag, url, id, db_id, uid) {
     event.LOCATION +
     "\nDESCRIPTION:" +
     event.DESCRIPTION +
+    "\nCATEGORIES:" +
+    event.CATEGORIES +
     "\nEND:VEVENT\nEND:VCALENDAR";
 
   events = events.filter((person) => person.UID != uid);
@@ -4120,6 +4160,8 @@ let update_event = function (etag, url, id, db_id, uid) {
       event.LOCATION +
       "\nDESCRIPTION:" +
       event.DESCRIPTION +
+      "\nCATEGORIES:" +
+      event.CATEGORIES +
       "\nEND:VEVENT" +
       alarm +
       "\nEND:VCALENDAR";
@@ -4158,7 +4200,11 @@ let delete_event = function (etag, url, account_id, uid) {
       .then(function (value) {
         backup_events();
         side_toaster("event deleted", 2000);
-        m.route.set("/page_events");
+        if (events.length != 0) {
+          m.route.set("/page_events");
+        } else {
+          m.route.set("/page_calendar");
+        }
       })
       .catch(function (err) {
         // This code runs if there were any errors
@@ -4190,15 +4236,23 @@ let import_event_callback = function (id, date) {
 };
 
 export let set_tabindex = () => {
-  document.querySelectorAll(".item").forEach((e, i) => {
-    e.setAttribute("tabindex", i);
-  });
+  document
+    .querySelectorAll('.item:not([style*="display: none"]')
+    .forEach((e, i) => {
+      if (e.style.display != "none") {
+        e.setAttribute("tabindex", i);
+      } else {
+        e.setAttribute("tabindex", -1);
+      }
+    });
 };
 
 const sort_events = () => {
+  document.getElementById("search").value = "";
   if (status.sortEvents == "startDate") {
     sort_array(events, "lastmod", "date");
     document.activeElement.parentElement.firstChild.focus();
+
     side_toaster("the last modified ones now appear at the top", 6000);
     status.sortEvents = "lastmod";
   } else {
@@ -4259,7 +4313,6 @@ let backup_events = function () {
   localforage
     .getItem("events")
     .then(function (value) {
-      console.log(value);
       let only_local_events = value.filter((events) => events.id == "local-id");
 
       try {
@@ -4328,6 +4381,11 @@ function shortpress_action(param) {
         m.route.get() == "/page_event_templates" ||
         m.route.get() == "/page_list_files"
       ) {
+        nav(+1);
+      }
+
+      if (document.activeElement.tagName == "INPUT") {
+        //document.activeElement.blur();
         nav(+1);
       }
 

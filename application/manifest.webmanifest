@@ -23,7 +23,7 @@
   ],
 
   "b2g_features": {
-    "version": "2.0.0",
+    "version": "2.0.2",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
