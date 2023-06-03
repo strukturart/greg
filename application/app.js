@@ -35,6 +35,8 @@ export let events = [];
 export let accounts = [];
 export let event_templates = [];
 
+export let search_history = [];
+
 const google_acc = {
   token_url: "https://oauth2.googleapis.com/token",
   redirect_url: "https://greg.strukturart.com/redirect.html",
@@ -597,8 +599,6 @@ let delete_caldav = function (etag, url, account_id, uid) {
           });
 
           if (result.ok) {
-            // events = events.filter((e) => e.UID != uid);
-            console.log(uid);
             for (var i = 0; i < events.length; i++) {
               if (events[i].UID == uid) {
                 events.splice(i, 1);
@@ -1412,6 +1412,21 @@ let clear_form = function () {
   });
 };
 
+let search_events = (term) => {
+  let k = term.toUpperCase();
+  document.querySelectorAll("#events-wrapper article").forEach((v, i) => {
+    if (
+      v.getAttribute("data-summary").indexOf(k) >= 0 ||
+      v.getAttribute("data-category").indexOf(k) >= 0
+    ) {
+      v.style.display = "block";
+    } else {
+      v.style.display = "none";
+    }
+  });
+  set_tabindex();
+};
+
 /*--------------*/
 //after select element KaiOS specific
 /*--------------*/
@@ -1627,6 +1642,7 @@ var page_events = {
     return m(
       "div",
       {
+        class: "flex",
         id: "events-wrapper",
         onremove: () => {
           status.selected_day =
@@ -1645,6 +1661,22 @@ var page_events = {
           );
         },
       },
+      m("input", {
+        type: "search",
+        class: "width-90 item",
+        id: "search",
+        tabIndex: 0,
+        onfocus: () => {
+          window.scroll({
+            top: 20,
+            left: 0,
+            behavior: "smooth",
+          });
+        },
+        oninput: () => {
+          search_events(document.activeElement.value);
+        },
+      }),
       [
         events.map(function (item, index) {
           let de,
@@ -1673,9 +1705,11 @@ var page_events = {
             "article",
             {
               class: "item events " + u + " " + a,
-              tabindex: index,
+              tabindex: index + 1,
               "data-id": item.UID,
               "data-date": item.dateStart,
+              "data-category": item.CATEGORIES.toUpperCase() ?? "",
+              "data-summary": item.SUMMARY.toUpperCase() ?? "",
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -1822,7 +1856,6 @@ export let page_options = {
                   store_settings();
                 },
                 oncreate: function () {
-                  console.log(settings);
                   setTimeout(function () {
                     focus_after_selection();
                     if (
@@ -3426,7 +3459,8 @@ let nav = function (move) {
     m.route.get() == "/page_list_files"
   ) {
     let b = document.activeElement.parentNode.parentNode;
-    items = b.querySelectorAll(".item");
+    items = b.querySelectorAll('.item:not([style*="display: none"]');
+    console.log(items);
   }
 
   if (
@@ -3442,7 +3476,6 @@ let nav = function (move) {
     m.route.get() == "/page_add_event" ||
     m.route.get() == "/page_edit_event"
   ) {
-    let b = document.activeElement.parentNode;
     items = document.querySelectorAll(".item");
 
     if (document.activeElement.parentNode.classList.contains("input-parent")) {
@@ -4198,15 +4231,23 @@ let import_event_callback = function (id, date) {
 };
 
 export let set_tabindex = () => {
-  document.querySelectorAll(".item").forEach((e, i) => {
-    e.setAttribute("tabindex", i);
-  });
+  document
+    .querySelectorAll('.item:not([style*="display: none"]')
+    .forEach((e, i) => {
+      if (e.style.display != "none") {
+        e.setAttribute("tabindex", i);
+      } else {
+        e.setAttribute("tabindex", -1);
+      }
+    });
 };
 
 const sort_events = () => {
+  document.getElementById("search").value = "";
   if (status.sortEvents == "startDate") {
     sort_array(events, "lastmod", "date");
     document.activeElement.parentElement.firstChild.focus();
+
     side_toaster("the last modified ones now appear at the top", 6000);
     status.sortEvents = "lastmod";
   } else {
@@ -4267,7 +4308,6 @@ let backup_events = function () {
   localforage
     .getItem("events")
     .then(function (value) {
-      console.log(value);
       let only_local_events = value.filter((events) => events.id == "local-id");
 
       try {
@@ -4336,6 +4376,11 @@ function shortpress_action(param) {
         m.route.get() == "/page_event_templates" ||
         m.route.get() == "/page_list_files"
       ) {
+        nav(+1);
+      }
+
+      if (document.activeElement.tagName == "INPUT") {
+        //document.activeElement.blur();
         nav(+1);
       }
 
