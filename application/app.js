@@ -317,8 +317,8 @@ let cache_caldav = function () {
     })();
   });
 };
-
-export let sync_caldav = function (callback) {
+/*
+export const sync_caldav = function (callback) {
   accounts.forEach(function (item) {
     const client = "";
     if (item.type == "oauth") {
@@ -407,11 +407,120 @@ export let sync_caldav = function (callback) {
           };
           try {
             const ma = await client.syncCalendars(s);
-
+            console.log(ma);
             if (ma.updated.length > 0) {
               console.log(item.id + "should update");
 
               i = value.lenght;
+              callback(ma);
+              break;
+            }
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    })();
+  });
+};
+
+*/
+export let sync_caldav = function (callback) {
+  accounts.forEach(function (item) {
+    let client = "";
+    if (item.type == "oauth") {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          tokenUrl: google_acc.token_url,
+          refreshToken: item.tokens.refresh_token,
+          clientId: google_cred.clientId,
+          clientSecret: google_cred.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: google_acc.redirect_url,
+        },
+        authMethod: "Oauth",
+        defaultAccountType: "caldav",
+      });
+    } else {
+      client = new DAVClient({
+        serverUrl: item.server_url,
+        credentials: {
+          username: item.user,
+          password: item.password,
+        },
+        authMethod: "Basic",
+        defaultAccountType: "caldav",
+      });
+    }
+
+    (async () => {
+      try {
+        await client.login();
+      } catch (e) {
+        if (e.message == "Invalid credentials")
+          toaster(
+            "there was a problem logging into your account " +
+              item.name +
+              " please check your account details",
+            5000
+          );
+      }
+
+      try {
+        // Set calendar names
+        const calendars = await client.fetchCalendars();
+        let cn = [
+          {
+            name: "local",
+            id: "local-id",
+            data: "",
+            type: "local",
+          },
+        ];
+        for (let i = 0; i < calendars.length; i++) {
+          const objects = await client.fetchCalendarObjects({
+            calendar: calendars[i],
+          });
+          cn.push({
+            name: calendars[i].displayName,
+            url: calendars[i].url,
+            id: item.id,
+          });
+        }
+        // Compare calendar list
+        // If not equal, update the list
+        if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
+          side_toaster("the calendar list has been updated", 2000);
+          localforage.setItem("calendarNames", cn);
+        }
+
+        const value = await localforage.getItem(item.id);
+        if (value == null) return false;
+
+        for (let i = 0; i < value.length; i++) {
+          let s = {
+            oldCalendars: [
+              {
+                url: value[i].url,
+                ctag: value[i].ctag,
+                syncToken: value[i].syncToken,
+                displayName: value[i].displayName,
+                objects: value[i].objects,
+              },
+            ],
+            detailedResult: true,
+            headers: client.authHeaders,
+          };
+          try {
+            const ma = await client.syncCalendars(s);
+            console.log(ma);
+            if (ma.updated.length > 0) {
+              console.log(item.id + " should update");
+
+              i = value.length;
               callback(ma);
               break;
             }
@@ -781,6 +890,7 @@ let load_subscriptions = function () {
 };
 
 export let sync_caldav_callback = function (o) {
+  console.log("to update: " + o);
   load_caldav();
 };
 
@@ -3460,7 +3570,6 @@ let nav = function (move) {
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
-    console.log(items);
   }
 
   if (
@@ -3746,7 +3855,6 @@ let store_event = function (db_id, cal_name) {
       .add(1, "day")
       .format("YYYY-MM-DD hh:mm:ss");
 
-    console.log(document.getElementById("event-date-end").value + "/" + h);
     convert_dt_end = h;
   }
 
@@ -3935,7 +4043,6 @@ let store_event = function (db_id, cal_name) {
     }
 
     event_data = event_data.trim();
-    console.log(event_data);
 
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
