@@ -109,7 +109,7 @@ export let settings = {
   firstday: "sunday",
 };
 let blob = "";
-
+/*
 let style_calendar_cell = function () {
   if (events.length > 0) {
     try {
@@ -133,15 +133,30 @@ let style_calendar_cell = function () {
   }
 };
 
-async function load_caldav() {
-  // Clear events
-  events = events.filter((e) => !e.isCaldav);
+*/
+const style_calendar_cell = () => {
+  if (events.length > 0) {
+    document.querySelectorAll("div.calendar-cell").forEach((e) => {
+      const p = e.getAttribute("data-date");
+      const eventInfo = event_check(p);
+      const rruleInfo = rrule_check(p);
 
-  // Load data from every account
-  for (const item of accounts) {
-    let client;
+      e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
+      e.classList.toggle(
+        "multievent",
+        eventInfo.multidayevent || rruleInfo.count > 1
+      );
+    });
+  }
+};
+//login handler
+const clientInstances = {};
+const isLoggedInMap = {};
+
+async function getClientInstance(item) {
+  if (!clientInstances[item.id]) {
     if (item.type === "oauth") {
-      client = new DAVClient({
+      clientInstances[item.id] = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           tokenUrl: google_acc.token_url,
@@ -155,7 +170,7 @@ async function load_caldav() {
         defaultAccountType: "caldav",
       });
     } else {
-      client = new DAVClient({
+      clientInstances[item.id] = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
           username: item.user,
@@ -165,26 +180,27 @@ async function load_caldav() {
         defaultAccountType: "caldav",
       });
     }
+  }
+  return clientInstances[item.id];
+}
+
+///load events
+
+async function load_caldav() {
+  // Clear events
+  events = events.filter((e) => !e.isCaldav);
+
+  // Load data from every account
+  for (const item of accounts) {
+    const client = await getClientInstance(item);
+    console.log("logged " + client);
 
     try {
-      await client.login();
-    } catch (e) {
-      if (e.message === "Network request failed") {
-        toaster(
-          `The data of the account ${item.name} could not be loaded`,
-          5000
-        );
+      if (!isLoggedInMap[item.id]) {
+        await client.login();
+        isLoggedInMap[item.id] = true;
       }
 
-      if (e.message === "Invalid credentials") {
-        toaster(
-          `There was a problem logging into your account ${item.name}. Please check your account details.`,
-          5000
-        );
-      }
-    }
-
-    try {
       if (m.route.get() === "/page_calendar") {
         document.getElementById("icon-loading").style.visibility = "visible";
       }
@@ -427,114 +443,76 @@ export const sync_caldav = function (callback) {
 };
 
 */
-export let sync_caldav = function (callback) {
-  accounts.forEach(function (item) {
-    let client = "";
-    if (item.type == "oauth") {
-      client = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          tokenUrl: google_acc.token_url,
-          refreshToken: item.tokens.refresh_token,
-          clientId: google_cred.clientId,
-          clientSecret: google_cred.clientSecret,
-          authorizationCode: item.authorizationCode,
-          redirectUrl: google_acc.redirect_url,
-        },
-        authMethod: "Oauth",
-        defaultAccountType: "caldav",
-      });
-    } else {
-      client = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          username: item.user,
-          password: item.password,
-        },
-        authMethod: "Basic",
-        defaultAccountType: "caldav",
-      });
-    }
+export let sync_caldav = async function (callback) {
+  for (const item of accounts) {
+    const client = await getClientInstance(item);
 
-    (async () => {
-      try {
+    try {
+      if (!isLoggedInMap[item.id]) {
         await client.login();
-      } catch (e) {
-        if (e.message == "Invalid credentials")
-          toaster(
-            "there was a problem logging into your account " +
-              item.name +
-              " please check your account details",
-            5000
-          );
+        isLoggedInMap[item.id] = true;
       }
 
-      try {
-        // Set calendar names
-        const calendars = await client.fetchCalendars();
-        let cn = [
-          {
-            name: "local",
-            id: "local-id",
-            data: "",
-            type: "local",
-          },
-        ];
-        for (let i = 0; i < calendars.length; i++) {
-          const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
-          });
-          cn.push({
-            name: calendars[i].displayName,
-            url: calendars[i].url,
-            id: item.id,
-          });
-        }
-        // Compare calendar list
-        // If not equal, update the list
-        if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
-          side_toaster("the calendar list has been updated", 2000);
-          localforage.setItem("calendarNames", cn);
-        }
+      const calendars = await client.fetchCalendars();
+      let cn = [
+        {
+          name: "local",
+          id: "local-id",
+          data: "",
+          type: "local",
+        },
+      ];
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+        cn.push({
+          name: calendars[i].displayName,
+          url: calendars[i].url,
+          id: item.id,
+        });
+      }
 
-        const value = await localforage.getItem(item.id);
-        if (value == null) return false;
+      if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
+        side_toaster("the calendar list has been updated", 2000);
+        localforage.setItem("calendarNames", cn);
+      }
 
-        for (let i = 0; i < value.length; i++) {
-          let s = {
-            oldCalendars: [
-              {
-                url: value[i].url,
-                ctag: value[i].ctag,
-                syncToken: value[i].syncToken,
-                displayName: value[i].displayName,
-                objects: value[i].objects,
-              },
-            ],
-            detailedResult: true,
-            headers: client.authHeaders,
-          };
-          try {
-            const ma = await client.syncCalendars(s);
-            console.log(ma);
-            if (ma.updated.length > 0) {
-              console.log(item.id + " should update");
+      const value = await localforage.getItem(item.id);
+      if (value == null) continue;
 
-              i = value.length;
-              callback(ma);
-              break;
-            }
-          } catch (e) {
-            console.log(e);
+      for (let i = 0; i < value.length; i++) {
+        let s = {
+          oldCalendars: [
+            {
+              url: value[i].url,
+              ctag: value[i].ctag,
+              syncToken: value[i].syncToken,
+              displayName: value[i].displayName,
+              objects: value[i].objects,
+            },
+          ],
+          detailedResult: true,
+          headers: client.authHeaders,
+        };
+        try {
+          const ma = await client.syncCalendars(s);
+          console.log(ma);
+          if (ma.updated.length > 0) {
+            console.log(item.id + " should update");
+            callback(ma);
+            break;
           }
+        } catch (e) {
+          console.log(e);
         }
-      } catch (err) {
-        console.log(err);
       }
-    })();
-  });
+    } catch (err) {
+      console.log(err);
+    }
+  }
 };
-
+/*
 let create_caldav = function (
   event_data,
   calendar_id,
@@ -651,6 +629,94 @@ let create_caldav = function (
       })();
     }
   });
+};
+*/
+
+let create_caldav = async function (
+  event_data,
+  calendar_id,
+  calendar_name,
+  event,
+  event_id
+) {
+  popup("Please wait...", "show");
+
+  const matchingAccount = accounts.find((p) => p.id === calendar_id);
+
+  if (matchingAccount) {
+    const client = await getClientInstance(matchingAccount);
+
+    try {
+      if (!isLoggedInMap[matchingAccount.id]) {
+        await client.login();
+        isLoggedInMap[matchingAccount.id] = true;
+      }
+
+      const calendars = await client.fetchCalendars();
+      const matchingCalendar = calendars.find(
+        (calendar) => calendar.displayName === calendar_name
+      );
+
+      if (matchingCalendar) {
+        const result = await client.createCalendarObject({
+          calendar: matchingCalendar,
+          filename: event_id + ".ics",
+          iCalString: event_data,
+          headers: {
+            "content-type": "text/calendar; charset=utf-8",
+            authorization: client.authHeaders.authorization,
+          },
+        });
+
+        if (result.ok) {
+          try {
+            const [res] = await client.propfind({
+              url: result.url,
+              props: {
+                [`${DAVNamespaceShort.DAV}:getetag`]: {},
+              },
+              depth: "0",
+              headers: client.authHeaders,
+            });
+
+            event.etag = res.props.getetag;
+            event.url = result.url;
+            event.isCaldav = true;
+            event.id = calendar_id;
+          } catch (e) {
+            console.log(e);
+          }
+
+          parse_ics(
+            event_data,
+            "",
+            false,
+            event.etag,
+            event.url,
+            event.id,
+            true
+          );
+
+          popup("", "close");
+          cache_caldav();
+
+          m.route.set("/page_calendar");
+        } else {
+          popup("There was a problem saving, please try again later.", "show");
+          setTimeout(function () {
+            popup("", "close");
+            try {
+              sort_array(events, "dateStartUnix", "number");
+            } catch (e) {
+              alert(e);
+            }
+          }, 5000);
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
 };
 
 let delete_caldav = function (etag, url, account_id, uid) {
@@ -1469,8 +1535,6 @@ let showCalendar = function (month, year) {
         cell.appendChild(moon);
 
         cell.setAttribute("data-date", p);
-
-        //cell.setAttribute("data-index", new Date(p).toISOString());
 
         cell.classList.add("item");
         row.appendChild(cell);
