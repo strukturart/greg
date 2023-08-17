@@ -133,7 +133,7 @@ let style_calendar_cell = function () {
   }
 };
 
-*/
+*
 const style_calendar_cell = () => {
   if (events.length > 0) {
     document.querySelectorAll("div.calendar-cell").forEach((e) => {
@@ -149,6 +149,28 @@ const style_calendar_cell = () => {
     });
   }
 };
+*/
+
+const style_calendar_cell = () => {
+  try {
+    if (events.length > 0) {
+      document.querySelectorAll("div.calendar-cell").forEach((e) => {
+        const p = e.getAttribute("data-date");
+        const eventInfo = event_check(p);
+        const rruleInfo = rrule_check(p);
+
+        e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
+        e.classList.toggle(
+          "multievent",
+          eventInfo.multidayevent || rruleInfo.count > 1
+        );
+      });
+    }
+  } catch (error) {
+    console.error("Error styling calendar cells:", error);
+  }
+};
+
 //login handler
 const clientInstances = {};
 const isLoggedInMap = {};
@@ -632,7 +654,9 @@ let create_caldav = function (
 };
 */
 
-let create_caldav = async function (
+//create event
+
+export let create_caldav = async function (
   event_data,
   calendar_id,
   calendar_name,
@@ -719,203 +743,127 @@ let create_caldav = async function (
   }
 };
 
-let delete_caldav = function (etag, url, account_id, uid) {
+//delete event
+
+export let delete_caldav = async function (etag, url, account_id, uid) {
   popup("Please wait...", "show");
 
-  accounts.forEach(function (p) {
-    if (p.id == account_id) {
-      const client = "";
-      if (p.type == "oauth") {
-        client = new DAVClient({
-          serverUrl: p.server_url,
-          credentials: {
-            tokenUrl: google_acc.token_url,
-            refreshToken: p.tokens.refresh_token,
-            clientId: google_cred.clientId,
-            clientSecret: google_cred.clientSecret,
-            authorizationCode: p.authorizationCode,
-            redirectUrl: google_acc.redirect_url,
-          },
-          authMethod: "Oauth",
-          defaultAccountType: "caldav",
-        });
-      } else {
-        client = new DAVClient({
-          serverUrl: item.server_url,
-          credentials: {
-            username: item.user,
-            password: item.password,
-          },
-          authMethod: "Basic",
-          defaultAccountType: "caldav",
-        });
+  const matchingAccount = accounts.find((p) => p.id === account_id);
+
+  if (matchingAccount) {
+    const client = await getClientInstance(matchingAccount);
+
+    try {
+      if (!isLoggedInMap[matchingAccount.id]) {
+        await client.login();
+        isLoggedInMap[matchingAccount.id] = true;
       }
-      (async () => {
+
+      const result = await client.deleteCalendarObject({
+        calendarObject: {
+          url: url,
+          etag: etag,
+        },
+        headers: client.authHeaders,
+      });
+
+      if (result.ok) {
+        const index = events.findIndex((event) => event.UID === uid);
+        if (index !== -1) {
+          events.splice(index, 1);
+          console.log("deleted");
+          remove_alarm(uid);
+          cache_caldav();
+          clear_form();
+          style_calendar_cell(currentYear, currentMonth);
+          m.route.set("/page_calendar");
+          popup("", "close");
+        }
+      } else {
+        popup("There was a problem deleting, please try again later.", "show");
+        setTimeout(function () {
+          popup("", "close");
+        }, 5000);
+      }
+    } catch (e) {
+      console.log(e);
+
+      popup("There was a problem deleting, please try again later.", "show");
+      setTimeout(function () {
+        popup("", "close");
         try {
-          await client.login();
+          sort_array(events, "dateStartUnix", "number");
         } catch (e) {
           console.log(e);
-          if (e.message == "Invalid credentials")
-            toaster(
-              "there was a problem logging into your account " +
-                item.name +
-                " please check your account details",
-              5000
-            );
         }
-        try {
-          const result = await client.deleteCalendarObject({
-            calendarObject: {
-              url: url,
-              etag: etag,
-            },
-            headers: client.authHeaders,
-          });
-
-          if (result.ok) {
-            for (var i = 0; i < events.length; i++) {
-              if (events[i].UID == uid) {
-                events.splice(i, 1);
-                console.log("deleted");
-                break;
-              }
-            }
-            remove_alarm(uid);
-            cache_caldav();
-            clear_form();
-            style_calendar_cell();
-            m.route.set("/page_calendar");
-            popup("", "close");
-          } else {
-            popup(
-              "There was a problem deleting, please try again later.",
-              "show"
-            );
-            setTimeout(function () {
-              popup("", "close");
-            }, 5000);
-          }
-        } catch (e) {
-          console.log(e);
-
-          popup(
-            "There was a problem deleting, please try again later.",
-            "show"
-          );
-          setTimeout(function () {
-            popup("", "close");
-            try {
-              sort_array(events, "dateStartUnix", "number");
-            } catch (e) {
-              console.log(e);
-            }
-          }, 5000);
-        }
-      })();
+      }, 5000);
     }
-  });
+  }
 };
 
-let update_caldav = function (etag, url, data, account_id) {
+//update event
+
+export let update_caldav = async function (etag, url, data, account_id) {
   popup("Please wait...", "show");
 
-  accounts.forEach(function (p) {
-    if (p.id == account_id) {
-      const client = "";
-      if (p.type == "oauth") {
-        client = new DAVClient({
-          serverUrl: p.server_url,
-          credentials: {
-            tokenUrl: google_acc.token_url,
-            refreshToken: p.tokens.refresh_token,
-            clientId: google_cred.clientId,
-            clientSecret: google_cred.clientSecret,
-            authorizationCode: p.authorizationCode,
-            redirectUrl: google_acc.redirect_url,
-          },
-          authMethod: "Oauth",
-          defaultAccountType: "caldav",
-        });
-      } else {
-        client = new DAVClient({
-          serverUrl: p.server_url,
-          credentials: {
-            username: p.user,
-            password: p.password,
-          },
-          authMethod: "Basic",
-          defaultAccountType: "caldav",
-        });
-      }
-      (async () => {
-        try {
-          await client.login();
-        } catch (e) {
-          console.log(e);
-          if (e.message == "Invalid credentials")
-            toaster(
-              "there was a problem logging into your account " +
-                item.name +
-                " please check your account details",
-              5000
-            );
-        }
-        try {
-          const result = await client.updateCalendarObject({
-            calendarObject: {
-              url: url,
-              data: data,
-              etag: etag,
-            },
+  const matchingAccount = accounts.find((p) => p.id === account_id);
 
+  if (matchingAccount) {
+    const client = await getClientInstance(matchingAccount);
+
+    try {
+      if (!isLoggedInMap[matchingAccount.id]) {
+        await client.login();
+        isLoggedInMap[matchingAccount.id] = true;
+      }
+
+      const result = await client.updateCalendarObject({
+        calendarObject: {
+          url: url,
+          data: data,
+          etag: etag,
+        },
+        headers: client.authHeaders,
+      });
+
+      if (result.ok) {
+        popup("", "close");
+        m.route.set("/page_calendar");
+
+        try {
+          const [res] = await client.propfind({
+            url: result.url,
+            props: {
+              [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            },
+            depth: "0",
             headers: client.authHeaders,
           });
 
-          if (result.ok) {
-            popup("", "close");
-            m.route.set("/page_calendar");
-            //get new ETAG
-            try {
-              const [res] = await client.propfind({
-                url: result.url,
-                props: {
-                  [`${DAVNamespaceShort.DAV}:getetag`]: {},
-                },
-                depth: "0",
-                headers: client.authHeaders,
-              });
-
-              events.map((item) => {
-                if (item.etag === etag) {
-                  item.etag = res.props.getetag;
-                  return item.etag;
-                } else {
-                  return item;
-                }
-              });
-              cache_caldav();
-            } catch (e) {
-              console.log(e);
+          events.forEach((item) => {
+            if (item.etag === etag) {
+              item.etag = res.props.getetag;
             }
-          } else {
-            console.log(JSON.stringify(result));
-            popup(
-              "There was a problem saving, please try again later.",
-              "show"
-            );
-            setTimeout(function () {
-              popup("", "close");
-            }, 5000);
-          }
+          });
+
+          cache_caldav();
         } catch (e) {
-          popup("There was a problem saving, please try again later.", "show");
-          setTimeout(function () {
-            popup("", "close");
-          }, 5000);
+          console.log(e);
         }
-      })();
+      } else {
+        console.log(JSON.stringify(result));
+        popup("There was a problem saving, please try again later.", "show");
+        setTimeout(function () {
+          popup("", "close");
+        }, 5000);
+      }
+    } catch (e) {
+      popup("There was a problem saving, please try again later.", "show");
+      setTimeout(function () {
+        popup("", "close");
+      }, 5000);
     }
-  });
+  }
 };
 
 const load_cached_caldav = async () => {
@@ -935,7 +883,7 @@ const load_cached_caldav = async () => {
         }
       }
 
-      style_calendar_cell();
+      style_calendar_cell(currentYear, currentMonth);
     } catch (e) {
       console.log(e);
     }
@@ -983,12 +931,18 @@ localforage
   });
 
 //store templates
-let store_event_as_template = function (title, description, location) {
+let store_event_as_template = function (
+  title,
+  description,
+  location,
+  category
+) {
   let m = {
     id: uid(32),
     title: title,
     description: description,
     location: location,
+    category: category,
   };
   event_templates.push(m);
 
@@ -1575,7 +1529,7 @@ let showCalendar = function (month, year) {
   }
 
   highlight_current_day();
-  style_calendar_cell();
+  style_calendar_cell(currentYear, currentMonth);
 };
 
 let clear_form = function () {
@@ -1619,14 +1573,14 @@ let focus_after_selection = function () {
 //autocomplete locations
 /*--------------*/
 
-let autocomplete = function (e) {
+let autocomplete = function (e, key) {
   let myList = document.getElementById("search-result");
   document.querySelectorAll(".search-item").forEach(function (e) {
     e.remove();
   });
 
   let matches = events.filter(function (val, i) {
-    if (events[i].LOCATION.indexOf(e) >= 0) return events[i];
+    if (events[i][key].indexOf(e) >= 0) return events[i];
   });
 
   if (matches.length === 0 || e == "") {
@@ -1640,7 +1594,7 @@ let autocomplete = function (e) {
 
     myList.insertAdjacentHTML(
       "afterend",
-      "<div class='item search-item'>" + val.LOCATION + "</div>"
+      "<div class='item search-item'>" + val[key] + "</div>"
     );
 
     document.querySelectorAll(".item").forEach(function (e, index) {
@@ -2641,7 +2595,7 @@ var page_add_event = {
             type: "text",
             id: "event-location",
             oninput: function (m) {
-              autocomplete(m.target.value);
+              autocomplete(m.target.value, "LOCATION");
             },
           }),
         ]),
@@ -3240,7 +3194,8 @@ var page_edit_event = {
               store_event_as_template(
                 document.getElementById("event-title").value,
                 document.getElementById("event-description").value,
-                document.getElementById("event-location").value
+                document.getElementById("event-location").value,
+                document.getElementById("event-category").value
               );
             },
           },
@@ -4110,7 +4065,7 @@ let store_event = function (db_id, cal_name) {
 
     create_caldav(event_data, event.id, cal_name, event, event.UID);
   }
-  style_calendar_cell();
+  style_calendar_cell(currentYear, currentMonth);
 };
 
 // ////////////
@@ -4302,7 +4257,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   } else {
     try {
       parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
-      style_calendar_cell();
+      style_calendar_cell(currentYear, currentMonth);
     } catch (e) {
       console.log("error parsing" + e);
     }

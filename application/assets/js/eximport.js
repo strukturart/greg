@@ -159,6 +159,11 @@ export let list_ics = function () {
 // /PARSE ICS
 // /////////////
 
+function formatTimeWithTimeZone(time) {
+  if (!time) return "";
+  return `;TZID=${time.timezone}:${time.toICALString()}`;
+}
+
 export let parse_ics = function (
   data,
   callback,
@@ -177,18 +182,13 @@ export let parse_ics = function (
   }
 
   var comp = new ICAL.Component(jcalData);
-  //console.log(comp);
-
   var valarm = comp.getAllSubcomponents("VALARM");
   valarm.forEach(function (ite) {
     //console.log(ite);
   });
 
   var vevent = comp.getAllSubcomponents("vevent");
-  let calendar_name = "";
-  try {
-    calendar_name = comp.jCal[1][3][3];
-  } catch (e) {}
+  let calendar_name = comp.getFirstPropertyValue("x-wr-calname") || "";
 
   vevent.forEach(function (ite) {
     let n = "";
@@ -264,24 +264,12 @@ export let parse_ics = function (
     let dtstart = ite.getFirstPropertyValue("dtstart");
     let dtend = ite.getFirstPropertyValue("dtend");
 
-    if (account_id == "local-id") {
-      dtstart =
-        ";TZID=" +
-        ite.getFirstPropertyValue("dtstart").timezone +
-        ":" +
-        ite.getFirstPropertyValue("dtstart").toICALString();
-
-      dtend =
-        ";TZID=" +
-        ite.getFirstPropertyValue("dtend").timezone +
-        ":" +
-        ite.getFirstPropertyValue("dtend").toICALString();
-
-      lastmod =
-        ";TZID=" +
-        ite.getFirstPropertyValue("last-modified").timezone +
-        ":" +
-        ite.getFirstPropertyValue("last-modified").toICALString();
+    if (account_id === "local-id") {
+      dtstart = formatTimeWithTimeZone(ite.getFirstPropertyValue("dtstart"));
+      dtend = formatTimeWithTimeZone(ite.getFirstPropertyValue("dtend"));
+      lastmod = formatTimeWithTimeZone(
+        ite.getFirstPropertyValue("last-modified")
+      );
     }
     //todo remove more key:values
     let imp = {
