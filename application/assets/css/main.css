@@ -35,6 +35,18 @@
   font-family: "Roboto" !important;
 }
 
+kbd {
+  border: 2px solid black;
+  box-shadow: 2px 2px black;
+  font-size: 0.85em;
+  line-height: 0.85em;
+  display: inline-block;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 3px 5px;
+  white-space: nowrap;
+}
+
 :focus {
   outline: none;
   background: var(--color-four);
@@ -845,23 +857,11 @@ div#options div#subscription-text {
   margin: 0 0 10px 0;
   text-align: center;
 }
-ul#keys li span {
-  font-weight: bold;
-  margin: 0px 0 0px 0px;
-  padding: 0px 10px 0 0px;
-  position: absolute;
-  left: 10px;
-  max-width: 80px;
-}
 
 div#options ul#keys li {
   margin: 0 0 0px 0;
-  padding: 5px 0 5px 90px;
+  padding: 5px;
   font-size: 0.9rem;
-}
-
-div#options ul#keys li:nth-child(6) {
-  height: 60px;
 }
 
 div#options ul#keys:focus {

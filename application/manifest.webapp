@@ -1,10 +1,10 @@
 {
-  "version": "2.0.5",
+  "version": "2.1.2",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
   "subtitle": "easy to use calendar",
-  "description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars or connect to nextcloud(caldav). you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #",
+  "description": "Effortlessly manage your schedule with GREG for KaiOS. Save events locally or sync external calendars, including Nextcloud/Google via CalDAV. Navigate months, slide through events, and quickly jump to today with intuitive controls. Plus, enjoy a moon phase calendar with a press of a button (#). Stay organized with ease.",
   "launch_path": "/index.html",
   "type": "privileged",
   "fullscreen": "true",
@@ -24,7 +24,7 @@
     "en-US": {
       "name": "greg",
       "subtitle": "greg",
-      "description": "Calendar app for KaiOs. Events can be saved in the local calendar or subscribed to external calendars  connect to nextcloud(caldav). you can jump between the months with the 1/3 keys, slide through events with the 2 key and jump to the current date with *. as a little extra there is a moon phase calendar that is activated with #"
+      "description": "Effortlessly manage your schedule with GREG for KaiOS. Save events locally or sync external calendars, including Nextcloud/Google via CalDAV. Navigate months, slide through events, and quickly jump to today with intuitive controls. Plus, enjoy a moon phase calendar with a press of a button (#). Stay organized with ease."
     }
   },
   "default_locale": "en-US",

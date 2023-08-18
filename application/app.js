@@ -109,66 +109,26 @@ export let settings = {
   firstday: "sunday",
 };
 let blob = "";
-/*
-let style_calendar_cell = function () {
-  if (events.length > 0) {
-    try {
-      document.querySelectorAll("div.calendar-cell").forEach(function (e) {
-        let p = e.getAttribute("data-date");
 
-        if (event_check(p).event == true) {
-          e.classList.add("event");
-          if (event_check(p).multidayevent == true)
-            e.classList.add("multievent");
-        } else {
-          if (e.classList.contains("event")) e.classList.remove("event");
-        }
+const style_calendar_cell = (targetYear, targetMonth) => {
+  if (events.length == 0) return;
 
-        if (rrule_check(p).rrule == true) {
-          e.classList.add("event");
-          if (rrule_check(p).count > 1) e.classList.add("multievent");
-        }
-      });
-    } catch (e) {}
-  }
-};
+  const eventsForMonth = events.filter((event) => {
+    const eventDate = dayjs(event.dateStart);
+    return eventDate.year() === targetYear && eventDate.month() === targetMonth;
+  });
 
-*
-const style_calendar_cell = () => {
-  if (events.length > 0) {
-    document.querySelectorAll("div.calendar-cell").forEach((e) => {
-      const p = e.getAttribute("data-date");
-      const eventInfo = event_check(p);
-      const rruleInfo = rrule_check(p);
+  document.querySelectorAll("div.calendar-cell").forEach((e) => {
+    const p = e.getAttribute("data-date");
+    const eventInfo = event_check(p, eventsForMonth);
+    const rruleInfo = rrule_check(p, eventsForMonth);
 
-      e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
-      e.classList.toggle(
-        "multievent",
-        eventInfo.multidayevent || rruleInfo.count > 1
-      );
-    });
-  }
-};
-*/
-
-const style_calendar_cell = () => {
-  try {
-    if (events.length > 0) {
-      document.querySelectorAll("div.calendar-cell").forEach((e) => {
-        const p = e.getAttribute("data-date");
-        const eventInfo = event_check(p);
-        const rruleInfo = rrule_check(p);
-
-        e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
-        e.classList.toggle(
-          "multievent",
-          eventInfo.multidayevent || rruleInfo.count > 1
-        );
-      });
-    }
-  } catch (error) {
-    console.error("Error styling calendar cells:", error);
-  }
+    e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
+    e.classList.toggle(
+      "multievent",
+      eventInfo.multidayevent || rruleInfo.count > 1
+    );
+  });
 };
 
 //login handler
@@ -251,7 +211,7 @@ async function load_caldav() {
 
         // Parse data
         for (const obj of objects) {
-          parse_ics(obj.data, "", false, obj.etag, obj.url, item.id, true);
+          parse_ics(obj.data, false, obj.etag, obj.url, item.id, true);
         }
       }
 
@@ -259,7 +219,7 @@ async function load_caldav() {
         document.getElementById("icon-loading").style.visibility = "hidden";
       }
 
-      style_calendar_cell();
+      style_calendar_cell(currentYear, currentMonth);
       side_toaster("Data loaded", 3000);
     } catch (e) {
       if (m.route.get() === "/page_calendar") {
@@ -273,7 +233,6 @@ let cache_caldav = function () {
   accounts.forEach(function (item) {
     const client = "";
     if (item.type == "oauth") {
-      console.log("oauth");
       client = new DAVClient({
         serverUrl: item.server_url,
         credentials: {
@@ -713,7 +672,7 @@ export let create_caldav = async function (
 
           parse_ics(
             event_data,
-            "",
+
             false,
             event.etag,
             event.url,
@@ -890,6 +849,8 @@ const load_cached_caldav = async () => {
   }
 };
 
+//load subscriptions
+
 let load_subscriptions = function () {
   if (
     subscriptions == null ||
@@ -925,6 +886,24 @@ localforage
       return false;
     }
     event_templates = value;
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
+
+//load accounts data
+//load cached data
+localforage
+  .getItem("accounts")
+  .then(function (value) {
+    if (value == null) {
+      accounts = [];
+      return false;
+    }
+    accounts = value;
+    setTimeout(() => {
+      load_cached_caldav();
+    }, 1500);
   })
   .catch(function (err) {
     console.log(err);
@@ -1008,6 +987,7 @@ const find_closest_date = function (date) {
   let t = 0;
 
   let focusAndScroll = function () {
+    console.log(t);
     document
       .querySelectorAll('div#events-wrapper article[data-id="' + t + '"]')[0]
       .focus();
@@ -1026,7 +1006,7 @@ const find_closest_date = function (date) {
     try {
       let m = events.findIndex((event) => dayjs(event.DTSTAMP).unix() < search);
       t = events[m].UID;
-      console.log(m);
+      // console.log(m);
 
       focusAndScroll();
     } catch (e) {
@@ -1741,23 +1721,6 @@ var page_calendar = {
         event_slider(status.selected_day);
         jump_to_today();
 
-        //load accounts data
-        setTimeout(() => {
-          localforage
-            .getItem("accounts")
-            .then(function (value) {
-              if (value == null) {
-                accounts = [];
-                return false;
-              }
-              accounts = value;
-              load_cached_caldav();
-            })
-            .catch(function (err) {
-              console.log(err);
-            });
-        }, 200);
-
         status.startup = true;
       }
     }, 200);
@@ -1835,8 +1798,8 @@ var page_events = {
               tabindex: index + 1,
               "data-id": item.UID,
               "data-date": item.dateStart,
-              "data-category": item.CATEGORIES.toUpperCase() ?? "",
-              "data-summary": item.SUMMARY.toUpperCase() ?? "",
+              "data-category": (item.CATEGORIES || "").toUpperCase(),
+              "data-summary": (item.SUMMARY || "").toUpperCase(),
             },
             [
               m("div", { class: "icons-bar" }, [
@@ -1848,6 +1811,90 @@ var page_events = {
               ]),
             ]
           );
+        }),
+      ]
+    );
+  },
+};
+
+var page_events_filtered = {
+  view: function () {
+    //let type = m.route.get().type;
+    let query = m.route.param("query");
+    let tindex = 0;
+
+    return m(
+      "div",
+      {
+        class: "flex",
+        id: "events-wrapper",
+        onremove: () => {
+          status.selected_day =
+            document.activeElement.getAttribute("data-date");
+
+          status.selected_day_id =
+            document.activeElement.getAttribute("data-id");
+        },
+        oncreate: function () {
+          document.querySelectorAll(".item")[0].focus();
+          bottom_bar(
+            "<img src='assets/image/pencil.svg'>",
+            "<img src='assets/image/calendar.svg'>",
+            ""
+          );
+        },
+      },
+
+      [
+        events.map(function (item) {
+          if (
+            item.CATEGORIES &&
+            item.CATEGORIES.toLowerCase() === query.toLowerCase()
+          ) {
+            tindex++;
+            let de,
+              se = "";
+
+            //all day
+            if (item.allDay) {
+              se = "all day";
+            } else {
+              se = dayjs.unix(item.dateStartUnix).format("HH:mm");
+            }
+
+            //date
+            if (item.dateStart != item.dateEnd && !item.allDay) {
+              de =
+                dayjs(item.dateStart).format(settings.dateformat) +
+                " - " +
+                dayjs(item.dateEnd).format(settings.dateformat);
+            } else {
+              de = dayjs(item.dateStart).format(settings.dateformat);
+            }
+
+            let u = item.isSubscription ? "subscription" : "";
+            let a = item.allDay ? "allDay" : "";
+            return m(
+              "article",
+              {
+                class: "item events " + u + " " + a,
+                tabindex: tindex,
+                "data-id": item.UID,
+                "data-date": item.dateStart,
+                "data-category": (item.CATEGORIES || "").toUpperCase(),
+                "data-summary": (item.SUMMARY || "").toUpperCase(),
+              },
+              [
+                m("div", { class: "icons-bar" }, [
+                  m("div", { class: "date" }, de),
+                  m("div", { class: "time" }, se),
+                  m("h2", { class: "summary" }, item.SUMMARY),
+                  m("div", { class: "location" }, item.LOCATION),
+                  m("div", { class: "description" }, item.DESCRIPTION),
+                ]),
+              ]
+            );
+          }
         }),
       ]
     );
@@ -1873,7 +1920,7 @@ export let page_options = {
           "ul",
           {
             id: "keys",
-            class: "item",
+            class: "item width-100",
             tabindex: "1",
             oncreate: function ({ dom }) {
               bottom_bar("", "", "");
@@ -1890,33 +1937,53 @@ export let page_options = {
             },
           },
           [
-            m("li", [m("span", "1 & 3")], "Months"),
-            m("li", [m("span", "2")], "Event slider"),
-            m("li", [m("span", "5")], "Edit event"),
-            m("li", [m("span", "Enter")], "Events/Month"),
-            m("li", [m("span", "#")], "Moon"),
-            m("li", [m("span", "*")], "Jump to today"),
-            m(
-              "li",
-              [m("span", "SoftLeft longpress")],
-              "create event from template"
-            ),
-            m(
-              "li",
-              [m("span", { class: "keys-current-day" }, "")],
-              "current day"
-            ),
-            m(
-              "li",
-              [m("span", { class: "keys-day-event" }, "")],
-              "day with event"
-            ),
+            m("li", { class: "flex justify-content-spacebetween" }, [
+              m("kbd", "1 & 3"),
+              m("div", "Month"),
+            ]),
+            m("li", { class: "flex justify-content-spacebetween" }, [
+              m("kbd", "2"),
+              m("div", "Event slider"),
+            ]),
 
-            m(
-              "li",
-              [m("span", { class: "keys-day-multi-event" }, "")],
-              "day with several events"
-            ),
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "5"),
+              m("div", "Edit event"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "Enter"),
+              m("div", "Events/Month"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "0"),
+              m("div", "Events filterdy by category"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "#"),
+              m("div", "Moon"),
+            ]),
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "*"),
+              m("div", "Today"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("kbd", "SoftLeft longpress"),
+              m("div", {}, "create event from template"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("span", { class: "keys-day-event" }),
+              m("span", "day with event"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("span", { class: "keys-day-multi-event" }),
+              m("span", "day with several events"),
+            ]),
           ]
         ),
         m("h2", { class: "item", tabindex: "2" }, "Settings"),
@@ -2109,6 +2176,49 @@ export let page_options = {
             item.name
           );
         }),
+
+        m("h2", "Category view"),
+
+        m(
+          "div",
+          {
+            class: "item input-parent",
+            id: "events-category-filter-wrapper",
+            tabindex: "",
+          },
+          [
+            m(
+              "label",
+              { for: "events-category-filter" },
+              "select the category"
+            ),
+            m(
+              "select",
+              {
+                id: "events-category-filter",
+                class: "select-box",
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  setTimeout(function () {
+                    focus_after_selection();
+                    document.querySelector("#events-category-filter").value =
+                      settings.eventsfilter;
+                  }, 1000);
+                },
+              },
+              [
+                m("option", { value: "-" }, "-"),
+                ...Array.from(new Set(events.map((e) => e.CATEGORIES)))
+                  .filter((category) => category !== "")
+                  .map((category) =>
+                    m("option", { value: category }, category)
+                  ),
+              ]
+            ),
+          ]
+        ),
 
         m("h2", "Accounts"),
 
@@ -3213,7 +3323,7 @@ let cb = function (result) {
 
 let callback_getfile = function (result) {
   try {
-    parse_ics(result, "", false, "", "", "local-id", false);
+    parse_ics(result, false, "", "", "local-id", false);
 
     let only_local_events = events.filter((events) => events.id == "local-id");
 
@@ -3325,6 +3435,7 @@ m.route(root, "/page_calendar", {
   "/page_edit_account": page_edit_account,
   "/page_event_templates": page_event_templates,
   "/page_list_files": page_list_files,
+  "/page_events_filtered": page_events_filtered,
 });
 m.route.prefix = "#";
 
@@ -3335,6 +3446,11 @@ let store_settings = function () {
 
   settings.dateformat = document.getElementById("event-date-format").value;
   settings.firstday = document.getElementById("first-day-of-the-week").value;
+  settings.eventsfilter = document.getElementById(
+    "events-category-filter"
+  ).value;
+
+  console.log(settings);
 
   localforage
     .setItem("settings", settings)
@@ -3432,11 +3548,6 @@ let store_account = function (edit, id) {
   }
 };
 
-//check if calendar has updated
-setTimeout(() => {
-  sync_caldav(sync_caldav_callback);
-}, 5000);
-
 let delete_subscription = function () {
   let updated_subscriptions = subscriptions.filter(
     (e) => e.id != document.activeElement.getAttribute("data-id")
@@ -3503,6 +3614,11 @@ localforage
       } catch (e) {
         alert(e);
       }
+
+      //check if calendar has updated
+      setTimeout(() => {
+        sync_caldav(sync_caldav_callback);
+      }, 1000);
     }
   })
   .catch(function (err) {});
@@ -3558,6 +3674,8 @@ let load_template_data = function () {
       document.getElementById("event-title").value = e.title;
       document.getElementById("event-description").value = e.description;
       document.getElementById("event-location").value = e.location;
+      document.getElementById("event-category").value = e.category;
+
       selected_template = "";
     }
   });
@@ -3585,7 +3703,8 @@ let nav = function (move) {
     m.route.get() == "/page_options" ||
     m.route.get() == "/page_events" ||
     m.route.get() == "/page_event_templates" ||
-    m.route.get() == "/page_list_files"
+    m.route.get() == "/page_list_files" ||
+    m.route.get().startsWith("/page_events_filtered")
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
@@ -3635,7 +3754,11 @@ let nav = function (move) {
     behavior: "smooth",
   });
 
-  if (m.route.get() == "/page_calendar" || m.route.get() == "/page_events") {
+  if (
+    m.route.get() == "/page_calendar" ||
+    m.route.get() == "/page_events" ||
+    m.route.get().startsWith("/page_events_filtered")
+  ) {
     try {
       status.selected_day = targetElement.getAttribute("data-date");
       status.selected_day_id = targetElement.getAttribute("data-id");
@@ -3669,6 +3792,17 @@ if ("b2g" in Navigator) {
           (error) => {}
         );
       });
+  } catch (e) {
+    console.log(e);
+  }
+} else {
+  try {
+    navigator.serviceWorker
+      .register(new URL("sw.js", import.meta.url), {
+        type: "module",
+        scope: "/",
+      })
+      .then((registration) => {});
   } catch (e) {
     console.log(e);
   }
@@ -3991,7 +4125,7 @@ let store_event = function (db_id, cal_name) {
 
   if (db_id == "local-id") {
     try {
-      parse_ics(dd, "", false, "", "", "local-id", false, bn);
+      parse_ics(dd, false, "", "", "local-id", false, bn);
     } catch (e) {
       console.log(e);
     }
@@ -4231,7 +4365,7 @@ let update_event = function (etag, url, id, db_id, uid) {
 
   if (db_id == "local-id") {
     try {
-      parse_ics(dd, "", false, "", "", "local-id", false, event.alarm);
+      parse_ics(dd, false, "", "", "local-id", false, event.alarm);
     } catch (e) {
       console.log(e);
     }
@@ -4256,7 +4390,7 @@ let update_event = function (etag, url, id, db_id, uid) {
       });
   } else {
     try {
-      parse_ics(dd, "", false, "", "", db_id, false, event.alarm);
+      parse_ics(dd, false, "", "", db_id, false, event.alarm);
       style_calendar_cell(currentYear, currentMonth);
     } catch (e) {
       console.log("error parsing" + e);
@@ -4487,7 +4621,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event" ||
         m.route.get() == "/page_event_templates" ||
-        m.route.get() == "/page_list_files"
+        m.route.get() == "/page_list_files" ||
+        m.route.get().startsWith("/page_events_filtered")
       ) {
         nav(-1);
       }
@@ -4505,7 +4640,8 @@ function shortpress_action(param) {
         m.route.get() == "/page_add_event" ||
         m.route.get() == "/page_edit_event" ||
         m.route.get() == "/page_event_templates" ||
-        m.route.get() == "/page_list_files"
+        m.route.get() == "/page_list_files" ||
+        m.route.get().startsWith("/page_events_filtered")
       ) {
         nav(+1);
       }
@@ -4566,6 +4702,10 @@ function shortpress_action(param) {
         });
       break;
 
+    case "7":
+      load_cached_caldav();
+      break;
+
     case "SoftRight":
     case "Alt":
       if (m.route.get() == "/page_calendar") {
@@ -4598,7 +4738,10 @@ function shortpress_action(param) {
       if (m.route.get() == "/page_event_templates") {
         delete_template(document.activeElement.getAttribute("data-id"));
       }
-      if (m.route.get() == "/page_events") {
+      if (
+        m.route.get() == "/page_events" ||
+        m.route.get().startsWith("/page_events_filtered")
+      ) {
         if (document.activeElement.classList.contains("subscription")) {
           toaster("a subscription cannot be edited", 2000);
           return false;
@@ -4693,18 +4836,24 @@ function shortpress_action(param) {
       if (m.route.get() == "/page_edit_event") return false;
 
       if (events.length > 0) {
-        if (
-          m.route.get() == "/page_calendar" ||
-          m.route.get() == "/page_events"
+        if (m.route.get().startsWith("/page_events_filtered")) {
+          m.route.set("/page_calendar");
+        } else if (
+          m.route.get() === "/page_calendar" ||
+          m.route.get() === "/page_events"
         ) {
-          m.route.get() == "/page_calendar"
-            ? m.route.set("/page_events")
-            : m.route.set("/page_calendar");
+          m.route.set(
+            m.route.get() === "/page_calendar"
+              ? "/page_events"
+              : "/page_calendar"
+          );
         }
       } else {
-        if (m.route.get() == "/page_calendar")
+        if (m.route.get() === "/page_calendar") {
           side_toaster("There are no calendar entries to display", 3000);
+        }
       }
+
       break;
 
     case "Backspace":
@@ -4712,6 +4861,10 @@ function shortpress_action(param) {
         m.route.get() == "/page_add_event" &&
         document.activeElement.tagName != "INPUT"
       ) {
+        m.route.set("/page_calendar");
+      }
+
+      if (m.route.get() == "/page_events_filtered") {
         m.route.set("/page_calendar");
       }
 
@@ -4742,6 +4895,10 @@ function shortpress_action(param) {
         stop_scan(stop_scan_callback);
       }
 
+      break;
+
+    case "0":
+      m.route.set("/page_events_filtered", { query: settings.eventsfilter });
       break;
   }
 }
@@ -4804,6 +4961,8 @@ if (debug) {
 
 const channel = new BroadcastChannel("sw-messages");
 channel.addEventListener("message", (event) => {
+  console.log(event);
+
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
   const l = event.data.oauth_success;

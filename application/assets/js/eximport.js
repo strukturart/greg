@@ -159,14 +159,13 @@ export let list_ics = function () {
 // /PARSE ICS
 // /////////////
 
-function formatTimeWithTimeZone(time) {
+export function formatTimeWithTimeZone(time) {
   if (!time) return "";
   return `;TZID=${time.timezone}:${time.toICALString()}`;
 }
 
-export let parse_ics = function (
+export const parse_ics = async function (
   data,
-  callback,
   isSubscription,
   etag,
   url,
@@ -183,9 +182,7 @@ export let parse_ics = function (
 
   var comp = new ICAL.Component(jcalData);
   var valarm = comp.getAllSubcomponents("VALARM");
-  valarm.forEach(function (ite) {
-    //console.log(ite);
-  });
+  valarm.forEach(function (ite) {});
 
   var vevent = comp.getAllSubcomponents("vevent");
   let calendar_name = comp.getFirstPropertyValue("x-wr-calname") || "";
@@ -305,11 +302,8 @@ export let parse_ics = function (
     };
     events.push(imp);
   });
-  try {
-    sort_array(events, "dateStartUnix", "number");
-  } catch (e) {
-    console.log(e);
-  }
+
+  sort_array(events, "dateStartUnix", "number");
 };
 
 /////////////
