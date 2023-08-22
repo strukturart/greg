@@ -258,13 +258,6 @@ export const parse_ics = async function (
     let dtstart = ite.getFirstPropertyValue("dtstart");
     let dtend = ite.getFirstPropertyValue("dtend");
 
-    if (account_id === "local-id") {
-      dtstart = formatTimeWithTimeZone(ite.getFirstPropertyValue("dtstart"));
-      dtend = formatTimeWithTimeZone(ite.getFirstPropertyValue("dtend"));
-      lastmod = formatTimeWithTimeZone(
-        ite.getFirstPropertyValue("last-modified")
-      );
-    }
     //todo remove more key:values
     let imp = {
       BEGIN: "VEVENT",
@@ -299,75 +292,6 @@ export const parse_ics = async function (
     events.push(imp);
   });
 };
-
-/*
-
-export const parse_ics = async function (
-  data,
-  isSubscription,
-  etag,
-  url,
-  account_id,
-  isCaldav,
-  alarm
-) {
-  let jcalData;
-  try {
-    jcalData = ICAL.parse(data);
-  } catch (e) {
-    console.log("parser error" + e);
-  }
-
-  var comp = new ICAL.Component(jcalData);
-  var vevent = comp.getAllProperties("vevent");
-
-  let calendar_name = comp.getFirstPropertyValue("x-wr-calname") || "";
-
-  const events = vevent.map((ite) => {
-    const rrule = ite.getFirstPropertyValue("rrule") || {};
-    const n = rrule.freq ? rrule : null;
-    const dtstart = ite.getFirstPropertyValue("dtstart");
-    const dtend = ite.getFirstPropertyValue("dtend");
-    const allday = dtstart.isDate && dtend.isDate;
-    const lastmod = ite.getFirstPropertyValue("last-modified");
-
-    return {
-      BEGIN: "VEVENT",
-      UID: ite.getFirstPropertyValue("uid"),
-      SUMMARY: ite.getFirstPropertyValue("summary"),
-      LOCATION: ite.getFirstPropertyValue("location"),
-      DESCRIPTION: ite.getFirstPropertyValue("description"),
-      CATEGORIES: ite.getFirstPropertyValue("categories") || "",
-      ATTACH: ite.getFirstPropertyValue("attach"),
-      RRULE: n,
-      "LAST-MODIFIED": lastmod,
-      CLASS: ite.getFirstPropertyValue("class") || "",
-      DTSTAMP: dtstart,
-      DTSTART: dtstart,
-      DTEND: dtend,
-      END: "VEVENT",
-      isSubscription,
-      isCaldav,
-      allDay: allday,
-      dateStart: dtstart.toJSDate().toISOString().substring(0, 10),
-      dateStartUnix: dtstart.toJSDate().getTime() / 1000,
-      dateEnd: dtend.toJSDate().toISOString().substring(0, 10),
-      time_start: dtstart.toJSDate().toISOString().substring(11, 19),
-      time_end: dtend.toJSDate().toISOString().substring(11, 19),
-      alarm: alarm || "none",
-      rrule_json: n,
-      etag,
-      url,
-      calendar_name,
-      id: account_id,
-    };
-  });
-
-  // Now `events` contains the optimized event objects.
-  // You can further process or use them as needed.
-};
-
-*/
 
 /////////////
 ///FETCH ICS

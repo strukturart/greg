@@ -1551,11 +1551,11 @@ var page_events = {
           //date
           if (item.dateStart != item.dateEnd && !item.allDay) {
             de =
-              dayjs(item.dateStart).format(settings.dateformat) +
+              dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
               " - " +
-              dayjs(item.dateEnd).format(settings.dateformat);
+              dayjs.unix(item.dateEndUnix).format(settings.dateformat);
           } else {
-            de = dayjs(item.dateStart).format(settings.dateformat);
+            de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
           }
 
           let u = item.isSubscription ? "subscription" : "";
@@ -3219,8 +3219,6 @@ let store_settings = function () {
     "events-category-filter"
   ).value;
 
-  console.log(settings);
-
   localforage
     .setItem("settings", settings)
     .then(function () {
@@ -4253,22 +4251,6 @@ let delete_event = function (etag, url, account_id, uid) {
 //let d = `0${t.getDate()}`.slice(-2);
 //let y = t.getFullYear();
 
-// callback import event
-let import_event_callback = function (id, date) {
-  let without_subscription = events.filter(
-    (events) => events.isSubscription === false
-  );
-
-  localforage
-    .setItem("events", without_subscription)
-    .then(function () {
-      export_ical("others/greg.ics", without_subscription);
-    })
-    .catch(function (err) {
-      side_toaster("no data to export", 2000);
-    });
-};
-
 export let set_tabindex = () => {
   document
     .querySelectorAll('.item:not([style*="display: none"]')
@@ -4661,6 +4643,8 @@ function shortpress_action(param) {
       break;
 
     case "0":
+      if (document.activeElement.tagName == "INPUT") return false;
+
       m.route.set("/page_events_filtered", { query: settings.eventsfilter });
       break;
   }
