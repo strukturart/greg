@@ -245,7 +245,9 @@ export let deleteFile = function (storage, path, notification) {
   requestDel.onsuccess = function () {
     if (notification == "notification") {
       toaster(
-        'File "' + name + '" successfully deleted frome the sdcard storage area'
+        'File "' +
+          name +
+          '" successfully deleted frome the sdcard storage area',
       );
     }
   };

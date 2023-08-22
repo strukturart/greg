@@ -15,6 +15,7 @@ An easy to use calendar for KaiOs
 - Key #: toggle moon phase view
 - Key SoftLeft: Add event
 - Key SoftLeft Longpress: Add Event with template
+- <kbn>0</kbn> Single category view
 
 ### Nextcloud account
 
@@ -54,6 +55,19 @@ This software (except KaiAds) is open source and licensed under the MIT License.
 
 This software uses KaiAds. This is a third party service that may collect information used to identify you. Pricacy policy of KaiAds.
 If you connect a Google account to greg, it is possible that Google collects information about you, or identifies you.
+
+### Dev
+
+If you want to create your own version of the app you need to use your own google oaut cred. you have to create a file with this content
+/assets/js/google_cred.js
+
+```
+const google_cred = {
+  clientId:
+    "",
+  clientSecret: "",
+};
+```
 
 ## Donation
 

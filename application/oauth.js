@@ -20,7 +20,7 @@ let get_token = function () {
   urlencoded.append("grant_type", "authorization_code");
   urlencoded.append(
     "redirect_uri",
-    "https://greg.strukturart.com/redirect.html"
+    "https://greg.strukturart.com/redirect.html",
   );
   urlencoded.append("client_id", google_cred.clientId);
   urlencoded.append("client_secret", google_cred.clientSecret);
@@ -33,7 +33,7 @@ let get_token = function () {
   };
 
   return fetch("https://oauth2.googleapis.com/token", requestOptions).then(
-    (response) => response.json()
+    (response) => response.json(),
   );
 };
 

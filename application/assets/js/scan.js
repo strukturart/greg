@@ -53,7 +53,7 @@ export let start_scan = function (callback) {
               0,
               0,
               imageWidth,
-              imageHeight
+              imageHeight,
             );
             var idd = imageData.data;
 
@@ -69,7 +69,7 @@ export let start_scan = function (callback) {
       },
       function (err) {
         console.log("The following error occurred: " + err.name);
-      }
+      },
     );
   } else {
     console.log("getUserMedia not supported");

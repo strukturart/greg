@@ -3,16 +3,18 @@
   --color-two: yellow;
   --color-three: silver;
   --color-four: #beb9b9;
-  --color-five: rgba(214, 225, 228, .32);
-  --color-seven: rgba(101, 216, 24, .286);
-  --color-eight: rgba(47, 82, 196, .19);
+  --color-five: rgba(214, 225, 228, 0.32);
+  --color-seven: rgba(101, 216, 24, 0.286);
+  --color-eight: rgba(47, 82, 196, 0.19);
 }
 
 @font-face {
   src: url("Roboto-Medium.91322885.ttf");
 }
 
-*, :before, :after {
+*,
+:before,
+:after {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   overflow-wrap: break-word;
@@ -36,7 +38,8 @@
   outline: 1px solid red;
 }
 
-html, body {
+html,
+body {
   max-height: 100%;
   max-width: 100%;
   height: 100%;
@@ -53,7 +56,9 @@ html, body {
   overflow: hidden;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   font-size: 1rem;
 }
 
@@ -63,7 +68,8 @@ img {
   display: block;
 }
 
-img[src=""], img[src=" "] {
+img[src=""],
+img[src=" "] {
   display: none;
 }
 
@@ -194,7 +200,7 @@ div#intro #version {
   color: #fff;
   text-align: center;
   background: #000;
-  font-size: .8rem;
+  font-size: 0.8rem;
   animation-name: intro_img;
   animation-duration: 2s;
   animation-iteration-count: 1;
@@ -283,7 +289,7 @@ div#toast {
   transform-origin: 0 0;
   background: #000;
   padding: 5px;
-  transition: all .5s ease-in-out;
+  transition: all 0.5s ease-in-out;
   position: fixed;
   top: 0;
   transform: translate(0, -100px);
@@ -297,7 +303,7 @@ div#side-toast {
   transform-origin: 0 0;
   background: orange;
   padding: 5px;
-  transition: all .5s ease-in-out;
+  transition: all 0.5s ease-in-out;
   position: fixed;
   top: 70vh;
   transform: translate(-100vw);
@@ -367,7 +373,7 @@ div#calendar div.calendar-head {
 div#calendar div.calendar-head div {
   width: 12%;
   text-align: center;
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 div#calendar div.calendar-head div.active {
@@ -389,7 +395,7 @@ div#calendar div#calendar-body div {
   text-align: center;
   border: 0;
   outline: 0 solid red;
-  font-size: .8rem;
+  font-size: 0.8rem;
   position: relative;
   overflow: hidden;
 }
@@ -491,7 +497,7 @@ div#calendar div#calendar-body div div.today div.active {
 span.weeknumber {
   color: silver;
   padding: 2px;
-  font-size: .7rem;
+  font-size: 0.7rem;
   position: absolute;
   right: 0;
 }
@@ -563,7 +569,9 @@ div#events-wrapper article:last-child {
   margin: 0 0 55px;
 }
 
-div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time, div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay, div#events-wrapper article[data-all-day="true"] div.time {
+div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time,
+div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay,
+div#events-wrapper article[data-all-day="true"] div.time {
   display: none;
 }
 
@@ -648,20 +656,20 @@ div#event-slider article {
   max-width: 80vw;
   min-width: 80vw;
   margin: 0 0 15px;
-  font-size: .9rem;
+  font-size: 0.9rem;
   display: none;
 }
 
 div#event-slider article > * {
   text-align: center;
-  font-size: .9rem;
+  font-size: 0.9rem;
 }
 
 div#event-slider article:nth-child(1) {
   max-width: 90vw;
   min-width: 90vw;
   margin: 0 0 15px;
-  font-size: .9rem;
+  font-size: 0.9rem;
   display: block;
 }
 
@@ -805,7 +813,7 @@ div#bottom-bar div {
   text-align: center;
   background: none;
   padding: 2px;
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 div#bottom-bar div#button-center {
@@ -942,7 +950,7 @@ div#settings label {
 }
 
 div#time {
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 @keyframes jump {
@@ -954,4 +962,3 @@ div#time {
     transform: translateY(-30px);
   }
 }
-

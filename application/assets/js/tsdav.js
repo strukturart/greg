@@ -87,7 +87,7 @@ function getAugmentedNamespace(n) {
             get: function () {
               return n[k];
             },
-          }
+          },
     );
   });
   return a;
@@ -363,7 +363,7 @@ var browserPonyfill = { exports: {} };
             ) {
               this.headers.set(
                 "content-type",
-                "application/x-www-form-urlencoded;charset=UTF-8"
+                "application/x-www-form-urlencoded;charset=UTF-8",
               );
             }
           }
@@ -406,7 +406,7 @@ var browserPonyfill = { exports: {} };
             return readBlobAsText(this._bodyBlob);
           } else if (this._bodyArrayBuffer) {
             return Promise.resolve(
-              readArrayBufferAsText(this._bodyArrayBuffer)
+              readArrayBufferAsText(this._bodyArrayBuffer),
             );
           } else if (this._bodyFormData) {
             throw new Error("could not read FormData body as text");
@@ -640,7 +640,7 @@ var browserPonyfill = { exports: {} };
           }
 
           xhr.send(
-            typeof request._bodyInit === "undefined" ? null : request._bodyInit
+            typeof request._bodyInit === "undefined" ? null : request._bodyInit,
           );
         });
       }
@@ -955,7 +955,7 @@ var ms = function (val, options) {
   }
   throw new Error(
     "val is not a non-empty string or a valid number. val=" +
-      JSON.stringify(val)
+      JSON.stringify(val),
   );
 };
 
@@ -974,7 +974,7 @@ function parse(str) {
   }
   var match =
     /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
-      str
+      str,
     );
   if (!match) {
     return;
@@ -1235,7 +1235,7 @@ function setup(env) {
     const newDebug = createDebug(
       this.namespace +
         (typeof delimiter === "undefined" ? ":" : delimiter) +
-        namespace
+        namespace,
     );
     newDebug.log = this.log;
     return newDebug;
@@ -1257,7 +1257,7 @@ function setup(env) {
 
     let i;
     const split = (typeof namespaces === "string" ? namespaces : "").split(
-      /[\s,]+/
+      /[\s,]+/,
     );
     const len = split.length;
 
@@ -1356,7 +1356,7 @@ function setup(env) {
    */
   function destroy() {
     console.warn(
-      "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`."
+      "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.",
     );
   }
 
@@ -1384,7 +1384,7 @@ var common = setup;
       if (!warned) {
         warned = true;
         console.warn(
-          "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`."
+          "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.",
         );
       }
     };
@@ -1803,8 +1803,8 @@ function fromByteArray(uint8) {
       encodeChunk(
         uint8,
         i,
-        i + maxChunkLength > len2 ? len2 : i + maxChunkLength
-      )
+        i + maxChunkLength > len2 ? len2 : i + maxChunkLength,
+      ),
     );
   }
 
@@ -2013,7 +2013,7 @@ function Buffer$1(arg, encodingOrOffset, length) {
   if (typeof arg === "number") {
     if (typeof encodingOrOffset === "string") {
       throw new Error(
-        "If encoding is specified then the first argument must be a string"
+        "If encoding is specified then the first argument must be a string",
       );
     }
     return allocUnsafe(this, arg);
@@ -2212,7 +2212,7 @@ function fromObject(that, obj) {
   }
 
   throw new TypeError(
-    "First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object."
+    "First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.",
   );
 }
 
@@ -2224,7 +2224,7 @@ function checked(length) {
       "Attempt to allocate Buffer larger than maximum " +
         "size: 0x" +
         kMaxLength().toString(16) +
-        " bytes"
+        " bytes",
     );
   }
   return length | 0;
@@ -2507,7 +2507,7 @@ Buffer$1.prototype.compare = function compare(
   start,
   end,
   thisStart,
-  thisEnd
+  thisEnd,
 ) {
   if (!internalIsBuffer(target)) {
     throw new TypeError("Argument must be a Buffer");
@@ -2711,7 +2711,7 @@ Buffer$1.prototype.indexOf = function indexOf(val, byteOffset, encoding) {
 Buffer$1.prototype.lastIndexOf = function lastIndexOf(
   val,
   byteOffset,
-  encoding
+  encoding,
 ) {
   return bidirectionalIndexOf(this, val, byteOffset, encoding, false);
 };
@@ -2748,7 +2748,7 @@ function utf8Write(buf, string, offset, length) {
     utf8ToBytes(string, buf.length - offset),
     buf,
     offset,
-    length
+    length,
   );
 }
 
@@ -2769,7 +2769,7 @@ function ucs2Write(buf, string, offset, length) {
     utf16leToBytes(string, buf.length - offset),
     buf,
     offset,
-    length
+    length,
   );
 }
 
@@ -2797,7 +2797,7 @@ Buffer$1.prototype.write = function write(string, offset, length, encoding) {
     // legacy write(string, encoding, offset, length) - remove in v0.13
   } else {
     throw new Error(
-      "Buffer.write(string, encoding, offset[, length]) is no longer supported"
+      "Buffer.write(string, encoding, offset[, length]) is no longer supported",
     );
   }
 
@@ -2965,7 +2965,7 @@ function decodeCodePointsArray(codePoints) {
   while (i < len) {
     res += String.fromCharCode.apply(
       String,
-      codePoints.slice(i, (i += MAX_ARGUMENTS_LENGTH))
+      codePoints.slice(i, (i += MAX_ARGUMENTS_LENGTH)),
     );
   }
   return res;
@@ -3062,7 +3062,7 @@ function checkOffset(offset, ext, length) {
 Buffer$1.prototype.readUIntLE = function readUIntLE(
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3081,7 +3081,7 @@ Buffer$1.prototype.readUIntLE = function readUIntLE(
 Buffer$1.prototype.readUIntBE = function readUIntBE(
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3134,7 +3134,7 @@ Buffer$1.prototype.readUInt32BE = function readUInt32BE(offset, noAssert) {
 Buffer$1.prototype.readIntLE = function readIntLE(
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3156,7 +3156,7 @@ Buffer$1.prototype.readIntLE = function readIntLE(
 Buffer$1.prototype.readIntBE = function readIntBE(
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3247,7 +3247,7 @@ Buffer$1.prototype.writeUIntLE = function writeUIntLE(
   value,
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3271,7 +3271,7 @@ Buffer$1.prototype.writeUIntBE = function writeUIntBE(
   value,
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3312,7 +3312,7 @@ function objectWriteUInt16(buf, value, offset, littleEndian) {
 Buffer$1.prototype.writeUInt16LE = function writeUInt16LE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3329,7 +3329,7 @@ Buffer$1.prototype.writeUInt16LE = function writeUInt16LE(
 Buffer$1.prototype.writeUInt16BE = function writeUInt16BE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3353,7 +3353,7 @@ function objectWriteUInt32(buf, value, offset, littleEndian) {
 Buffer$1.prototype.writeUInt32LE = function writeUInt32LE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3372,7 +3372,7 @@ Buffer$1.prototype.writeUInt32LE = function writeUInt32LE(
 Buffer$1.prototype.writeUInt32BE = function writeUInt32BE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3392,7 +3392,7 @@ Buffer$1.prototype.writeIntLE = function writeIntLE(
   value,
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3420,7 +3420,7 @@ Buffer$1.prototype.writeIntBE = function writeIntBE(
   value,
   offset,
   byteLength,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3457,7 +3457,7 @@ Buffer$1.prototype.writeInt8 = function writeInt8(value, offset, noAssert) {
 Buffer$1.prototype.writeInt16LE = function writeInt16LE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3474,7 +3474,7 @@ Buffer$1.prototype.writeInt16LE = function writeInt16LE(
 Buffer$1.prototype.writeInt16BE = function writeInt16BE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3491,7 +3491,7 @@ Buffer$1.prototype.writeInt16BE = function writeInt16BE(
 Buffer$1.prototype.writeInt32LE = function writeInt32LE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3510,7 +3510,7 @@ Buffer$1.prototype.writeInt32LE = function writeInt32LE(
 Buffer$1.prototype.writeInt32BE = function writeInt32BE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   value = +value;
   offset = offset | 0;
@@ -3543,7 +3543,7 @@ function writeFloat(buf, value, offset, littleEndian, noAssert) {
 Buffer$1.prototype.writeFloatLE = function writeFloatLE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   return writeFloat(this, value, offset, true, noAssert);
 };
@@ -3551,7 +3551,7 @@ Buffer$1.prototype.writeFloatLE = function writeFloatLE(
 Buffer$1.prototype.writeFloatBE = function writeFloatBE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   return writeFloat(this, value, offset, false, noAssert);
 };
@@ -3567,7 +3567,7 @@ function writeDouble(buf, value, offset, littleEndian, noAssert) {
 Buffer$1.prototype.writeDoubleLE = function writeDoubleLE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   return writeDouble(this, value, offset, true, noAssert);
 };
@@ -3575,7 +3575,7 @@ Buffer$1.prototype.writeDoubleLE = function writeDoubleLE(
 Buffer$1.prototype.writeDoubleBE = function writeDoubleBE(
   value,
   offset,
-  noAssert
+  noAssert,
 ) {
   return writeDouble(this, value, offset, false, noAssert);
 };
@@ -3623,7 +3623,7 @@ Buffer$1.prototype.copy = function copy(target, targetStart, start, end) {
     Uint8Array.prototype.set.call(
       target,
       this.subarray(start, start + len),
-      targetStart
+      targetStart,
     );
   }
 
@@ -3780,7 +3780,7 @@ function utf8ToBytes(string, units) {
       bytes.push(
         (codePoint >> 0xc) | 0xe0,
         ((codePoint >> 0x6) & 0x3f) | 0x80,
-        (codePoint & 0x3f) | 0x80
+        (codePoint & 0x3f) | 0x80,
       );
     } else if (codePoint < 0x110000) {
       if ((units -= 4) < 0) break;
@@ -3788,7 +3788,7 @@ function utf8ToBytes(string, units) {
         (codePoint >> 0x12) | 0xf0,
         ((codePoint >> 0xc) & 0x3f) | 0x80,
         ((codePoint >> 0x6) & 0x3f) | 0x80,
-        (codePoint & 0x3f) | 0x80
+        (codePoint & 0x3f) | 0x80,
       );
     } else {
       throw new Error("Invalid code point");
@@ -4492,267 +4492,267 @@ function base64DetectIncompleteChar(buffer) {
     };
 
     sax.XML_ENTITIES = {
-      "amp": "&",
-      "gt": ">",
-      "lt": "<",
-      "quot": '"',
-      "apos": "'",
+      amp: "&",
+      gt: ">",
+      lt: "<",
+      quot: '"',
+      apos: "'",
     };
 
     sax.ENTITIES = {
-      "amp": "&",
-      "gt": ">",
-      "lt": "<",
-      "quot": '"',
-      "apos": "'",
-      "AElig": 198,
-      "Aacute": 193,
-      "Acirc": 194,
-      "Agrave": 192,
-      "Aring": 197,
-      "Atilde": 195,
-      "Auml": 196,
-      "Ccedil": 199,
-      "ETH": 208,
-      "Eacute": 201,
-      "Ecirc": 202,
-      "Egrave": 200,
-      "Euml": 203,
-      "Iacute": 205,
-      "Icirc": 206,
-      "Igrave": 204,
-      "Iuml": 207,
-      "Ntilde": 209,
-      "Oacute": 211,
-      "Ocirc": 212,
-      "Ograve": 210,
-      "Oslash": 216,
-      "Otilde": 213,
-      "Ouml": 214,
-      "THORN": 222,
-      "Uacute": 218,
-      "Ucirc": 219,
-      "Ugrave": 217,
-      "Uuml": 220,
-      "Yacute": 221,
-      "aacute": 225,
-      "acirc": 226,
-      "aelig": 230,
-      "agrave": 224,
-      "aring": 229,
-      "atilde": 227,
-      "auml": 228,
-      "ccedil": 231,
-      "eacute": 233,
-      "ecirc": 234,
-      "egrave": 232,
-      "eth": 240,
-      "euml": 235,
-      "iacute": 237,
-      "icirc": 238,
-      "igrave": 236,
-      "iuml": 239,
-      "ntilde": 241,
-      "oacute": 243,
-      "ocirc": 244,
-      "ograve": 242,
-      "oslash": 248,
-      "otilde": 245,
-      "ouml": 246,
-      "szlig": 223,
-      "thorn": 254,
-      "uacute": 250,
-      "ucirc": 251,
-      "ugrave": 249,
-      "uuml": 252,
-      "yacute": 253,
-      "yuml": 255,
-      "copy": 169,
-      "reg": 174,
-      "nbsp": 160,
-      "iexcl": 161,
-      "cent": 162,
-      "pound": 163,
-      "curren": 164,
-      "yen": 165,
-      "brvbar": 166,
-      "sect": 167,
-      "uml": 168,
-      "ordf": 170,
-      "laquo": 171,
-      "not": 172,
-      "shy": 173,
-      "macr": 175,
-      "deg": 176,
-      "plusmn": 177,
-      "sup1": 185,
-      "sup2": 178,
-      "sup3": 179,
-      "acute": 180,
-      "micro": 181,
-      "para": 182,
-      "middot": 183,
-      "cedil": 184,
-      "ordm": 186,
-      "raquo": 187,
-      "frac14": 188,
-      "frac12": 189,
-      "frac34": 190,
-      "iquest": 191,
-      "times": 215,
-      "divide": 247,
-      "OElig": 338,
-      "oelig": 339,
-      "Scaron": 352,
-      "scaron": 353,
-      "Yuml": 376,
-      "fnof": 402,
-      "circ": 710,
-      "tilde": 732,
-      "Alpha": 913,
-      "Beta": 914,
-      "Gamma": 915,
-      "Delta": 916,
-      "Epsilon": 917,
-      "Zeta": 918,
-      "Eta": 919,
-      "Theta": 920,
-      "Iota": 921,
-      "Kappa": 922,
-      "Lambda": 923,
-      "Mu": 924,
-      "Nu": 925,
-      "Xi": 926,
-      "Omicron": 927,
-      "Pi": 928,
-      "Rho": 929,
-      "Sigma": 931,
-      "Tau": 932,
-      "Upsilon": 933,
-      "Phi": 934,
-      "Chi": 935,
-      "Psi": 936,
-      "Omega": 937,
-      "alpha": 945,
-      "beta": 946,
-      "gamma": 947,
-      "delta": 948,
-      "epsilon": 949,
-      "zeta": 950,
-      "eta": 951,
-      "theta": 952,
-      "iota": 953,
-      "kappa": 954,
-      "lambda": 955,
-      "mu": 956,
-      "nu": 957,
-      "xi": 958,
-      "omicron": 959,
-      "pi": 960,
-      "rho": 961,
-      "sigmaf": 962,
-      "sigma": 963,
-      "tau": 964,
-      "upsilon": 965,
-      "phi": 966,
-      "chi": 967,
-      "psi": 968,
-      "omega": 969,
-      "thetasym": 977,
-      "upsih": 978,
-      "piv": 982,
-      "ensp": 8194,
-      "emsp": 8195,
-      "thinsp": 8201,
-      "zwnj": 8204,
-      "zwj": 8205,
-      "lrm": 8206,
-      "rlm": 8207,
-      "ndash": 8211,
-      "mdash": 8212,
-      "lsquo": 8216,
-      "rsquo": 8217,
-      "sbquo": 8218,
-      "ldquo": 8220,
-      "rdquo": 8221,
-      "bdquo": 8222,
-      "dagger": 8224,
-      "Dagger": 8225,
-      "bull": 8226,
-      "hellip": 8230,
-      "permil": 8240,
-      "prime": 8242,
-      "Prime": 8243,
-      "lsaquo": 8249,
-      "rsaquo": 8250,
-      "oline": 8254,
-      "frasl": 8260,
-      "euro": 8364,
-      "image": 8465,
-      "weierp": 8472,
-      "real": 8476,
-      "trade": 8482,
-      "alefsym": 8501,
-      "larr": 8592,
-      "uarr": 8593,
-      "rarr": 8594,
-      "darr": 8595,
-      "harr": 8596,
-      "crarr": 8629,
-      "lArr": 8656,
-      "uArr": 8657,
-      "rArr": 8658,
-      "dArr": 8659,
-      "hArr": 8660,
-      "forall": 8704,
-      "part": 8706,
-      "exist": 8707,
-      "empty": 8709,
-      "nabla": 8711,
-      "isin": 8712,
-      "notin": 8713,
-      "ni": 8715,
-      "prod": 8719,
-      "sum": 8721,
-      "minus": 8722,
-      "lowast": 8727,
-      "radic": 8730,
-      "prop": 8733,
-      "infin": 8734,
-      "ang": 8736,
-      "and": 8743,
-      "or": 8744,
-      "cap": 8745,
-      "cup": 8746,
-      "int": 8747,
-      "there4": 8756,
-      "sim": 8764,
-      "cong": 8773,
-      "asymp": 8776,
-      "ne": 8800,
-      "equiv": 8801,
-      "le": 8804,
-      "ge": 8805,
-      "sub": 8834,
-      "sup": 8835,
-      "nsub": 8836,
-      "sube": 8838,
-      "supe": 8839,
-      "oplus": 8853,
-      "otimes": 8855,
-      "perp": 8869,
-      "sdot": 8901,
-      "lceil": 8968,
-      "rceil": 8969,
-      "lfloor": 8970,
-      "rfloor": 8971,
-      "lang": 9001,
-      "rang": 9002,
-      "loz": 9674,
-      "spades": 9824,
-      "clubs": 9827,
-      "hearts": 9829,
-      "diams": 9830,
+      amp: "&",
+      gt: ">",
+      lt: "<",
+      quot: '"',
+      apos: "'",
+      AElig: 198,
+      Aacute: 193,
+      Acirc: 194,
+      Agrave: 192,
+      Aring: 197,
+      Atilde: 195,
+      Auml: 196,
+      Ccedil: 199,
+      ETH: 208,
+      Eacute: 201,
+      Ecirc: 202,
+      Egrave: 200,
+      Euml: 203,
+      Iacute: 205,
+      Icirc: 206,
+      Igrave: 204,
+      Iuml: 207,
+      Ntilde: 209,
+      Oacute: 211,
+      Ocirc: 212,
+      Ograve: 210,
+      Oslash: 216,
+      Otilde: 213,
+      Ouml: 214,
+      THORN: 222,
+      Uacute: 218,
+      Ucirc: 219,
+      Ugrave: 217,
+      Uuml: 220,
+      Yacute: 221,
+      aacute: 225,
+      acirc: 226,
+      aelig: 230,
+      agrave: 224,
+      aring: 229,
+      atilde: 227,
+      auml: 228,
+      ccedil: 231,
+      eacute: 233,
+      ecirc: 234,
+      egrave: 232,
+      eth: 240,
+      euml: 235,
+      iacute: 237,
+      icirc: 238,
+      igrave: 236,
+      iuml: 239,
+      ntilde: 241,
+      oacute: 243,
+      ocirc: 244,
+      ograve: 242,
+      oslash: 248,
+      otilde: 245,
+      ouml: 246,
+      szlig: 223,
+      thorn: 254,
+      uacute: 250,
+      ucirc: 251,
+      ugrave: 249,
+      uuml: 252,
+      yacute: 253,
+      yuml: 255,
+      copy: 169,
+      reg: 174,
+      nbsp: 160,
+      iexcl: 161,
+      cent: 162,
+      pound: 163,
+      curren: 164,
+      yen: 165,
+      brvbar: 166,
+      sect: 167,
+      uml: 168,
+      ordf: 170,
+      laquo: 171,
+      not: 172,
+      shy: 173,
+      macr: 175,
+      deg: 176,
+      plusmn: 177,
+      sup1: 185,
+      sup2: 178,
+      sup3: 179,
+      acute: 180,
+      micro: 181,
+      para: 182,
+      middot: 183,
+      cedil: 184,
+      ordm: 186,
+      raquo: 187,
+      frac14: 188,
+      frac12: 189,
+      frac34: 190,
+      iquest: 191,
+      times: 215,
+      divide: 247,
+      OElig: 338,
+      oelig: 339,
+      Scaron: 352,
+      scaron: 353,
+      Yuml: 376,
+      fnof: 402,
+      circ: 710,
+      tilde: 732,
+      Alpha: 913,
+      Beta: 914,
+      Gamma: 915,
+      Delta: 916,
+      Epsilon: 917,
+      Zeta: 918,
+      Eta: 919,
+      Theta: 920,
+      Iota: 921,
+      Kappa: 922,
+      Lambda: 923,
+      Mu: 924,
+      Nu: 925,
+      Xi: 926,
+      Omicron: 927,
+      Pi: 928,
+      Rho: 929,
+      Sigma: 931,
+      Tau: 932,
+      Upsilon: 933,
+      Phi: 934,
+      Chi: 935,
+      Psi: 936,
+      Omega: 937,
+      alpha: 945,
+      beta: 946,
+      gamma: 947,
+      delta: 948,
+      epsilon: 949,
+      zeta: 950,
+      eta: 951,
+      theta: 952,
+      iota: 953,
+      kappa: 954,
+      lambda: 955,
+      mu: 956,
+      nu: 957,
+      xi: 958,
+      omicron: 959,
+      pi: 960,
+      rho: 961,
+      sigmaf: 962,
+      sigma: 963,
+      tau: 964,
+      upsilon: 965,
+      phi: 966,
+      chi: 967,
+      psi: 968,
+      omega: 969,
+      thetasym: 977,
+      upsih: 978,
+      piv: 982,
+      ensp: 8194,
+      emsp: 8195,
+      thinsp: 8201,
+      zwnj: 8204,
+      zwj: 8205,
+      lrm: 8206,
+      rlm: 8207,
+      ndash: 8211,
+      mdash: 8212,
+      lsquo: 8216,
+      rsquo: 8217,
+      sbquo: 8218,
+      ldquo: 8220,
+      rdquo: 8221,
+      bdquo: 8222,
+      dagger: 8224,
+      Dagger: 8225,
+      bull: 8226,
+      hellip: 8230,
+      permil: 8240,
+      prime: 8242,
+      Prime: 8243,
+      lsaquo: 8249,
+      rsaquo: 8250,
+      oline: 8254,
+      frasl: 8260,
+      euro: 8364,
+      image: 8465,
+      weierp: 8472,
+      real: 8476,
+      trade: 8482,
+      alefsym: 8501,
+      larr: 8592,
+      uarr: 8593,
+      rarr: 8594,
+      darr: 8595,
+      harr: 8596,
+      crarr: 8629,
+      lArr: 8656,
+      uArr: 8657,
+      rArr: 8658,
+      dArr: 8659,
+      hArr: 8660,
+      forall: 8704,
+      part: 8706,
+      exist: 8707,
+      empty: 8709,
+      nabla: 8711,
+      isin: 8712,
+      notin: 8713,
+      ni: 8715,
+      prod: 8719,
+      sum: 8721,
+      minus: 8722,
+      lowast: 8727,
+      radic: 8730,
+      prop: 8733,
+      infin: 8734,
+      ang: 8736,
+      and: 8743,
+      or: 8744,
+      cap: 8745,
+      cup: 8746,
+      int: 8747,
+      there4: 8756,
+      sim: 8764,
+      cong: 8773,
+      asymp: 8776,
+      ne: 8800,
+      equiv: 8801,
+      le: 8804,
+      ge: 8805,
+      sub: 8834,
+      sup: 8835,
+      nsub: 8836,
+      sube: 8838,
+      supe: 8839,
+      oplus: 8853,
+      otimes: 8855,
+      perp: 8869,
+      sdot: 8901,
+      lceil: 8968,
+      rceil: 8969,
+      lfloor: 8970,
+      rfloor: 8971,
+      lang: 9001,
+      rang: 9002,
+      loz: 9674,
+      spades: 9824,
+      clubs: 9827,
+      hearts: 9829,
+      diams: 9830,
     };
 
     Object.keys(sax.ENTITIES).forEach(function (key) {
@@ -4888,7 +4888,7 @@ function base64DetectIncompleteChar(buffer) {
                 XML_NAMESPACE +
                 "\n" +
                 "Actual: " +
-                parser.attribValue
+                parser.attribValue,
             );
           } else if (
             local === "xmlns" &&
@@ -4900,7 +4900,7 @@ function base64DetectIncompleteChar(buffer) {
                 XMLNS_NAMESPACE +
                 "\n" +
                 "Actual: " +
-                parser.attribValue
+                parser.attribValue,
             );
           } else {
             var tag = parser.tag;
@@ -4942,7 +4942,7 @@ function base64DetectIncompleteChar(buffer) {
         if (tag.prefix && !tag.uri) {
           strictFail(
             parser,
-            "Unbound namespace prefix: " + JSON.stringify(parser.tagName)
+            "Unbound namespace prefix: " + JSON.stringify(parser.tagName),
           );
           tag.uri = qn.prefix;
         }
@@ -4981,7 +4981,7 @@ function base64DetectIncompleteChar(buffer) {
           if (prefix && prefix !== "xmlns" && !uri) {
             strictFail(
               parser,
-              "Unbound namespace prefix: " + JSON.stringify(prefix)
+              "Unbound namespace prefix: " + JSON.stringify(prefix),
             );
             a.uri = prefix;
           }
@@ -5144,7 +5144,7 @@ function base64DetectIncompleteChar(buffer) {
       if (parser.closed) {
         return error(
           parser,
-          "Cannot write after close. Assign an onready handler."
+          "Cannot write after close. Assign an onready handler.",
         );
       }
       if (chunk === null) {
@@ -5281,7 +5281,7 @@ function base64DetectIncompleteChar(buffer) {
               if (parser.doctype || parser.sawRoot) {
                 strictFail(
                   parser,
-                  "Inappropriately located doctype declaration"
+                  "Inappropriately located doctype declaration",
                 );
               }
               parser.doctype = "";
@@ -5474,7 +5474,7 @@ function base64DetectIncompleteChar(buffer) {
             } else {
               strictFail(
                 parser,
-                "Forward-slash in opening tag not followed by >"
+                "Forward-slash in opening tag not followed by >",
               );
               parser.state = S.ATTRIB;
             }
@@ -5898,7 +5898,7 @@ function addField(type, value) {
             value[key] = options.instructionFn(
               value[key],
               key,
-              currentElement$1
+              currentElement$1,
             );
           } else {
             var temp = value[key];
@@ -5936,7 +5936,7 @@ function addField(type, value) {
           element[options.attributesKey] = options.instructionFn(
             element[options.attributesKey],
             key,
-            currentElement$1
+            currentElement$1,
           );
         }
       } else {
@@ -5980,7 +5980,7 @@ function manipulateAttributes(attributes) {
           attributes[key] = options.attributeValueFn(
             attributes[key],
             key,
-            currentElement$1
+            currentElement$1,
           );
         if ("attributeNameFn" in options) {
           var temp = attributes[key];
@@ -6223,7 +6223,7 @@ var xml2json$1 = function (xml, userOptions) {
       function (k, v) {
         return k === parentKey ? "_" : v;
       },
-      options.spaces
+      options.spaces,
     );
   } else {
     json = JSON.stringify(js, null, options.spaces);
@@ -6284,7 +6284,7 @@ function writeAttributes(attributes, options, depth) {
     attributes = options.attributesFn(
       attributes,
       currentElementName,
-      currentElement
+      currentElement,
     );
   }
   var key,
@@ -6311,13 +6311,13 @@ function writeAttributes(attributes, options, depth) {
               key,
               attr,
               currentElementName,
-              currentElement
+              currentElement,
             )
           : key;
       result.push(
         options.spaces && options.indentAttributes
           ? writeIndentation(options, depth + 1, false)
-          : " "
+          : " ",
       );
       result.push(
         attrName +
@@ -6328,10 +6328,10 @@ function writeAttributes(attributes, options, depth) {
                 attr,
                 key,
                 currentElementName,
-                currentElement
+                currentElement,
               )
             : attr) +
-          quote
+          quote,
       );
     }
   }
@@ -6373,7 +6373,7 @@ function writeInstruction(instruction, options, depth) {
           key,
           instruction[key],
           currentElementName,
-          currentElement
+          currentElement,
         )
       : key;
   if (typeof instruction[key] === "object") {
@@ -6392,7 +6392,7 @@ function writeInstruction(instruction, options, depth) {
         instructionValue,
         key,
         currentElementName,
-        currentElement
+        currentElement,
       );
     return (
       "<?" +
@@ -6511,7 +6511,7 @@ function writeElement(element, options, depth) {
     xml.push(
       options.spaces && hasContent(element, options)
         ? "\n" + Array(depth + 1).join(options.spaces)
-        : ""
+        : "",
     );
     xml.push("</" + elementName + ">");
   } else {
@@ -6642,7 +6642,7 @@ function writeElementCompact(element, name, options, depth, indent) {
       (indent ? writeIndentation(options, depth, false) : "") +
         "</" +
         elementName +
-        ">"
+        ">",
     );
   }
   return xml.join("");
@@ -6665,7 +6665,7 @@ function writeElementsCompact(element, options, depth, firstLine) {
             xml.push(
               (options.indentInstruction
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeInstruction(nodes[i], options, depth)
+                : "") + writeInstruction(nodes[i], options, depth),
             );
             break;
           case options.attributesKey:
@@ -6675,26 +6675,26 @@ function writeElementsCompact(element, options, depth, firstLine) {
             xml.push(
               (options.indentText
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeText(nodes[i], options)
+                : "") + writeText(nodes[i], options),
             );
             break;
           case options.cdataKey:
             xml.push(
               (options.indentCdata
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeCdata(nodes[i], options)
+                : "") + writeCdata(nodes[i], options),
             );
             break;
           case options.doctypeKey:
             xml.push(
               writeIndentation(options, depth, firstLine) +
-                writeDoctype(nodes[i], options)
+                writeDoctype(nodes[i], options),
             );
             break;
           case options.commentKey:
             xml.push(
               writeIndentation(options, depth, firstLine) +
-                writeComment(nodes[i], options)
+                writeComment(nodes[i], options),
             );
             break;
           default:
@@ -6705,8 +6705,8 @@ function writeElementsCompact(element, options, depth, firstLine) {
                   key,
                   options,
                   depth,
-                  hasContentCompact(nodes[i], options)
-                )
+                  hasContentCompact(nodes[i], options),
+                ),
             );
         }
         firstLine = firstLine && !xml.length;
@@ -6821,7 +6821,7 @@ const getDAVAttribute = (nsArr) =>
   nsArr.reduce(
     (prev, curr) =>
       Object.assign(Object.assign({}, prev), { [DAVAttributeMap[curr]]: curr }),
-    {}
+    {},
   );
 const cleanupFalsy = (obj) =>
   Object.entries(obj).reduce((prev, [key, value]) => {
@@ -6852,9 +6852,9 @@ const davRequest = (params) =>
                   _attributes: { version: "1.0", encoding: "utf-8" },
                 },
               },
-              body
+              body,
             ),
-            { _attributes: attributes }
+            { _attributes: attributes },
           ),
           {
             compact: true,
@@ -6866,7 +6866,7 @@ const davRequest = (params) =>
               }
               return name;
             },
-          }
+          },
         )
       : body;
     // debug('outgoing xml:');
@@ -6885,7 +6885,7 @@ const davRequest = (params) =>
     const davResponse = yield browserPonyfill.exports.fetch(url, {
       headers: Object.assign(
         { "Content-Type": "text/xml;charset=UTF-8" },
-        cleanupFalsy(headers)
+        cleanupFalsy(headers),
       ),
       body: xmlBody,
       method,
@@ -6970,7 +6970,7 @@ const davRequest = (params) =>
               matchArr === null || matchArr === void 0
                 ? void 0
                 : matchArr.groups.status,
-              10
+              10,
             )
           : davResponse.status,
         statusText:
@@ -6992,7 +6992,7 @@ const davRequest = (params) =>
         ).reduce((prev, curr) => {
           return Object.assign(
             Object.assign({}, prev),
-            curr === null || curr === void 0 ? void 0 : curr.prop
+            curr === null || curr === void 0 ? void 0 : curr.prop,
           );
         }, {}),
       };
@@ -7069,7 +7069,7 @@ const findMissingFieldNames = (obj, fields) =>
   fields.reduce(
     (prev, curr) =>
       obj[curr] ? prev : `${prev.length ? `${prev},` : ""}${curr}`,
-    ""
+    "",
   );
 
 const debug$4 = getLogger("tsdav:collection");
@@ -7211,8 +7211,8 @@ const smartCollectionSync = (params) =>
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields
-        )} before smartCollectionSync`
+          requiredFields,
+        )} before smartCollectionSync`,
       );
     }
     const syncMethod =
@@ -7226,7 +7226,7 @@ const smartCollectionSync = (params) =>
         ? "webdav"
         : "basic";
     debug$4(
-      `smart collection sync with type ${account.accountType} and method ${syncMethod}`
+      `smart collection sync with type ${account.accountType} and method ${syncMethod}`,
     );
     if (syncMethod === "webdav") {
       const result = yield syncCollection({
@@ -7325,7 +7325,7 @@ const smartCollectionSync = (params) =>
         (_m = collection.objects) !== null && _m !== void 0 ? _m : [];
       // no existing url
       const created = remoteObjects.filter((o) =>
-        localObjects.every((lo) => !urlContains(lo.url, o.url))
+        localObjects.every((lo) => !urlContains(lo.url, o.url)),
       );
       // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
       // have same url, but etag different
@@ -7344,8 +7344,8 @@ const smartCollectionSync = (params) =>
       // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
       const unchanged = localObjects.filter((lo) =>
         remoteObjects.some(
-          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag
-        )
+          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag,
+        ),
       );
       return Object.assign(Object.assign({}, collection), {
         objects: detailedResult
@@ -7383,7 +7383,7 @@ const smartCollectionSync = (params) =>
           : [];
       // no existing url
       const created = remoteObjects.filter((ro) =>
-        localObjects.every((lo) => !urlContains(lo.url, ro.url))
+        localObjects.every((lo) => !urlContains(lo.url, ro.url)),
       );
       // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
       // have same url, but etag different
@@ -7397,13 +7397,13 @@ const smartCollectionSync = (params) =>
       // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
       // does not present in remote
       const deleted = localObjects.filter((cal) =>
-        remoteObjects.every((ro) => !urlContains(ro.url, cal.url))
+        remoteObjects.every((ro) => !urlContains(ro.url, cal.url)),
       );
       // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
       const unchanged = localObjects.filter((lo) =>
         remoteObjects.some(
-          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag
-        )
+          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag,
+        ),
       );
       if (isDirty) {
         return Object.assign(Object.assign({}, collection), {
@@ -7500,8 +7500,8 @@ const fetchAddressBooks = (params) =>
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields
-        )} before fetchAddressBooks`
+          requiredFields,
+        )} before fetchAddressBooks`,
       );
     }
     const res = yield propfind({
@@ -7528,7 +7528,7 @@ const fetchAddressBooks = (params) =>
                 ? void 0
                 : _a.resourcetype) !== null && _b !== void 0
               ? _b
-              : {}
+              : {},
           ).includes("addressbook");
         })
         .map((rs) => {
@@ -7552,7 +7552,7 @@ const fetchAddressBooks = (params) =>
           return {
             url: new URL(
               (_e = rs.href) !== null && _e !== void 0 ? _e : "",
-              (_f = account.rootUrl) !== null && _f !== void 0 ? _f : ""
+              (_f = account.rootUrl) !== null && _f !== void 0 ? _f : "",
             ).href,
             ctag:
               (_g = rs.props) === null || _g === void 0 ? void 0 : _g.getctag,
@@ -7560,7 +7560,7 @@ const fetchAddressBooks = (params) =>
             resourcetype: Object.keys(
               (_h = rs.props) === null || _h === void 0
                 ? void 0
-                : _h.resourcetype
+                : _h.resourcetype,
             ),
             syncToken:
               (_j = rs.props) === null || _j === void 0 ? void 0 : _j.syncToken,
@@ -7571,8 +7571,8 @@ const fetchAddressBooks = (params) =>
             return Object.assign(Object.assign({}, addr), {
               reports: yield supportedReportSet({ collection: addr, headers }),
             });
-          })
-        )
+          }),
+        ),
     );
   });
 const fetchVCards = (params) =>
@@ -7583,7 +7583,7 @@ const fetchVCards = (params) =>
         addressBook === null || addressBook === void 0
           ? void 0
           : addressBook.url
-      }`
+      }`,
     );
     const requiredFields = ["url"];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -7593,8 +7593,8 @@ const fetchVCards = (params) =>
       throw new Error(
         `addressBook must have ${findMissingFieldNames(
           addressBook,
-          requiredFields
-        )} before fetchVCards`
+          requiredFields,
+        )} before fetchVCards`,
       );
     }
     const vcardUrls = (
@@ -7618,10 +7618,10 @@ const fetchVCards = (params) =>
       .map((url) =>
         url.startsWith("http") || !url
           ? url
-          : new URL(url, addressBook.url).href
+          : new URL(url, addressBook.url).href,
       )
       .filter(
-        urlFilter !== null && urlFilter !== void 0 ? urlFilter : (url) => url
+        urlFilter !== null && urlFilter !== void 0 ? urlFilter : (url) => url,
       )
       .map((url) => new URL(url).pathname);
     const vCardResults =
@@ -7642,7 +7642,7 @@ const fetchVCards = (params) =>
       return {
         url: new URL(
           (_a = res.href) !== null && _a !== void 0 ? _a : "",
-          addressBook.url
+          addressBook.url,
         ).href,
         etag: (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
         data:
@@ -7668,7 +7668,7 @@ const createVCard = (params) =>
       data: vCardString,
       headers: Object.assign(
         { "content-type": "text/vcard; charset=utf-8", "If-None-Match": "*" },
-        headers
+        headers,
       ),
     });
   });
@@ -7681,7 +7681,7 @@ const updateVCard = (params) =>
       etag: vCard.etag,
       headers: Object.assign(
         { "content-type": "text/vcard; charset=utf-8" },
-        headers
+        headers,
       ),
     });
   });
@@ -7789,8 +7789,8 @@ const fetchCalendars = (params) =>
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields
-        )} before fetchCalendars`
+          requiredFields,
+        )} before fetchCalendars`,
       );
     }
     const res = yield propfind({
@@ -7822,7 +7822,7 @@ const fetchCalendars = (params) =>
                 ? void 0
                 : _a.resourcetype) !== null && _b !== void 0
               ? _b
-              : {}
+              : {},
           ).includes("calendar");
         })
         .filter((rc) => {
@@ -7831,12 +7831,12 @@ const fetchCalendars = (params) =>
           const components = Array.isArray(
             (_a = rc.props) === null || _a === void 0
               ? void 0
-              : _a.supportedCalendarComponentSet.comp
+              : _a.supportedCalendarComponentSet.comp,
           )
             ? (_b = rc.props) === null || _b === void 0
               ? void 0
               : _b.supportedCalendarComponentSet.comp.map(
-                  (sc) => sc._attributes.name
+                  (sc) => sc._attributes.name,
                 )
             : [
                 (_c = rc.props) === null || _c === void 0
@@ -7861,7 +7861,7 @@ const fetchCalendars = (params) =>
             timezone: typeof timezone === "string" ? timezone : "",
             url: new URL(
               (_c = rs.href) !== null && _c !== void 0 ? _c : "",
-              (_d = account.rootUrl) !== null && _d !== void 0 ? _d : ""
+              (_d = account.rootUrl) !== null && _d !== void 0 ? _d : "",
             ).href,
             ctag:
               (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
@@ -7881,12 +7881,12 @@ const fetchCalendars = (params) =>
             components: Array.isArray(
               (_k = rs.props) === null || _k === void 0
                 ? void 0
-                : _k.supportedCalendarComponentSet.comp
+                : _k.supportedCalendarComponentSet.comp,
             )
               ? (_l = rs.props) === null || _l === void 0
                 ? void 0
                 : _l.supportedCalendarComponentSet.comp.map(
-                    (sc) => sc._attributes.name
+                    (sc) => sc._attributes.name,
                   )
               : [
                   (_m = rs.props) === null || _m === void 0
@@ -7896,7 +7896,7 @@ const fetchCalendars = (params) =>
             resourcetype: Object.keys(
               (_o = rs.props) === null || _o === void 0
                 ? void 0
-                : _o.resourcetype
+                : _o.resourcetype,
             ),
             syncToken:
               (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken,
@@ -7907,8 +7907,8 @@ const fetchCalendars = (params) =>
             return Object.assign(Object.assign({}, cal), {
               reports: yield supportedReportSet({ collection: cal, headers }),
             });
-          })
-        )
+          }),
+        ),
     );
   });
 const fetchCalendarObjects = (params) =>
@@ -7939,7 +7939,7 @@ const fetchCalendarObjects = (params) =>
     debug$2(
       `Fetching calendar objects from ${
         calendar === null || calendar === void 0 ? void 0 : calendar.url
-      }`
+      }`,
     );
     const requiredFields = ["url"];
     if (!calendar || !hasFields(calendar, requiredFields)) {
@@ -7949,8 +7949,8 @@ const fetchCalendarObjects = (params) =>
       throw new Error(
         `calendar must have ${findMissingFieldNames(
           calendar,
-          requiredFields
-        )} before fetchCalendarObjects`
+          requiredFields,
+        )} before fetchCalendarObjects`,
       );
     }
     // default to fetch all
@@ -7984,7 +7984,7 @@ const fetchCalendarObjects = (params) =>
                           },
                         },
                       }
-                    : {}
+                    : {},
                 ),
               },
             },
@@ -8007,15 +8007,15 @@ const fetchCalendarObjects = (params) =>
           })
     )
       .map((url) =>
-        url.startsWith("http") || !url ? url : new URL(url, calendar.url).href
+        url.startsWith("http") || !url ? url : new URL(url, calendar.url).href,
       ) // patch up to full url if url is not full
       .filter(
         urlFilter !== null && urlFilter !== void 0
           ? urlFilter
           : (url) =>
               Boolean(
-                url === null || url === void 0 ? void 0 : url.includes(".ics")
-              )
+                url === null || url === void 0 ? void 0 : url.includes(".ics"),
+              ),
       ) // filter out non ics calendar objects since apple calendar might have those
       .map((url) => new URL(url).pathname); // obtain pathname of the url
     const calendarObjectResults =
@@ -8041,7 +8041,7 @@ const fetchCalendarObjects = (params) =>
                         },
                       },
                     }
-                  : {}
+                  : {},
               ),
             },
             objectUrls: calendarObjectUrls,
@@ -8054,7 +8054,7 @@ const fetchCalendarObjects = (params) =>
       return {
         url: new URL(
           (_a = res.href) !== null && _a !== void 0 ? _a : "",
-          calendar.url
+          calendar.url,
         ).href,
         etag: `${
           (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag
@@ -8085,7 +8085,7 @@ const createCalendarObject = (params) =>
           "content-type": "text/calendar; charset=utf-8",
           "If-None-Match": "*",
         },
-        headers
+        headers,
       ),
     });
   });
@@ -8098,7 +8098,7 @@ const updateCalendarObject = (params) =>
       etag: calendarObject.etag,
       headers: Object.assign(
         { "content-type": "text/calendar; charset=utf-8" },
-        headers
+        headers,
       ),
     });
   });
@@ -8131,7 +8131,7 @@ const syncCalendars = (params) =>
     const remoteCalendars = yield fetchCalendars({ account, headers });
     // no existing url
     const created = remoteCalendars.filter((rc) =>
-      localCalendars.every((lc) => !urlContains(lc.url, rc.url))
+      localCalendars.every((lc) => !urlContains(lc.url, rc.url)),
     );
     debug$2(`new calendars: ${created.map((cc) => cc.displayName)}`);
     // have same url, but syncToken/ctag different
@@ -8159,12 +8159,12 @@ const syncCalendars = (params) =>
             account,
           });
           return result;
-        })
-      )
+        }),
+      ),
     );
     // does not present in remote
     const deleted = localCalendars.filter((cal) =>
-      remoteCalendars.every((rc) => !urlContains(rc.url, cal.url))
+      remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)),
     );
     debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
     const unchanged = localCalendars.filter((cal) =>
@@ -8172,8 +8172,8 @@ const syncCalendars = (params) =>
         (rc) =>
           urlContains(rc.url, cal.url) &&
           ((rc.syncToken && rc.syncToken !== cal.syncToken) ||
-            (rc.ctag && rc.ctag !== cal.ctag))
-      )
+            (rc.ctag && rc.ctag !== cal.ctag)),
+      ),
     );
     // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
     return detailedResult
@@ -8291,8 +8291,8 @@ const fetchPrincipalUrl = (params) =>
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields
-        )} before fetchPrincipalUrl`
+          requiredFields,
+        )} before fetchPrincipalUrl`,
       );
     }
     debug$1(`Fetching principal url from path ${account.rootUrl}`);
@@ -8318,7 +8318,7 @@ const fetchPrincipalUrl = (params) =>
             : _c.currentUserPrincipal) === null || _d === void 0
           ? void 0
           : _d.href
-      }`
+      }`,
     );
     return new URL(
       (_g =
@@ -8330,7 +8330,7 @@ const fetchPrincipalUrl = (params) =>
           : _f.href) !== null && _g !== void 0
         ? _g
         : "",
-      account.rootUrl
+      account.rootUrl,
     ).href;
   });
 const fetchHomeUrl = (params) =>
@@ -8342,8 +8342,8 @@ const fetchHomeUrl = (params) =>
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields
-        )} before fetchHomeUrl`
+          requiredFields,
+        )} before fetchHomeUrl`,
       );
     }
     debug$1(`Fetch home url from ${account.principalUrl}`);
@@ -8357,7 +8357,7 @@ const fetchHomeUrl = (params) =>
       headers,
     });
     const matched = responses.find((r) =>
-      urlContains(account.principalUrl, r.href)
+      urlContains(account.principalUrl, r.href),
     );
     if (!matched || !matched.ok) {
       throw new Error("cannot find homeUrl");
@@ -8374,7 +8374,7 @@ const fetchHomeUrl = (params) =>
             null || _j === void 0
         ? void 0
         : _j.addressbookHomeSet.href,
-      account.rootUrl
+      account.rootUrl,
     ).href;
     debug$1(`Fetched home url ${result}`);
     return result;
@@ -8416,8 +8416,8 @@ const createAccount = (params) =>
               return Object.assign(Object.assign({}, cal), {
                 objects: yield fetchCalendarObjects({ calendar: cal, headers }),
               });
-            })
-          )
+            }),
+          ),
         );
       } else if (account.accountType === "carddav" && newAccount.addressBooks) {
         newAccount.addressBooks = yield Promise.all(
@@ -8426,8 +8426,8 @@ const createAccount = (params) =>
               return Object.assign(Object.assign({}, addr), {
                 objects: yield fetchVCards({ addressBook: addr, headers }),
               });
-            })
-          )
+            }),
+          ),
         );
       }
     }
@@ -8497,7 +8497,7 @@ var base64 = { exports: {} };
         /[^+a-zA-Z0-9/]/.test(input)
       ) {
         error(
-          "Invalid character: the string to be decoded is not correctly encoded."
+          "Invalid character: the string to be decoded is not correctly encoded.",
         );
       }
       var bitCounter = 0;
@@ -8512,7 +8512,7 @@ var base64 = { exports: {} };
         if (bitCounter++ % 4) {
           // …convert the first 8 bits to a single ASCII character.
           output += String.fromCharCode(
-            0xff & (bitStorage >> ((-2 * bitCounter) & 6))
+            0xff & (bitStorage >> ((-2 * bitCounter) & 6)),
           );
         }
       }
@@ -8528,7 +8528,7 @@ var base64 = { exports: {} };
         // matched, and the input is supposed to only contain ASCII anyway.
         error(
           "The string to be encoded contains characters outside of the " +
-            "Latin1 range."
+            "Latin1 range.",
         );
       }
       var padding = input.length % 3;
@@ -8575,9 +8575,9 @@ var base64 = { exports: {} };
     };
 
     var base64 = {
-      "encode": encode,
-      "decode": decode,
-      "version": "1.0.0",
+      encode: encode,
+      decode: decode,
+      version: "1.0.0",
     };
 
     // Some AMD build optimizers, like r.js, check for specific condition patterns
@@ -8614,12 +8614,12 @@ const defaultParam =
 const getBasicAuthHeaders = (credentials) => {
   debug(
     `Basic auth token generated: ${base64.exports.encode(
-      `${credentials.username}:${credentials.password}`
-    )}`
+      `${credentials.username}:${credentials.password}`,
+    )}`,
   );
   return {
     authorization: `Basic ${base64.exports.encode(
-      `${credentials.username}:${credentials.password}`
+      `${credentials.username}:${credentials.password}`,
     )}`,
   };
 };
@@ -8636,8 +8636,8 @@ const fetchOauthTokens = (credentials) =>
       throw new Error(
         `Oauth credentials missing: ${findMissingFieldNames(
           credentials,
-          requireFields
-        )}`
+          requireFields,
+        )}`,
       );
     }
     const param = new URLSearchParams({
@@ -8677,8 +8677,8 @@ const refreshAccessToken = (credentials) =>
       throw new Error(
         `Oauth credentials missing: ${findMissingFieldNames(
           credentials,
-          requireFields
-        )}`
+          requireFields,
+        )}`,
       );
     }
     const param = new URLSearchParams({
@@ -8765,7 +8765,7 @@ const createDAVClient = (params) =>
             init: Object.assign(Object.assign({}, restInit), {
               headers: Object.assign(Object.assign({}, authHeaders), headers),
             }),
-          })
+          }),
         );
       });
     const createObject$1 = defaultParam(createObject, {
@@ -8930,10 +8930,10 @@ class DAVClient {
           init: Object.assign(Object.assign({}, restInit), {
             headers: Object.assign(
               Object.assign({}, this.authHeaders),
-              headers
+              headers,
             ),
           }),
-        })
+        }),
       );
     });
   }
@@ -8972,7 +8972,7 @@ class DAVClient {
       return createAccount({
         account: Object.assign(
           { serverUrl: this.serverUrl, credentials: this.credentials },
-          account
+          account,
         ),
         headers: Object.assign(Object.assign({}, this.authHeaders), headers),
         loadCollections,
@@ -8983,35 +8983,35 @@ class DAVClient {
   collectionQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(collectionQuery, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   makeCollection(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(makeCollection, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   syncCollection(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(syncCollection, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   supportedReportSet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(supportedReportSet, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   isCollectionDirty(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(isCollectionDirty, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
@@ -9026,21 +9026,21 @@ class DAVClient {
   calendarQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(calendarQuery, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   makeCalendar(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(makeCalendar, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   calendarMultiGet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(calendarMultiGet, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
@@ -9055,28 +9055,28 @@ class DAVClient {
   fetchCalendarObjects(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(fetchCalendarObjects, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   createCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(createCalendarObject, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   updateCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(updateCalendarObject, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   deleteCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(deleteCalendarObject, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
@@ -9091,14 +9091,14 @@ class DAVClient {
   addressBookQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(addressBookQuery, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   addressBookMultiGet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(addressBookMultiGet, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
@@ -9113,28 +9113,28 @@ class DAVClient {
   fetchVCards(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(fetchVCards, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   createVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(createVCard, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   updateVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(updateVCard, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
   deleteVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(deleteVCard, { headers: this.authHeaders })(
-        params[0]
+        params[0],
       );
     });
   }
@@ -9155,21 +9155,21 @@ var index = Object.assign(
             Object.assign(
               Object.assign(
                 { DAVNamespace, DAVNamespaceShort, DAVAttributeMap },
-                client
+                client,
               ),
-              request
+              request,
             ),
-            collection
+            collection,
           ),
-          account
+          account,
         ),
-        addressBook
+        addressBook,
       ),
-      calendar
+      calendar,
     ),
-    authHelpers
+    authHelpers,
   ),
-  requestHelpers
+  requestHelpers,
 );
 
 export {

@@ -29,6 +29,7 @@ cp ./application/oauth.js ./docs/
 
 
 
+
 #!/bin/bash
 #create default app zip
 cd dist/

@@ -35,7 +35,10 @@ div#qr-screen {
   left: 50%;
 }
 
-#corner-nw, #corner-no, #corner-so, #corner-sw {
+#corner-nw,
+#corner-no,
+#corner-so,
+#corner-sw {
   height: 30px;
   width: 30px;
   border: 6px solid #fff;
@@ -77,4 +80,3 @@ div#qr-screen {
   bottom: 20px;
   left: 20px;
 }
-
