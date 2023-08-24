@@ -283,7 +283,7 @@ export const parse_ics = async function (
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || "none",
-      rrule_json: n,
+      //rrule_json: n,
       etag: etag,
       url: url,
       calendar_name: calendar_name,

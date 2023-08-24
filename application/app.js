@@ -111,15 +111,10 @@ export let settings = {
 const style_calendar_cell = (targetYear, targetMonth) => {
   if (events.length == 0) return;
 
-  const eventsForMonth = events.filter((event) => {
-    const eventDate = dayjs(event.dateStart);
-    return eventDate.year() === targetYear && eventDate.month() === targetMonth;
-  });
-
   document.querySelectorAll("div.calendar-cell").forEach((e) => {
     const p = e.getAttribute("data-date");
-    const eventInfo = event_check(p, eventsForMonth);
-    const rruleInfo = rrule_check(p, eventsForMonth);
+    const eventInfo = event_check(p);
+    const rruleInfo = rrule_check(p);
 
     e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
     e.classList.toggle(
@@ -797,6 +792,7 @@ const find_closest_date = function (date) {
   }
 };
 
+/*
 const event_check = function (date) {
   let feedback = {
     event: false,
@@ -812,12 +808,52 @@ const event_check = function (date) {
       eventStartTime === targetTime ||
       (eventStartTime <= targetTime &&
         eventEndTime >= targetTime &&
-        event.rrule_json.freq === undefined)
+        event.RRULE.freq === undefined)
     );
   });
 
   feedback.event = k.length > 0;
   feedback.multidayevent = k.length > 1;
+
+  return feedback;
+};
+*/
+
+const event_check = function (date) {
+  let feedback = {
+    event: false,
+    multidayevent: false,
+  };
+
+  let eventsOnTargetDate = events.filter((event) => {
+    const eventStartTime = new Date(event.dateStart).getTime();
+    const eventEndTime = new Date(event.dateEnd).getTime();
+    const targetTime = new Date(date).getTime();
+
+    return eventStartTime <= targetTime && eventEndTime >= targetTime;
+  });
+
+  feedback.event = eventsOnTargetDate.length > 0;
+
+  // Check for multiday events
+  if (eventsOnTargetDate.length > 1) {
+    const sortedEvents = eventsOnTargetDate.sort(
+      (a, b) =>
+        new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
+    );
+
+    for (let i = 1; i < sortedEvents.length; i++) {
+      const prevEventEndTime = new Date(sortedEvents[i - 1].dateEnd).getTime();
+      const currentEventStartTime = new Date(
+        sortedEvents[i].dateStart
+      ).getTime();
+
+      if (prevEventEndTime >= currentEventStartTime) {
+        feedback.multidayevent = true;
+        break;
+      }
+    }
+  }
 
   return feedback;
 };
@@ -842,18 +878,18 @@ let rrule_check = function (date) {
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
-      let d = events[t].rrule_json.freq;
+      let d = events[t].RRULE.freq;
       let e = events[t].RRULE;
 
       if (typeof e !== "undefined" && e !== undefined && e != null) {
         //recurrences
 
-        if (events[t].rrule_json != null) {
+        if (events[t].RRULE != null) {
           //endless || with end
-          if (events[t].rrule_json.until == null) {
+          if (events[t].RRULE.until == null) {
             b = new Date("3000-01-01").getTime();
           } else {
-            b = new Date(events[t].rrule_json.until).getTime();
+            b = new Date(events[t].RRULE.until).getTime();
           }
         }
 
@@ -962,7 +998,7 @@ let event_slider = function (date) {
     let a = new Date(events[i].dateStart).getTime();
     let b = new Date(events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
-    let d = events[i].rrule_json.freq;
+    let d = events[i].RRULE.freq;
 
     if (d === "none" || d === "" || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
@@ -2986,7 +3022,7 @@ var page_edit_event = {
               "select",
               {
                 id: "event-recur",
-                value: update_event_date.rrule_json.freq ?? "none",
+                value: update_event_date.RRULE.freq ?? "none",
                 class: "select-box",
               },
               [
@@ -3699,7 +3735,7 @@ let remove_alarm = function (id) {
 // /////////////
 // /////////////
 
-const convert_ics_date = function (t, ful) {
+const convert_ics_date = function (t, ful, k) {
   let nn = dayjs(t).format("YYYYMMDDTHHmmss");
 
   if (ful) {
@@ -3707,6 +3743,7 @@ const convert_ics_date = function (t, ful) {
   } else {
     nn = ":" + nn;
   }
+  if (k) nn = dayjs(t).format("YYYYMMDDTHHmmss");
 
   return nn;
 };
@@ -3722,11 +3759,13 @@ const rrule_convert = function (val, date_end, date_start) {
 
   if (val === "WEEKLY") {
     return `FREQ=${val};INTERVAL=1;BYDAY=${f};UNTIL=${convert_ics_date(
-      date_end
+      date_end,
+      false,
+      true
     )}`;
   }
 
-  return `FREQ=${val};UNTIL=${convert_ics_date(date_end)}`;
+  return `FREQ=${val};UNTIL=${convert_ics_date(date_end, false, true)}`;
 };
 
 //todo if is rrule enddate == startdate
@@ -4093,6 +4132,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     calendar_name: document.getElementById("event-calendar").value,
     allDay: allDay,
   };
+  console.log(event);
 
   if (event.alarm !== "none") {
     event.BEGIN = "VALARM";
