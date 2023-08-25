@@ -194,23 +194,22 @@ export const parse_ics = async function (
       n = rrule;
       rr_until = n.until || "";
     }
-
+    //date start
     let dateStart, timeStart, dateStartUnix;
-
     if (ite.getFirstPropertyValue("dtstart")) {
-      dtstart = ite.getFirstPropertyValue("dtstart");
-      dateStart = dtstart.format("YYYY-MM-DD");
-      timeStart = dtstart.format("HH:mm:ss");
-      dateStartUnix = dtstart.toJSDate().getTime() / 1000;
+      let a = dayjs(ite.getFirstPropertyValue("dtstart"));
+      dateStart = a.format("YYYY-MM-DD");
+      timeStart = a.format("HH:mm:ss");
+      dateStartUnix = a.unix();
     }
 
     //date end
     let dateEnd, timeEnd, dateEndUnix;
     if (ite.getFirstPropertyValue("dtend")) {
-      dateEnd = dayjs(ite.getFirstPropertyValue("dtend")).format("YYYY-MM-DD");
-      timeEnd = dayjs(ite.getFirstPropertyValue("dtend")).format("HH:mm:ss");
-      dateEndUnix =
-        new Date(ite.getFirstPropertyValue("dtend")).getTime() / 1000;
+      let a = dayjs(ite.getFirstPropertyValue("dtend"));
+      dateEnd = a.format("YYYY-MM-DD");
+      timeEnd = a.format("HH:mm:ss");
+      dateEndUnix = a.unix();
 
       if (rr_until != "") {
         dateEnd = dayjs(n.until).format("YYYY-MM-DD");
@@ -231,10 +230,10 @@ export const parse_ics = async function (
       //allDay hack
       //the end date of an allday event is moved to the next day, i don't know why. hence this ugly correction
       //start
-      let k = ite.getFirstPropertyValue("dtstart").toJSDate();
-      dateStart = dayjs(k).format("YYYY-MM-DD");
-      timeStart = dayjs(k).format("HH:mm:ss");
-      dateStartUnix = k.getTime() / 1000;
+      // let k = ite.getFirstPropertyValue("dtstart").toJSDate();
+      // dateStart = dayjs(k).format("YYYY-MM-DD");
+      //// timeStart = dayjs(k).format("HH:mm:ss");
+      // dateStartUnix = k.getTime() / 1000;
 
       //end
       let f = ite.getFirstPropertyValue("dtend").toJSDate();
@@ -243,10 +242,6 @@ export const parse_ics = async function (
       timeEnd = dayjs(f).format("HH:mm:ss");
       dateEndUnix = f.getTime() / 1000;
     }
-
-    let lastmod = ite.getFirstPropertyValue("last-modified");
-    let dtstart = ite.getFirstPropertyValue("dtstart");
-    let dtend = ite.getFirstPropertyValue("dtend");
 
     //todo remove more key:values
     let imp = {
@@ -257,11 +252,11 @@ export const parse_ics = async function (
       DESCRIPTION: ite.getFirstPropertyValue("description"),
       CATEGORIES: ite.getFirstPropertyValue("categories") || "",
       RRULE: ite.getFirstPropertyValue("rrule") || "",
-      "LAST-MODIFIED": lastmod,
+      "LAST-MODIFIED": ite.getFirstPropertyValue("last-modified"),
       CLASS: ite.getFirstPropertyValue("class") || "",
-      DTSTAMP: dtstart,
-      DTSTART: dtstart,
-      DTEND: dtend,
+      DTSTAMP: ite.getFirstPropertyValue("dtstart"),
+      DTSTART: ite.getFirstPropertyValue("dtstart"),
+      DTEND: ite.getFirstPropertyValue("dtend"),
       END: "VEVENT",
       isSubscription: isSubscription,
       isCaldav: isCaldav,
