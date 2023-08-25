@@ -538,6 +538,10 @@ div#calendar div#calendar-body div div.event {
   background: pink !important;
 }
 
+div#calendar div#calendar-body div div.rrule {
+  background: rgb(167, 226, 167) !important;
+}
+
 div#calendar div#calendar-body div div.multievent {
   background: LightSalmon !important;
 }
@@ -905,6 +909,14 @@ div#options li span.keys-current-day {
   height: 20px;
   width: 20px;
   background: rgb(120, 183, 255);
+  background-size: 10%;
+  margin: 0 20px 0 0;
+}
+
+div#options li span.keys-day-rrule-event {
+  height: 20px;
+  width: 20px;
+  background: rgb(142, 187, 116);
   background-size: 10%;
   margin: 0 20px 0 0;
 }

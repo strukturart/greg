@@ -180,8 +180,6 @@ export const parse_ics = async function (
   }
 
   var comp = new ICAL.Component(jcalData);
-  var valarm = comp.getAllSubcomponents("VALARM");
-  valarm.forEach(function (ite) {});
 
   var vevent = comp.getAllSubcomponents("vevent");
   let calendar_name = comp.getFirstPropertyValue("x-wr-calname") || "";
@@ -190,28 +188,20 @@ export const parse_ics = async function (
     let n = "";
     let rr_until = "";
 
-    if (
-      typeof ite.getFirstPropertyValue("rrule") == "object" &&
-      ite.getFirstPropertyValue("rrule") != null &&
-      ite.getFirstPropertyValue("rrule").freq != null
-    ) {
-      n = ite.getFirstPropertyValue("rrule");
-      if (n.until != null) {
-        rr_until = n.until;
-      }
+    const rrule = ite.getFirstPropertyValue("rrule");
+
+    if (rrule && typeof rrule === "object" && rrule.freq) {
+      n = rrule;
+      rr_until = n.until || "";
     }
 
     let dateStart, timeStart, dateStartUnix;
 
     if (ite.getFirstPropertyValue("dtstart")) {
-      dateStart = dayjs(ite.getFirstPropertyValue("dtstart")).format(
-        "YYYY-MM-DD"
-      );
-      timeStart = dayjs(ite.getFirstPropertyValue("dtstart")).format(
-        "HH:mm:ss"
-      );
-      dateStartUnix =
-        new Date(ite.getFirstPropertyValue("dtstart")).getTime() / 1000;
+      dtstart = ite.getFirstPropertyValue("dtstart");
+      dateStart = dtstart.format("YYYY-MM-DD");
+      timeStart = dtstart.format("HH:mm:ss");
+      dateStartUnix = dtstart.toJSDate().getTime() / 1000;
     }
 
     //date end
@@ -283,7 +273,6 @@ export const parse_ics = async function (
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || "none",
-      //rrule_json: n,
       etag: etag,
       url: url,
       calendar_name: calendar_name,

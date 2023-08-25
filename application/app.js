@@ -108,20 +108,29 @@ export let settings = {
   firstday: "sunday",
 };
 
-const style_calendar_cell = (targetYear, targetMonth) => {
-  if (events.length == 0) return;
+let style_calendar_cell = function () {
+  if (events.length > 0) {
+    try {
+      document.querySelectorAll("div.calendar-cell").forEach(function (e) {
+        let p = e.getAttribute("data-date");
 
-  document.querySelectorAll("div.calendar-cell").forEach((e) => {
-    const p = e.getAttribute("data-date");
-    const eventInfo = event_check(p);
-    const rruleInfo = rrule_check(p);
+        if (event_check(p).event == true) {
+          e.classList.add("event");
+          if (event_check(p).multidayevent == true)
+            e.classList.add("multievent");
+        } else {
+          if (e.classList.contains("event")) e.classList.remove("event");
+        }
 
-    e.classList.toggle("event", eventInfo.event || rruleInfo.rrule);
-    e.classList.toggle(
-      "multievent",
-      eventInfo.multidayevent || rruleInfo.count > 1
-    );
-  });
+        if (rrule_check(p).rrule == true) {
+          e.classList.add("event");
+          e.classList.add("rrule");
+
+          if (rrule_check(p).count > 1) e.classList.add("multievent");
+        }
+      });
+    } catch (e) {}
+  }
 };
 
 //login handler
@@ -830,7 +839,11 @@ const event_check = function (date) {
     const eventEndTime = new Date(event.dateEnd).getTime();
     const targetTime = new Date(date).getTime();
 
-    return eventStartTime <= targetTime && eventEndTime >= targetTime;
+    return (
+      eventStartTime <= targetTime &&
+      eventEndTime >= targetTime &&
+      event.RRULE.freq === undefined
+    );
   });
 
   feedback.event = eventsOnTargetDate.length > 0;
@@ -1009,8 +1022,8 @@ let event_slider = function (date) {
       //workaround if enddate is not set
       //AKA infinity
 
-      if (events[i].rrule_json != null) {
-        if (events[i].rrule_json.until == null) {
+      if (events[i].RRULE != null) {
+        if (events[i].RRULE.until == null) {
           b = new Date("3000-01-01").getTime();
         }
       }
@@ -1788,6 +1801,11 @@ export let page_options = {
             m("li", { class: "width-100  flex justify-content-spacebetween" }, [
               m("span", { class: "keys-day-multi-event" }),
               m("span", "day with several events"),
+            ]),
+
+            m("li", { class: "width-100  flex justify-content-spacebetween" }, [
+              m("span", { class: "keys-day-rrule-event" }),
+              m("span", "day with reccurence"),
             ]),
           ]
         ),
