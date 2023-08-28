@@ -21,12 +21,16 @@ const parse_ics = function (
 
   var vevent = comp.getAllSubcomponents('vevent');
   let calendar_name = comp.getFirstPropertyValue('x-wr-calname') || '';
-
+  let imp;
   vevent.forEach(function (ite) {
     let n = '';
     let rr_until = '';
-
+    let allday = false;
+    let date_start = ite.getFirstPropertyValue('dtstart');
+    let date_end = ite.getFirstPropertyValue('dtend');
     const rrule = ite.getFirstPropertyValue('rrule');
+
+    if (date_start.isDate && date_end.isDate) allday = true;
 
     if (rrule && typeof rrule === 'object' && rrule.freq) {
       n = rrule;
@@ -34,8 +38,8 @@ const parse_ics = function (
     }
     //date start
     let dateStart, timeStart, dateStartUnix;
-    if (ite.getFirstPropertyValue('dtstart')) {
-      let a = dayjs(ite.getFirstPropertyValue('dtstart'));
+    if (date_start) {
+      let a = dayjs(date_start);
       dateStart = a.format('YYYY-MM-DD');
       timeStart = a.format('HH:mm:ss');
       dateStartUnix = a.unix();
@@ -43,8 +47,8 @@ const parse_ics = function (
 
     //date end
     let dateEnd, timeEnd, dateEndUnix;
-    if (ite.getFirstPropertyValue('dtend')) {
-      let a = dayjs(ite.getFirstPropertyValue('dtend'));
+    if (date_end) {
+      let a = dayjs(date_end);
       dateEnd = a.format('YYYY-MM-DD');
       timeEnd = a.format('HH:mm:ss');
       dateEndUnix = a.unix();
@@ -54,31 +58,18 @@ const parse_ics = function (
         timeEnd = dayjs(n.until).format('HH:mm:ss');
         dateEndUnix = new Date(n.until).getTime() / 1000;
       }
-    }
-
-    //allDay event
-    let allday = false;
-
-    if (
-      ite.getFirstPropertyValue('dtstart').isDate &&
-      ite.getFirstPropertyValue('dtend').isDate
-    ) {
-      allday = true;
-
-      //allDay hack
-      //the end date of an allday event is moved to the next day, i don't know why. hence this ugly correction
-      //start
-
-      //end
-      let f = ite.getFirstPropertyValue('dtend').toJSDate();
-      f = new Date(dayjs(f).subtract(1, 'day'));
-      dateEnd = dayjs(f).format('YYYY-MM-DD');
-      timeEnd = dayjs(f).format('HH:mm:ss');
-      dateEndUnix = f.getTime() / 1000;
+      //allDay
+      if (allday) {
+        let f = ite.getFirstPropertyValue('dtend').toJSDate();
+        f = new Date(dayjs(f).subtract(1, 'day'));
+        dateEnd = dayjs(f).format('YYYY-MM-DD');
+        timeEnd = dayjs(f).format('HH:mm:ss');
+        dateEndUnix = f.getTime() / 1000;
+      }
     }
 
     //todo remove more key:values
-    let imp = {
+    imp = {
       BEGIN: 'VEVENT',
       UID: ite.getFirstPropertyValue('uid'),
       SUMMARY: ite.getFirstPropertyValue('summary'),
@@ -107,30 +98,30 @@ const parse_ics = function (
       calendar_name: calendar_name,
       id: account_id,
     };
-    return imp;
   });
+  return imp;
 };
 
 const channel = new BroadcastChannel('sw-messages');
 
 self.addEventListener('message', (event) => {
   // Receive a message from the main thread
-  //const data = event.data.t;
-
-  // Perform calculations (simplified example)
-
+  if (!event.data) {
+    channel.postMessage({ action: 'error', content: 'error' });
+    return false;
+  }
   let ff = parse_ics(
     event.data.t.data,
-    '',
     false,
     event.data.t.etag,
     event.data.t.url,
     event.data.e,
-    true
+    true,
+    false
   );
 
   // Post the result back to the main thread
-  channel.postMessage(ff);
+  channel.postMessage({ action: 'parse', content: ff });
 });
 
 self.onsystemmessage = (evt) => {

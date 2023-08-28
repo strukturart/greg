@@ -236,6 +236,7 @@ async function load_caldav(callback) {
 
 let cache_caldav = function () {
   accounts.forEach(function (item) {
+    console.log(item);
     const client = '';
     if (item.type == 'oauth') {
       client = new DAVClient({
@@ -587,7 +588,6 @@ export let update_caldav = async function (etag, url, data, account_id) {
           console.log(e);
         }
       } else {
-        console.log(JSON.stringify(result));
         popup('There was a problem saving, please try again later.', 'show');
         setTimeout(function () {
           popup('', 'close');
@@ -615,7 +615,6 @@ const load_cached_caldav = async () => {
 
       for (const b of w) {
         for (const m of b.objects) {
-          // parse_ics(m.data, '', false, m.etag, m.url, item.id, true);
           if (
             'serviceWorker' in navigator &&
             navigator.serviceWorker.controller
@@ -627,8 +626,6 @@ const load_cached_caldav = async () => {
           }
         }
       }
-      sort_array(events, 'dateStartUnix', 'number');
-      style_calendar_cell(currentYear, currentMonth);
     } catch (e) {
       console.log(e);
     }
@@ -3633,7 +3630,17 @@ if ('b2g' in Navigator) {
       .register(new URL('sw.js', import.meta.url), {
         type: 'module',
       })
-      .then((registration) => {});
+      .then((registration) => {
+        if (registration.waiting) {
+          // There's a new service worker waiting to activate
+          // You can prompt the user to reload the page to apply the update
+          // For example: show a message to the user
+
+          window.location.reload(); // Corrected line
+        } else {
+          // No waiting service worker, registration was successful
+        }
+      });
   } catch (e) {
     console.log(e);
   }
@@ -3777,7 +3784,8 @@ const rrule_convert = function (val, date_end, date_start) {
   return `FREQ=${val};UNTIL=${convert_ics_date(date_end, false, true)}`;
 };
 
-//todo if is rrule enddate == startdate
+//local calendar are stored in events var -> localForage
+//caldav calendars are stored in object -> localforage
 
 let export_data = [];
 
@@ -3963,6 +3971,7 @@ let store_event = function (db_id, cal_name) {
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set('/page_calendar');
+          style_calendar_cell(currentYear, currentMonth);
         }, 200);
       })
       .catch(function (err) {
@@ -4263,6 +4272,7 @@ let update_event = function (etag, url, id, db_id, uid) {
 ///////////
 
 let delete_event = function (etag, url, account_id, uid) {
+  console.log(etag);
   if (etag) {
     delete_caldav(etag, url, account_id, uid);
   } else {
@@ -4509,7 +4519,7 @@ function shortpress_action(param) {
 
     case '7':
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ t: '100' });
+        navigator.serviceWorker.controller.postMessage({ t: events });
       }
 
       break;
@@ -4758,15 +4768,43 @@ if (debug) {
   };
 }
 
+let lastMessageTime; // Store the timestamp of the last received message
+let running = false;
 channel.addEventListener('message', (event) => {
-  console.log(event);
+  if (event.data.action == 'parse') {
+    lastMessageTime = Date.now(); // Update the timestamp for the last received message
+    running = true;
+    events.push(event.data.content);
+  }
+  if (event.data.action == 'error') {
+    console.log(event.data.content);
+  }
 
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
-  const l = event.data.oauth_success;
-  if (event.data.oauth_success) {
-    setTimeout(() => {
-      window.open(l);
-    }, 5000);
+
+  if (event.data.oauth_succes) {
+    const l = event.data.oauth_success;
+    if (event.data.oauth_success) {
+      setTimeout(() => {
+        window.open(l);
+      }, 5000);
+    }
   }
 });
+
+// Set up a timer to check if no messages have arrived for a certain period
+const waitTimeout = 1000; // Time in milliseconds
+const checkMessagesInterval = 100; // Interval to check for new messages
+
+const waitForNoMessages = setInterval(() => {
+  if (!running) return false;
+  const currentTime = Date.now();
+  console.log(currentTime - lastMessageTime);
+  if (currentTime - lastMessageTime >= waitTimeout) {
+    sort_array(events, 'dateStartUnix', 'number');
+    style_calendar_cell(currentYear, currentMonth);
+    clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
+    // Your code to proceed after no more messages arrive
+  }
+}, checkMessagesInterval);
