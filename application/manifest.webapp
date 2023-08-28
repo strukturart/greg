@@ -1,5 +1,5 @@
 {
-  "version": "2.1.2",
+  "version": "2.1.4",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -79,6 +79,7 @@
     },
     "alarms": {
       "description": "Required to schedule alarms"
-    }
+    },
+    "worker-activity": {}
   }
 }
