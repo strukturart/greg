@@ -115,7 +115,6 @@ let style_calendar_cell = function () {
     try {
       document.querySelectorAll('div.calendar-cell').forEach(function (e) {
         let p = e.getAttribute('data-date');
-
         if (event_check(p).event == true) {
           e.classList.add('event');
           if (event_check(p).multidayevent == true)
@@ -125,7 +124,7 @@ let style_calendar_cell = function () {
         }
 
         if (rrule_check(p).rrule == true) {
-          e.classList.add('event');
+          //  e.classList.add('event');
           e.classList.add('rrule');
 
           if (rrule_check(p).count > 1) e.classList.add('multievent');
@@ -385,7 +384,7 @@ export let sync_caldav = async function (callback) {
         try {
           const ma = await client.syncCalendars(s);
           console.log(ma);
-          if (ma.updated.length > 0) {
+          if (ma.updated.length && ma.updated.length > 0) {
             console.log(item.id + ' should update');
             callback(ma);
             break;
@@ -695,7 +694,7 @@ localforage
     accounts = value;
     setTimeout(() => {
       load_cached_caldav();
-    }, 1500);
+    }, 100);
   })
   .catch(function (err) {
     console.log(err);
@@ -1979,6 +1978,7 @@ export let page_options = {
             class: 'item',
             tabindex: '7',
             onclick: function () {
+              m.route.set('/page_calendar');
               load_caldav(true);
             },
           },
@@ -3938,7 +3938,7 @@ let store_event = function (db_id, cal_name) {
   }
 
   let dd =
-    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:' +
+    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:local\nBEGIN:VEVENT\nSUMMARY:' +
     event.SUMMARY +
     '\nUID:' +
     event.UID +
@@ -3960,8 +3960,14 @@ let store_event = function (db_id, cal_name) {
     event.CATEGORIES +
     '\nEND:VEVENT\nEND:VCALENDAR';
 
-  if (db_id == 'local-id') {
+  if (event.id == 'local-id') {
+    if (!event.RRULE) {
+      delete event.RRULE;
+    }
+
     try {
+      dd = dd.trim();
+
       parse_ics(dd, false, '', '', 'local-id', false, bn);
     } catch (e) {
       console.log(e);
@@ -3975,11 +3981,11 @@ let store_event = function (db_id, cal_name) {
       .setItem('events', without_subscription)
       .then(function () {
         clear_form();
-        backup_events();
         side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
           m.route.set('/page_calendar');
           style_calendar_cell(currentYear, currentMonth);
+          backup_events();
         }, 200);
       })
       .catch(function (err) {
@@ -4175,7 +4181,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   }
 
   let dd =
-    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:' +
+    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:local\nBEGIN:VEVENT\nSUMMARY:' +
     event.SUMMARY +
     '\nUID:' +
     event.UID +
@@ -4196,6 +4202,10 @@ let update_event = function (etag, url, id, db_id, uid) {
     '\nCATEGORIES:' +
     event.CATEGORIES +
     '\nEND:VEVENT\nEND:VCALENDAR';
+
+  if (!event.RRULE) {
+    delete event.RRULE;
+  }
 
   events = events.filter((person) => person.UID != uid);
   //remove orginal event
@@ -4529,9 +4539,10 @@ function shortpress_action(param) {
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({ t: events });
       }
-
       break;
 
+    case '8':
+      break;
     case 'SoftRight':
     case 'Alt':
       if (m.route.get() == '/page_calendar') {
@@ -4714,7 +4725,6 @@ function shortpress_action(param) {
 
     case '0':
       if (document.activeElement.tagName == 'INPUT') return false;
-
       m.route.set('/page_events_filtered', { query: settings.eventsfilter });
       break;
   }
@@ -4776,6 +4786,12 @@ if (debug) {
   };
 }
 
+// Set up a timer to check if no messages have arrived for a certain period
+const waitTimeout = 2000; // Time in milliseconds
+const checkMessagesInterval = 100; // Interval to check for new messages
+let waitForNoMessages;
+let interval_is_running = false;
+
 let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
@@ -4784,9 +4800,14 @@ channel.addEventListener('message', (event) => {
     running = true;
     events.push(event.data.content);
     document.getElementById('icon-waiting').style.visibility = 'visible';
+
+    if (interval_is_running == false) {
+      interval();
+    }
   }
   if (event.data.action == 'error') {
     console.log(event.data.content);
+    document.getElementById('icon-waiting').style.visibility = 'hidden';
   }
 
   //callback from Google OAuth
@@ -4802,20 +4823,20 @@ channel.addEventListener('message', (event) => {
   }
 });
 
-// Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 2000; // Time in milliseconds
-const checkMessagesInterval = 100; // Interval to check for new messages
+let interval = () => {
+  waitForNoMessages = setInterval(() => {
+    interval_is_running = true;
+    if (!running) return false;
+    const currentTime = Date.now();
+    if (currentTime - lastMessageTime >= waitTimeout) {
+      document.getElementById('icon-waiting').style.visibility = 'hidden';
+      running = false;
+      sort_array(events, 'dateStartUnix', 'number');
+      style_calendar_cell(currentYear, currentMonth);
+      interval_is_running = false;
 
-const waitForNoMessages = setInterval(() => {
-  if (!running) return false;
-  const currentTime = Date.now();
-  console.log(currentTime - lastMessageTime);
-  if (currentTime - lastMessageTime >= waitTimeout) {
-    sort_array(events, 'dateStartUnix', 'number');
-    style_calendar_cell(currentYear, currentMonth);
-
-    clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
-    // Your code to proceed after no more messages arrive
-    document.getElementById('icon-waiting').style.visibility = 'hidden';
-  }
-}, checkMessagesInterval);
+      clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
+      // Your code to proceed after no more messages arrive
+    }
+  }, checkMessagesInterval);
+};
