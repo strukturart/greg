@@ -11,8 +11,8 @@
 }
 
 @font-face {
-  font-family: "Roboto", sans-serif;
-  src: url("../fonts/Roboto-Medium.ttf");
+  font-family: 'Roboto', sans-serif;
+  src: url('../fonts/Roboto-Medium.ttf');
 }
 
 *,
@@ -32,7 +32,7 @@
   -ms-hyphens: auto;
   -moz-hyphens: auto;
   hyphens: auto;
-  font-family: "Roboto" !important;
+  font-family: 'Roboto' !important;
 }
 
 kbd {
@@ -61,7 +61,7 @@ kbd {
 }
 html,
 body {
-  font-family: "Roboto" !important;
+  font-family: 'Roboto' !important;
 
   font-weight: 100;
   position: relative;
@@ -96,11 +96,11 @@ img {
   display: block;
 }
 
-img[src=""] {
+img[src=''] {
   display: none;
 }
 
-img[src=" "] {
+img[src=' '] {
   display: none;
 }
 
@@ -115,7 +115,7 @@ button {
   border: 2px solid gray;
   font-weight: 700;
   min-height: 40px;
-  font-family: "Roboto" !important;
+  font-family: 'Roboto' !important;
 }
 
 button img {
@@ -145,8 +145,8 @@ select {
   margin: 0 5% 0 5%;
   text-align: center;
   position: relative;
-  background: #fafafa url("../image/E264.svg") no-repeat 99% 80%;
-  font-family: "Roboto";
+  background: #fafafa url('../image/E264.svg') no-repeat 99% 80%;
+  font-family: 'Roboto';
 }
 
 textarea {
@@ -154,15 +154,15 @@ textarea {
   width: 90%;
   padding: 3px;
   border: 1px solid silver;
-  font-family: "Roboto";
+  font-family: 'Roboto';
 }
 
 form {
-  font-family: "Roboto";
+  font-family: 'Roboto';
 }
 
 input {
-  font-family: "Roboto";
+  font-family: 'Roboto';
 }
 
 input {
@@ -171,14 +171,14 @@ input {
   padding: 3px;
   border: 2px solid silver;
   border-radius: 6px;
-  font-family: "Roboto" !important;
+  font-family: 'Roboto' !important;
 }
 
-input[type="checkbox"] {
+input[type='checkbox'] {
   border: 0px solid white;
   width: 40px;
 }
-input[type="checkbox"] {
+input[type='checkbox'] {
   width: 20px;
   height: 20px;
   background: #fcfff4;
@@ -228,12 +228,12 @@ div.toogle-button {
   z-index: 3;
 }
 
-input[type="checkbox"]:checked ~ div.ckb-wrapper > div.ckb-icon {
+input[type='checkbox']:checked ~ div.ckb-wrapper > div.ckb-icon {
   opacity: 1;
   background: rgb(226, 223, 223);
 }
 
-input[type="checkbox"]:checked ~ div.ckb-wrapper > div.toogle-button {
+input[type='checkbox']:checked ~ div.ckb-wrapper > div.toogle-button {
   right: 8px;
   background: rgb(34, 33, 33);
 }
@@ -373,6 +373,16 @@ div#intro img {
   animation-fill-mode: forwards;
 }
 
+#icon-waiting {
+  visibility: hidden;
+
+  height: 20px;
+  animation-name: blink;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-fill-mode: forwards;
+}
+
 #KaiOsAd {
   height: 200px;
   width: 240px;
@@ -461,7 +471,7 @@ div.search-item {
 div.search-item:focus {
   background: orange;
 }
-article.events[data-alarm="none"] img.bell {
+article.events[data-alarm='none'] img.bell {
   display: none;
 }
 
@@ -582,7 +592,7 @@ div#calendar div#calendar-body div div div.moon-phase-7 {
   background-image: url(../image/moon8.svg);
 }
 
-div#calendar div#calendar-body div div div[class^="moon-phase-"] {
+div#calendar div#calendar-body div div div[class^='moon-phase-'] {
   background-position: center;
   background-size: 80% 80%;
   background-repeat: no-repeat;
@@ -604,6 +614,10 @@ div#calendar div#calendar-body div div div.active {
 div#calendar div#calendar-body div div.today div.active {
   display: block;
   filter: sepia(100%);
+}
+
+div.calendar-cell {
+  transform: none;
 }
 
 span.weeknumber {
@@ -689,15 +703,15 @@ div#events-wrapper article:last-child {
   margin: 0 0 55px 0;
 }
 
-div#events-wrapper article[data-all-day="allDay"] div.icons-bar div.time {
+div#events-wrapper article[data-all-day='allDay'] div.icons-bar div.time {
   display: none;
 }
 
-div#events-wrapper article[data-all-day=""] div.icons-bar div.allDay {
+div#events-wrapper article[data-all-day=''] div.icons-bar div.allDay {
   display: none;
 }
 
-div#events-wrapper article[data-all-day="true"] div.time {
+div#events-wrapper article[data-all-day='true'] div.time {
   display: none;
 }
 
@@ -743,7 +757,7 @@ div#event-slider div.icons-bar {
   margin: 5px 0;
 }
 
-div#event-slider article[data-alarm="none"] div.icons-bar img.bell {
+div#event-slider article[data-alarm='none'] div.icons-bar img.bell {
   display: none;
 }
 

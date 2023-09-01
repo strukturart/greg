@@ -179,7 +179,6 @@ async function load_caldav(callback) {
   // Load data from every account
   for (const item of accounts) {
     const client = await getClientInstance(item);
-    console.log('logged ' + client);
 
     try {
       if (!isLoggedInMap[item.id]) {
@@ -215,7 +214,17 @@ async function load_caldav(callback) {
 
         // Parse data
         for (const obj of objects) {
-          parse_ics(obj.data, false, obj.etag, obj.url, item.id, true);
+          // parse_ics(obj.data, false, obj.etag, obj.url, item.id, true);
+
+          if (
+            'serviceWorker' in navigator &&
+            navigator.serviceWorker.controller
+          ) {
+            navigator.serviceWorker.controller.postMessage({
+              t: obj,
+              e: item.id,
+            });
+          }
         }
       }
 
@@ -810,33 +819,6 @@ const find_closest_date = function (date) {
   }
 };
 
-/*
-const event_check = function (date) {
-  let feedback = {
-    event: false,
-    multidayevent: false,
-  };
-
-  let k = events.filter((event) => {
-    const eventStartTime = new Date(event.dateStart).getTime();
-    const eventEndTime = new Date(event.dateEnd).getTime();
-    const targetTime = new Date(date).getTime();
-
-    return (
-      eventStartTime === targetTime ||
-      (eventStartTime <= targetTime &&
-        eventEndTime >= targetTime &&
-        event.RRULE.freq === undefined)
-    );
-  });
-
-  feedback.event = k.length > 0;
-  feedback.multidayevent = k.length > 1;
-
-  return feedback;
-};
-*/
-
 const event_check = function (date) {
   let feedback = {
     event: false,
@@ -1206,6 +1188,26 @@ let highlight_current_day = function () {
 //BUILD CALENDAR
 //////////////
 
+//animation
+let calendar_animation = () => {
+  const calendarCells = document.querySelectorAll('div.calendar-cell');
+
+  function toggleOpacity(cell) {
+    const currentOpacity = getComputedStyle(cell).opacity;
+    cell.style.opacity = currentOpacity === '1' ? '0.3' : '1';
+  }
+  setInterval(() => {
+    const randomIndex = Math.floor(Math.random() * calendarCells.length);
+    const selectedCell = calendarCells[randomIndex];
+
+    toggleOpacity(selectedCell);
+
+    setTimeout(() => {
+      toggleOpacity(selectedCell);
+    }, 500);
+  }, 1000); // 2 seconds interval to allow 1-second blinking effect
+};
+
 // get weeknumber
 Date.prototype.getWeek = function () {
   var date = new Date(this.getTime());
@@ -1465,6 +1467,12 @@ var page_calendar = {
           m('img', {
             id: 'icon-loading',
             src: './assets/image/E252.svg',
+            alt: 'loading',
+          }),
+
+          m('img', {
+            id: 'icon-waiting',
+            src: './assets/image/waiting.png',
             alt: 'loading',
           }),
           m(
@@ -4775,6 +4783,7 @@ channel.addEventListener('message', (event) => {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
     events.push(event.data.content);
+    document.getElementById('icon-waiting').style.visibility = 'visible';
   }
   if (event.data.action == 'error') {
     console.log(event.data.content);
@@ -4794,7 +4803,7 @@ channel.addEventListener('message', (event) => {
 });
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 1000; // Time in milliseconds
+const waitTimeout = 2000; // Time in milliseconds
 const checkMessagesInterval = 100; // Interval to check for new messages
 
 const waitForNoMessages = setInterval(() => {
@@ -4804,7 +4813,9 @@ const waitForNoMessages = setInterval(() => {
   if (currentTime - lastMessageTime >= waitTimeout) {
     sort_array(events, 'dateStartUnix', 'number');
     style_calendar_cell(currentYear, currentMonth);
+
     clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
     // Your code to proceed after no more messages arrive
+    document.getElementById('icon-waiting').style.visibility = 'hidden';
   }
 }, checkMessagesInterval);
