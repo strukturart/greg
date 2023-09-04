@@ -832,7 +832,7 @@ const event_check = function (date) {
     return (
       eventStartTime <= targetTime &&
       eventEndTime >= targetTime &&
-      event.RRULE.freq === undefined
+      !event.RRULE.freq
     );
   });
 
@@ -1978,8 +1978,10 @@ export let page_options = {
             class: 'item',
             tabindex: '7',
             onclick: function () {
-              m.route.set('/page_calendar');
-              load_caldav(true);
+              setTimeout(() => {
+                load_caldav(true);
+              }, 1000);
+              side_toaster('the big loading has begun', 2000);
             },
           },
           'Reload all events'
@@ -2182,15 +2184,14 @@ export let page_options = {
           },
 
           onfocus: function () {
-            bottom_bar('', '', '');
+            bottom_bar('', 'open ads', '');
+            alert('kk');
           },
-          onblur: function () {},
+          onblur: function () {
+            bottom_bar('', 'open ads', '');
+          },
 
-          onkeypress: function (event) {
-            bottom_bar('', '', '');
-            if (event.keyCode == 13) {
-            }
-          },
+          onkeypress: function (event) {},
         }),
       ]
     );
@@ -3448,6 +3449,7 @@ localforage
       events = value;
       try {
         sort_array(events, 'dateStartUnix', 'number');
+        style_calendar_cell(currentYear, currentMonth);
       } catch (e) {
         alert(e);
       }
@@ -4202,10 +4204,6 @@ let update_event = function (etag, url, id, db_id, uid) {
     '\nCATEGORIES:' +
     event.CATEGORIES +
     '\nEND:VEVENT\nEND:VCALENDAR';
-
-  if (!event.RRULE) {
-    delete event.RRULE;
-  }
 
   events = events.filter((person) => person.UID != uid);
   //remove orginal event
