@@ -1,7 +1,11 @@
 'use strict';
 
 import localforage from 'localforage';
-import { side_toaster, sort_array } from './assets/js/helper.js';
+import {
+  side_toaster,
+  sort_array,
+  sort_array_last_mod,
+} from './assets/js/helper.js';
 import { toaster } from './assets/js/helper.js';
 import { validate } from './assets/js/helper.js';
 import { get_file } from './assets/js/helper.js';
@@ -4320,12 +4324,6 @@ let delete_event = function (etag, url, account_id, uid) {
   }
 };
 
-// event slider
-//let t = new Date();
-//let mm = `0${t.getMonth() + 1}`.slice(-2);
-//let d = `0${t.getDate()}`.slice(-2);
-//let y = t.getFullYear();
-
 export let set_tabindex = () => {
   document
     .querySelectorAll('.item:not([style*="display: none"]')
@@ -4341,18 +4339,18 @@ export let set_tabindex = () => {
 const sort_events = () => {
   document.getElementById('search').value = '';
   if (status.sortEvents == 'startDate') {
-    sort_array(events, 'LAST-MODIFIED', 'date');
+    //sort_array(events, 'LAST-MODIFIED', 'date');
+    sort_array_last_mod(events, "['LAST-MODIFIED']['_time']");
     document.activeElement.parentElement.firstChild.focus();
 
     side_toaster('the last modified ones now appear at the top', 6000);
     status.sortEvents = 'lastmod';
   } else {
-    sort_array(events, 'DTSTART', 'date');
+    sort_array(events, 'dateEndUnix', 'date');
     document.activeElement.parentElement.firstChild.focus();
     side_toaster('the date start ones now appear at the top', 6000);
     status.sortEvents = 'startDate';
   }
-
   m.redraw();
 };
 
