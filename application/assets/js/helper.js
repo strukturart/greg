@@ -17,8 +17,7 @@ export function sort_array(arr, itemKey, type) {
   arr.sort(sortFunction);
 }
 
-export function sort_array_last_mod() {
-  console.log(events);
+export async function sort_array_last_mod() {
   // Custom comparison function to sort by date-like properties
   function compareDateObjects(a, b) {
     const dateA = new Date(

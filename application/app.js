@@ -175,7 +175,7 @@ async function getClientInstance(item) {
 
 ///load events
 
-async function load_caldav(callback) {
+async function load_caldav(callback = false) {
   // Clear events
   events = events.filter((e) => !e.isCaldav);
 
@@ -217,8 +217,6 @@ async function load_caldav(callback) {
 
         // Parse data
         for (const obj of objects) {
-          // parse_ics(obj.data, false, obj.etag, obj.url, item.id, true);
-
           if (
             'serviceWorker' in navigator &&
             navigator.serviceWorker.controller
@@ -387,10 +385,8 @@ export let sync_caldav = async function (callback) {
         };
         try {
           const ma = await client.syncCalendars(s);
-          console.log(ma);
           if (ma.updated.length && ma.updated.length > 0) {
-            console.log(item.id + ' should update');
-            callback(ma);
+            callback();
             break;
           }
         } catch (e) {
@@ -659,9 +655,17 @@ let load_subscriptions = function () {
   }
 };
 
-export let sync_caldav_callback = function (o) {
-  console.log('to update: ' + o);
-  load_caldav();
+export let sync_caldav_callback = function () {
+  load_caldav().then(() => {
+    if (
+      confirm(
+        'There are new calendar entries, would you like to display them?'
+      ) == true
+    ) {
+      m.route.set('/page_events', { query: 'sort_by_last_mod' });
+      status.sortEvents = 'startDate';
+    }
+  });
 };
 
 //get event data
@@ -782,7 +786,6 @@ const find_closest_date = function (date) {
   let t = 0;
 
   let focusAndScroll = function () {
-    console.log(t);
     document
       .querySelectorAll('div#events-wrapper article[data-id="' + t + '"]')[0]
       .focus();
@@ -1567,6 +1570,8 @@ var page_calendar = {
 
 var page_events = {
   view: function () {
+    let query = m.route.param('query');
+
     return m(
       'div',
       {
@@ -1580,7 +1585,10 @@ var page_events = {
             document.activeElement.getAttribute('data-id');
         },
         oncreate: function () {
-          find_closest_date();
+          if (!query) find_closest_date();
+          if (query == 'sort_by_last_mod') {
+            sort_array_last_mod();
+          }
 
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
@@ -1594,6 +1602,11 @@ var page_events = {
         class: 'width-90 item',
         id: 'search',
         tabIndex: 0,
+        oncreate: ({ dom }) => {
+          if (query == 'sort_by_last_mod') {
+            dom.focus();
+          }
+        },
         onfocus: () => {
           window.scroll({
             top: 20,
@@ -1657,7 +1670,6 @@ var page_events = {
 
 var page_events_filtered = {
   view: function () {
-    //let type = m.route.get().type;
     let query = m.route.param('query');
     let tindex = 0;
 
@@ -3547,7 +3559,7 @@ let nav = function (move) {
     m.route.get() == '/page_events' ||
     m.route.get() == '/page_event_templates' ||
     m.route.get() == '/page_list_files' ||
-    m.route.get().startsWith('/page_events_filtered')
+    m.route.get().startsWith('/page_events')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
@@ -3600,7 +3612,7 @@ let nav = function (move) {
   if (
     m.route.get() == '/page_calendar' ||
     m.route.get() == '/page_events' ||
-    m.route.get().startsWith('/page_events_filtered')
+    m.route.get().startsWith('/page_events')
   ) {
     try {
       status.selected_day = targetElement.getAttribute('data-date');
@@ -4339,12 +4351,13 @@ export let set_tabindex = () => {
 const sort_events = () => {
   document.getElementById('search').value = '';
   if (status.sortEvents == 'startDate') {
-    //sort_array(events, 'LAST-MODIFIED', 'date');
-    sort_array_last_mod(events, "['LAST-MODIFIED']['_time']");
+    sort_array_last_mod().then(() => {
+      m.route.set('/page_events');
+      status.sortEvents = 'lastmod';
+    });
     document.activeElement.parentElement.firstChild.focus();
 
     side_toaster('the last modified ones now appear at the top', 6000);
-    status.sortEvents = 'lastmod';
   } else {
     sort_array(events, 'dateEndUnix', 'date');
     document.activeElement.parentElement.firstChild.focus();
@@ -4451,7 +4464,7 @@ function shortpress_action(param) {
         m.route.get() == '/page_edit_event' ||
         m.route.get() == '/page_event_templates' ||
         m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events_filtered')
+        m.route.get().startsWith('/page_events')
       ) {
         nav(-1);
       }
@@ -4470,13 +4483,12 @@ function shortpress_action(param) {
         m.route.get() == '/page_edit_event' ||
         m.route.get() == '/page_event_templates' ||
         m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events_filtered')
+        m.route.get().startsWith('/page_events')
       ) {
         nav(+1);
       }
 
       if (document.activeElement.tagName == 'INPUT') {
-        //document.activeElement.blur();
         nav(+1);
       }
 
@@ -4538,6 +4550,8 @@ function shortpress_action(param) {
       break;
 
     case '8':
+      m.route.set('/page_events', { query: 'sort_by_last_mod' });
+
       break;
     case 'SoftRight':
     case 'Alt':
@@ -4658,8 +4672,12 @@ function shortpress_action(param) {
       if (m.route.get() == '/page_edit_event') return false;
 
       if (events.length > 0) {
-        if (m.route.get().startsWith('/page_events_filtered')) {
-          m.route.set('/page_calendar');
+        if (m.route.get().startsWith('/page_events')) {
+          if (document.activeElement.tagName == 'INPUT')
+            m.route.set('/page_calendar');
+          setTimeout(() => {
+            jump_to_today();
+          }, 1000);
         } else if (
           m.route.get() === '/page_calendar' ||
           m.route.get() === '/page_events'
