@@ -40,7 +40,7 @@ const google_oauth_url =
 export let events = [];
 export let accounts = [];
 export let event_templates = [];
-
+export let closing_prohibited = false;
 export let search_history = [];
 
 const google_acc = {
@@ -128,7 +128,6 @@ let style_calendar_cell = function () {
         }
 
         if (rrule_check(p).rrule == true) {
-          //  e.classList.add('event');
           e.classList.add('rrule');
 
           if (rrule_check(p).count > 1) e.classList.add('multievent');
@@ -176,6 +175,7 @@ async function getClientInstance(item) {
 ///load events
 
 async function load_caldav(callback = false) {
+  closing_prohibited = true;
   // Clear events
   events = events.filter((e) => !e.isCaldav);
 
@@ -233,11 +233,12 @@ async function load_caldav(callback = false) {
         document.getElementById('icon-loading').style.visibility = 'hidden';
         if (callback) side_toaster('all event reloaded', 2000);
       }
-
+      closing_prohibited = false;
       style_calendar_cell(currentYear, currentMonth);
       side_toaster('Data loaded', 3000);
     } catch (e) {
       if (m.route.get() === '/page_calendar') {
+        closing_prohibited = false;
         document.getElementById('icon-loading').style.visibility = 'hidden';
       }
     }
@@ -477,7 +478,7 @@ export let create_caldav = async function (
             try {
               sort_array(events, 'dateStartUnix', 'number');
             } catch (e) {
-              alert(e);
+              console.log(e);
             }
           }, 5000);
         }
@@ -663,7 +664,6 @@ export let sync_caldav_callback = function () {
       ) == true
     ) {
       m.route.set('/page_events', { query: 'sort_by_last_mod' });
-      status.sortEvents = 'startDate';
     }
   });
 };
@@ -692,21 +692,26 @@ localforage
 
 //load accounts data
 //load cached data
-localforage
-  .getItem('accounts')
-  .then(function (value) {
+async function loadAccounts() {
+  try {
+    const value = await localforage.getItem('accounts');
     if (value == null) {
       accounts = [];
       return false;
     }
     accounts = value;
-    setTimeout(() => {
-      load_cached_caldav();
-    }, 100);
-  })
-  .catch(function (err) {
+    return true;
+  } catch (err) {
     console.log(err);
-  });
+    return false;
+  }
+}
+
+loadAccounts().then((result) => {
+  if (result) {
+    load_cached_caldav();
+  }
+});
 
 //store templates
 let store_event_as_template = function (
@@ -1107,7 +1112,7 @@ let event_slider = function (date) {
         document.querySelectorAll('div#event-slider article')[0].style.display =
           'block';
       } catch (e) {
-        alert(e);
+        console.log(e);
       }
     }
   }
@@ -1487,7 +1492,7 @@ var page_calendar = {
               id: 'time',
               oncreate: function () {
                 document.getElementById('time').innerText =
-                  dayjs().format('hh:mm');
+                  dayjs().format('HH:mm');
               },
             },
             'time is relative'
@@ -1588,6 +1593,7 @@ var page_events = {
           if (!query) find_closest_date();
           if (query == 'sort_by_last_mod') {
             sort_array_last_mod();
+            status.sortEvents = 'startDate';
           }
 
           bottom_bar(
@@ -2201,7 +2207,6 @@ export let page_options = {
 
           onfocus: function () {
             bottom_bar('', 'open ads', '');
-            alert('kk');
           },
           onblur: function () {
             bottom_bar('', 'open ads', '');
@@ -3464,16 +3469,13 @@ localforage
     if (value != null) {
       events = value;
       try {
-        sort_array(events, 'dateStartUnix', 'number');
         style_calendar_cell(currentYear, currentMonth);
       } catch (e) {
-        alert(e);
+        console.log(e);
       }
 
       //check if calendar has updated
-      setTimeout(() => {
-        sync_caldav(sync_caldav_callback);
-      }, 1000);
+      sync_caldav(sync_caldav_callback);
     }
   })
   .catch(function (err) {});
@@ -3624,12 +3626,11 @@ let nav = function (move) {
   highlight_current_day();
 };
 
-if ('b2g' in Navigator) {
+if ('b2g' in navigator) {
   try {
     navigator.serviceWorker
       .register(new URL('sw.js', import.meta.url), {
         type: 'module',
-        scope: '/',
       })
       .then((registration) => {
         registration.systemMessageManager.subscribe('alarm').then(
@@ -3706,7 +3707,7 @@ let add_alarm = function (date, message_text, id) {
         (err) => console.log('add err: ' + err)
       );
     } catch (e) {
-      alert(e);
+      console.log(e);
     }
   }
 };
@@ -3763,7 +3764,7 @@ let remove_alarm = function (id) {
         });
       };
     } catch (e) {
-      alert(e);
+      console.log(e);
     }
   }
 };
@@ -4560,7 +4561,7 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_events') {
+      if (m.route.get().startsWith('/page_events')) {
         sort_events();
         return true;
       }
@@ -4585,10 +4586,7 @@ function shortpress_action(param) {
       if (m.route.get() == '/page_event_templates') {
         delete_template(document.activeElement.getAttribute('data-id'));
       }
-      if (
-        m.route.get() == '/page_events' ||
-        m.route.get().startsWith('/page_events_filtered')
-      ) {
+      if (m.route.get().startsWith('/page_events')) {
         if (document.activeElement.classList.contains('subscription')) {
           toaster('a subscription cannot be edited', 2000);
           return false;
@@ -4673,11 +4671,12 @@ function shortpress_action(param) {
 
       if (events.length > 0) {
         if (m.route.get().startsWith('/page_events')) {
+          m.route.set('/page_calendar');
+
           if (document.activeElement.tagName == 'INPUT')
-            m.route.set('/page_calendar');
-          setTimeout(() => {
-            jump_to_today();
-          }, 1000);
+            setTimeout(() => {
+              jump_to_today();
+            }, 1000);
         } else if (
           m.route.get() === '/page_calendar' ||
           m.route.get() === '/page_events'
@@ -4738,6 +4737,9 @@ function shortpress_action(param) {
       break;
 
     case '0':
+      if(!settings.eventsfilter){
+        side_toaster("no category selected, you can do that in the settings",4000)
+      }
       if (document.activeElement.tagName == 'INPUT') return false;
       m.route.set('/page_events_filtered', { query: settings.eventsfilter });
       break;
@@ -4754,12 +4756,12 @@ function handleKeyDown(evt) {
   }
 
   if (evt.key === 'Backspace' && m.route.get() == '/page_calendar') {
-    window.close();
+    if (closing_prohibited == false) window.close();
   }
 
   if (evt.key === 'EndCall') {
     evt.preventDefault();
-    window.close();
+    if (closing_prohibited == false) window.close();
   }
   if (!evt.repeat) {
     longpress = false;
@@ -4809,6 +4811,15 @@ let interval_is_running = false;
 let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
+  //callback from Google OAuth
+  //ugly method to open a new window, because a window from sw clients.open can no longer be closed
+
+  if (event.data.oauth_success) {
+    const l = event.data.oauth_success;
+    setTimeout(() => {
+      window.open(l);
+    }, 5000);
+  }
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
@@ -4820,20 +4831,7 @@ channel.addEventListener('message', (event) => {
     }
   }
   if (event.data.action == 'error') {
-    console.log(event.data.content);
     document.getElementById('icon-waiting').style.visibility = 'hidden';
-  }
-
-  //callback from Google OAuth
-  //ugly method to open a new window, because a window from sw clients.open can no longer be closed
-
-  if (event.data.oauth_succes) {
-    const l = event.data.oauth_success;
-    if (event.data.oauth_success) {
-      setTimeout(() => {
-        window.open(l);
-      }, 5000);
-    }
   }
 });
 

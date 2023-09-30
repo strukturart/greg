@@ -1,6 +1,8 @@
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
 
+const channel = new BroadcastChannel('sw-messages');
+
 const parse_ics = function (
   data,
   isSubscription,
@@ -98,13 +100,9 @@ const parse_ics = function (
       calendar_name: calendar_name,
       id: account_id,
     };
-
-  
   });
   return imp;
 };
-
-const channel = new BroadcastChannel('sw-messages');
 
 self.addEventListener('message', (event) => {
   // Receive a message from the main thread
@@ -128,6 +126,12 @@ self.addEventListener('message', (event) => {
 
 self.onsystemmessage = (evt) => {
   try {
+    channel.postMessage({ action: 'info', content: evt.name });
+  } catch (e) {
+    channel.postMessage({ action: 'error', content: e });
+  }
+
+  try {
     let m = evt.data.json();
     self.registration.showNotification('Greg', {
       body: m.data.note,
@@ -135,7 +139,7 @@ self.onsystemmessage = (evt) => {
   } catch (e) {}
 
   try {
-    const serviceHandler = () => {
+    const serviceHandler = async () => {
       if (evt.name === 'activity') {
         handler = evt.data.webActivityRequestHandler();
         const { name: activityName, data: activityData } = handler.source;
@@ -149,6 +153,9 @@ self.onsystemmessage = (evt) => {
         }
       }
     };
+
     evt.waitUntil(serviceHandler());
-  } catch (e) {}
+  } catch (e) {
+    channel.postMessage({ action: 'error', content: e });
+  }
 };

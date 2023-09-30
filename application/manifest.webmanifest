@@ -23,7 +23,7 @@
   ],
 
   "b2g_features": {
-    "version": "3.0.9",
+    "version": "3.0.210",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
@@ -77,9 +77,9 @@
       },
       "feature-detection": {
         "description": "query which keys are available"
-      },
+      }
       
-      "worker-activity": {}
+
 
     }
   }

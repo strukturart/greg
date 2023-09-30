@@ -12,7 +12,7 @@ export let load_ads = function () {
       slot: 'greg',
       test: 0,
       timeout: 10000,
-      h: 100,
+      h: 264,
       w: 240,
       container: document.getElementById('KaiOsAds-Wrapper'),
       onerror: (err) => console.error('Error:', err),

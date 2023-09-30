@@ -384,16 +384,19 @@ div#intro img {
 }
 
 #KaiOsAd {
-  height: 200px;
+  height: 264px;
   width: 240px;
 }
 
 #KaiOsAds-Wrapper {
-  padding: 10px;
+  padding: 0px;
+  height: 264px;
+  width: 240px;
 }
 
 #KaiOsAds-Wrapper iframe {
-  width: 220px;
+  width: 240px;
+  height: 264px;
 }
 
 /*///////////////////////////
@@ -857,7 +860,7 @@ div#options {
   position: absolute;
   z-index: 4;
   top: 0;
-  padding: 0px 5px 5px 0px;
+  padding: 0px 0px 0px 0px;
   height: 92vh;
   overflow: hidden;
 }
