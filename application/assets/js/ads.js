@@ -1,5 +1,7 @@
 'use strict';
 
+import { bottom_bar, side_toaster } from './helper';
+
 export let load_ads = function () {
   var js = document.createElement('script');
   js.type = 'text/javascript';
@@ -12,7 +14,7 @@ export let load_ads = function () {
       slot: 'greg',
       test: 0,
       timeout: 10000,
-      h: 264,
+      h: 100,
       w: 240,
       container: document.getElementById('KaiOsAds-Wrapper'),
       onerror: (err) => console.error('Error:', err),
@@ -24,20 +26,38 @@ export let load_ads = function () {
         ad.on('close', () => console.log('close event'));
 
         // the ad succesfully displayed
-        ad.on('display', () => console.log('display event'));
+        ad.on('display', () => {
+          try {
+            const childElements = document.querySelectorAll(
+              '#KaiOsAds-Wrapper > *'
+            );
+
+            document.querySelector('#KaiOsAds-Wrapper').style.margin =
+              '0px 0px 30px 0';
+
+            childElements.forEach((element) => {
+              element.addEventListener('focus', (event) => {
+                bottom_bar('', 'open ads', '');
+              });
+            });
+          } catch (e) {
+            console.log(e);
+          }
+        });
 
         // Ad is ready to be displayed
         // calling 'display' will display the ad
         ad.call('display', {
           navClass: 'item',
-          tabIndex: 9,
-          //display: "block",
+          display: 'block',
         });
       },
     });
   };
   document.head.appendChild(js);
 };
+
+// Get a reference to the element you want to add the focus event listener to
 
 //KaiOS ads
 export let getManifest = function (callback) {

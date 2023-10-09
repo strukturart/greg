@@ -375,7 +375,6 @@ div#intro img {
 
 #icon-waiting {
   visibility: hidden;
-
   height: 20px;
   animation-name: blink;
   animation-duration: 1.5s;
@@ -384,19 +383,21 @@ div#intro img {
 }
 
 #KaiOsAd {
-  height: 264px;
+  height: 100px;
   width: 240px;
 }
 
 #KaiOsAds-Wrapper {
   padding: 0px;
-  height: 264px;
+  height: 100px;
   width: 240px;
+  margin: 0 0 50px 0;
 }
 
 #KaiOsAds-Wrapper iframe {
   width: 240px;
-  height: 264px;
+  height: 100px;
+  margin: 0 0 50px 0;
 }
 
 /*///////////////////////////
@@ -860,8 +861,8 @@ div#options {
   position: absolute;
   z-index: 4;
   top: 0;
-  padding: 0px 0px 0px 0px;
-  height: 92vh;
+  padding: 0px 0px 50px 0px;
+  height: 99%;
   overflow: hidden;
 }
 

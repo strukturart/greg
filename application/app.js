@@ -42,6 +42,7 @@ export let accounts = [];
 export let event_templates = [];
 export let closing_prohibited = false;
 export let search_history = [];
+export let calendar_names;
 
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
@@ -52,32 +53,6 @@ let oauth_callback = '';
 localforage.setDriver(localforage.INDEXEDDB);
 
 //set default local calendar
-
-let calendar_names;
-
-async function loadCalendarNames() {
-  try {
-    const keys = await localforage.keys();
-    if (keys.indexOf('calendarNames') == -1) {
-      calendar_names = [
-        {
-          name: 'local',
-          id: 'local-id',
-          data: '',
-          type: 'local',
-        },
-      ];
-      await localforage.setItem('calendarNames', calendar_names);
-    } else {
-      const e = await localforage.getItem('calendarNames');
-      calendar_names = e;
-    }
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-loadCalendarNames();
 
 export let months = [
   'Jan',
@@ -142,34 +117,38 @@ const clientInstances = {};
 const isLoggedInMap = {};
 
 async function getClientInstance(item) {
-  if (!clientInstances[item.id]) {
-    if (item.type === 'oauth') {
-      clientInstances[item.id] = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          tokenUrl: google_acc.token_url,
-          refreshToken: item.tokens.refresh_token,
-          clientId: google_cred.clientId,
-          clientSecret: google_cred.clientSecret,
-          authorizationCode: item.authorizationCode,
-          redirectUrl: google_acc.redirect_url,
-        },
-        authMethod: 'Oauth',
-        defaultAccountType: 'caldav',
-      });
-    } else {
-      clientInstances[item.id] = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          username: item.user,
-          password: item.password,
-        },
-        authMethod: 'Basic',
-        defaultAccountType: 'caldav',
-      });
+  try {
+    if (!clientInstances[item.id]) {
+      if (item.type === 'oauth') {
+        clientInstances[item.id] = new DAVClient({
+          serverUrl: item.server_url,
+          credentials: {
+            tokenUrl: google_acc.token_url,
+            refreshToken: item.tokens.refresh_token,
+            clientId: google_cred.clientId,
+            clientSecret: google_cred.clientSecret,
+            authorizationCode: item.authorizationCode,
+            redirectUrl: google_acc.redirect_url,
+          },
+          authMethod: 'Oauth',
+          defaultAccountType: 'caldav',
+        });
+      } else {
+        clientInstances[item.id] = new DAVClient({
+          serverUrl: item.server_url,
+          credentials: {
+            username: item.user,
+            password: item.password,
+          },
+          authMethod: 'Basic',
+          defaultAccountType: 'caldav',
+        });
+      }
     }
+    return clientInstances[item.id];
+  } catch (e) {
+    side_toaster(e, 5000);
   }
-  return clientInstances[item.id];
 }
 
 ///load events
@@ -332,6 +311,19 @@ let cache_caldav = function () {
   });
 };
 
+//default calendar
+let cn = [
+  {
+    name: 'local',
+    id: 'local-id',
+    data: '',
+    type: 'local',
+  },
+];
+
+//check if has new content
+//update calendar names
+
 export let sync_caldav = async function (callback) {
   for (const item of accounts) {
     const client = await getClientInstance(item);
@@ -343,14 +335,7 @@ export let sync_caldav = async function (callback) {
       }
 
       const calendars = await client.fetchCalendars();
-      let cn = [
-        {
-          name: 'local',
-          id: 'local-id',
-          data: '',
-          type: 'local',
-        },
-      ];
+
       for (let i = 0; i < calendars.length; i++) {
         const objects = await client.fetchCalendarObjects({
           calendar: calendars[i],
@@ -360,11 +345,6 @@ export let sync_caldav = async function (callback) {
           url: calendars[i].url,
           id: item.id,
         });
-      }
-
-      if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
-        side_toaster('the calendar list has been updated', 2000);
-        localforage.setItem('calendarNames', cn);
       }
 
       const value = await localforage.getItem(item.id);
@@ -398,6 +378,11 @@ export let sync_caldav = async function (callback) {
       console.log(err);
     }
   }
+  if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
+    side_toaster('the calendar list has been updated', 2000);
+    localforage.setItem('calendarNames', cn);
+    loadCalendarNames();
+  }
 };
 
 //create event
@@ -420,6 +405,7 @@ export let create_caldav = async function (
       if (!isLoggedInMap[matchingAccount.id]) {
         await client.login();
         isLoggedInMap[matchingAccount.id] = true;
+        console.log('client' + client);
       }
 
       const calendars = await client.fetchCalendars();
@@ -432,10 +418,13 @@ export let create_caldav = async function (
           calendar: matchingCalendar,
           filename: event_id + '.ics',
           iCalString: event_data,
+          headers: client.authHeaders,
+          /*
           headers: {
             'content-type': 'text/calendar; charset=utf-8',
-            authorization: client.authHeaders.authorization,
+            authorization: client.authHeaders,
           },
+          */
         });
 
         if (result.ok) {
@@ -690,28 +679,49 @@ localforage
     console.log(err);
   });
 
-//load accounts data
-//load cached data
-async function loadAccounts() {
+//load calendar names
+
+async function loadCalendarNames() {
+  await localforage.getItem('accounts').then((e) => {});
   try {
-    const value = await localforage.getItem('accounts');
-    if (value == null) {
-      accounts = [];
-      return false;
+    const keys = await localforage.keys();
+    //set local calendar as default
+    if (keys.indexOf('calendarNames') == -1) {
+      calendar_names = [
+        {
+          name: 'local',
+          id: 'local-id',
+          data: '',
+          type: 'local',
+        },
+      ];
+      await localforage.setItem('calendarNames', calendar_names);
+    } else {
+      const e = await localforage.getItem('calendarNames');
+      calendar_names = e;
     }
-    accounts = value;
-    return true;
   } catch (err) {
     console.log(err);
-    return false;
   }
 }
 
-loadAccounts().then((result) => {
-  if (result) {
+loadCalendarNames();
+
+//load accounts data
+//load cached data
+
+async function loadAccounts() {
+  try {
+    accounts = (await localforage.getItem('accounts')) || [];
     load_cached_caldav();
+
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
   }
-});
+}
+loadAccounts();
 
 //store templates
 let store_event_as_template = function (
@@ -1767,6 +1777,8 @@ export let page_options = {
           if (settings.ads) {
             load_ads();
           }
+
+          bottom_bar('', '', '');
         },
       },
       [
@@ -2196,7 +2208,7 @@ export let page_options = {
 
         m('div', {
           id: 'KaiOsAds-Wrapper',
-          tabindex: subscriptions.length + accounts.length + 9,
+          tabindex: subscriptions.length + accounts.length + 11,
           class: 'flex justify-content-spacearound',
           oninit: function () {
             if (settings.ads) {
@@ -2204,6 +2216,7 @@ export let page_options = {
               document.querySelector('h2.ads-title').remove();
             }
           },
+          oncreate: () => {},
 
           onfocus: function () {
             bottom_bar('', 'open ads', '');
@@ -2211,14 +2224,9 @@ export let page_options = {
           onblur: function () {
             bottom_bar('', 'open ads', '');
           },
-
-          onkeypress: function (event) {},
         }),
       ]
     );
-  },
-  oncreate: function () {
-    bottom_bar('', '', '');
   },
 };
 
@@ -3269,11 +3277,7 @@ var page_event_templates = {
                 selected_template = item.id;
                 m.route.set('/page_add_event');
               },
-              oncreate: function ({ dom }) {
-                if (index == 0) {
-                  dom.focus();
-                }
-              },
+              oncreate: function ({ dom }) {},
               tabIndex: index,
               'data-id': item.id,
             },
@@ -3395,7 +3399,10 @@ let store_account = function (edit, id) {
     localforage
       .setItem('accounts', accounts)
       .then(function (value) {
-        side_toaster("<img src='assets/image/E25C.svg'", 2000);
+        side_toaster(
+          'the calendar events will be loaded the next time the app is restarted',
+          30000
+        );
         m.route.set('/page_options');
       })
       .catch(function (err) {
@@ -3473,8 +3480,8 @@ localforage
       } catch (e) {
         console.log(e);
       }
-
-      //check if calendar has updated
+      sync_caldav(sync_caldav_callback);
+    } else {
       sync_caldav(sync_caldav_callback);
     }
   })
@@ -4027,7 +4034,11 @@ let store_event = function (db_id, cal_name) {
       event.END = 'VALARM';
     }
 
-    const alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
+    let alarm = ''; // Initialize alarm as an empty string
+
+    if (notification_time !== null && notification_time !== 'none') {
+      alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
+    }
 
     let event_data =
       'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:' +
@@ -4049,7 +4060,7 @@ let store_event = function (db_id, cal_name) {
       '\nCATEGORIES:' +
       event.CATEGORIES +
       '\nEND:VEVENT' +
-      alarm +
+      alarm + // Include the alarm section if it's not null or 'none'
       '\nEND:VCALENDAR';
 
     if (!event.RRULE) {
@@ -4737,8 +4748,11 @@ function shortpress_action(param) {
       break;
 
     case '0':
-      if(!settings.eventsfilter){
-        side_toaster("no category selected, you can do that in the settings",4000)
+      if (!settings.eventsfilter) {
+        side_toaster(
+          'no category selected, you can do that in the settings',
+          4000
+        );
       }
       if (document.activeElement.tagName == 'INPUT') return false;
       m.route.set('/page_events_filtered', { query: settings.eventsfilter });
