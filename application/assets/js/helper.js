@@ -1,5 +1,7 @@
 'use strict';
-import { events } from '../../app.js';
+import { events, settings } from '../../app.js';
+import { status } from '../../app.js';
+import { uid } from 'uid';
 
 export function sort_array(arr, itemKey, type) {
   const sortFunction = (a, b) => {
@@ -435,4 +437,138 @@ function write_file(data, filename) {
   request.onerror = function () {
     toaster('Unable to write the file: ' + this.error, 2000);
   };
+}
+
+const interval = 60;
+
+export let add_sync_alarm = function (date, message_text) {
+  // KaiOs  2.xx
+  if ('mozAlarms' in navigator) {
+    // This is arbitrary data pass to the alarm
+    var data = {
+      note: message_text,
+      event_id: uid(32),
+    };
+
+    var request = navigator.mozAlarms.add(date, 'honorTimezone', data);
+
+    request.onsuccess = function (e) {};
+
+    request.onerror = function () {
+      console.log('An error occurred: ' + this.error.name);
+    };
+  }
+
+  // KaiOs  3.xx
+  if ('b2g' in navigator) {
+    try {
+      let options = {
+        date: date,
+        data: { note: message_text },
+        ignoreTimezone: false,
+      };
+
+      navigator.b2g.alarmManager.add(options).then(
+        (id) => console.log('add id: ' + id),
+        (err) => console.log('add err: ' + err)
+      );
+    } catch (e) {
+      //alert(e);
+    }
+  }
+};
+
+let remove_sync_alarm = function () {
+  // KaiOs  2.xx
+
+  try {
+    let request = navigator.mozAlarms.getAll();
+
+    request.onsuccess = function () {
+      this.result.forEach(function (alarm) {
+        if (alarm.data.note == 'keep alive') {
+          navigator.mozAlarms.remove(alarm.id);
+        }
+      });
+    };
+
+    request.onerror = function () {
+      console.log('An error occurred:', this.error.name);
+    };
+  } catch (e) {}
+
+  // KaiOs  3.xx
+  if ('b2g' in navigator) {
+    try {
+      let request = navigator.b2g.alarmManager.getAll();
+      request.onsuccess = function () {
+        this.result.forEach(function (alarm) {
+          if (id == 'all') {
+            let req = navigator.b2g.alarmManager.remove(alarm.id);
+
+            req.onsuccess = function () {
+              console.log('removed');
+            };
+
+            req.onerror = function () {
+              console.log('An error occurred: ' + this.error.name);
+            };
+          } else {
+            if (alarm.data.event_id == id) {
+              let req = navigator.b2g.alarmManager.remove(alarm.id);
+
+              req.onsuccess = function () {
+                console.log('removed');
+              };
+
+              req.onerror = function () {
+                console.log('An error occurred: ' + this.error.name);
+              };
+            } else {
+              console.log('no alarm founded');
+            }
+          }
+        });
+      };
+    } catch (e) {
+      console.log(e);
+    }
+  }
+};
+
+//restart alarm to check if the app  was closed by the system
+try {
+  if ('mozAlarms' in navigator) {
+    //set alarm
+    let m = function () {
+      var d = new Date();
+      d.setMinutes(d.getMinutes() + interval);
+      add_sync_alarm(d, 'keep alive');
+    };
+
+    try {
+      let request = navigator.mozAlarms.getAll();
+
+      request.onsuccess = function () {
+        this.result.forEach(function (alarm) {
+          console.log(alarm.data.note);
+        });
+      };
+
+      request.onerror = function () {
+        console.log('An error occurred:', this.error.name);
+      };
+    } catch (e) {}
+
+    //reset alarm or stop loop
+    navigator.mozSetMessageHandler('alarm', function (alarm) {
+      if (alarm.data.note == 'keep alive') {
+        remove_sync_alarm();
+        if (settings.background_sync == 'Yes') m();
+        if (!status.visible && !navigator.onLine) window.close();
+      }
+    });
+  }
+} catch (e) {
+  console.log(e);
 }

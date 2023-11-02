@@ -6,10 +6,10 @@ import {
   sort_array,
   sort_array_last_mod,
 } from './assets/js/helper.js';
-import { toaster } from './assets/js/helper.js';
+import { toaster, pushLocalNotification } from './assets/js/helper.js';
 import { validate } from './assets/js/helper.js';
 import { get_file } from './assets/js/helper.js';
-import { bottom_bar } from './assets/js/helper.js';
+import { bottom_bar, add_sync_alarm } from './assets/js/helper.js';
 import { popup } from './assets/js/helper.js';
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
 import { fetch_ics } from './assets/js/eximport.js';
@@ -87,6 +87,7 @@ export let settings = {
   timezone: moment.tz.guess(),
   dateformat: 'YYYY-MM-DD',
   firstday: 'sunday',
+  background_sync: 'No',
 };
 
 let style_calendar_cell = function () {
@@ -369,15 +370,25 @@ export let sync_caldav = async function (callback) {
           if (ma.updated.length && ma.updated.length > 0) {
             callback();
             break;
+          } else {
+            if (!status.visible) window.close();
           }
         } catch (e) {
           console.log(e);
+          if (!status.visible) window.close();
+
+          if (!navigator.onLine)
+            pushLocalNotification('greg', 'device offline');
         }
       }
     } catch (err) {
       console.log(err);
+      if (!status.visible) window.close();
+
+      if (!navigator.onLine) pushLocalNotification('greg', 'device offline');
     }
   }
+
   if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
     side_toaster('the calendar list has been updated', 2000);
     localforage.setItem('calendarNames', cn);
@@ -647,6 +658,13 @@ let load_subscriptions = function () {
 
 export let sync_caldav_callback = function () {
   load_caldav().then(() => {
+    //close app because is background sync
+    if (!status.visible) {
+      pushLocalNotification('greg', 'updated');
+      window.close();
+      return false;
+    }
+    /*
     if (
       confirm(
         'There are new calendar entries, would you like to display them?'
@@ -654,6 +672,7 @@ export let sync_caldav_callback = function () {
     ) {
       m.route.set('/page_events', { query: 'sort_by_last_mod' });
     }
+    */
   });
 };
 
@@ -1896,6 +1915,44 @@ export let page_options = {
               [
                 m('option', { value: 'YYYY-MM-DD' }, 'YYYY-MM-DD'),
                 m('option', { value: 'DD.MM.YYYY' }, 'DD.MM.YYYY'),
+              ]
+            ),
+          ]
+        ),
+
+        m(
+          'div',
+          {
+            class: 'item input-parent',
+            id: 'background-syn-box',
+            tabindex: '3',
+          },
+          [
+            m('label', { for: 'background-syn-box' }, 'Background sync ?'),
+            m(
+              'select',
+              {
+                id: 'background-sync',
+                class: 'select-box',
+                onchange: function () {
+                  store_settings();
+                },
+
+                oncreate: function () {
+                  load_settings();
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (settings.background_sync == 'No') {
+                      document.querySelector('#background-sync').value = 'No';
+                    } else {
+                      document.querySelector('#background-sync').value = 'Yes';
+                    }
+                  }, 1000);
+                },
+              },
+              [
+                m('option', { value: 'Yes' }, 'Yes'),
+                m('option', { value: 'No' }, 'No'),
               ]
             ),
           ]
@@ -3314,6 +3371,14 @@ let store_settings = function () {
   settings.eventsfilter = document.getElementById(
     'events-category-filter'
   ).value;
+
+  settings.background_sync = document.getElementById('background-sync').value;
+
+  if (settings.background_sync == 'Yes') {
+    var d = new Date();
+    d.setMinutes(d.getMinutes() + 60);
+    add_sync_alarm(d, 'keep alive');
+  }
 
   localforage
     .setItem('settings', settings)
