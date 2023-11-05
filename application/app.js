@@ -2,14 +2,24 @@
 
 import localforage from 'localforage';
 import {
+  restart_background_sync,
   side_toaster,
   sort_array,
   sort_array_last_mod,
 } from './assets/js/helper.js';
-import { toaster, pushLocalNotification } from './assets/js/helper.js';
+import {
+  toaster,
+  pushLocalNotification,
+  get_contact,
+} from './assets/js/helper.js';
 import { validate } from './assets/js/helper.js';
 import { get_file } from './assets/js/helper.js';
-import { bottom_bar, add_sync_alarm } from './assets/js/helper.js';
+import {
+  bottom_bar,
+  add_sync_alarm,
+  test_is_background_sync,
+  remove_sync_alarm,
+} from './assets/js/helper.js';
 import { popup } from './assets/js/helper.js';
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
 import { fetch_ics } from './assets/js/eximport.js';
@@ -44,6 +54,8 @@ export let closing_prohibited = false;
 export let search_history = [];
 export let calendar_names;
 
+export let background_sync_interval = 60;
+
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
   redirect_url: 'https://greg.strukturart.com/redirect.html',
@@ -53,7 +65,7 @@ let oauth_callback = '';
 localforage.setDriver(localforage.INDEXEDDB);
 
 //set default local calendar
-
+test_is_background_sync();
 export let months = [
   'Jan',
   'Feb',
@@ -778,12 +790,14 @@ let currentDay = today.getDate();
 
 let update_event_date;
 
-let load_settings = function () {
+export let load_settings = function () {
   localforage
     .getItem('settings')
     .then(function (value) {
       if (value == null) return false;
       settings = value;
+      localStorage.setItem('background_sync', settings.background_sync);
+
       if (settings.firstday == 'sunday' || settings.firstday == undefined) {
         weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       } else {
@@ -797,6 +811,8 @@ let load_settings = function () {
       console.log(err);
     });
 };
+
+load_settings();
 
 //ads || ads free
 
@@ -1924,7 +1940,7 @@ export let page_options = {
           'div',
           {
             class: 'item input-parent',
-            id: 'background-syn-box',
+            id: 'background-sync-box',
             tabindex: '3',
           },
           [
@@ -1939,6 +1955,12 @@ export let page_options = {
                 },
 
                 oncreate: function () {
+                  if ('b2g' in navigator) {
+                    document.getElementById(
+                      'background-sync-box'
+                    ).style.display = 'none';
+                  }
+
                   load_settings();
                   setTimeout(function () {
                     focus_after_selection();
@@ -2586,7 +2608,11 @@ var page_accounts = {
     ]);
   },
 };
+let focused_element = null;
 
+let callback_get_contact = (e) => {
+  document.getElementById(focused_element).value = e;
+};
 var page_add_event = {
   view: function () {
     return m(
@@ -2619,6 +2645,21 @@ var page_add_event = {
               oncreate: function () {
                 load_settings();
                 load_template_data();
+              },
+
+              onfocus: () => {
+                focused_element = 'event-title';
+                bottom_bar('', '', "<img src='assets/image/person.svg'>");
+              },
+
+              onblur: () => {
+                focused_element = 'event-title';
+                bottom_bar('', '', '');
+              },
+              onkeypress: (e) => {
+                if (e.key == 'SoftRight') {
+                  get_contact(callback_get_contact);
+                }
               },
             }),
           ]
@@ -3375,9 +3416,9 @@ let store_settings = function () {
   settings.background_sync = document.getElementById('background-sync').value;
 
   if (settings.background_sync == 'Yes') {
-    var d = new Date();
-    d.setMinutes(d.getMinutes() + 60);
-    add_sync_alarm(d, 'keep alive');
+    restart_background_sync();
+  } else {
+    remove_sync_alarm();
   }
 
   localforage
@@ -3745,13 +3786,14 @@ if ('b2g' in navigator) {
   }
 }
 
-let add_alarm = function (date, message_text, id) {
+let add_alarm = function (date, message_text, id, type) {
   // KaiOs  2.xx
   if ('mozAlarms' in navigator) {
     // This is arbitrary data pass to the alarm
     var data = {
       note: message_text,
       event_id: id,
+      type: type,
     };
 
     var request = navigator.mozAlarms.add(date, 'honorTimezone', data);
@@ -3770,7 +3812,7 @@ let add_alarm = function (date, message_text, id) {
     try {
       let options = {
         date: date,
-        data: { note: message_text },
+        data: { note: message_text, type: type },
         ignoreTimezone: false,
       };
 
@@ -4021,7 +4063,8 @@ let store_event = function (db_id, cal_name) {
       add_alarm(
         calc_notification,
         event.SUMMARY + ' ' + event.time_start ?? '',
-        event.UID
+        event.UID,
+        'alarm'
       );
     } catch (e) {
       console.log(e);
@@ -4271,7 +4314,8 @@ let update_event = function (etag, url, id, db_id, uid) {
     add_alarm(
       calc_notification,
       event.SUMMARY + ' ' + event.time_start ?? '',
-      event.UID
+      event.UID,
+      'alarm'
     );
   }
 
@@ -4621,9 +4665,8 @@ function shortpress_action(param) {
       break;
 
     case '7':
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ t: events });
-      }
+      test();
+
       break;
 
     case '8':
@@ -4890,6 +4933,10 @@ let interval_is_running = false;
 let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
+  if (event.data.action == 'background_sync') {
+    pushLocalNotification('hello', 'hello');
+  }
+
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
 

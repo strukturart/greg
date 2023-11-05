@@ -23,7 +23,7 @@
   ],
 
   "b2g_features": {
-    "version": "3.0.214",
+    "version": "3.0.237",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
@@ -40,8 +40,7 @@
     },
     "messages": [
       { "serviceworker-notification": "index.html" },
-      "alarm",
-      "activity"
+      "alarm"
     ],
 
     "activities": {

@@ -70,7 +70,6 @@ const parse_ics = function (
       }
     }
 
-    //todo remove more key:values
     imp = {
       BEGIN: 'VEVENT',
       UID: ite.getFirstPropertyValue('uid'),
@@ -126,19 +125,6 @@ self.addEventListener('message', (event) => {
 
 self.onsystemmessage = (evt) => {
   try {
-    channel.postMessage({ action: 'info', content: evt.name });
-  } catch (e) {
-    channel.postMessage({ action: 'error', content: e });
-  }
-
-  try {
-    let m = evt.data.json();
-    self.registration.showNotification('Greg', {
-      body: m.data.note,
-    });
-  } catch (e) {}
-
-  try {
     const serviceHandler = async () => {
       if (evt.name === 'activity') {
         handler = evt.data.webActivityRequestHandler();
@@ -149,6 +135,39 @@ self.onsystemmessage = (evt) => {
           const url = '/oauth.html?code=' + code;
           channel.postMessage({
             oauth_success: url,
+          });
+        }
+      }
+
+      if (evt.name === 'alarm') {
+        let m = evt.data.json();
+
+        if (m.data.note == 'keep alive') {
+          // todo sync caldav
+          /*
+          self.registration.showNotification('Test', {
+            body: m.data.note,
+          });
+
+          var d = new Date();
+          d.setMinutes(d.getMinutes() + 2);
+
+          let options = {
+            date: d,
+            data: { note: 'keep alive', type: 'background_sync' },
+            ignoreTimezone: false,
+          };
+
+          navigator.b2g.alarmManager
+            .add(options)
+            .then(
+              channel.postMessage({ action: 'background_sync', content: '' })
+            );
+
+            */
+        } else {
+          self.registration.showNotification('Greg', {
+            body: m.data.note,
           });
         }
       }

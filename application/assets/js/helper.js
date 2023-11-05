@@ -1,5 +1,11 @@
 'use strict';
-import { events, settings } from '../../app.js';
+
+import {
+  events,
+  settings,
+  background_sync_interval,
+  load_settings,
+} from '../../app.js';
 import { status } from '../../app.js';
 import { uid } from 'uid';
 
@@ -44,6 +50,55 @@ export async function sort_array_last_mod() {
 
   events.sort(compareDateObjects);
 }
+
+export const test = () => {
+  if ('b2g' in navigator) {
+    let activity = new WebActivity('pick', { type: 'image/jpeg' });
+    activity.start().then(
+      (rv) => {},
+      (err) => {
+        alert(err);
+      }
+    );
+  }
+};
+
+export let get_contact = (callback) => {
+  try {
+    var activity = new MozActivity({
+      name: 'pick',
+      data: {
+        type: ['webcontacts/contact'],
+      },
+    });
+
+    activity.onsuccess = function () {
+      var contact = this.result;
+      if (contact && contact.contact) {
+        var contactName = contact.contact.name[0];
+        console.log('Contact Name: ' + contactName);
+        callback(contactName); // Pass the contactName to the callback
+      }
+    };
+
+    activity.onerror = function () {
+      console.error('Error opening contact picker: ' + this.error.name);
+    };
+  } catch (e) {}
+
+  if ('b2g' in navigator) {
+    let activity = new WebActivity('pick', {
+      type: 'webcontacts/contact',
+    });
+
+    activity.start().then(
+      (rv) => {},
+      (err) => {
+        alert(err);
+      }
+    );
+  }
+};
 
 export let notification = '';
 let notify = function (param_title, param_text, param_silent) {
@@ -439,14 +494,33 @@ function write_file(data, filename) {
   };
 }
 
-const interval = 60;
+export let test_is_background_sync = () => {
+  try {
+    if (localStorage.getItem('background_sync') == 'No') return false;
 
-export let add_sync_alarm = function (date, message_text) {
+    let request = navigator.mozAlarms.getAll();
+
+    request.onsuccess = function () {
+      this.result.forEach(function (alarm) {
+        console.log('test' + alarm.data.note);
+
+        if (alarm.data.note == 'keep alive') restart_background_sync();
+      });
+    };
+
+    request.onerror = function () {
+      console.log('An error occurred:', this.error.name);
+    };
+  } catch (e) {}
+};
+
+export let add_sync_alarm = function (date, message_text, type) {
   // KaiOs  2.xx
   if ('mozAlarms' in navigator) {
     // This is arbitrary data pass to the alarm
     var data = {
       note: message_text,
+      type: type,
       event_id: uid(32),
     };
 
@@ -464,7 +538,7 @@ export let add_sync_alarm = function (date, message_text) {
     try {
       let options = {
         date: date,
-        data: { note: message_text },
+        data: { note: message_text, type: 'background_sync' },
         ignoreTimezone: false,
       };
 
@@ -478,7 +552,7 @@ export let add_sync_alarm = function (date, message_text) {
   }
 };
 
-let remove_sync_alarm = function () {
+export let remove_sync_alarm = function () {
   // KaiOs  2.xx
 
   try {
@@ -536,36 +610,23 @@ let remove_sync_alarm = function () {
   }
 };
 
-//restart alarm to check if the app  was closed by the system
+export let restart_background_sync = () => {
+  var d = new Date();
+  d.setMinutes(d.getMinutes() + background_sync_interval);
+  add_sync_alarm(d, 'keep alive');
+};
+
 try {
   if ('mozAlarms' in navigator) {
-    //set alarm
-    let m = function () {
-      var d = new Date();
-      d.setMinutes(d.getMinutes() + interval);
-      add_sync_alarm(d, 'keep alive');
-    };
-
-    try {
-      let request = navigator.mozAlarms.getAll();
-
-      request.onsuccess = function () {
-        this.result.forEach(function (alarm) {
-          console.log(alarm.data.note);
-        });
-      };
-
-      request.onerror = function () {
-        console.log('An error occurred:', this.error.name);
-      };
-    } catch (e) {}
-
-    //reset alarm or stop loop
     navigator.mozSetMessageHandler('alarm', function (alarm) {
       if (alarm.data.note == 'keep alive') {
         remove_sync_alarm();
-        if (settings.background_sync == 'Yes') m();
+        if (localStorage.getItem('background_sync') == 'Yes') {
+          restart_background_sync();
+        }
         if (!status.visible && !navigator.onLine) window.close();
+      } else {
+        pushLocalNotification('Greg', alarm.data.note);
       }
     });
   }
