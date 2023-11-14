@@ -1,5 +1,5 @@
 {
-  "version": "2.2.571",
+  "version": "2.2.574",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -28,15 +28,59 @@
     }
   },
   "default_locale": "en-US",
+
+  "deeplinks": {
+    "regex": "^https?://.*\\.ics$",
+    "action": "open-deeplink"
+  },
+
+  "activities": {
+    "open-deeplink": {
+      "href": "/index.html",
+      "disposition": "window",
+      "filters": {
+        "type": "url",
+        "url": {
+          "required": true,
+          "regexp": "^https?://.*\\.ics$",
+          "pattern": "^https?://.*\\.ics$"
+        }
+      },
+      "returnValue": true
+    },
+    "view": {
+      "filters": {
+        "type": "url",
+        "url": {
+          "required": true,
+          "regexp": "^https?://.*\\.ics$",
+          "pattern": "^https?://.*\\.ics$"
+        }
+      },
+      "disposition": "inline",
+      "returnValue": true,
+      "href": "/index.html"
+    },
+    "open": {
+      "filters": {
+        "type": ["text/calendar"]
+      },
+      "disposition": "inline",
+      "returnValue": true,
+      "href": "/index.html"
+    }
+  },
+
   "messages": [
     {
       "alarm": "/index.html"
     },
+    { "activity": "/index.html" },
+
     {
       "notification": "/index.html"
     },
-    { "serviceworker-notification": "/index.html" },
-    { "activity": "/index.html" }
+    { "serviceworker-notification": "/index.html" }
   ],
 
   "redirects": [
@@ -49,8 +93,6 @@
   "serviceworker": {
     "script_url": "sw.js"
   },
-
- 
 
   "permissions": {
     "serviceworker": {
@@ -79,7 +121,6 @@
     },
     "alarms": {
       "description": "Required to schedule alarms"
-    },
-    "worker-activity": {}
+    }
   }
 }

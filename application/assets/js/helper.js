@@ -51,18 +51,6 @@ export async function sort_array_last_mod() {
   events.sort(compareDateObjects);
 }
 
-export const test = () => {
-  if ('b2g' in navigator) {
-    let activity = new WebActivity('pick', { type: 'image/jpeg' });
-    activity.start().then(
-      (rv) => {},
-      (err) => {
-        alert(err);
-      }
-    );
-  }
-};
-
 export let get_contact = (callback) => {
   try {
     var activity = new MozActivity({
@@ -76,7 +64,6 @@ export let get_contact = (callback) => {
       var contact = this.result;
       if (contact && contact.contact) {
         var contactName = contact.contact.name[0];
-        console.log('Contact Name: ' + contactName);
         callback(contactName); // Pass the contactName to the callback
       }
     };
@@ -92,37 +79,17 @@ export let get_contact = (callback) => {
     });
 
     activity.start().then(
-      (rv) => {},
+      (rv) => {
+        var contact = rv;
+        if (contact && contact.contact) {
+          var contactName = contact.contact.name[0];
+          callback(contactName);
+        }
+      },
       (err) => {
         alert(err);
       }
     );
-  }
-};
-
-export let notification = '';
-let notify = function (param_title, param_text, param_silent) {
-  var options = {
-    body: param_text,
-    silent: param_silent,
-    requireInteraction: false,
-    //actions: [{ action: "test", title: "test" }],
-  };
-
-  // Let's check whether notification permissions have already been granted
-  if (Notification.permission === 'granted') {
-    // If it's okay let's create a notification
-    notification = new Notification(param_title, options);
-  }
-
-  // Otherwise, we need to ask the user for permission
-  if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(function (permission) {
-      // If the user accepts, let's create a notification
-      if (permission === 'granted') {
-        notification = new Notification(param_title, options);
-      }
-    });
   }
 };
 
@@ -485,7 +452,6 @@ function write_file(data, filename) {
 
   request.onsuccess = function () {
     var name = this.result;
-    //toaster('File "' + name + '" successfully wrote on the sdcard storage area', 2000);
   };
 
   // An error typically occur if a file with the same name already exist
@@ -494,6 +460,7 @@ function write_file(data, filename) {
   };
 }
 
+//background sync
 export let test_is_background_sync = () => {
   try {
     if (localStorage.getItem('background_sync') == 'No') return false;
@@ -502,8 +469,6 @@ export let test_is_background_sync = () => {
 
     request.onsuccess = function () {
       this.result.forEach(function (alarm) {
-        console.log('test' + alarm.data.note);
-
         if (alarm.data.note == 'keep alive') restart_background_sync();
       });
     };
@@ -609,6 +574,8 @@ export let remove_sync_alarm = function () {
     }
   }
 };
+
+//alarm loop
 
 export let restart_background_sync = () => {
   var d = new Date();

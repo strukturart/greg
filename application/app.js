@@ -16,7 +16,6 @@ import { validate } from './assets/js/helper.js';
 import { get_file } from './assets/js/helper.js';
 import {
   bottom_bar,
-  add_sync_alarm,
   test_is_background_sync,
   remove_sync_alarm,
 } from './assets/js/helper.js';
@@ -672,7 +671,7 @@ export let sync_caldav_callback = function () {
   load_caldav().then(() => {
     //close app because is background sync
     if (!status.visible) {
-      pushLocalNotification('greg', 'updated');
+      //pushLocalNotification('greg', 'updated');
       window.close();
       return false;
     }
@@ -2123,6 +2122,9 @@ export let page_options = {
               'data-action': 'delete-subscription',
 
               tabindex: index + 8,
+              onfocus: function () {
+                bottom_bar("<img src='assets/image/delete.svg'>", '', '');
+              },
               onblur: function () {
                 bottom_bar('', '', '');
               },
@@ -2317,6 +2319,7 @@ var page_subscriptions = {
         {
           class: 'item input-parent',
           tabindex: '0',
+
           oncreate: function ({ dom }) {
             dom.focus();
           },
@@ -2345,6 +2348,7 @@ var page_subscriptions = {
           m('input', {
             placeholder: 'URL',
             type: 'text',
+            value: m.route.param('url') || '',
             id: 'cal-subs-url',
             'data-scan-action': 'true',
             onfocus: function () {
@@ -2655,11 +2659,6 @@ var page_add_event = {
               onblur: () => {
                 focused_element = 'event-title';
                 bottom_bar('', '', '');
-              },
-              onkeypress: (e) => {
-                if (e.key == 'SoftRight') {
-                  get_contact(callback_get_contact);
-                }
               },
             }),
           ]
@@ -4488,6 +4487,28 @@ const sort_events = () => {
   m.redraw();
 };
 
+let backup_events = function () {
+  localforage
+    .getItem('events')
+    .then(function (value) {
+      let only_local_events = value.filter((events) => events.id == 'local-id');
+
+      try {
+        export_ical('others/greg.ics', value);
+      } catch (e) {
+        console.log(e);
+      }
+    })
+    .catch(function (err) {
+      // This code runs if there were any errors
+      console.log(err);
+    });
+};
+
+let stop_scan_callback = function () {
+  document.getElementById('qr-screen').style.display = 'none';
+};
+
 // ////////////////////////////
 // //KEYPAD HANDLER////////////
 // ////////////////////////////
@@ -4532,34 +4553,12 @@ function longpress_action(param) {
   }
 }
 
-let backup_events = function () {
-  localforage
-    .getItem('events')
-    .then(function (value) {
-      let only_local_events = value.filter((events) => events.id == 'local-id');
-
-      try {
-        export_ical('others/greg.ics', value);
-      } catch (e) {
-        console.log(e);
-      }
-    })
-    .catch(function (err) {
-      // This code runs if there were any errors
-      console.log(err);
-    });
-};
-
-let stop_scan_callback = function () {
-  // m.route.set("/page_subscriptions");
-  document.getElementById('qr-screen').style.display = 'none';
-};
-
 // /////////////
 // //SHORTPRESS
 // ////////////
-
+let block_keys = false;
 function shortpress_action(param) {
+  if (block_keys) return false;
   switch (param.key) {
     case '*':
       if (m.route.get() == '/page_calendar') {
@@ -4665,8 +4664,6 @@ function shortpress_action(param) {
       break;
 
     case '7':
-      test();
-
       break;
 
     case '8':
@@ -4683,6 +4680,9 @@ function shortpress_action(param) {
       if (m.route.get().startsWith('/page_events')) {
         sort_events();
         return true;
+      }
+      if (m.route.get().startsWith('/page_add_event')) {
+        get_contact(callback_get_contact);
       }
 
       if (
@@ -4978,3 +4978,30 @@ let interval = () => {
     }
   }, checkMessagesInterval);
 };
+
+//MozAcitivty deepLink handler
+navigator.mozSetMessageHandler('activity', function (activityRequest) {
+  var option = activityRequest.source;
+  //gpx
+  if (option.name == 'open') {
+  }
+  //link
+  if (option.name == 'view') {
+    setTimeout(() => {
+      block_keys = true;
+
+      var userConfirmation = confirm('Do you want to proceed?');
+      if (userConfirmation) {
+        // Code to execute if the user clicks "OK"
+        m.route.set('/page_subscriptions');
+        block_keys = false;
+      } else {
+        window.close();
+        block_keys = false;
+      }
+    }, 10000);
+  }
+  //deeplink
+  if (option.name == 'open-deeplink') {
+  }
+});
