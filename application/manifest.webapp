@@ -1,5 +1,5 @@
 {
-  "version": "2.2.574",
+  "version": "2.2.582",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -29,25 +29,7 @@
   },
   "default_locale": "en-US",
 
-  "deeplinks": {
-    "regex": "^https?://.*\\.ics$",
-    "action": "open-deeplink"
-  },
-
   "activities": {
-    "open-deeplink": {
-      "href": "/index.html",
-      "disposition": "window",
-      "filters": {
-        "type": "url",
-        "url": {
-          "required": true,
-          "regexp": "^https?://.*\\.ics$",
-          "pattern": "^https?://.*\\.ics$"
-        }
-      },
-      "returnValue": true
-    },
     "view": {
       "filters": {
         "type": "url",
@@ -57,16 +39,8 @@
           "pattern": "^https?://.*\\.ics$"
         }
       },
-      "disposition": "inline",
-      "returnValue": true,
-      "href": "/index.html"
-    },
-    "open": {
-      "filters": {
-        "type": ["text/calendar"]
-      },
-      "disposition": "inline",
-      "returnValue": true,
+      "disposition": "window",
+      "returnValue": false,
       "href": "/index.html"
     }
   },
@@ -75,7 +49,6 @@
     {
       "alarm": "/index.html"
     },
-    { "activity": "/index.html" },
 
     {
       "notification": "/index.html"

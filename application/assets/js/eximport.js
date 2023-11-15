@@ -1,5 +1,3 @@
-import { list_files } from './helper.js';
-import { toaster } from './helper.js';
 import { side_toaster } from './helper.js';
 import localforage from 'localforage';
 import { events } from '../../app.js';
@@ -97,7 +95,7 @@ export let export_ical = function (filename, event_data) {
       };
 
       request.onerror = function () {
-        toaster('Unable to write the file', 2000);
+        side_toaster('Unable to write the file', 2000);
       };
     } catch (e) {
       console.log(e);
@@ -114,44 +112,13 @@ export let export_ical = function (filename, event_data) {
         };
 
         request.onerror = function () {
-          toaster('Unable to write the file', 2000);
+          side_toaster('Unable to write the file', 2000);
         };
       } catch (e) {
         console.log(e);
       }
     }
   }, 2000);
-};
-
-////////////
-///LIST ICS
-//////////////
-
-export let list_ics = function () {
-  let file_list = [];
-  let cb = function (result) {
-    file_list.push(result);
-
-    let fn = result.split('/');
-    fn = fn[fn.length - 1];
-    if (fn == 'greg.ics') return false;
-
-    document.querySelector('div#options div#import-text').style.display =
-      'block';
-
-    document
-      .querySelector('div#options div#import-text')
-      .insertAdjacentHTML(
-        'afterend',
-        '<button class="item dynamic" data-function="import" data-filename="' +
-          result +
-          '">' +
-          fn +
-          '</button>'
-      );
-  };
-
-  list_files('ics', cb);
 };
 
 // /////////////
@@ -260,7 +227,6 @@ export const parse_ics = async function (
       id: account_id,
     };
 
-
     events.push(imp);
   });
 };
@@ -269,44 +235,27 @@ export const parse_ics = async function (
 ///FETCH ICS
 ///////////
 
-export let fetch_ics = function (url, cb, db_name) {
+export let fetch_ics = function (url, db_name) {
   let xhttp = new XMLHttpRequest({ mozSystem: true });
 
   xhttp.open('GET', url + '?time=' + new Date().getTime(), true);
   xhttp.timeout = 2000;
 
-  xhttp.onprogress = function () {
-    // toaster("loading subscriptions", 2000);
-  };
-
   xhttp.onload = function () {
-    if (xhttp.readyState === xhttp.DONE && xhttp.status === 200) {
-      let data = xhttp.response;
+    let data = xhttp.response;
 
-      parse_ics(data, cb, false, true);
-
-      localforage
-        .setItem(db_name, data)
-        .then(function () {})
-        .catch(function (err) {
-          console.log(err);
-        });
-      side_toaster('subscriptions loaded', 2000);
-    }
-  };
-
-  xhttp.onerror = function () {
-    side_toaster('subscription could not be loaded', 2000);
+    parse_ics(data, true, '', '', db_name, false, 'none');
 
     localforage
-      .getItem(db_name)
-      .then(function (value) {
-        toaster('load cached data', 2000);
-        parse_ics(value, cb);
-      })
+      .setItem(db_name, data)
+      .then(function () {})
       .catch(function (err) {
         console.log(err);
       });
+  };
+
+  xhttp.onerror = function () {
+    side_toaster('subscription could not be loaded', 4000);
   };
 
   xhttp.send(null);
@@ -346,7 +295,7 @@ export function loadICS(filename, callback) {
     let reader = new FileReader();
 
     reader.onerror = function (event) {
-      toaster("can't read file", 3000);
+      side_toaster("can't read file", 3000);
       reader.abort();
     };
 

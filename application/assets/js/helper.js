@@ -1,11 +1,6 @@
 'use strict';
 
-import {
-  events,
-  settings,
-  background_sync_interval,
-  load_settings,
-} from '../../app.js';
+import { events, background_sync_interval } from '../../app.js';
 import { status } from '../../app.js';
 import { uid } from 'uid';
 
@@ -263,6 +258,12 @@ export let screenlock = function (stat) {
     if (lock.topic == 'screen') {
       lock.unlock();
     }
+  }
+};
+
+export const wakeLookCPU = () => {
+  if ('requestWakeLock' in navigator) {
+    navigator.requestWakeLock('cpu');
   }
 };
 
@@ -587,6 +588,7 @@ try {
   if ('mozAlarms' in navigator) {
     navigator.mozSetMessageHandler('alarm', function (alarm) {
       if (alarm.data.note == 'keep alive') {
+        wakeLookCPU();
         remove_sync_alarm();
         if (localStorage.getItem('background_sync') == 'Yes') {
           restart_background_sync();

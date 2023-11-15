@@ -6,6 +6,7 @@ import {
   side_toaster,
   sort_array,
   sort_array_last_mod,
+  wakeLookCPU,
 } from './assets/js/helper.js';
 import {
   toaster,
@@ -55,6 +56,7 @@ export let calendar_names;
 
 export let background_sync_interval = 60;
 
+wakeLookCPU();
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
   redirect_url: 'https://greg.strukturart.com/redirect.html',
@@ -654,17 +656,11 @@ const load_cached_caldav = async () => {
 
 //load subscriptions
 
-let load_subscriptions = function () {
-  if (
-    subscriptions == null ||
-    subscriptions.lenght == -1 ||
-    subscriptions == 'undefined'
-  )
-    return false;
-
-  for (let i = 0; i < subscriptions.length; i++) {
-    fetch_ics(subscriptions[i].url, '', subscriptions[i].id);
-  }
+const load_subscriptions = () => {
+  //if (!subscriptions || subscriptions.length === 0) return false;
+  subscriptions.forEach((e) => {
+    fetch_ics(e.url, e.id);
+  });
 };
 
 export let sync_caldav_callback = function () {
@@ -2310,7 +2306,7 @@ export let page_options = {
     );
   },
 };
-
+let p = '';
 var page_subscriptions = {
   view: function () {
     return m('div', { id: 'subscription-form' }, [
@@ -2319,6 +2315,11 @@ var page_subscriptions = {
         {
           class: 'item input-parent',
           tabindex: '0',
+          oninit: () => {
+            bottom_bar('', '', '');
+
+            //   p = m.route.param('url');
+          },
 
           oncreate: function ({ dom }) {
             dom.focus();
@@ -2348,11 +2349,15 @@ var page_subscriptions = {
           m('input', {
             placeholder: 'URL',
             type: 'text',
-            value: m.route.param('url') || '',
             id: 'cal-subs-url',
             'data-scan-action': 'true',
             onfocus: function () {
               bottom_bar("<img src='assets/image/E1D8.svg'>", '', '');
+            },
+            oncreate: () => {
+              setTimeout(() => {
+                document.getElementById('cal-subs-url').value = p;
+              }, 1000);
             },
             onblur: function () {
               bottom_bar('', '', '');
@@ -3385,8 +3390,9 @@ var page_event_templates = {
     );
   },
 };
+let kk = '/page_calendar';
 
-m.route(root, '/page_calendar', {
+m.route(root, kk, {
   '/page_calendar': page_calendar,
   '/page_events': page_events,
   '/page_options': page_options,
@@ -3453,20 +3459,19 @@ let store_subscription = function () {
       side_toaster("<img src='assets/image/E25C.svg'", 2000);
       m.route.set('/page_options');
     });
-    //creat db to store data
+    //create db to store data
     localforage
       .setItem(id, '')
       .then(function (value) {
-        toaster('done', 2000);
+        side_toaster('subscription added', 4000);
+        load_subscriptions();
       })
       .catch(function (err) {
         // This code runs if there were any errors
         console.log(err);
       });
-    load_subscriptions();
-    list_subscriptions();
   } else {
-    toaster('Please enter a name and a valid url', 2000);
+    side_toaster('Please enter a name and a valid url', 2000);
   }
 };
 
@@ -3594,13 +3599,9 @@ localforage
 
 localforage
   .getItem('subscriptions')
-  .then(function (value) {
-    subscriptions = value;
+  .then(function (s) {
+    subscriptions = s;
 
-    if (subscriptions == null) {
-      subscriptions = [];
-      return false;
-    }
     load_subscriptions();
   })
   .catch(function (err) {});
@@ -3735,7 +3736,7 @@ let nav = function (move) {
     } catch (e) {}
   }
 
-  highlight_current_day();
+  // highlight_current_day();
 };
 
 if ('b2g' in navigator) {
@@ -4530,14 +4531,8 @@ function repeat_action(param) {
 
 function longpress_action(param) {
   switch (param.key) {
-    case '0':
-      break;
-
     case 'Backspace':
       window.close();
-      break;
-
-    case 'ArrowLeft':
       break;
 
     case 'SoftLeft':
@@ -4558,7 +4553,7 @@ function longpress_action(param) {
 // ////////////
 let block_keys = false;
 function shortpress_action(param) {
-  if (block_keys) return false;
+  //if (block_keys) return false;
   switch (param.key) {
     case '*':
       if (m.route.get() == '/page_calendar') {
@@ -4642,12 +4637,18 @@ function shortpress_action(param) {
         let f = document.querySelectorAll('#event-slider article');
         f.forEach((e, i) => {
           if (e.style.display == 'block') n = e;
+
           if (f.length - 1 == i) {
             update_event_date = events.filter(function (arr) {
+              if (arr.isSubscription == true) return false;
               return arr.UID == n.getAttribute('data-uid');
             })[0];
 
-            m.route.set('/page_edit_event');
+            if (update_event_date == undefined) {
+              side_toaster('subscriptions events cannot be edited', 4000);
+            } else {
+              m.route.set('/page_edit_event');
+            }
           }
         });
       }
@@ -4982,26 +4983,16 @@ let interval = () => {
 //MozAcitivty deepLink handler
 navigator.mozSetMessageHandler('activity', function (activityRequest) {
   var option = activityRequest.source;
-  //gpx
-  if (option.name == 'open') {
-  }
+
   //link
   if (option.name == 'view') {
-    setTimeout(() => {
-      block_keys = true;
+    p = option.data.url;
+    side_toaster(
+      'please open the subscriptions page and store the values',
+      15000
+    );
+    wakeLookCPU();
 
-      var userConfirmation = confirm('Do you want to proceed?');
-      if (userConfirmation) {
-        // Code to execute if the user clicks "OK"
-        m.route.set('/page_subscriptions');
-        block_keys = false;
-      } else {
-        window.close();
-        block_keys = false;
-      }
-    }, 10000);
-  }
-  //deeplink
-  if (option.name == 'open-deeplink') {
+    return false;
   }
 });
