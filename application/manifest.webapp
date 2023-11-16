@@ -1,5 +1,5 @@
 {
-  "version": "2.2.582",
+  "version": "2.2.584",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -28,6 +28,11 @@
     }
   },
   "default_locale": "en-US",
+
+  "deeplinks": {
+    "regex": "^https?://.*\\.ics$",
+    "action": "view"
+  },
 
   "activities": {
     "view": {
