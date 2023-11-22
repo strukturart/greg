@@ -865,6 +865,10 @@ div#options {
   height: 99%;
   overflow: hidden;
 }
+.last-sync-info {
+  padding: 10px 0 20px 0 !important;
+  text-align: center;
+}
 
 div#options div#import-text {
   padding: 10px;

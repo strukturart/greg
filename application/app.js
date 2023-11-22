@@ -7,20 +7,18 @@ import {
   sort_array,
   sort_array_last_mod,
   wakeLookCPU,
-} from './assets/js/helper.js';
-import {
-  toaster,
-  pushLocalNotification,
-  get_contact,
-} from './assets/js/helper.js';
-import { validate } from './assets/js/helper.js';
-import { get_file } from './assets/js/helper.js';
-import {
   bottom_bar,
   test_is_background_sync,
   remove_sync_alarm,
+  toaster,
+  pushLocalNotification,
+  get_contact,
+  validate,
+  get_file,
+  popup,
+  list_files,
 } from './assets/js/helper.js';
-import { popup } from './assets/js/helper.js';
+
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
 import { fetch_ics } from './assets/js/eximport.js';
 import { export_ical } from './assets/js/eximport.js';
@@ -28,10 +26,8 @@ import { parse_ics } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
 import m from 'mithril';
-import { DAVClient } from './assets/js/tsdav.js';
+import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
 import 'url-search-params-polyfill';
-import { list_files } from './assets/js/helper.js';
-import { DAVNamespaceShort } from './assets/js/tsdav.js';
 import { getManifest, load_ads, manifest } from './assets/js/ads.js';
 import { uid } from 'uid';
 import { google_cred } from './assets/js/google_cred.js';
@@ -55,6 +51,17 @@ export let search_history = [];
 export let calendar_names;
 
 export let background_sync_interval = 60;
+let last_sync = localStorage.getItem('last_sync') || '';
+
+let subscriptions = [];
+localforage.getItem('subscriptions').then((e) => {
+  if (e == null) {
+    console.log(subscriptions);
+  } else {
+    subscriptions = e;
+    console.log(subscriptions);
+  }
+});
 
 wakeLookCPU();
 const google_acc = {
@@ -161,7 +168,7 @@ async function getClientInstance(item) {
     }
     return clientInstances[item.id];
   } catch (e) {
-    side_toaster(e, 5000);
+    console.log(e);
   }
 }
 
@@ -215,6 +222,7 @@ async function load_caldav(callback = false) {
             navigator.serviceWorker.controller
           ) {
             navigator.serviceWorker.controller.postMessage({
+              type: 'parse',
               t: obj,
               e: item.id,
             });
@@ -339,6 +347,10 @@ let cn = [
 //update calendar names
 
 export let sync_caldav = async function (callback) {
+  localStorage.setItem(
+    'last_sync',
+    dayjs().format(settings.dateformat + ' hh:mm')
+  );
   for (const item of accounts) {
     const client = await getClientInstance(item);
 
@@ -387,7 +399,6 @@ export let sync_caldav = async function (callback) {
             if (!status.visible) window.close();
           }
         } catch (e) {
-          console.log(e);
           if (!status.visible) window.close();
 
           if (!navigator.onLine)
@@ -395,9 +406,7 @@ export let sync_caldav = async function (callback) {
         }
       }
     } catch (err) {
-      console.log(err);
       if (!status.visible) window.close();
-
       if (!navigator.onLine) pushLocalNotification('greg', 'device offline');
     }
   }
@@ -642,6 +651,7 @@ const load_cached_caldav = async () => {
             navigator.serviceWorker.controller
           ) {
             navigator.serviceWorker.controller.postMessage({
+              type: 'parse',
               t: m,
               e: item.id,
             });
@@ -775,8 +785,6 @@ let store_event_as_template = function (
       console.log(err);
     });
 };
-
-let subscriptions = [];
 
 let today = new Date();
 let currentMonth = today.getMonth();
@@ -1940,6 +1948,7 @@ export let page_options = {
           },
           [
             m('label', { for: 'background-syn-box' }, 'Background sync ?'),
+
             m(
               'select',
               {
@@ -1972,6 +1981,7 @@ export let page_options = {
                 m('option', { value: 'No' }, 'No'),
               ]
             ),
+            m('div', { class: 'last-sync-info' }, 'last sync: ' + last_sync),
           ]
         ),
 
@@ -2108,26 +2118,26 @@ export let page_options = {
           'add subscription'
         ),
         m('div', { id: 'subscription-text' }, 'Your subscriptions'),
-
-        subscriptions.map(function (item, index) {
-          return m(
-            'button',
-            {
-              class: 'item subscriptions-item',
-              'data-id': item.id,
-              'data-action': 'delete-subscription',
-
-              tabindex: index + 8,
-              onfocus: function () {
-                bottom_bar("<img src='assets/image/delete.svg'>", '', '');
-              },
-              onblur: function () {
-                bottom_bar('', '', '');
-              },
-            },
-            item.name
-          );
-        }),
+        subscriptions != null
+          ? subscriptions.map(function (item, index) {
+              return m(
+                'button',
+                {
+                  class: 'item subscriptions-item',
+                  'data-id': item.id,
+                  'data-action': 'delete-subscription',
+                  tabindex: index + 8,
+                  onfocus: function () {
+                    bottom_bar("<img src='assets/image/delete.svg'>", '', '');
+                  },
+                  onblur: function () {
+                    bottom_bar('', '', '');
+                  },
+                },
+                item.name
+              );
+            })
+          : m('div', { class: 'text-center' }, 'No subscriptions available'),
 
         m('h2', 'Category view'),
 
@@ -2178,7 +2188,7 @@ export let page_options = {
           'button',
           {
             class: 'item  google-button caldav-button',
-            tabindex: subscriptions.length + 9,
+            //   tabindex: subscriptions.length + 9,
             onclick: function () {
               m.route.set('/page_accounts');
             },
@@ -2204,7 +2214,7 @@ export let page_options = {
           'button',
           {
             class: 'item google-button',
-            tabindex: subscriptions.length + 10,
+            // tabindex: subscriptions.length + 10,
             onclick: function () {
               oauth_callback = setInterval(function () {
                 if (localStorage.getItem('oauth_callback') == 'true') {
@@ -2262,7 +2272,7 @@ export let page_options = {
               'data-account-type': item.type,
               'data-action': 'edit-delete-account',
 
-              tabindex: index + subscriptions.length + 8,
+              //   tabindex: index + subscriptions.length + 8,
               onblur: function () {
                 bottom_bar('', '', '');
               },
@@ -2285,7 +2295,7 @@ export let page_options = {
 
         m('div', {
           id: 'KaiOsAds-Wrapper',
-          tabindex: subscriptions.length + accounts.length + 11,
+          //  tabindex: subscriptions.length + accounts.length + 11,
           class: 'flex justify-content-spacearound',
           oninit: function () {
             if (settings.ads) {
@@ -3776,13 +3786,16 @@ if ('b2g' in navigator) {
           // You can prompt the user to reload the page to apply the update
           // For example: show a message to the user
 
-          window.location.reload(); // Corrected line
+          // Add a delay before reloading to allow the user to finish their interaction
+          setTimeout(() => {
+            window.location.reload(true); // Force reload from the server, skipping the cache
+          }, 1000); // Adjust the delay time as needed
         } else {
           // No waiting service worker, registration was successful
         }
       });
   } catch (e) {
-    console.log(e);
+    console.error('Error during service worker registration:', e);
   }
 }
 
@@ -4856,6 +4869,15 @@ function shortpress_action(param) {
 
       break;
 
+    case '9':
+      // Example of sending a message to a service worker from a web page
+      navigator.serviceWorker.controller.postMessage({
+        type: 'test',
+        message: 'Hello from the web page!',
+      });
+
+      break;
+
     case '0':
       if (!settings.eventsfilter) {
         side_toaster(
@@ -4937,6 +4959,7 @@ channel.addEventListener('message', (event) => {
   if (event.data.action == 'background_sync') {
     pushLocalNotification('hello', 'hello');
   }
+  console.log('hello');
 
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed

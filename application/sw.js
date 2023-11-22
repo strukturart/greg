@@ -1,8 +1,12 @@
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
+//import localforage from 'localforage';
+//import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+//import { accounts } from './app.js';
 
 const channel = new BroadcastChannel('sw-messages');
 
+//parse calendar events and send back to mainscript
 const parse_ics = function (
   data,
   isSubscription,
@@ -15,9 +19,7 @@ const parse_ics = function (
   let jcalData;
   try {
     jcalData = ICAL.parse(data);
-  } catch (e) {
-    console.log('parser error' + e);
-  }
+  } catch (e) {}
 
   var comp = new ICAL.Component(jcalData);
 
@@ -122,6 +124,51 @@ self.addEventListener('message', (event) => {
   // Post the result back to the main thread
   channel.postMessage({ action: 'parse', content: ff });
 });
+
+/*
+//loggin
+//login handler
+const clientInstances = {};
+const isLoggedInMap = {};
+
+async function getClientInstance(item) {
+  try {
+    if (!clientInstances[item.id]) {
+      if (item.type === 'oauth') {
+        clientInstances[item.id] = new DAVClient({
+          serverUrl: item.server_url,
+          credentials: {
+            tokenUrl: google_acc.token_url,
+            refreshToken: item.tokens.refresh_token,
+            clientId: google_cred.clientId,
+            clientSecret: google_cred.clientSecret,
+            authorizationCode: item.authorizationCode,
+            redirectUrl: google_acc.redirect_url,
+          },
+          authMethod: 'Oauth',
+          defaultAccountType: 'caldav',
+        });
+      } else {
+        clientInstances[item.id] = new DAVClient({
+          serverUrl: item.server_url,
+          credentials: {
+            username: item.user,
+            password: item.password,
+          },
+          authMethod: 'Basic',
+          defaultAccountType: 'caldav',
+        });
+      }
+    }
+    return clientInstances[item.id];
+  } catch (e) {
+    channel.postMessage({ action: 'error', content: e });
+  }
+}
+
+*/
+
+//System messages
 
 self.onsystemmessage = (evt) => {
   try {
