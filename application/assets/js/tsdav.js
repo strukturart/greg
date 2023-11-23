@@ -18,7 +18,7 @@ function __rest(s, e) {
   for (var p in s)
     if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
       t[p] = s[p];
-  if (s != null && typeof Object.getOwnPropertySymbols === "function")
+  if (s != null && typeof Object.getOwnPropertySymbols === 'function')
     for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
       if (
         e.indexOf(p[i]) < 0 &&
@@ -47,7 +47,7 @@ function __awaiter(thisArg, _arguments, P, generator) {
     }
     function rejected(value) {
       try {
-        step(generator["throw"](value));
+        step(generator['throw'](value));
       } catch (e) {
         reject(e);
       }
@@ -62,19 +62,19 @@ function __awaiter(thisArg, _arguments, P, generator) {
 }
 
 var commonjsGlobal =
-  typeof globalThis !== "undefined"
+  typeof globalThis !== 'undefined'
     ? globalThis
-    : typeof window !== "undefined"
+    : typeof window !== 'undefined'
     ? window
-    : typeof global !== "undefined"
+    : typeof global !== 'undefined'
     ? global
-    : typeof self !== "undefined"
+    : typeof self !== 'undefined'
     ? self
     : {};
 
 function getAugmentedNamespace(n) {
   if (n.__esModule) return n;
-  var a = Object.defineProperty({}, "__esModule", { value: true });
+  var a = Object.defineProperty({}, '__esModule', { value: true });
   Object.keys(n).forEach(function (k) {
     var d = Object.getOwnPropertyDescriptor(n, k);
     Object.defineProperty(
@@ -87,7 +87,7 @@ function getAugmentedNamespace(n) {
             get: function () {
               return n[k];
             },
-          },
+          }
     );
   });
   return a;
@@ -96,7 +96,7 @@ function getAugmentedNamespace(n) {
 var browserPonyfill = { exports: {} };
 
 (function (module, exports) {
-  var global = typeof self !== "undefined" ? self : commonjsGlobal;
+  var global = typeof self !== 'undefined' ? self : commonjsGlobal;
   var __self__ = (function () {
     function F() {
       this.fetch = false;
@@ -108,11 +108,11 @@ var browserPonyfill = { exports: {} };
   (function (self) {
     (function (exports) {
       var support = {
-        searchParams: "URLSearchParams" in self,
-        iterable: "Symbol" in self && "iterator" in Symbol,
+        searchParams: 'URLSearchParams' in self,
+        iterable: 'Symbol' in self && 'iterator' in Symbol,
         blob:
-          "FileReader" in self &&
-          "Blob" in self &&
+          'FileReader' in self &&
+          'Blob' in self &&
           (function () {
             try {
               new Blob();
@@ -121,8 +121,8 @@ var browserPonyfill = { exports: {} };
               return false;
             }
           })(),
-        formData: "FormData" in self,
-        arrayBuffer: "ArrayBuffer" in self,
+        formData: 'FormData' in self,
+        arrayBuffer: 'ArrayBuffer' in self,
       };
 
       function isDataView(obj) {
@@ -131,15 +131,15 @@ var browserPonyfill = { exports: {} };
 
       if (support.arrayBuffer) {
         var viewClasses = [
-          "[object Int8Array]",
-          "[object Uint8Array]",
-          "[object Uint8ClampedArray]",
-          "[object Int16Array]",
-          "[object Uint16Array]",
-          "[object Int32Array]",
-          "[object Uint32Array]",
-          "[object Float32Array]",
-          "[object Float64Array]",
+          '[object Int8Array]',
+          '[object Uint8Array]',
+          '[object Uint8ClampedArray]',
+          '[object Int16Array]',
+          '[object Uint16Array]',
+          '[object Int32Array]',
+          '[object Uint32Array]',
+          '[object Float32Array]',
+          '[object Float64Array]',
         ];
 
         var isArrayBufferView =
@@ -153,7 +153,7 @@ var browserPonyfill = { exports: {} };
       }
 
       function normalizeName(name) {
-        if (typeof name !== "string") {
+        if (typeof name !== 'string') {
           name = String(name);
         }
         if (/[^a-z0-9\-#$%&'*+.^_`|~]/i.test(name)) {
@@ -163,7 +163,7 @@ var browserPonyfill = { exports: {} };
       }
 
       function normalizeValue(value) {
-        if (typeof value !== "string") {
+        if (typeof value !== 'string') {
           value = String(value);
         }
         return value;
@@ -209,10 +209,10 @@ var browserPonyfill = { exports: {} };
         name = normalizeName(name);
         value = normalizeValue(value);
         var oldValue = this.map[name];
-        this.map[name] = oldValue ? oldValue + ", " + value : value;
+        this.map[name] = oldValue ? oldValue + ', ' + value : value;
       };
 
-      Headers.prototype["delete"] = function (name) {
+      Headers.prototype['delete'] = function (name) {
         delete this.map[normalizeName(name)];
       };
 
@@ -267,7 +267,7 @@ var browserPonyfill = { exports: {} };
 
       function consumed(body) {
         if (body.bodyUsed) {
-          return Promise.reject(new TypeError("Already read"));
+          return Promise.reject(new TypeError('Already read'));
         }
         body.bodyUsed = true;
       }
@@ -304,7 +304,7 @@ var browserPonyfill = { exports: {} };
         for (var i = 0; i < view.length; i++) {
           chars[i] = String.fromCharCode(view[i]);
         }
-        return chars.join("");
+        return chars.join('');
       }
 
       function bufferClone(buf) {
@@ -323,8 +323,8 @@ var browserPonyfill = { exports: {} };
         this._initBody = function (body) {
           this._bodyInit = body;
           if (!body) {
-            this._bodyText = "";
-          } else if (typeof body === "string") {
+            this._bodyText = '';
+          } else if (typeof body === 'string') {
             this._bodyText = body;
           } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
             this._bodyBlob = body;
@@ -352,18 +352,18 @@ var browserPonyfill = { exports: {} };
             this._bodyText = body = Object.prototype.toString.call(body);
           }
 
-          if (!this.headers.get("content-type")) {
-            if (typeof body === "string") {
-              this.headers.set("content-type", "text/plain;charset=UTF-8");
+          if (!this.headers.get('content-type')) {
+            if (typeof body === 'string') {
+              this.headers.set('content-type', 'text/plain;charset=UTF-8');
             } else if (this._bodyBlob && this._bodyBlob.type) {
-              this.headers.set("content-type", this._bodyBlob.type);
+              this.headers.set('content-type', this._bodyBlob.type);
             } else if (
               support.searchParams &&
               URLSearchParams.prototype.isPrototypeOf(body)
             ) {
               this.headers.set(
-                "content-type",
-                "application/x-www-form-urlencoded;charset=UTF-8",
+                'content-type',
+                'application/x-www-form-urlencoded;charset=UTF-8'
               );
             }
           }
@@ -381,7 +381,7 @@ var browserPonyfill = { exports: {} };
             } else if (this._bodyArrayBuffer) {
               return Promise.resolve(new Blob([this._bodyArrayBuffer]));
             } else if (this._bodyFormData) {
-              throw new Error("could not read FormData body as blob");
+              throw new Error('could not read FormData body as blob');
             } else {
               return Promise.resolve(new Blob([this._bodyText]));
             }
@@ -406,10 +406,10 @@ var browserPonyfill = { exports: {} };
             return readBlobAsText(this._bodyBlob);
           } else if (this._bodyArrayBuffer) {
             return Promise.resolve(
-              readArrayBufferAsText(this._bodyArrayBuffer),
+              readArrayBufferAsText(this._bodyArrayBuffer)
             );
           } else if (this._bodyFormData) {
-            throw new Error("could not read FormData body as text");
+            throw new Error('could not read FormData body as text');
           } else {
             return Promise.resolve(this._bodyText);
           }
@@ -429,7 +429,7 @@ var browserPonyfill = { exports: {} };
       }
 
       // HTTP methods whose capitalization should be normalized
-      var methods = ["DELETE", "GET", "HEAD", "OPTIONS", "POST", "PUT"];
+      var methods = ['DELETE', 'GET', 'HEAD', 'OPTIONS', 'POST', 'PUT'];
 
       function normalizeMethod(method) {
         var upcased = method.toUpperCase();
@@ -442,7 +442,7 @@ var browserPonyfill = { exports: {} };
 
         if (input instanceof Request) {
           if (input.bodyUsed) {
-            throw new TypeError("Already read");
+            throw new TypeError('Already read');
           }
           this.url = input.url;
           this.credentials = input.credentials;
@@ -461,17 +461,17 @@ var browserPonyfill = { exports: {} };
         }
 
         this.credentials =
-          options.credentials || this.credentials || "same-origin";
+          options.credentials || this.credentials || 'same-origin';
         if (options.headers || !this.headers) {
           this.headers = new Headers(options.headers);
         }
-        this.method = normalizeMethod(options.method || this.method || "GET");
+        this.method = normalizeMethod(options.method || this.method || 'GET');
         this.mode = options.mode || this.mode || null;
         this.signal = options.signal || this.signal;
         this.referrer = null;
 
-        if ((this.method === "GET" || this.method === "HEAD") && body) {
-          throw new TypeError("Body not allowed for GET or HEAD requests");
+        if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+          throw new TypeError('Body not allowed for GET or HEAD requests');
         }
         this._initBody(body);
       }
@@ -484,12 +484,12 @@ var browserPonyfill = { exports: {} };
         var form = new FormData();
         body
           .trim()
-          .split("&")
+          .split('&')
           .forEach(function (bytes) {
             if (bytes) {
-              var split = bytes.split("=");
-              var name = split.shift().replace(/\+/g, " ");
-              var value = split.join("=").replace(/\+/g, " ");
+              var split = bytes.split('=');
+              var name = split.shift().replace(/\+/g, ' ');
+              var value = split.join('=').replace(/\+/g, ' ');
               form.append(decodeURIComponent(name), decodeURIComponent(value));
             }
           });
@@ -500,12 +500,12 @@ var browserPonyfill = { exports: {} };
         var headers = new Headers();
         // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
         // https://tools.ietf.org/html/rfc7230#section-3.2
-        var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, " ");
+        var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
         preProcessedHeaders.split(/\r?\n/).forEach(function (line) {
-          var parts = line.split(":");
+          var parts = line.split(':');
           var key = parts.shift().trim();
           if (key) {
-            var value = parts.join(":").trim();
+            var value = parts.join(':').trim();
             headers.append(key, value);
           }
         });
@@ -519,12 +519,12 @@ var browserPonyfill = { exports: {} };
           options = {};
         }
 
-        this.type = "default";
+        this.type = 'default';
         this.status = options.status === undefined ? 200 : options.status;
         this.ok = this.status >= 200 && this.status < 300;
-        this.statusText = "statusText" in options ? options.statusText : "OK";
+        this.statusText = 'statusText' in options ? options.statusText : 'OK';
         this.headers = new Headers(options.headers);
-        this.url = options.url || "";
+        this.url = options.url || '';
         this._initBody(bodyInit);
       }
 
@@ -540,8 +540,8 @@ var browserPonyfill = { exports: {} };
       };
 
       Response.error = function () {
-        var response = new Response(null, { status: 0, statusText: "" });
-        response.type = "error";
+        var response = new Response(null, { status: 0, statusText: '' });
+        response.type = 'error';
         return response;
       };
 
@@ -549,7 +549,7 @@ var browserPonyfill = { exports: {} };
 
       Response.redirect = function (url, status) {
         if (redirectStatuses.indexOf(status) === -1) {
-          throw new RangeError("Invalid status code");
+          throw new RangeError('Invalid status code');
         }
 
         return new Response(null, {
@@ -577,7 +577,7 @@ var browserPonyfill = { exports: {} };
           var request = new Request(input, init);
 
           if (request.signal && request.signal.aborted) {
-            return reject(new exports.DOMException("Aborted", "AbortError"));
+            return reject(new exports.DOMException('Aborted', 'AbortError'));
           }
 
           var xhr = new XMLHttpRequest({ mozSystem: true });
@@ -590,38 +590,38 @@ var browserPonyfill = { exports: {} };
             var options = {
               status: xhr.status,
               statusText: xhr.statusText,
-              headers: parseHeaders(xhr.getAllResponseHeaders() || ""),
+              headers: parseHeaders(xhr.getAllResponseHeaders() || ''),
             };
             options.url =
-              "responseURL" in xhr
+              'responseURL' in xhr
                 ? xhr.responseURL
-                : options.headers.get("X-Request-URL");
-            var body = "response" in xhr ? xhr.response : xhr.responseText;
+                : options.headers.get('X-Request-URL');
+            var body = 'response' in xhr ? xhr.response : xhr.responseText;
             resolve(new Response(body, options));
           };
 
           xhr.onerror = function () {
-            reject(new TypeError("Network request failed"));
+            reject(new TypeError('Network request failed'));
           };
 
           xhr.ontimeout = function () {
-            reject(new TypeError("Network request failed"));
+            reject(new TypeError('Network request failed'));
           };
 
           xhr.onabort = function () {
-            reject(new exports.DOMException("Aborted", "AbortError"));
+            reject(new exports.DOMException('Aborted', 'AbortError'));
           };
 
           xhr.open(request.method, request.url, true);
 
-          if (request.credentials === "include") {
+          if (request.credentials === 'include') {
             xhr.withCredentials = true;
-          } else if (request.credentials === "omit") {
+          } else if (request.credentials === 'omit') {
             xhr.withCredentials = false;
           }
 
-          if ("responseType" in xhr && support.blob) {
-            xhr.responseType = "blob";
+          if ('responseType' in xhr && support.blob) {
+            xhr.responseType = 'blob';
           }
 
           request.headers.forEach(function (value, name) {
@@ -629,18 +629,18 @@ var browserPonyfill = { exports: {} };
           });
 
           if (request.signal) {
-            request.signal.addEventListener("abort", abortXhr);
+            request.signal.addEventListener('abort', abortXhr);
 
             xhr.onreadystatechange = function () {
               // DONE (success or failure)
               if (xhr.readyState === 4) {
-                request.signal.removeEventListener("abort", abortXhr);
+                request.signal.removeEventListener('abort', abortXhr);
               }
             };
           }
 
           xhr.send(
-            typeof request._bodyInit === "undefined" ? null : request._bodyInit,
+            typeof request._bodyInit === 'undefined' ? null : request._bodyInit
           );
         });
       }
@@ -659,7 +659,7 @@ var browserPonyfill = { exports: {} };
       exports.Response = Response;
       exports.fetch = fetch;
 
-      Object.defineProperty(exports, "__esModule", { value: true });
+      Object.defineProperty(exports, '__esModule', { value: true });
 
       return exports;
     })({});
@@ -680,11 +680,11 @@ var browserPonyfill = { exports: {} };
 })(browserPonyfill, browserPonyfill.exports);
 
 var global$1 =
-  typeof global !== "undefined"
+  typeof global !== 'undefined'
     ? global
-    : typeof self !== "undefined"
+    : typeof self !== 'undefined'
     ? self
-    : typeof window !== "undefined"
+    : typeof window !== 'undefined'
     ? window
     : {};
 
@@ -692,17 +692,17 @@ var global$1 =
 // based off https://github.com/defunctzombie/node-process/blob/master/browser.js
 
 function defaultSetTimout() {
-  throw new Error("setTimeout has not been defined");
+  throw new Error('setTimeout has not been defined');
 }
 function defaultClearTimeout() {
-  throw new Error("clearTimeout has not been defined");
+  throw new Error('clearTimeout has not been defined');
 }
 var cachedSetTimeout = defaultSetTimout;
 var cachedClearTimeout = defaultClearTimeout;
-if (typeof global$1.setTimeout === "function") {
+if (typeof global$1.setTimeout === 'function') {
   cachedSetTimeout = setTimeout;
 }
-if (typeof global$1.clearTimeout === "function") {
+if (typeof global$1.clearTimeout === 'function') {
   cachedClearTimeout = clearTimeout;
 }
 
@@ -822,12 +822,12 @@ function Item(fun, array) {
 Item.prototype.run = function () {
   this.fun.apply(null, this.array);
 };
-var title = "browser";
-var platform = "browser";
+var title = 'browser';
+var platform = 'browser';
 var browser$1 = true;
 var env = {};
 var argv = [];
-var version = ""; // empty string to avoid regexp issues
+var version = ''; // empty string to avoid regexp issues
 var versions = {};
 var release = {};
 var config = {};
@@ -843,14 +843,14 @@ var removeAllListeners = noop;
 var emit = noop;
 
 function binding(name) {
-  throw new Error("process.binding is not supported");
+  throw new Error('process.binding is not supported');
 }
 
 function cwd() {
-  return "/";
+  return '/';
 }
 function chdir(dir) {
-  throw new Error("process.chdir is not supported");
+  throw new Error('process.chdir is not supported');
 }
 function umask() {
   return 0;
@@ -948,14 +948,14 @@ var y = d * 365.25;
 var ms = function (val, options) {
   options = options || {};
   var type = typeof val;
-  if (type === "string" && val.length > 0) {
+  if (type === 'string' && val.length > 0) {
     return parse(val);
-  } else if (type === "number" && isFinite(val)) {
+  } else if (type === 'number' && isFinite(val)) {
     return options.long ? fmtLong(val) : fmtShort(val);
   }
   throw new Error(
-    "val is not a non-empty string or a valid number. val=" +
-      JSON.stringify(val),
+    'val is not a non-empty string or a valid number. val=' +
+      JSON.stringify(val)
   );
 };
 
@@ -974,51 +974,51 @@ function parse(str) {
   }
   var match =
     /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
-      str,
+      str
     );
   if (!match) {
     return;
   }
   var n = parseFloat(match[1]);
-  var type = (match[2] || "ms").toLowerCase();
+  var type = (match[2] || 'ms').toLowerCase();
   switch (type) {
-    case "years":
-    case "year":
-    case "yrs":
-    case "yr":
-    case "y":
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
       return n * y;
-    case "weeks":
-    case "week":
-    case "w":
+    case 'weeks':
+    case 'week':
+    case 'w':
       return n * w;
-    case "days":
-    case "day":
-    case "d":
+    case 'days':
+    case 'day':
+    case 'd':
       return n * d;
-    case "hours":
-    case "hour":
-    case "hrs":
-    case "hr":
-    case "h":
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
       return n * h;
-    case "minutes":
-    case "minute":
-    case "mins":
-    case "min":
-    case "m":
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
       return n * m;
-    case "seconds":
-    case "second":
-    case "secs":
-    case "sec":
-    case "s":
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
       return n * s;
-    case "milliseconds":
-    case "millisecond":
-    case "msecs":
-    case "msec":
-    case "ms":
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
       return n;
     default:
       return undefined;
@@ -1036,18 +1036,18 @@ function parse(str) {
 function fmtShort(ms) {
   var msAbs = Math.abs(ms);
   if (msAbs >= d) {
-    return Math.round(ms / d) + "d";
+    return Math.round(ms / d) + 'd';
   }
   if (msAbs >= h) {
-    return Math.round(ms / h) + "h";
+    return Math.round(ms / h) + 'h';
   }
   if (msAbs >= m) {
-    return Math.round(ms / m) + "m";
+    return Math.round(ms / m) + 'm';
   }
   if (msAbs >= s) {
-    return Math.round(ms / s) + "s";
+    return Math.round(ms / s) + 's';
   }
-  return ms + "ms";
+  return ms + 'ms';
 }
 
 /**
@@ -1061,18 +1061,18 @@ function fmtShort(ms) {
 function fmtLong(ms) {
   var msAbs = Math.abs(ms);
   if (msAbs >= d) {
-    return plural(ms, msAbs, d, "day");
+    return plural(ms, msAbs, d, 'day');
   }
   if (msAbs >= h) {
-    return plural(ms, msAbs, h, "hour");
+    return plural(ms, msAbs, h, 'hour');
   }
   if (msAbs >= m) {
-    return plural(ms, msAbs, m, "minute");
+    return plural(ms, msAbs, m, 'minute');
   }
   if (msAbs >= s) {
-    return plural(ms, msAbs, s, "second");
+    return plural(ms, msAbs, s, 'second');
   }
-  return ms + " ms";
+  return ms + ' ms';
 }
 
 /**
@@ -1081,7 +1081,7 @@ function fmtLong(ms) {
 
 function plural(ms, msAbs, n, name) {
   var isPlural = msAbs >= n * 1.5;
-  return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
+  return Math.round(ms / n) + ' ' + name + (isPlural ? 's' : '');
 }
 
 /**
@@ -1166,21 +1166,21 @@ function setup(env) {
 
       args[0] = createDebug.coerce(args[0]);
 
-      if (typeof args[0] !== "string") {
+      if (typeof args[0] !== 'string') {
         // Anything else let's inspect with %O
-        args.unshift("%O");
+        args.unshift('%O');
       }
 
       // Apply any `formatters` transformations
       let index = 0;
       args[0] = args[0].replace(/%([a-zA-Z%])/g, (match, format) => {
         // If we encounter an escaped % then don't increase the array index
-        if (match === "%%") {
-          return "%";
+        if (match === '%%') {
+          return '%';
         }
         index++;
         const formatter = createDebug.formatters[format];
-        if (typeof formatter === "function") {
+        if (typeof formatter === 'function') {
           const val = args[index];
           match = formatter.call(self, val);
 
@@ -1204,7 +1204,7 @@ function setup(env) {
     debug.extend = extend;
     debug.destroy = createDebug.destroy; // XXX Temporary. Will be removed in the next major release.
 
-    Object.defineProperty(debug, "enabled", {
+    Object.defineProperty(debug, 'enabled', {
       enumerable: true,
       configurable: false,
       get: () => {
@@ -1224,7 +1224,7 @@ function setup(env) {
     });
 
     // Env-specific initialization logic for debug instances
-    if (typeof createDebug.init === "function") {
+    if (typeof createDebug.init === 'function') {
       createDebug.init(debug);
     }
 
@@ -1234,8 +1234,8 @@ function setup(env) {
   function extend(namespace, delimiter) {
     const newDebug = createDebug(
       this.namespace +
-        (typeof delimiter === "undefined" ? ":" : delimiter) +
-        namespace,
+        (typeof delimiter === 'undefined' ? ':' : delimiter) +
+        namespace
     );
     newDebug.log = this.log;
     return newDebug;
@@ -1256,8 +1256,8 @@ function setup(env) {
     createDebug.skips = [];
 
     let i;
-    const split = (typeof namespaces === "string" ? namespaces : "").split(
-      /[\s,]+/,
+    const split = (typeof namespaces === 'string' ? namespaces : '').split(
+      /[\s,]+/
     );
     const len = split.length;
 
@@ -1267,12 +1267,12 @@ function setup(env) {
         continue;
       }
 
-      namespaces = split[i].replace(/\*/g, ".*?");
+      namespaces = split[i].replace(/\*/g, '.*?');
 
-      if (namespaces[0] === "-") {
-        createDebug.skips.push(new RegExp("^" + namespaces.slice(1) + "$"));
+      if (namespaces[0] === '-') {
+        createDebug.skips.push(new RegExp('^' + namespaces.slice(1) + '$'));
       } else {
-        createDebug.names.push(new RegExp("^" + namespaces + "$"));
+        createDebug.names.push(new RegExp('^' + namespaces + '$'));
       }
     }
   }
@@ -1286,9 +1286,9 @@ function setup(env) {
   function disable() {
     const namespaces = [
       ...createDebug.names.map(toNamespace),
-      ...createDebug.skips.map(toNamespace).map((namespace) => "-" + namespace),
-    ].join(",");
-    createDebug.enable("");
+      ...createDebug.skips.map(toNamespace).map((namespace) => '-' + namespace),
+    ].join(',');
+    createDebug.enable('');
     return namespaces;
   }
 
@@ -1300,7 +1300,7 @@ function setup(env) {
    * @api public
    */
   function enabled(name) {
-    if (name[name.length - 1] === "*") {
+    if (name[name.length - 1] === '*') {
       return true;
     }
 
@@ -1333,7 +1333,7 @@ function setup(env) {
     return regexp
       .toString()
       .substring(2, regexp.toString().length - 2)
-      .replace(/\.\*\?$/, "*");
+      .replace(/\.\*\?$/, '*');
   }
 
   /**
@@ -1356,7 +1356,7 @@ function setup(env) {
    */
   function destroy() {
     console.warn(
-      "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.",
+      'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
     );
   }
 
@@ -1384,7 +1384,7 @@ var common = setup;
       if (!warned) {
         warned = true;
         console.warn(
-          "Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.",
+          'Instance method `debug.destroy()` is deprecated and no longer does anything. It will be removed in the next major version of `debug`.'
         );
       }
     };
@@ -1395,82 +1395,82 @@ var common = setup;
    */
 
   exports.colors = [
-    "#0000CC",
-    "#0000FF",
-    "#0033CC",
-    "#0033FF",
-    "#0066CC",
-    "#0066FF",
-    "#0099CC",
-    "#0099FF",
-    "#00CC00",
-    "#00CC33",
-    "#00CC66",
-    "#00CC99",
-    "#00CCCC",
-    "#00CCFF",
-    "#3300CC",
-    "#3300FF",
-    "#3333CC",
-    "#3333FF",
-    "#3366CC",
-    "#3366FF",
-    "#3399CC",
-    "#3399FF",
-    "#33CC00",
-    "#33CC33",
-    "#33CC66",
-    "#33CC99",
-    "#33CCCC",
-    "#33CCFF",
-    "#6600CC",
-    "#6600FF",
-    "#6633CC",
-    "#6633FF",
-    "#66CC00",
-    "#66CC33",
-    "#9900CC",
-    "#9900FF",
-    "#9933CC",
-    "#9933FF",
-    "#99CC00",
-    "#99CC33",
-    "#CC0000",
-    "#CC0033",
-    "#CC0066",
-    "#CC0099",
-    "#CC00CC",
-    "#CC00FF",
-    "#CC3300",
-    "#CC3333",
-    "#CC3366",
-    "#CC3399",
-    "#CC33CC",
-    "#CC33FF",
-    "#CC6600",
-    "#CC6633",
-    "#CC9900",
-    "#CC9933",
-    "#CCCC00",
-    "#CCCC33",
-    "#FF0000",
-    "#FF0033",
-    "#FF0066",
-    "#FF0099",
-    "#FF00CC",
-    "#FF00FF",
-    "#FF3300",
-    "#FF3333",
-    "#FF3366",
-    "#FF3399",
-    "#FF33CC",
-    "#FF33FF",
-    "#FF6600",
-    "#FF6633",
-    "#FF9900",
-    "#FF9933",
-    "#FFCC00",
-    "#FFCC33",
+    '#0000CC',
+    '#0000FF',
+    '#0033CC',
+    '#0033FF',
+    '#0066CC',
+    '#0066FF',
+    '#0099CC',
+    '#0099FF',
+    '#00CC00',
+    '#00CC33',
+    '#00CC66',
+    '#00CC99',
+    '#00CCCC',
+    '#00CCFF',
+    '#3300CC',
+    '#3300FF',
+    '#3333CC',
+    '#3333FF',
+    '#3366CC',
+    '#3366FF',
+    '#3399CC',
+    '#3399FF',
+    '#33CC00',
+    '#33CC33',
+    '#33CC66',
+    '#33CC99',
+    '#33CCCC',
+    '#33CCFF',
+    '#6600CC',
+    '#6600FF',
+    '#6633CC',
+    '#6633FF',
+    '#66CC00',
+    '#66CC33',
+    '#9900CC',
+    '#9900FF',
+    '#9933CC',
+    '#9933FF',
+    '#99CC00',
+    '#99CC33',
+    '#CC0000',
+    '#CC0033',
+    '#CC0066',
+    '#CC0099',
+    '#CC00CC',
+    '#CC00FF',
+    '#CC3300',
+    '#CC3333',
+    '#CC3366',
+    '#CC3399',
+    '#CC33CC',
+    '#CC33FF',
+    '#CC6600',
+    '#CC6633',
+    '#CC9900',
+    '#CC9933',
+    '#CCCC00',
+    '#CCCC33',
+    '#FF0000',
+    '#FF0033',
+    '#FF0066',
+    '#FF0099',
+    '#FF00CC',
+    '#FF00FF',
+    '#FF3300',
+    '#FF3333',
+    '#FF3366',
+    '#FF3399',
+    '#FF33CC',
+    '#FF33FF',
+    '#FF6600',
+    '#FF6633',
+    '#FF9900',
+    '#FF9933',
+    '#FFCC00',
+    '#FFCC33',
   ];
 
   /**
@@ -1487,16 +1487,16 @@ var common = setup;
     // initialized. Since we know we're in Chrome, we'll just detect this case
     // explicitly
     if (
-      typeof window !== "undefined" &&
+      typeof window !== 'undefined' &&
       window.process &&
-      (window.process.type === "renderer" || window.process.__nwjs)
+      (window.process.type === 'renderer' || window.process.__nwjs)
     ) {
       return true;
     }
 
     // Internet Explorer and Edge do not support colors.
     if (
-      typeof navigator !== "undefined" &&
+      typeof navigator !== 'undefined' &&
       navigator.userAgent &&
       navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)
     ) {
@@ -1506,23 +1506,23 @@ var common = setup;
     // Is webkit? http://stackoverflow.com/a/16459606/376773
     // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
     return (
-      (typeof document !== "undefined" &&
+      (typeof document !== 'undefined' &&
         document.documentElement &&
         document.documentElement.style &&
         document.documentElement.style.WebkitAppearance) ||
       // Is firebug? http://stackoverflow.com/a/398120/376773
-      (typeof window !== "undefined" &&
+      (typeof window !== 'undefined' &&
         window.console &&
         (window.console.firebug ||
           (window.console.exception && window.console.table))) ||
       // Is firefox >= v31?
       // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-      (typeof navigator !== "undefined" &&
+      (typeof navigator !== 'undefined' &&
         navigator.userAgent &&
         navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) &&
         parseInt(RegExp.$1, 10) >= 31) ||
       // Double check webkit in userAgent just in case we are in a worker
-      (typeof navigator !== "undefined" &&
+      (typeof navigator !== 'undefined' &&
         navigator.userAgent &&
         navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/))
     );
@@ -1536,20 +1536,20 @@ var common = setup;
 
   function formatArgs(args) {
     args[0] =
-      (this.useColors ? "%c" : "") +
+      (this.useColors ? '%c' : '') +
       this.namespace +
-      (this.useColors ? " %c" : " ") +
+      (this.useColors ? ' %c' : ' ') +
       args[0] +
-      (this.useColors ? "%c " : " ") +
-      "+" +
+      (this.useColors ? '%c ' : ' ') +
+      '+' +
       module.exports.humanize(this.diff);
 
     if (!this.useColors) {
       return;
     }
 
-    const c = "color: " + this.color;
-    args.splice(1, 0, c, "color: inherit");
+    const c = 'color: ' + this.color;
+    args.splice(1, 0, c, 'color: inherit');
 
     // The final "%c" is somewhat tricky, because there could be other
     // arguments passed either before or after the %c, so we need to
@@ -1557,11 +1557,11 @@ var common = setup;
     let index = 0;
     let lastC = 0;
     args[0].replace(/%[a-zA-Z%]/g, (match) => {
-      if (match === "%%") {
+      if (match === '%%') {
         return;
       }
       index++;
-      if (match === "%c") {
+      if (match === '%c') {
         // We only are interested in the *last* %c
         // (the user may have provided their own)
         lastC = index;
@@ -1590,9 +1590,9 @@ var common = setup;
   function save(namespaces) {
     try {
       if (namespaces) {
-        exports.storage.setItem("debug", namespaces);
+        exports.storage.setItem('debug', namespaces);
       } else {
-        exports.storage.removeItem("debug");
+        exports.storage.removeItem('debug');
       }
     } catch (error) {
       // Swallow
@@ -1609,14 +1609,14 @@ var common = setup;
   function load() {
     let r;
     try {
-      r = exports.storage.getItem("debug");
+      r = exports.storage.getItem('debug');
     } catch (error) {
       // Swallow
       // XXX (@Qix-) should we be logging these?
     }
 
     // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-    if (!r && typeof browser$1$1 !== "undefined" && "env" in browser$1$1) {
+    if (!r && typeof browser$1$1 !== 'undefined' && 'env' in browser$1$1) {
       r = browser$1$1.env.DEBUG;
     }
 
@@ -1657,7 +1657,7 @@ var common = setup;
     try {
       return JSON.stringify(v);
     } catch (error) {
-      return "[UnexpectedJSONParseError]: " + error.message;
+      return '[UnexpectedJSONParseError]: ' + error.message;
     }
   };
 })(browser, browser.exports);
@@ -1666,51 +1666,51 @@ var getLogger = browser.exports;
 
 var DAVNamespace;
 (function (DAVNamespace) {
-  DAVNamespace["CALENDAR_SERVER"] = "http://calendarserver.org/ns/";
-  DAVNamespace["CALDAV_APPLE"] = "http://apple.com/ns/ical/";
-  DAVNamespace["CALDAV"] = "urn:ietf:params:xml:ns:caldav";
-  DAVNamespace["CARDDAV"] = "urn:ietf:params:xml:ns:carddav";
-  DAVNamespace["DAV"] = "DAV:";
+  DAVNamespace['CALENDAR_SERVER'] = 'http://calendarserver.org/ns/';
+  DAVNamespace['CALDAV_APPLE'] = 'http://apple.com/ns/ical/';
+  DAVNamespace['CALDAV'] = 'urn:ietf:params:xml:ns:caldav';
+  DAVNamespace['CARDDAV'] = 'urn:ietf:params:xml:ns:carddav';
+  DAVNamespace['DAV'] = 'DAV:';
 })(DAVNamespace || (DAVNamespace = {}));
 const DAVAttributeMap = {
-  [DAVNamespace.CALDAV]: "xmlns:c",
-  [DAVNamespace.CARDDAV]: "xmlns:card",
-  [DAVNamespace.CALENDAR_SERVER]: "xmlns:cs",
-  [DAVNamespace.CALDAV_APPLE]: "xmlns:ca",
-  [DAVNamespace.DAV]: "xmlns:d",
+  [DAVNamespace.CALDAV]: 'xmlns:c',
+  [DAVNamespace.CARDDAV]: 'xmlns:card',
+  [DAVNamespace.CALENDAR_SERVER]: 'xmlns:cs',
+  [DAVNamespace.CALDAV_APPLE]: 'xmlns:ca',
+  [DAVNamespace.DAV]: 'xmlns:d',
 };
 var DAVNamespaceShort;
 (function (DAVNamespaceShort) {
-  DAVNamespaceShort["CALDAV"] = "c";
-  DAVNamespaceShort["CARDDAV"] = "card";
-  DAVNamespaceShort["CALENDAR_SERVER"] = "cs";
-  DAVNamespaceShort["CALDAV_APPLE"] = "ca";
-  DAVNamespaceShort["DAV"] = "d";
+  DAVNamespaceShort['CALDAV'] = 'c';
+  DAVNamespaceShort['CARDDAV'] = 'card';
+  DAVNamespaceShort['CALENDAR_SERVER'] = 'cs';
+  DAVNamespaceShort['CALDAV_APPLE'] = 'ca';
+  DAVNamespaceShort['DAV'] = 'd';
 })(DAVNamespaceShort || (DAVNamespaceShort = {}));
 var ICALObjects;
 (function (ICALObjects) {
-  ICALObjects["VEVENT"] = "VEVENT";
-  ICALObjects["VTODO"] = "VTODO";
-  ICALObjects["VJOURNAL"] = "VJOURNAL";
-  ICALObjects["VFREEBUSY"] = "VFREEBUSY";
-  ICALObjects["VTIMEZONE"] = "VTIMEZONE";
-  ICALObjects["VALARM"] = "VALARM";
+  ICALObjects['VEVENT'] = 'VEVENT';
+  ICALObjects['VTODO'] = 'VTODO';
+  ICALObjects['VJOURNAL'] = 'VJOURNAL';
+  ICALObjects['VFREEBUSY'] = 'VFREEBUSY';
+  ICALObjects['VTIMEZONE'] = 'VTIMEZONE';
+  ICALObjects['VALARM'] = 'VALARM';
 })(ICALObjects || (ICALObjects = {}));
 
 var lookup = [];
 var revLookup = [];
-var Arr = typeof Uint8Array !== "undefined" ? Uint8Array : Array;
+var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
 var inited = false;
 function init() {
   inited = true;
-  var code = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   for (var i = 0, len = code.length; i < len; ++i) {
     lookup[i] = code[i];
     revLookup[code.charCodeAt(i)] = i;
   }
 
-  revLookup["-".charCodeAt(0)] = 62;
-  revLookup["_".charCodeAt(0)] = 63;
+  revLookup['-'.charCodeAt(0)] = 62;
+  revLookup['_'.charCodeAt(0)] = 63;
 }
 
 function toByteArray(b64) {
@@ -1721,7 +1721,7 @@ function toByteArray(b64) {
   var len = b64.length;
 
   if (len % 4 > 0) {
-    throw new Error("Invalid string. Length must be a multiple of 4");
+    throw new Error('Invalid string. Length must be a multiple of 4');
   }
 
   // the number of equal signs (place holders)
@@ -1729,7 +1729,7 @@ function toByteArray(b64) {
   // represent one byte
   // if there is only one, then the three characters before it represent 2 bytes
   // this is just a cheap hack to not do indexOf twice
-  placeHolders = b64[len - 2] === "=" ? 2 : b64[len - 1] === "=" ? 1 : 0;
+  placeHolders = b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0;
 
   // base64 is 4/3 + up to two characters of the original data
   arr = new Arr((len * 3) / 4 - placeHolders);
@@ -1783,7 +1783,7 @@ function encodeChunk(uint8, start, end) {
     tmp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
     output.push(tripletToBase64(tmp));
   }
-  return output.join("");
+  return output.join('');
 }
 
 function fromByteArray(uint8) {
@@ -1793,7 +1793,7 @@ function fromByteArray(uint8) {
   var tmp;
   var len = uint8.length;
   var extraBytes = len % 3; // if we have 1 byte left, pad 2 bytes
-  var output = "";
+  var output = '';
   var parts = [];
   var maxChunkLength = 16383; // must be multiple of 3
 
@@ -1803,8 +1803,8 @@ function fromByteArray(uint8) {
       encodeChunk(
         uint8,
         i,
-        i + maxChunkLength > len2 ? len2 : i + maxChunkLength,
-      ),
+        i + maxChunkLength > len2 ? len2 : i + maxChunkLength
+      )
     );
   }
 
@@ -1813,18 +1813,18 @@ function fromByteArray(uint8) {
     tmp = uint8[len - 1];
     output += lookup[tmp >> 2];
     output += lookup[(tmp << 4) & 0x3f];
-    output += "==";
+    output += '==';
   } else if (extraBytes === 2) {
     tmp = (uint8[len - 2] << 8) + uint8[len - 1];
     output += lookup[tmp >> 10];
     output += lookup[(tmp >> 4) & 0x3f];
     output += lookup[(tmp << 2) & 0x3f];
-    output += "=";
+    output += '=';
   }
 
   parts.push(output);
 
-  return parts.join("");
+  return parts.join('');
 }
 
 function read(buffer, offset, isLE, mLen, nBytes) {
@@ -1925,7 +1925,7 @@ var toString = {}.toString;
 var isArray$3 =
   Array.isArray ||
   function (arr) {
-    return toString.call(arr) == "[object Array]";
+    return toString.call(arr) == '[object Array]';
   };
 
 /*!
@@ -1977,7 +1977,7 @@ function kMaxLength() {
 
 function createBuffer(that, length) {
   if (kMaxLength() < length) {
-    throw new RangeError("Invalid typed array length");
+    throw new RangeError('Invalid typed array length');
   }
   if (Buffer$1.TYPED_ARRAY_SUPPORT) {
     // Return an augmented `Uint8Array` instance, for best performance
@@ -2010,10 +2010,10 @@ function Buffer$1(arg, encodingOrOffset, length) {
   }
 
   // Common case.
-  if (typeof arg === "number") {
-    if (typeof encodingOrOffset === "string") {
+  if (typeof arg === 'number') {
+    if (typeof encodingOrOffset === 'string') {
       throw new Error(
-        "If encoding is specified then the first argument must be a string",
+        'If encoding is specified then the first argument must be a string'
       );
     }
     return allocUnsafe(this, arg);
@@ -2030,15 +2030,15 @@ Buffer$1._augment = function (arr) {
 };
 
 function from(that, value, encodingOrOffset, length) {
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     throw new TypeError('"value" argument must not be a number');
   }
 
-  if (typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer) {
+  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
     return fromArrayBuffer(that, value, encodingOrOffset, length);
   }
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return fromString(that, value, encodingOrOffset);
   }
 
@@ -2063,7 +2063,7 @@ if (Buffer$1.TYPED_ARRAY_SUPPORT) {
 }
 
 function assertSize(size) {
-  if (typeof size !== "number") {
+  if (typeof size !== 'number') {
     throw new TypeError('"size" argument must be a number');
   } else if (size < 0) {
     throw new RangeError('"size" argument must not be negative');
@@ -2079,7 +2079,7 @@ function alloc(that, size, fill, encoding) {
     // Only pay attention to encoding if it's a string. This
     // prevents accidentally sending in a number that would
     // be interpretted as a start offset.
-    return typeof encoding === "string"
+    return typeof encoding === 'string'
       ? createBuffer(that, size).fill(fill, encoding)
       : createBuffer(that, size).fill(fill);
   }
@@ -2119,8 +2119,8 @@ Buffer$1.allocUnsafeSlow = function (size) {
 };
 
 function fromString(that, string, encoding) {
-  if (typeof encoding !== "string" || encoding === "") {
-    encoding = "utf8";
+  if (typeof encoding !== 'string' || encoding === '') {
+    encoding = 'utf8';
   }
 
   if (!Buffer$1.isEncoding(encoding)) {
@@ -2196,23 +2196,23 @@ function fromObject(that, obj) {
 
   if (obj) {
     if (
-      (typeof ArrayBuffer !== "undefined" &&
+      (typeof ArrayBuffer !== 'undefined' &&
         obj.buffer instanceof ArrayBuffer) ||
-      "length" in obj
+      'length' in obj
     ) {
-      if (typeof obj.length !== "number" || isnan(obj.length)) {
+      if (typeof obj.length !== 'number' || isnan(obj.length)) {
         return createBuffer(that, 0);
       }
       return fromArrayLike(that, obj);
     }
 
-    if (obj.type === "Buffer" && isArray$3(obj.data)) {
+    if (obj.type === 'Buffer' && isArray$3(obj.data)) {
       return fromArrayLike(that, obj.data);
     }
   }
 
   throw new TypeError(
-    "First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.",
+    'First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.'
   );
 }
 
@@ -2221,10 +2221,10 @@ function checked(length) {
   // length is NaN (which is otherwise coerced to zero.)
   if (length >= kMaxLength()) {
     throw new RangeError(
-      "Attempt to allocate Buffer larger than maximum " +
-        "size: 0x" +
+      'Attempt to allocate Buffer larger than maximum ' +
+        'size: 0x' +
         kMaxLength().toString(16) +
-        " bytes",
+        ' bytes'
     );
   }
   return length | 0;
@@ -2244,7 +2244,7 @@ function internalIsBuffer(b) {
 
 Buffer$1.compare = function compare(a, b) {
   if (!internalIsBuffer(a) || !internalIsBuffer(b)) {
-    throw new TypeError("Arguments must be Buffers");
+    throw new TypeError('Arguments must be Buffers');
   }
 
   if (a === b) return 0;
@@ -2267,17 +2267,17 @@ Buffer$1.compare = function compare(a, b) {
 
 Buffer$1.isEncoding = function isEncoding(encoding) {
   switch (String(encoding).toLowerCase()) {
-    case "hex":
-    case "utf8":
-    case "utf-8":
-    case "ascii":
-    case "latin1":
-    case "binary":
-    case "base64":
-    case "ucs2":
-    case "ucs-2":
-    case "utf16le":
-    case "utf-16le":
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'latin1':
+    case 'binary':
+    case 'base64':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
       return true;
     default:
       return false;
@@ -2319,14 +2319,14 @@ function byteLength(string, encoding) {
     return string.length;
   }
   if (
-    typeof ArrayBuffer !== "undefined" &&
-    typeof ArrayBuffer.isView === "function" &&
+    typeof ArrayBuffer !== 'undefined' &&
+    typeof ArrayBuffer.isView === 'function' &&
     (ArrayBuffer.isView(string) || string instanceof ArrayBuffer)
   ) {
     return string.byteLength;
   }
-  if (typeof string !== "string") {
-    string = "" + string;
+  if (typeof string !== 'string') {
+    string = '' + string;
   }
 
   var len = string.length;
@@ -2336,26 +2336,26 @@ function byteLength(string, encoding) {
   var loweredCase = false;
   for (;;) {
     switch (encoding) {
-      case "ascii":
-      case "latin1":
-      case "binary":
+      case 'ascii':
+      case 'latin1':
+      case 'binary':
         return len;
-      case "utf8":
-      case "utf-8":
+      case 'utf8':
+      case 'utf-8':
       case undefined:
         return utf8ToBytes(string).length;
-      case "ucs2":
-      case "ucs-2":
-      case "utf16le":
-      case "utf-16le":
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
         return len * 2;
-      case "hex":
+      case 'hex':
         return len >>> 1;
-      case "base64":
+      case 'base64':
         return base64ToBytes(string).length;
       default:
         if (loweredCase) return utf8ToBytes(string).length; // assume utf8
-        encoding = ("" + encoding).toLowerCase();
+        encoding = ('' + encoding).toLowerCase();
         loweredCase = true;
     }
   }
@@ -2378,7 +2378,7 @@ function slowToString(encoding, start, end) {
   // Return early if start > this.length. Done here to prevent potential uint32
   // coercion fail below.
   if (start > this.length) {
-    return "";
+    return '';
   }
 
   if (end === undefined || end > this.length) {
@@ -2386,7 +2386,7 @@ function slowToString(encoding, start, end) {
   }
 
   if (end <= 0) {
-    return "";
+    return '';
   }
 
   // Force coersion to uint32. This will also coerce falsey/NaN values to 0.
@@ -2394,39 +2394,39 @@ function slowToString(encoding, start, end) {
   start >>>= 0;
 
   if (end <= start) {
-    return "";
+    return '';
   }
 
-  if (!encoding) encoding = "utf8";
+  if (!encoding) encoding = 'utf8';
 
   while (true) {
     switch (encoding) {
-      case "hex":
+      case 'hex':
         return hexSlice(this, start, end);
 
-      case "utf8":
-      case "utf-8":
+      case 'utf8':
+      case 'utf-8':
         return utf8Slice(this, start, end);
 
-      case "ascii":
+      case 'ascii':
         return asciiSlice(this, start, end);
 
-      case "latin1":
-      case "binary":
+      case 'latin1':
+      case 'binary':
         return latin1Slice(this, start, end);
 
-      case "base64":
+      case 'base64':
         return base64Slice(this, start, end);
 
-      case "ucs2":
-      case "ucs-2":
-      case "utf16le":
-      case "utf-16le":
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
         return utf16leSlice(this, start, end);
 
       default:
-        if (loweredCase) throw new TypeError("Unknown encoding: " + encoding);
-        encoding = (encoding + "").toLowerCase();
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding);
+        encoding = (encoding + '').toLowerCase();
         loweredCase = true;
     }
   }
@@ -2445,7 +2445,7 @@ function swap(b, n, m) {
 Buffer$1.prototype.swap16 = function swap16() {
   var len = this.length;
   if (len % 2 !== 0) {
-    throw new RangeError("Buffer size must be a multiple of 16-bits");
+    throw new RangeError('Buffer size must be a multiple of 16-bits');
   }
   for (var i = 0; i < len; i += 2) {
     swap(this, i, i + 1);
@@ -2456,7 +2456,7 @@ Buffer$1.prototype.swap16 = function swap16() {
 Buffer$1.prototype.swap32 = function swap32() {
   var len = this.length;
   if (len % 4 !== 0) {
-    throw new RangeError("Buffer size must be a multiple of 32-bits");
+    throw new RangeError('Buffer size must be a multiple of 32-bits');
   }
   for (var i = 0; i < len; i += 4) {
     swap(this, i, i + 3);
@@ -2468,7 +2468,7 @@ Buffer$1.prototype.swap32 = function swap32() {
 Buffer$1.prototype.swap64 = function swap64() {
   var len = this.length;
   if (len % 8 !== 0) {
-    throw new RangeError("Buffer size must be a multiple of 64-bits");
+    throw new RangeError('Buffer size must be a multiple of 64-bits');
   }
   for (var i = 0; i < len; i += 8) {
     swap(this, i, i + 7);
@@ -2481,25 +2481,25 @@ Buffer$1.prototype.swap64 = function swap64() {
 
 Buffer$1.prototype.toString = function toString() {
   var length = this.length | 0;
-  if (length === 0) return "";
+  if (length === 0) return '';
   if (arguments.length === 0) return utf8Slice(this, 0, length);
   return slowToString.apply(this, arguments);
 };
 
 Buffer$1.prototype.equals = function equals(b) {
-  if (!internalIsBuffer(b)) throw new TypeError("Argument must be a Buffer");
+  if (!internalIsBuffer(b)) throw new TypeError('Argument must be a Buffer');
   if (this === b) return true;
   return Buffer$1.compare(this, b) === 0;
 };
 
 Buffer$1.prototype.inspect = function inspect() {
-  var str = "";
+  var str = '';
   var max = INSPECT_MAX_BYTES;
   if (this.length > 0) {
-    str = this.toString("hex", 0, max).match(/.{2}/g).join(" ");
-    if (this.length > max) str += " ... ";
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ');
+    if (this.length > max) str += ' ... ';
   }
-  return "<Buffer " + str + ">";
+  return '<Buffer ' + str + '>';
 };
 
 Buffer$1.prototype.compare = function compare(
@@ -2507,10 +2507,10 @@ Buffer$1.prototype.compare = function compare(
   start,
   end,
   thisStart,
-  thisEnd,
+  thisEnd
 ) {
   if (!internalIsBuffer(target)) {
-    throw new TypeError("Argument must be a Buffer");
+    throw new TypeError('Argument must be a Buffer');
   }
 
   if (start === undefined) {
@@ -2532,7 +2532,7 @@ Buffer$1.prototype.compare = function compare(
     thisStart < 0 ||
     thisEnd > this.length
   ) {
-    throw new RangeError("out of range index");
+    throw new RangeError('out of range index');
   }
 
   if (thisStart >= thisEnd && start >= end) {
@@ -2586,7 +2586,7 @@ function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
   if (buffer.length === 0) return -1;
 
   // Normalize byteOffset
-  if (typeof byteOffset === "string") {
+  if (typeof byteOffset === 'string') {
     encoding = byteOffset;
     byteOffset = 0;
   } else if (byteOffset > 0x7fffffff) {
@@ -2611,7 +2611,7 @@ function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
   }
 
   // Normalize val
-  if (typeof val === "string") {
+  if (typeof val === 'string') {
     val = Buffer$1.from(val, encoding);
   }
 
@@ -2622,11 +2622,11 @@ function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
       return -1;
     }
     return arrayIndexOf(buffer, val, byteOffset, encoding, dir);
-  } else if (typeof val === "number") {
+  } else if (typeof val === 'number') {
     val = val & 0xff; // Search for a byte value [0-255]
     if (
       Buffer$1.TYPED_ARRAY_SUPPORT &&
-      typeof Uint8Array.prototype.indexOf === "function"
+      typeof Uint8Array.prototype.indexOf === 'function'
     ) {
       if (dir) {
         return Uint8Array.prototype.indexOf.call(buffer, val, byteOffset);
@@ -2637,7 +2637,7 @@ function bidirectionalIndexOf(buffer, val, byteOffset, encoding, dir) {
     return arrayIndexOf(buffer, [val], byteOffset, encoding, dir);
   }
 
-  throw new TypeError("val must be string, number or Buffer");
+  throw new TypeError('val must be string, number or Buffer');
 }
 
 function arrayIndexOf(arr, val, byteOffset, encoding, dir) {
@@ -2648,10 +2648,10 @@ function arrayIndexOf(arr, val, byteOffset, encoding, dir) {
   if (encoding !== undefined) {
     encoding = String(encoding).toLowerCase();
     if (
-      encoding === "ucs2" ||
-      encoding === "ucs-2" ||
-      encoding === "utf16le" ||
-      encoding === "utf-16le"
+      encoding === 'ucs2' ||
+      encoding === 'ucs-2' ||
+      encoding === 'utf16le' ||
+      encoding === 'utf-16le'
     ) {
       if (arr.length < 2 || val.length < 2) {
         return -1;
@@ -2711,7 +2711,7 @@ Buffer$1.prototype.indexOf = function indexOf(val, byteOffset, encoding) {
 Buffer$1.prototype.lastIndexOf = function lastIndexOf(
   val,
   byteOffset,
-  encoding,
+  encoding
 ) {
   return bidirectionalIndexOf(this, val, byteOffset, encoding, false);
 };
@@ -2730,7 +2730,7 @@ function hexWrite(buf, string, offset, length) {
 
   // must be an even number of digits
   var strLen = string.length;
-  if (strLen % 2 !== 0) throw new TypeError("Invalid hex string");
+  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string');
 
   if (length > strLen / 2) {
     length = strLen / 2;
@@ -2748,7 +2748,7 @@ function utf8Write(buf, string, offset, length) {
     utf8ToBytes(string, buf.length - offset),
     buf,
     offset,
-    length,
+    length
   );
 }
 
@@ -2769,18 +2769,18 @@ function ucs2Write(buf, string, offset, length) {
     utf16leToBytes(string, buf.length - offset),
     buf,
     offset,
-    length,
+    length
   );
 }
 
 Buffer$1.prototype.write = function write(string, offset, length, encoding) {
   // Buffer#write(string)
   if (offset === undefined) {
-    encoding = "utf8";
+    encoding = 'utf8';
     length = this.length;
     offset = 0;
     // Buffer#write(string, encoding)
-  } else if (length === undefined && typeof offset === "string") {
+  } else if (length === undefined && typeof offset === 'string') {
     encoding = offset;
     length = this.length;
     offset = 0;
@@ -2789,7 +2789,7 @@ Buffer$1.prototype.write = function write(string, offset, length, encoding) {
     offset = offset | 0;
     if (isFinite(length)) {
       length = length | 0;
-      if (encoding === undefined) encoding = "utf8";
+      if (encoding === undefined) encoding = 'utf8';
     } else {
       encoding = length;
       length = undefined;
@@ -2797,7 +2797,7 @@ Buffer$1.prototype.write = function write(string, offset, length, encoding) {
     // legacy write(string, encoding, offset, length) - remove in v0.13
   } else {
     throw new Error(
-      "Buffer.write(string, encoding, offset[, length]) is no longer supported",
+      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
     );
   }
 
@@ -2808,41 +2808,41 @@ Buffer$1.prototype.write = function write(string, offset, length, encoding) {
     (string.length > 0 && (length < 0 || offset < 0)) ||
     offset > this.length
   ) {
-    throw new RangeError("Attempt to write outside buffer bounds");
+    throw new RangeError('Attempt to write outside buffer bounds');
   }
 
-  if (!encoding) encoding = "utf8";
+  if (!encoding) encoding = 'utf8';
 
   var loweredCase = false;
   for (;;) {
     switch (encoding) {
-      case "hex":
+      case 'hex':
         return hexWrite(this, string, offset, length);
 
-      case "utf8":
-      case "utf-8":
+      case 'utf8':
+      case 'utf-8':
         return utf8Write(this, string, offset, length);
 
-      case "ascii":
+      case 'ascii':
         return asciiWrite(this, string, offset, length);
 
-      case "latin1":
-      case "binary":
+      case 'latin1':
+      case 'binary':
         return latin1Write(this, string, offset, length);
 
-      case "base64":
+      case 'base64':
         // Warning: maxLength not taken into account in base64Write
         return base64Write(this, string, offset, length);
 
-      case "ucs2":
-      case "ucs-2":
-      case "utf16le":
-      case "utf-16le":
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
         return ucs2Write(this, string, offset, length);
 
       default:
-        if (loweredCase) throw new TypeError("Unknown encoding: " + encoding);
-        encoding = ("" + encoding).toLowerCase();
+        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding);
+        encoding = ('' + encoding).toLowerCase();
         loweredCase = true;
     }
   }
@@ -2850,7 +2850,7 @@ Buffer$1.prototype.write = function write(string, offset, length, encoding) {
 
 Buffer$1.prototype.toJSON = function toJSON() {
   return {
-    type: "Buffer",
+    type: 'Buffer',
     data: Array.prototype.slice.call(this._arr || this, 0),
   };
 };
@@ -2960,19 +2960,19 @@ function decodeCodePointsArray(codePoints) {
   }
 
   // Decode in chunks to avoid "call stack size exceeded".
-  var res = "";
+  var res = '';
   var i = 0;
   while (i < len) {
     res += String.fromCharCode.apply(
       String,
-      codePoints.slice(i, (i += MAX_ARGUMENTS_LENGTH)),
+      codePoints.slice(i, (i += MAX_ARGUMENTS_LENGTH))
     );
   }
   return res;
 }
 
 function asciiSlice(buf, start, end) {
-  var ret = "";
+  var ret = '';
   end = Math.min(buf.length, end);
 
   for (var i = start; i < end; ++i) {
@@ -2982,7 +2982,7 @@ function asciiSlice(buf, start, end) {
 }
 
 function latin1Slice(buf, start, end) {
-  var ret = "";
+  var ret = '';
   end = Math.min(buf.length, end);
 
   for (var i = start; i < end; ++i) {
@@ -2997,7 +2997,7 @@ function hexSlice(buf, start, end) {
   if (!start || start < 0) start = 0;
   if (!end || end < 0 || end > len) end = len;
 
-  var out = "";
+  var out = '';
   for (var i = start; i < end; ++i) {
     out += toHex(buf[i]);
   }
@@ -3006,7 +3006,7 @@ function hexSlice(buf, start, end) {
 
 function utf16leSlice(buf, start, end) {
   var bytes = buf.slice(start, end);
-  var res = "";
+  var res = '';
   for (var i = 0; i < bytes.length; i += 2) {
     res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256);
   }
@@ -3054,15 +3054,15 @@ Buffer$1.prototype.slice = function slice(start, end) {
  */
 function checkOffset(offset, ext, length) {
   if (offset % 1 !== 0 || offset < 0)
-    throw new RangeError("offset is not uint");
+    throw new RangeError('offset is not uint');
   if (offset + ext > length)
-    throw new RangeError("Trying to access beyond buffer length");
+    throw new RangeError('Trying to access beyond buffer length');
 }
 
 Buffer$1.prototype.readUIntLE = function readUIntLE(
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3081,7 +3081,7 @@ Buffer$1.prototype.readUIntLE = function readUIntLE(
 Buffer$1.prototype.readUIntBE = function readUIntBE(
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3134,7 +3134,7 @@ Buffer$1.prototype.readUInt32BE = function readUInt32BE(offset, noAssert) {
 Buffer$1.prototype.readIntLE = function readIntLE(
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3156,7 +3156,7 @@ Buffer$1.prototype.readIntLE = function readIntLE(
 Buffer$1.prototype.readIntBE = function readIntBE(
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   offset = offset | 0;
   byteLength = byteLength | 0;
@@ -3240,14 +3240,14 @@ function checkInt(buf, value, offset, ext, max, min) {
     throw new TypeError('"buffer" argument must be a Buffer instance');
   if (value > max || value < min)
     throw new RangeError('"value" argument is out of bounds');
-  if (offset + ext > buf.length) throw new RangeError("Index out of range");
+  if (offset + ext > buf.length) throw new RangeError('Index out of range');
 }
 
 Buffer$1.prototype.writeUIntLE = function writeUIntLE(
   value,
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3271,7 +3271,7 @@ Buffer$1.prototype.writeUIntBE = function writeUIntBE(
   value,
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3312,7 +3312,7 @@ function objectWriteUInt16(buf, value, offset, littleEndian) {
 Buffer$1.prototype.writeUInt16LE = function writeUInt16LE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3329,7 +3329,7 @@ Buffer$1.prototype.writeUInt16LE = function writeUInt16LE(
 Buffer$1.prototype.writeUInt16BE = function writeUInt16BE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3353,7 +3353,7 @@ function objectWriteUInt32(buf, value, offset, littleEndian) {
 Buffer$1.prototype.writeUInt32LE = function writeUInt32LE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3372,7 +3372,7 @@ Buffer$1.prototype.writeUInt32LE = function writeUInt32LE(
 Buffer$1.prototype.writeUInt32BE = function writeUInt32BE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3392,7 +3392,7 @@ Buffer$1.prototype.writeIntLE = function writeIntLE(
   value,
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3420,7 +3420,7 @@ Buffer$1.prototype.writeIntBE = function writeIntBE(
   value,
   offset,
   byteLength,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3457,7 +3457,7 @@ Buffer$1.prototype.writeInt8 = function writeInt8(value, offset, noAssert) {
 Buffer$1.prototype.writeInt16LE = function writeInt16LE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3474,7 +3474,7 @@ Buffer$1.prototype.writeInt16LE = function writeInt16LE(
 Buffer$1.prototype.writeInt16BE = function writeInt16BE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3491,7 +3491,7 @@ Buffer$1.prototype.writeInt16BE = function writeInt16BE(
 Buffer$1.prototype.writeInt32LE = function writeInt32LE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3510,7 +3510,7 @@ Buffer$1.prototype.writeInt32LE = function writeInt32LE(
 Buffer$1.prototype.writeInt32BE = function writeInt32BE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   value = +value;
   offset = offset | 0;
@@ -3528,8 +3528,8 @@ Buffer$1.prototype.writeInt32BE = function writeInt32BE(
 };
 
 function checkIEEE754(buf, value, offset, ext, max, min) {
-  if (offset + ext > buf.length) throw new RangeError("Index out of range");
-  if (offset < 0) throw new RangeError("Index out of range");
+  if (offset + ext > buf.length) throw new RangeError('Index out of range');
+  if (offset < 0) throw new RangeError('Index out of range');
 }
 
 function writeFloat(buf, value, offset, littleEndian, noAssert) {
@@ -3543,7 +3543,7 @@ function writeFloat(buf, value, offset, littleEndian, noAssert) {
 Buffer$1.prototype.writeFloatLE = function writeFloatLE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   return writeFloat(this, value, offset, true, noAssert);
 };
@@ -3551,7 +3551,7 @@ Buffer$1.prototype.writeFloatLE = function writeFloatLE(
 Buffer$1.prototype.writeFloatBE = function writeFloatBE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   return writeFloat(this, value, offset, false, noAssert);
 };
@@ -3567,7 +3567,7 @@ function writeDouble(buf, value, offset, littleEndian, noAssert) {
 Buffer$1.prototype.writeDoubleLE = function writeDoubleLE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   return writeDouble(this, value, offset, true, noAssert);
 };
@@ -3575,7 +3575,7 @@ Buffer$1.prototype.writeDoubleLE = function writeDoubleLE(
 Buffer$1.prototype.writeDoubleBE = function writeDoubleBE(
   value,
   offset,
-  noAssert,
+  noAssert
 ) {
   return writeDouble(this, value, offset, false, noAssert);
 };
@@ -3594,11 +3594,11 @@ Buffer$1.prototype.copy = function copy(target, targetStart, start, end) {
 
   // Fatal error conditions
   if (targetStart < 0) {
-    throw new RangeError("targetStart out of bounds");
+    throw new RangeError('targetStart out of bounds');
   }
   if (start < 0 || start >= this.length)
-    throw new RangeError("sourceStart out of bounds");
-  if (end < 0) throw new RangeError("sourceEnd out of bounds");
+    throw new RangeError('sourceStart out of bounds');
+  if (end < 0) throw new RangeError('sourceEnd out of bounds');
 
   // Are we oob?
   if (end > this.length) end = this.length;
@@ -3623,7 +3623,7 @@ Buffer$1.prototype.copy = function copy(target, targetStart, start, end) {
     Uint8Array.prototype.set.call(
       target,
       this.subarray(start, start + len),
-      targetStart,
+      targetStart
     );
   }
 
@@ -3636,12 +3636,12 @@ Buffer$1.prototype.copy = function copy(target, targetStart, start, end) {
 //    buffer.fill(string[, offset[, end]][, encoding])
 Buffer$1.prototype.fill = function fill(val, start, end, encoding) {
   // Handle string cases:
-  if (typeof val === "string") {
-    if (typeof start === "string") {
+  if (typeof val === 'string') {
+    if (typeof start === 'string') {
       encoding = start;
       start = 0;
       end = this.length;
-    } else if (typeof end === "string") {
+    } else if (typeof end === 'string') {
       encoding = end;
       end = this.length;
     }
@@ -3651,19 +3651,19 @@ Buffer$1.prototype.fill = function fill(val, start, end, encoding) {
         val = code;
       }
     }
-    if (encoding !== undefined && typeof encoding !== "string") {
-      throw new TypeError("encoding must be a string");
+    if (encoding !== undefined && typeof encoding !== 'string') {
+      throw new TypeError('encoding must be a string');
     }
-    if (typeof encoding === "string" && !Buffer$1.isEncoding(encoding)) {
-      throw new TypeError("Unknown encoding: " + encoding);
+    if (typeof encoding === 'string' && !Buffer$1.isEncoding(encoding)) {
+      throw new TypeError('Unknown encoding: ' + encoding);
     }
-  } else if (typeof val === "number") {
+  } else if (typeof val === 'number') {
     val = val & 255;
   }
 
   // Invalid ranges are not set to a default, so can range check early.
   if (start < 0 || this.length < start || this.length < end) {
-    throw new RangeError("Out of range index");
+    throw new RangeError('Out of range index');
   }
 
   if (end <= start) {
@@ -3676,7 +3676,7 @@ Buffer$1.prototype.fill = function fill(val, start, end, encoding) {
   if (!val) val = 0;
 
   var i;
-  if (typeof val === "number") {
+  if (typeof val === 'number') {
     for (i = start; i < end; ++i) {
       this[i] = val;
     }
@@ -3700,23 +3700,23 @@ var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
 
 function base64clean(str) {
   // Node strips out invalid characters like \n and \t from the string, base64-js does not
-  str = stringtrim(str).replace(INVALID_BASE64_RE, "");
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '');
   // Node converts strings with length < 2 to ''
-  if (str.length < 2) return "";
+  if (str.length < 2) return '';
   // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
   while (str.length % 4 !== 0) {
-    str = str + "=";
+    str = str + '=';
   }
   return str;
 }
 
 function stringtrim(str) {
   if (str.trim) return str.trim();
-  return str.replace(/^\s+|\s+$/g, "");
+  return str.replace(/^\s+|\s+$/g, '');
 }
 
 function toHex(n) {
-  if (n < 16) return "0" + n.toString(16);
+  if (n < 16) return '0' + n.toString(16);
   return n.toString(16);
 }
 
@@ -3780,7 +3780,7 @@ function utf8ToBytes(string, units) {
       bytes.push(
         (codePoint >> 0xc) | 0xe0,
         ((codePoint >> 0x6) & 0x3f) | 0x80,
-        (codePoint & 0x3f) | 0x80,
+        (codePoint & 0x3f) | 0x80
       );
     } else if (codePoint < 0x110000) {
       if ((units -= 4) < 0) break;
@@ -3788,10 +3788,10 @@ function utf8ToBytes(string, units) {
         (codePoint >> 0x12) | 0xf0,
         ((codePoint >> 0xc) & 0x3f) | 0x80,
         ((codePoint >> 0x6) & 0x3f) | 0x80,
-        (codePoint & 0x3f) | 0x80,
+        (codePoint & 0x3f) | 0x80
       );
     } else {
-      throw new Error("Invalid code point");
+      throw new Error('Invalid code point');
     }
   }
 
@@ -3851,7 +3851,7 @@ function isBuffer(obj) {
 function isFastBuffer(obj) {
   return (
     !!obj.constructor &&
-    typeof obj.constructor.isBuffer === "function" &&
+    typeof obj.constructor.isBuffer === 'function' &&
     obj.constructor.isBuffer(obj)
   );
 }
@@ -3859,8 +3859,8 @@ function isFastBuffer(obj) {
 // For Node v0.10 support. Remove this eventually.
 function isSlowBuffer(obj) {
   return (
-    typeof obj.readFloatLE === "function" &&
-    typeof obj.slice === "function" &&
+    typeof obj.readFloatLE === 'function' &&
+    typeof obj.slice === 'function' &&
     isFastBuffer(obj.slice(0, 0))
   );
 }
@@ -3907,17 +3907,17 @@ var isBufferEncoding =
   Buffer.isEncoding ||
   function (encoding) {
     switch (encoding && encoding.toLowerCase()) {
-      case "hex":
-      case "utf8":
-      case "utf-8":
-      case "ascii":
-      case "binary":
-      case "base64":
-      case "ucs2":
-      case "ucs-2":
-      case "utf16le":
-      case "utf-16le":
-      case "raw":
+      case 'hex':
+      case 'utf8':
+      case 'utf-8':
+      case 'ascii':
+      case 'binary':
+      case 'base64':
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+      case 'raw':
         return true;
       default:
         return false;
@@ -3926,7 +3926,7 @@ var isBufferEncoding =
 
 function assertEncoding(encoding) {
   if (encoding && !isBufferEncoding(encoding)) {
-    throw new Error("Unknown encoding: " + encoding);
+    throw new Error('Unknown encoding: ' + encoding);
   }
 }
 
@@ -3939,20 +3939,20 @@ function assertEncoding(encoding) {
 // @TODO There should be a utf8-strict encoding that rejects invalid UTF-8 code
 // points as used by CESU-8.
 var StringDecoder = (string_decoder.StringDecoder = function (encoding) {
-  this.encoding = (encoding || "utf8").toLowerCase().replace(/[-_]/, "");
+  this.encoding = (encoding || 'utf8').toLowerCase().replace(/[-_]/, '');
   assertEncoding(encoding);
   switch (this.encoding) {
-    case "utf8":
+    case 'utf8':
       // CESU-8 represents each of Surrogate Pair by 3-bytes
       this.surrogateSize = 3;
       break;
-    case "ucs2":
-    case "utf16le":
+    case 'ucs2':
+    case 'utf16le':
       // UTF-16 represents each of Surrogate Pair by 2-bytes
       this.surrogateSize = 2;
       this.detectIncompleteChar = utf16DetectIncompleteChar;
       break;
-    case "base64":
+    case 'base64':
       // Base-64 stores 3 bytes in 4 chars, and pads the remainder.
       this.surrogateSize = 3;
       this.detectIncompleteChar = base64DetectIncompleteChar;
@@ -3981,7 +3981,7 @@ var StringDecoder = (string_decoder.StringDecoder = function (encoding) {
 // Buffer#write) will replace incomplete surrogates with the unicode
 // replacement character. See https://codereview.chromium.org/121173009/ .
 StringDecoder.prototype.write = function (buffer) {
-  var charStr = "";
+  var charStr = '';
   // if our last write ended with an incomplete multibyte character
   while (this.charLength) {
     // determine how many remaining bytes this buffer has to offer for this char
@@ -3996,7 +3996,7 @@ StringDecoder.prototype.write = function (buffer) {
 
     if (this.charReceived < this.charLength) {
       // still not enough chars in this buffer? wait for more ...
-      return "";
+      return '';
     }
 
     // remove bytes belonging to the current character from the buffer
@@ -4009,7 +4009,7 @@ StringDecoder.prototype.write = function (buffer) {
     var charCode = charStr.charCodeAt(charStr.length - 1);
     if (charCode >= 0xd800 && charCode <= 0xdbff) {
       this.charLength += this.surrogateSize;
-      charStr = "";
+      charStr = '';
       continue;
     }
     this.charReceived = this.charLength = 0;
@@ -4086,7 +4086,7 @@ StringDecoder.prototype.detectIncompleteChar = function (buffer) {
 };
 
 StringDecoder.prototype.end = function (buffer) {
-  var res = "";
+  var res = '';
   if (buffer && buffer.length) res = this.write(buffer);
 
   if (this.charReceived) {
@@ -4135,39 +4135,39 @@ function base64DetectIncompleteChar(buffer) {
     sax.MAX_BUFFER_LENGTH = 64 * 1024;
 
     var buffers = [
-      "comment",
-      "sgmlDecl",
-      "textNode",
-      "tagName",
-      "doctype",
-      "procInstName",
-      "procInstBody",
-      "entity",
-      "attribName",
-      "attribValue",
-      "cdata",
-      "script",
+      'comment',
+      'sgmlDecl',
+      'textNode',
+      'tagName',
+      'doctype',
+      'procInstName',
+      'procInstBody',
+      'entity',
+      'attribName',
+      'attribValue',
+      'cdata',
+      'script',
     ];
 
     sax.EVENTS = [
-      "text",
-      "processinginstruction",
-      "sgmldeclaration",
-      "doctype",
-      "comment",
-      "opentagstart",
-      "attribute",
-      "opentag",
-      "closetag",
-      "opencdata",
-      "cdata",
-      "closecdata",
-      "error",
-      "end",
-      "ready",
-      "script",
-      "opennamespace",
-      "closenamespace",
+      'text',
+      'processinginstruction',
+      'sgmldeclaration',
+      'doctype',
+      'comment',
+      'opentagstart',
+      'attribute',
+      'opentag',
+      'closetag',
+      'opencdata',
+      'cdata',
+      'closecdata',
+      'error',
+      'end',
+      'ready',
+      'script',
+      'opennamespace',
+      'closenamespace',
     ];
 
     function SAXParser(strict, opt) {
@@ -4177,11 +4177,11 @@ function base64DetectIncompleteChar(buffer) {
 
       var parser = this;
       clearBuffers(parser);
-      parser.q = parser.c = "";
+      parser.q = parser.c = '';
       parser.bufferCheckPosition = sax.MAX_BUFFER_LENGTH;
       parser.opt = opt || {};
       parser.opt.lowercase = parser.opt.lowercase || parser.opt.lowercasetags;
-      parser.looseCase = parser.opt.lowercase ? "toLowerCase" : "toUpperCase";
+      parser.looseCase = parser.opt.lowercase ? 'toLowerCase' : 'toUpperCase';
       parser.tags = [];
       parser.closed = parser.closedRoot = parser.sawRoot = false;
       parser.tag = parser.error = null;
@@ -4206,7 +4206,7 @@ function base64DetectIncompleteChar(buffer) {
       if (parser.trackPosition) {
         parser.position = parser.line = parser.column = 0;
       }
-      emit(parser, "onready");
+      emit(parser, 'onready');
     }
 
     if (!Object.create) {
@@ -4237,22 +4237,22 @@ function base64DetectIncompleteChar(buffer) {
           // Avoid issues by emitting the text node now,
           // so at least it won't get any bigger.
           switch (buffers[i]) {
-            case "textNode":
+            case 'textNode':
               closeText(parser);
               break;
 
-            case "cdata":
-              emitNode(parser, "oncdata", parser.cdata);
-              parser.cdata = "";
+            case 'cdata':
+              emitNode(parser, 'oncdata', parser.cdata);
+              parser.cdata = '';
               break;
 
-            case "script":
-              emitNode(parser, "onscript", parser.script);
-              parser.script = "";
+            case 'script':
+              emitNode(parser, 'onscript', parser.script);
+              parser.script = '';
               break;
 
             default:
-              error(parser, "Max buffer length exceeded: " + buffers[i]);
+              error(parser, 'Max buffer length exceeded: ' + buffers[i]);
           }
         }
         maxActual = Math.max(maxActual, len);
@@ -4264,19 +4264,19 @@ function base64DetectIncompleteChar(buffer) {
 
     function clearBuffers(parser) {
       for (var i = 0, l = buffers.length; i < l; i++) {
-        parser[buffers[i]] = "";
+        parser[buffers[i]] = '';
       }
     }
 
     function flushBuffers(parser) {
       closeText(parser);
-      if (parser.cdata !== "") {
-        emitNode(parser, "oncdata", parser.cdata);
-        parser.cdata = "";
+      if (parser.cdata !== '') {
+        emitNode(parser, 'oncdata', parser.cdata);
+        parser.cdata = '';
       }
-      if (parser.script !== "") {
-        emitNode(parser, "onscript", parser.script);
-        parser.script = "";
+      if (parser.script !== '') {
+        emitNode(parser, 'onscript', parser.script);
+        parser.script = '';
       }
     }
 
@@ -4299,13 +4299,13 @@ function base64DetectIncompleteChar(buffer) {
 
     var Stream;
     try {
-      Stream = require("stream").Stream;
+      Stream = require('stream').Stream;
     } catch (ex) {
       Stream = function () {};
     }
 
     var streamWraps = sax.EVENTS.filter(function (ev) {
-      return ev !== "error" && ev !== "end";
+      return ev !== 'error' && ev !== 'end';
     });
 
     function createStream(strict, opt) {
@@ -4326,11 +4326,11 @@ function base64DetectIncompleteChar(buffer) {
       var me = this;
 
       this._parser.onend = function () {
-        me.emit("end");
+        me.emit('end');
       };
 
       this._parser.onerror = function (er) {
-        me.emit("error", er);
+        me.emit('error', er);
 
         // if didn't throw, then means error was handled.
         // go ahead and clear error, so we can write again.
@@ -4340,14 +4340,14 @@ function base64DetectIncompleteChar(buffer) {
       this._decoder = null;
 
       streamWraps.forEach(function (ev) {
-        Object.defineProperty(me, "on" + ev, {
+        Object.defineProperty(me, 'on' + ev, {
           get: function () {
-            return me._parser["on" + ev];
+            return me._parser['on' + ev];
           },
           set: function (h) {
             if (!h) {
               me.removeAllListeners(ev);
-              me._parser["on" + ev] = h;
+              me._parser['on' + ev] = h;
               return h;
             }
             me.on(ev, h);
@@ -4366,19 +4366,19 @@ function base64DetectIncompleteChar(buffer) {
 
     SAXStream.prototype.write = function (data) {
       if (
-        typeof Buffer$1 === "function" &&
-        typeof Buffer$1.isBuffer === "function" &&
+        typeof Buffer$1 === 'function' &&
+        typeof Buffer$1.isBuffer === 'function' &&
         Buffer$1.isBuffer(data)
       ) {
         if (!this._decoder) {
           var SD = string_decoder.StringDecoder;
-          this._decoder = new SD("utf8");
+          this._decoder = new SD('utf8');
         }
         data = this._decoder.write(data);
       }
 
       this._parser.write(data.toString());
-      this.emit("data", data);
+      this.emit('data', data);
       return true;
     };
 
@@ -4392,8 +4392,8 @@ function base64DetectIncompleteChar(buffer) {
 
     SAXStream.prototype.on = function (ev, handler) {
       var me = this;
-      if (!me._parser["on" + ev] && streamWraps.indexOf(ev) !== -1) {
-        me._parser["on" + ev] = function () {
+      if (!me._parser['on' + ev] && streamWraps.indexOf(ev) !== -1) {
+        me._parser['on' + ev] = function () {
           var args =
             arguments.length === 1
               ? [arguments[0]]
@@ -4408,10 +4408,10 @@ function base64DetectIncompleteChar(buffer) {
 
     // this really needs to be replaced with character classes.
     // XML allows all manner of ridiculous numbers and digits.
-    var CDATA = "[CDATA[";
-    var DOCTYPE = "DOCTYPE";
-    var XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
-    var XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";
+    var CDATA = '[CDATA[';
+    var DOCTYPE = 'DOCTYPE';
+    var XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace';
+    var XMLNS_NAMESPACE = 'http://www.w3.org/2000/xmlns/';
     var rootNS = { xml: XML_NAMESPACE, xmlns: XMLNS_NAMESPACE };
 
     // http://www.w3.org/TR/REC-xml/#NT-NameStartChar
@@ -4432,7 +4432,7 @@ function base64DetectIncompleteChar(buffer) {
       /[#:_A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\u00B7\u0300-\u036F\u203F-\u2040.\d-]/;
 
     function isWhitespace(c) {
-      return c === " " || c === "\n" || c === "\r" || c === "\t";
+      return c === ' ' || c === '\n' || c === '\r' || c === '\t';
     }
 
     function isQuote(c) {
@@ -4440,7 +4440,7 @@ function base64DetectIncompleteChar(buffer) {
     }
 
     function isAttribEnd(c) {
-      return c === ">" || isWhitespace(c);
+      return c === '>' || isWhitespace(c);
     }
 
     function isMatch(regex, c) {
@@ -4492,17 +4492,17 @@ function base64DetectIncompleteChar(buffer) {
     };
 
     sax.XML_ENTITIES = {
-      amp: "&",
-      gt: ">",
-      lt: "<",
+      amp: '&',
+      gt: '>',
+      lt: '<',
       quot: '"',
       apos: "'",
     };
 
     sax.ENTITIES = {
-      amp: "&",
-      gt: ">",
-      lt: "<",
+      amp: '&',
+      gt: '>',
+      lt: '<',
       quot: '"',
       apos: "'",
       AElig: 198,
@@ -4757,7 +4757,7 @@ function base64DetectIncompleteChar(buffer) {
 
     Object.keys(sax.ENTITIES).forEach(function (key) {
       var e = sax.ENTITIES[key];
-      var s = typeof e === "number" ? String.fromCharCode(e) : e;
+      var s = typeof e === 'number' ? String.fromCharCode(e) : e;
       sax.ENTITIES[key] = s;
     });
 
@@ -4779,13 +4779,13 @@ function base64DetectIncompleteChar(buffer) {
 
     function closeText(parser) {
       parser.textNode = textopts(parser.opt, parser.textNode);
-      if (parser.textNode) emit(parser, "ontext", parser.textNode);
-      parser.textNode = "";
+      if (parser.textNode) emit(parser, 'ontext', parser.textNode);
+      parser.textNode = '';
     }
 
     function textopts(opt, text) {
       if (opt.trim) text = text.trim();
-      if (opt.normalize) text = text.replace(/\s+/g, " ");
+      if (opt.normalize) text = text.replace(/\s+/g, ' ');
       return text;
     }
 
@@ -4793,40 +4793,40 @@ function base64DetectIncompleteChar(buffer) {
       closeText(parser);
       if (parser.trackPosition) {
         er +=
-          "\nLine: " +
+          '\nLine: ' +
           parser.line +
-          "\nColumn: " +
+          '\nColumn: ' +
           parser.column +
-          "\nChar: " +
+          '\nChar: ' +
           parser.c;
       }
       er = new Error(er);
       parser.error = er;
-      emit(parser, "onerror", er);
+      emit(parser, 'onerror', er);
       return parser;
     }
 
     function end(parser) {
       if (parser.sawRoot && !parser.closedRoot)
-        strictFail(parser, "Unclosed root tag");
+        strictFail(parser, 'Unclosed root tag');
       if (
         parser.state !== S.BEGIN &&
         parser.state !== S.BEGIN_WHITESPACE &&
         parser.state !== S.TEXT
       ) {
-        error(parser, "Unexpected end");
+        error(parser, 'Unexpected end');
       }
       closeText(parser);
-      parser.c = "";
+      parser.c = '';
       parser.closed = true;
-      emit(parser, "onend");
+      emit(parser, 'onend');
       SAXParser.call(parser, parser.strict, parser.opt);
       return parser;
     }
 
     function strictFail(parser, message) {
-      if (typeof parser !== "object" || !(parser instanceof SAXParser)) {
-        throw new Error("bad call to strictFail");
+      if (typeof parser !== 'object' || !(parser instanceof SAXParser)) {
+        throw new Error('bad call to strictFail');
       }
       if (parser.strict) {
         error(parser, message);
@@ -4843,19 +4843,19 @@ function base64DetectIncompleteChar(buffer) {
         tag.ns = parent.ns;
       }
       parser.attribList.length = 0;
-      emitNode(parser, "onopentagstart", tag);
+      emitNode(parser, 'onopentagstart', tag);
     }
 
     function qname(name, attribute) {
-      var i = name.indexOf(":");
-      var qualName = i < 0 ? ["", name] : name.split(":");
+      var i = name.indexOf(':');
+      var qualName = i < 0 ? ['', name] : name.split(':');
       var prefix = qualName[0];
       var local = qualName[1];
 
       // <x "xmlns"="http://foo">
-      if (attribute && name === "xmlns") {
-        prefix = "xmlns";
-        local = "";
+      if (attribute && name === 'xmlns') {
+        prefix = 'xmlns';
+        local = '';
       }
 
       return { prefix: prefix, local: local };
@@ -4870,7 +4870,7 @@ function base64DetectIncompleteChar(buffer) {
         parser.attribList.indexOf(parser.attribName) !== -1 ||
         parser.tag.attributes.hasOwnProperty(parser.attribName)
       ) {
-        parser.attribName = parser.attribValue = "";
+        parser.attribName = parser.attribValue = '';
         return;
       }
 
@@ -4879,28 +4879,28 @@ function base64DetectIncompleteChar(buffer) {
         var prefix = qn.prefix;
         var local = qn.local;
 
-        if (prefix === "xmlns") {
+        if (prefix === 'xmlns') {
           // namespace binding attribute. push the binding into scope
-          if (local === "xml" && parser.attribValue !== XML_NAMESPACE) {
+          if (local === 'xml' && parser.attribValue !== XML_NAMESPACE) {
             strictFail(
               parser,
-              "xml: prefix must be bound to " +
+              'xml: prefix must be bound to ' +
                 XML_NAMESPACE +
-                "\n" +
-                "Actual: " +
-                parser.attribValue,
+                '\n' +
+                'Actual: ' +
+                parser.attribValue
             );
           } else if (
-            local === "xmlns" &&
+            local === 'xmlns' &&
             parser.attribValue !== XMLNS_NAMESPACE
           ) {
             strictFail(
               parser,
-              "xmlns: prefix must be bound to " +
+              'xmlns: prefix must be bound to ' +
                 XMLNS_NAMESPACE +
-                "\n" +
-                "Actual: " +
-                parser.attribValue,
+                '\n' +
+                'Actual: ' +
+                parser.attribValue
             );
           } else {
             var tag = parser.tag;
@@ -4919,13 +4919,13 @@ function base64DetectIncompleteChar(buffer) {
       } else {
         // in non-xmlns mode, we can emit the event right away
         parser.tag.attributes[parser.attribName] = parser.attribValue;
-        emitNode(parser, "onattribute", {
+        emitNode(parser, 'onattribute', {
           name: parser.attribName,
           value: parser.attribValue,
         });
       }
 
-      parser.attribName = parser.attribValue = "";
+      parser.attribName = parser.attribValue = '';
     }
 
     function openTag(parser, selfClosing) {
@@ -4937,12 +4937,12 @@ function base64DetectIncompleteChar(buffer) {
         var qn = qname(parser.tagName);
         tag.prefix = qn.prefix;
         tag.local = qn.local;
-        tag.uri = tag.ns[qn.prefix] || "";
+        tag.uri = tag.ns[qn.prefix] || '';
 
         if (tag.prefix && !tag.uri) {
           strictFail(
             parser,
-            "Unbound namespace prefix: " + JSON.stringify(parser.tagName),
+            'Unbound namespace prefix: ' + JSON.stringify(parser.tagName)
           );
           tag.uri = qn.prefix;
         }
@@ -4950,7 +4950,7 @@ function base64DetectIncompleteChar(buffer) {
         var parent = parser.tags[parser.tags.length - 1] || parser;
         if (tag.ns && parent.ns !== tag.ns) {
           Object.keys(tag.ns).forEach(function (p) {
-            emitNode(parser, "onopennamespace", {
+            emitNode(parser, 'onopennamespace', {
               prefix: p,
               uri: tag.ns[p],
             });
@@ -4967,7 +4967,7 @@ function base64DetectIncompleteChar(buffer) {
           var qualName = qname(name, true);
           var prefix = qualName.prefix;
           var local = qualName.local;
-          var uri = prefix === "" ? "" : tag.ns[prefix] || "";
+          var uri = prefix === '' ? '' : tag.ns[prefix] || '';
           var a = {
             name: name,
             value: value,
@@ -4978,15 +4978,15 @@ function base64DetectIncompleteChar(buffer) {
 
           // if there's any attributes with an undefined namespace,
           // then fail on them now.
-          if (prefix && prefix !== "xmlns" && !uri) {
+          if (prefix && prefix !== 'xmlns' && !uri) {
             strictFail(
               parser,
-              "Unbound namespace prefix: " + JSON.stringify(prefix),
+              'Unbound namespace prefix: ' + JSON.stringify(prefix)
             );
             a.uri = prefix;
           }
           parser.tag.attributes[name] = a;
-          emitNode(parser, "onattribute", a);
+          emitNode(parser, 'onattribute', a);
         }
         parser.attribList.length = 0;
       }
@@ -4996,38 +4996,38 @@ function base64DetectIncompleteChar(buffer) {
       // process the tag
       parser.sawRoot = true;
       parser.tags.push(parser.tag);
-      emitNode(parser, "onopentag", parser.tag);
+      emitNode(parser, 'onopentag', parser.tag);
       if (!selfClosing) {
         // special case for <script> in non-strict mode.
-        if (!parser.noscript && parser.tagName.toLowerCase() === "script") {
+        if (!parser.noscript && parser.tagName.toLowerCase() === 'script') {
           parser.state = S.SCRIPT;
         } else {
           parser.state = S.TEXT;
         }
         parser.tag = null;
-        parser.tagName = "";
+        parser.tagName = '';
       }
-      parser.attribName = parser.attribValue = "";
+      parser.attribName = parser.attribValue = '';
       parser.attribList.length = 0;
     }
 
     function closeTag(parser) {
       if (!parser.tagName) {
-        strictFail(parser, "Weird empty close tag.");
-        parser.textNode += "</>";
+        strictFail(parser, 'Weird empty close tag.');
+        parser.textNode += '</>';
         parser.state = S.TEXT;
         return;
       }
 
       if (parser.script) {
-        if (parser.tagName !== "script") {
-          parser.script += "</" + parser.tagName + ">";
-          parser.tagName = "";
+        if (parser.tagName !== 'script') {
+          parser.script += '</' + parser.tagName + '>';
+          parser.tagName = '';
           parser.state = S.SCRIPT;
           return;
         }
-        emitNode(parser, "onscript", parser.script);
-        parser.script = "";
+        emitNode(parser, 'onscript', parser.script);
+        parser.script = '';
       }
 
       // first make sure that the closing tag actually exists.
@@ -5042,7 +5042,7 @@ function base64DetectIncompleteChar(buffer) {
         var close = parser.tags[t];
         if (close.name !== closeTo) {
           // fail the first time in strict mode
-          strictFail(parser, "Unexpected close tag");
+          strictFail(parser, 'Unexpected close tag');
         } else {
           break;
         }
@@ -5050,8 +5050,8 @@ function base64DetectIncompleteChar(buffer) {
 
       // didn't find it.  we already failed for strict, so just abort.
       if (t < 0) {
-        strictFail(parser, "Unmatched closing tag: " + parser.tagName);
-        parser.textNode += "</" + parser.tagName + ">";
+        strictFail(parser, 'Unmatched closing tag: ' + parser.tagName);
+        parser.textNode += '</' + parser.tagName + '>';
         parser.state = S.TEXT;
         return;
       }
@@ -5060,7 +5060,7 @@ function base64DetectIncompleteChar(buffer) {
       while (s-- > t) {
         var tag = (parser.tag = parser.tags.pop());
         parser.tagName = parser.tag.name;
-        emitNode(parser, "onclosetag", parser.tagName);
+        emitNode(parser, 'onclosetag', parser.tagName);
 
         var x = {};
         for (var i in tag.ns) {
@@ -5072,12 +5072,12 @@ function base64DetectIncompleteChar(buffer) {
           // remove namespace bindings introduced by tag
           Object.keys(tag.ns).forEach(function (p) {
             var n = tag.ns[p];
-            emitNode(parser, "onclosenamespace", { prefix: p, uri: n });
+            emitNode(parser, 'onclosenamespace', { prefix: p, uri: n });
           });
         }
       }
       if (t === 0) parser.closedRoot = true;
-      parser.tagName = parser.attribValue = parser.attribName = "";
+      parser.tagName = parser.attribValue = parser.attribName = '';
       parser.attribList.length = 0;
       parser.state = S.TEXT;
     }
@@ -5086,7 +5086,7 @@ function base64DetectIncompleteChar(buffer) {
       var entity = parser.entity;
       var entityLC = entity.toLowerCase();
       var num;
-      var numStr = "";
+      var numStr = '';
 
       if (parser.ENTITIES[entity]) {
         return parser.ENTITIES[entity];
@@ -5095,8 +5095,8 @@ function base64DetectIncompleteChar(buffer) {
         return parser.ENTITIES[entityLC];
       }
       entity = entityLC;
-      if (entity.charAt(0) === "#") {
-        if (entity.charAt(1) === "x") {
+      if (entity.charAt(0) === '#') {
+        if (entity.charAt(1) === 'x') {
           entity = entity.slice(2);
           num = parseInt(entity, 16);
           numStr = num.toString(16);
@@ -5106,30 +5106,30 @@ function base64DetectIncompleteChar(buffer) {
           numStr = num.toString(10);
         }
       }
-      entity = entity.replace(/^0+/, "");
+      entity = entity.replace(/^0+/, '');
       if (isNaN(num) || numStr.toLowerCase() !== entity) {
-        strictFail(parser, "Invalid character entity");
-        return "&" + parser.entity + ";";
+        strictFail(parser, 'Invalid character entity');
+        return '&' + parser.entity + ';';
       }
 
       return String.fromCodePoint(num);
     }
 
     function beginWhiteSpace(parser, c) {
-      if (c === "<") {
+      if (c === '<') {
         parser.state = S.OPEN_WAKA;
         parser.startTagPosition = parser.position;
       } else if (!isWhitespace(c)) {
         // have to process this as a text node.
         // weird, but happens.
-        strictFail(parser, "Non-whitespace before first tag.");
+        strictFail(parser, 'Non-whitespace before first tag.');
         parser.textNode = c;
         parser.state = S.TEXT;
       }
     }
 
     function charAt(chunk, i) {
-      var result = "";
+      var result = '';
       if (i < chunk.length) {
         result = chunk.charAt(i);
       }
@@ -5144,17 +5144,17 @@ function base64DetectIncompleteChar(buffer) {
       if (parser.closed) {
         return error(
           parser,
-          "Cannot write after close. Assign an onready handler.",
+          'Cannot write after close. Assign an onready handler.'
         );
       }
       if (chunk === null) {
         return end(parser);
       }
-      if (typeof chunk === "object") {
+      if (typeof chunk === 'object') {
         chunk = chunk.toString();
       }
       var i = 0;
-      var c = "";
+      var c = '';
       while (true) {
         c = charAt(chunk, i++);
         parser.c = c;
@@ -5165,7 +5165,7 @@ function base64DetectIncompleteChar(buffer) {
 
         if (parser.trackPosition) {
           parser.position++;
-          if (c === "\n") {
+          if (c === '\n') {
             parser.line++;
             parser.column = 0;
           } else {
@@ -5176,7 +5176,7 @@ function base64DetectIncompleteChar(buffer) {
         switch (parser.state) {
           case S.BEGIN:
             parser.state = S.BEGIN_WHITESPACE;
-            if (c === "\uFEFF") {
+            if (c === '\uFEFF') {
               continue;
             }
             beginWhiteSpace(parser, c);
@@ -5189,11 +5189,11 @@ function base64DetectIncompleteChar(buffer) {
           case S.TEXT:
             if (parser.sawRoot && !parser.closedRoot) {
               var starti = i - 1;
-              while (c && c !== "<" && c !== "&") {
+              while (c && c !== '<' && c !== '&') {
                 c = charAt(chunk, i++);
                 if (c && parser.trackPosition) {
                   parser.position++;
-                  if (c === "\n") {
+                  if (c === '\n') {
                     parser.line++;
                     parser.column = 0;
                   } else {
@@ -5204,16 +5204,16 @@ function base64DetectIncompleteChar(buffer) {
               parser.textNode += chunk.substring(starti, i - 1);
             }
             if (
-              c === "<" &&
+              c === '<' &&
               !(parser.sawRoot && parser.closedRoot && !parser.strict)
             ) {
               parser.state = S.OPEN_WAKA;
               parser.startTagPosition = parser.position;
             } else {
               if (!isWhitespace(c) && (!parser.sawRoot || parser.closedRoot)) {
-                strictFail(parser, "Text data outside of root node.");
+                strictFail(parser, 'Text data outside of root node.');
               }
-              if (c === "&") {
+              if (c === '&') {
                 parser.state = S.TEXT_ENTITY;
               } else {
                 parser.textNode += c;
@@ -5223,7 +5223,7 @@ function base64DetectIncompleteChar(buffer) {
 
           case S.SCRIPT:
             // only non-strict
-            if (c === "<") {
+            if (c === '<') {
               parser.state = S.SCRIPT_ENDING;
             } else {
               parser.script += c;
@@ -5231,64 +5231,64 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.SCRIPT_ENDING:
-            if (c === "/") {
+            if (c === '/') {
               parser.state = S.CLOSE_TAG;
             } else {
-              parser.script += "<" + c;
+              parser.script += '<' + c;
               parser.state = S.SCRIPT;
             }
             continue;
 
           case S.OPEN_WAKA:
             // either a /, ?, !, or text is coming next.
-            if (c === "!") {
+            if (c === '!') {
               parser.state = S.SGML_DECL;
-              parser.sgmlDecl = "";
+              parser.sgmlDecl = '';
             } else if (isWhitespace(c));
             else if (isMatch(nameStart, c)) {
               parser.state = S.OPEN_TAG;
               parser.tagName = c;
-            } else if (c === "/") {
+            } else if (c === '/') {
               parser.state = S.CLOSE_TAG;
-              parser.tagName = "";
-            } else if (c === "?") {
+              parser.tagName = '';
+            } else if (c === '?') {
               parser.state = S.PROC_INST;
-              parser.procInstName = parser.procInstBody = "";
+              parser.procInstName = parser.procInstBody = '';
             } else {
-              strictFail(parser, "Unencoded <");
+              strictFail(parser, 'Unencoded <');
               // if there was some whitespace, then add that in.
               if (parser.startTagPosition + 1 < parser.position) {
                 var pad = parser.position - parser.startTagPosition;
-                c = new Array(pad).join(" ") + c;
+                c = new Array(pad).join(' ') + c;
               }
-              parser.textNode += "<" + c;
+              parser.textNode += '<' + c;
               parser.state = S.TEXT;
             }
             continue;
 
           case S.SGML_DECL:
             if ((parser.sgmlDecl + c).toUpperCase() === CDATA) {
-              emitNode(parser, "onopencdata");
+              emitNode(parser, 'onopencdata');
               parser.state = S.CDATA;
-              parser.sgmlDecl = "";
-              parser.cdata = "";
-            } else if (parser.sgmlDecl + c === "--") {
+              parser.sgmlDecl = '';
+              parser.cdata = '';
+            } else if (parser.sgmlDecl + c === '--') {
               parser.state = S.COMMENT;
-              parser.comment = "";
-              parser.sgmlDecl = "";
+              parser.comment = '';
+              parser.sgmlDecl = '';
             } else if ((parser.sgmlDecl + c).toUpperCase() === DOCTYPE) {
               parser.state = S.DOCTYPE;
               if (parser.doctype || parser.sawRoot) {
                 strictFail(
                   parser,
-                  "Inappropriately located doctype declaration",
+                  'Inappropriately located doctype declaration'
                 );
               }
-              parser.doctype = "";
-              parser.sgmlDecl = "";
-            } else if (c === ">") {
-              emitNode(parser, "onsgmldeclaration", parser.sgmlDecl);
-              parser.sgmlDecl = "";
+              parser.doctype = '';
+              parser.sgmlDecl = '';
+            } else if (c === '>') {
+              emitNode(parser, 'onsgmldeclaration', parser.sgmlDecl);
+              parser.sgmlDecl = '';
               parser.state = S.TEXT;
             } else if (isQuote(c)) {
               parser.state = S.SGML_DECL_QUOTED;
@@ -5301,19 +5301,19 @@ function base64DetectIncompleteChar(buffer) {
           case S.SGML_DECL_QUOTED:
             if (c === parser.q) {
               parser.state = S.SGML_DECL;
-              parser.q = "";
+              parser.q = '';
             }
             parser.sgmlDecl += c;
             continue;
 
           case S.DOCTYPE:
-            if (c === ">") {
+            if (c === '>') {
               parser.state = S.TEXT;
-              emitNode(parser, "ondoctype", parser.doctype);
+              emitNode(parser, 'ondoctype', parser.doctype);
               parser.doctype = true; // just remember that we saw it.
             } else {
               parser.doctype += c;
-              if (c === "[") {
+              if (c === '[') {
                 parser.state = S.DOCTYPE_DTD;
               } else if (isQuote(c)) {
                 parser.state = S.DOCTYPE_QUOTED;
@@ -5325,14 +5325,14 @@ function base64DetectIncompleteChar(buffer) {
           case S.DOCTYPE_QUOTED:
             parser.doctype += c;
             if (c === parser.q) {
-              parser.q = "";
+              parser.q = '';
               parser.state = S.DOCTYPE;
             }
             continue;
 
           case S.DOCTYPE_DTD:
             parser.doctype += c;
-            if (c === "]") {
+            if (c === ']') {
               parser.state = S.DOCTYPE;
             } else if (isQuote(c)) {
               parser.state = S.DOCTYPE_DTD_QUOTED;
@@ -5344,12 +5344,12 @@ function base64DetectIncompleteChar(buffer) {
             parser.doctype += c;
             if (c === parser.q) {
               parser.state = S.DOCTYPE_DTD;
-              parser.q = "";
+              parser.q = '';
             }
             continue;
 
           case S.COMMENT:
-            if (c === "-") {
+            if (c === '-') {
               parser.state = S.COMMENT_ENDING;
             } else {
               parser.comment += c;
@@ -5357,25 +5357,25 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.COMMENT_ENDING:
-            if (c === "-") {
+            if (c === '-') {
               parser.state = S.COMMENT_ENDED;
               parser.comment = textopts(parser.opt, parser.comment);
               if (parser.comment) {
-                emitNode(parser, "oncomment", parser.comment);
+                emitNode(parser, 'oncomment', parser.comment);
               }
-              parser.comment = "";
+              parser.comment = '';
             } else {
-              parser.comment += "-" + c;
+              parser.comment += '-' + c;
               parser.state = S.COMMENT;
             }
             continue;
 
           case S.COMMENT_ENDED:
-            if (c !== ">") {
-              strictFail(parser, "Malformed comment");
+            if (c !== '>') {
+              strictFail(parser, 'Malformed comment');
               // allow <!-- blah -- bloo --> in non-strict mode,
               // which is a comment of " blah -- bloo "
-              parser.comment += "--" + c;
+              parser.comment += '--' + c;
               parser.state = S.COMMENT;
             } else {
               parser.state = S.TEXT;
@@ -5383,7 +5383,7 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.CDATA:
-            if (c === "]") {
+            if (c === ']') {
               parser.state = S.CDATA_ENDING;
             } else {
               parser.cdata += c;
@@ -5391,32 +5391,32 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.CDATA_ENDING:
-            if (c === "]") {
+            if (c === ']') {
               parser.state = S.CDATA_ENDING_2;
             } else {
-              parser.cdata += "]" + c;
+              parser.cdata += ']' + c;
               parser.state = S.CDATA;
             }
             continue;
 
           case S.CDATA_ENDING_2:
-            if (c === ">") {
+            if (c === '>') {
               if (parser.cdata) {
-                emitNode(parser, "oncdata", parser.cdata);
+                emitNode(parser, 'oncdata', parser.cdata);
               }
-              emitNode(parser, "onclosecdata");
-              parser.cdata = "";
+              emitNode(parser, 'onclosecdata');
+              parser.cdata = '';
               parser.state = S.TEXT;
-            } else if (c === "]") {
-              parser.cdata += "]";
+            } else if (c === ']') {
+              parser.cdata += ']';
             } else {
-              parser.cdata += "]]" + c;
+              parser.cdata += ']]' + c;
               parser.state = S.CDATA;
             }
             continue;
 
           case S.PROC_INST:
-            if (c === "?") {
+            if (c === '?') {
               parser.state = S.PROC_INST_ENDING;
             } else if (isWhitespace(c)) {
               parser.state = S.PROC_INST_BODY;
@@ -5428,7 +5428,7 @@ function base64DetectIncompleteChar(buffer) {
           case S.PROC_INST_BODY:
             if (!parser.procInstBody && isWhitespace(c)) {
               continue;
-            } else if (c === "?") {
+            } else if (c === '?') {
               parser.state = S.PROC_INST_ENDING;
             } else {
               parser.procInstBody += c;
@@ -5436,15 +5436,15 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.PROC_INST_ENDING:
-            if (c === ">") {
-              emitNode(parser, "onprocessinginstruction", {
+            if (c === '>') {
+              emitNode(parser, 'onprocessinginstruction', {
                 name: parser.procInstName,
                 body: parser.procInstBody,
               });
-              parser.procInstName = parser.procInstBody = "";
+              parser.procInstName = parser.procInstBody = '';
               parser.state = S.TEXT;
             } else {
-              parser.procInstBody += "?" + c;
+              parser.procInstBody += '?' + c;
               parser.state = S.PROC_INST_BODY;
             }
             continue;
@@ -5454,13 +5454,13 @@ function base64DetectIncompleteChar(buffer) {
               parser.tagName += c;
             } else {
               newTag(parser);
-              if (c === ">") {
+              if (c === '>') {
                 openTag(parser);
-              } else if (c === "/") {
+              } else if (c === '/') {
                 parser.state = S.OPEN_TAG_SLASH;
               } else {
                 if (!isWhitespace(c)) {
-                  strictFail(parser, "Invalid character in tag name");
+                  strictFail(parser, 'Invalid character in tag name');
                 }
                 parser.state = S.ATTRIB;
               }
@@ -5468,13 +5468,13 @@ function base64DetectIncompleteChar(buffer) {
             continue;
 
           case S.OPEN_TAG_SLASH:
-            if (c === ">") {
+            if (c === '>') {
               openTag(parser, true);
               closeTag(parser);
             } else {
               strictFail(
                 parser,
-                "Forward-slash in opening tag not followed by >",
+                'Forward-slash in opening tag not followed by >'
               );
               parser.state = S.ATTRIB;
             }
@@ -5484,24 +5484,24 @@ function base64DetectIncompleteChar(buffer) {
             // haven't read the attribute name yet.
             if (isWhitespace(c)) {
               continue;
-            } else if (c === ">") {
+            } else if (c === '>') {
               openTag(parser);
-            } else if (c === "/") {
+            } else if (c === '/') {
               parser.state = S.OPEN_TAG_SLASH;
             } else if (isMatch(nameStart, c)) {
               parser.attribName = c;
-              parser.attribValue = "";
+              parser.attribValue = '';
               parser.state = S.ATTRIB_NAME;
             } else {
-              strictFail(parser, "Invalid attribute name");
+              strictFail(parser, 'Invalid attribute name');
             }
             continue;
 
           case S.ATTRIB_NAME:
-            if (c === "=") {
+            if (c === '=') {
               parser.state = S.ATTRIB_VALUE;
-            } else if (c === ">") {
-              strictFail(parser, "Attribute without value");
+            } else if (c === '>') {
+              strictFail(parser, 'Attribute without value');
               parser.attribValue = parser.attribName;
               attrib(parser);
               openTag(parser);
@@ -5510,31 +5510,31 @@ function base64DetectIncompleteChar(buffer) {
             } else if (isMatch(nameBody, c)) {
               parser.attribName += c;
             } else {
-              strictFail(parser, "Invalid attribute name");
+              strictFail(parser, 'Invalid attribute name');
             }
             continue;
 
           case S.ATTRIB_NAME_SAW_WHITE:
-            if (c === "=") {
+            if (c === '=') {
               parser.state = S.ATTRIB_VALUE;
             } else if (isWhitespace(c)) {
               continue;
             } else {
-              strictFail(parser, "Attribute without value");
-              parser.tag.attributes[parser.attribName] = "";
-              parser.attribValue = "";
-              emitNode(parser, "onattribute", {
+              strictFail(parser, 'Attribute without value');
+              parser.tag.attributes[parser.attribName] = '';
+              parser.attribValue = '';
+              emitNode(parser, 'onattribute', {
                 name: parser.attribName,
-                value: "",
+                value: '',
               });
-              parser.attribName = "";
-              if (c === ">") {
+              parser.attribName = '';
+              if (c === '>') {
                 openTag(parser);
               } else if (isMatch(nameStart, c)) {
                 parser.attribName = c;
                 parser.state = S.ATTRIB_NAME;
               } else {
-                strictFail(parser, "Invalid attribute name");
+                strictFail(parser, 'Invalid attribute name');
                 parser.state = S.ATTRIB;
               }
             }
@@ -5547,7 +5547,7 @@ function base64DetectIncompleteChar(buffer) {
               parser.q = c;
               parser.state = S.ATTRIB_VALUE_QUOTED;
             } else {
-              strictFail(parser, "Unquoted attribute value");
+              strictFail(parser, 'Unquoted attribute value');
               parser.state = S.ATTRIB_VALUE_UNQUOTED;
               parser.attribValue = c;
             }
@@ -5555,7 +5555,7 @@ function base64DetectIncompleteChar(buffer) {
 
           case S.ATTRIB_VALUE_QUOTED:
             if (c !== parser.q) {
-              if (c === "&") {
+              if (c === '&') {
                 parser.state = S.ATTRIB_VALUE_ENTITY_Q;
               } else {
                 parser.attribValue += c;
@@ -5563,30 +5563,30 @@ function base64DetectIncompleteChar(buffer) {
               continue;
             }
             attrib(parser);
-            parser.q = "";
+            parser.q = '';
             parser.state = S.ATTRIB_VALUE_CLOSED;
             continue;
 
           case S.ATTRIB_VALUE_CLOSED:
             if (isWhitespace(c)) {
               parser.state = S.ATTRIB;
-            } else if (c === ">") {
+            } else if (c === '>') {
               openTag(parser);
-            } else if (c === "/") {
+            } else if (c === '/') {
               parser.state = S.OPEN_TAG_SLASH;
             } else if (isMatch(nameStart, c)) {
-              strictFail(parser, "No whitespace between attributes");
+              strictFail(parser, 'No whitespace between attributes');
               parser.attribName = c;
-              parser.attribValue = "";
+              parser.attribValue = '';
               parser.state = S.ATTRIB_NAME;
             } else {
-              strictFail(parser, "Invalid attribute name");
+              strictFail(parser, 'Invalid attribute name');
             }
             continue;
 
           case S.ATTRIB_VALUE_UNQUOTED:
             if (!isAttribEnd(c)) {
-              if (c === "&") {
+              if (c === '&') {
                 parser.state = S.ATTRIB_VALUE_ENTITY_U;
               } else {
                 parser.attribValue += c;
@@ -5594,7 +5594,7 @@ function base64DetectIncompleteChar(buffer) {
               continue;
             }
             attrib(parser);
-            if (c === ">") {
+            if (c === '>') {
               openTag(parser);
             } else {
               parser.state = S.ATTRIB;
@@ -5607,25 +5607,25 @@ function base64DetectIncompleteChar(buffer) {
                 continue;
               } else if (notMatch(nameStart, c)) {
                 if (parser.script) {
-                  parser.script += "</" + c;
+                  parser.script += '</' + c;
                   parser.state = S.SCRIPT;
                 } else {
-                  strictFail(parser, "Invalid tagname in closing tag.");
+                  strictFail(parser, 'Invalid tagname in closing tag.');
                 }
               } else {
                 parser.tagName = c;
               }
-            } else if (c === ">") {
+            } else if (c === '>') {
               closeTag(parser);
             } else if (isMatch(nameBody, c)) {
               parser.tagName += c;
             } else if (parser.script) {
-              parser.script += "</" + parser.tagName;
-              parser.tagName = "";
+              parser.script += '</' + parser.tagName;
+              parser.tagName = '';
               parser.state = S.SCRIPT;
             } else {
               if (!isWhitespace(c)) {
-                strictFail(parser, "Invalid tagname in closing tag");
+                strictFail(parser, 'Invalid tagname in closing tag');
               }
               parser.state = S.CLOSE_TAG_SAW_WHITE;
             }
@@ -5635,10 +5635,10 @@ function base64DetectIncompleteChar(buffer) {
             if (isWhitespace(c)) {
               continue;
             }
-            if (c === ">") {
+            if (c === '>') {
               closeTag(parser);
             } else {
-              strictFail(parser, "Invalid characters in closing tag");
+              strictFail(parser, 'Invalid characters in closing tag');
             }
             continue;
 
@@ -5650,39 +5650,39 @@ function base64DetectIncompleteChar(buffer) {
             switch (parser.state) {
               case S.TEXT_ENTITY:
                 returnState = S.TEXT;
-                buffer = "textNode";
+                buffer = 'textNode';
                 break;
 
               case S.ATTRIB_VALUE_ENTITY_Q:
                 returnState = S.ATTRIB_VALUE_QUOTED;
-                buffer = "attribValue";
+                buffer = 'attribValue';
                 break;
 
               case S.ATTRIB_VALUE_ENTITY_U:
                 returnState = S.ATTRIB_VALUE_UNQUOTED;
-                buffer = "attribValue";
+                buffer = 'attribValue';
                 break;
             }
 
-            if (c === ";") {
+            if (c === ';') {
               parser[buffer] += parseEntity(parser);
-              parser.entity = "";
+              parser.entity = '';
               parser.state = returnState;
             } else if (
               isMatch(parser.entity.length ? entityBody : entityStart, c)
             ) {
               parser.entity += c;
             } else {
-              strictFail(parser, "Invalid character in entity name");
-              parser[buffer] += "&" + parser.entity + c;
-              parser.entity = "";
+              strictFail(parser, 'Invalid character in entity name');
+              parser[buffer] += '&' + parser.entity + c;
+              parser.entity = '';
               parser.state = returnState;
             }
 
             continue;
 
           default:
-            throw new Error(parser, "Unknown state: " + parser.state);
+            throw new Error(parser, 'Unknown state: ' + parser.state);
         }
       } // while
 
@@ -5706,9 +5706,9 @@ function base64DetectIncompleteChar(buffer) {
           var index = -1;
           var length = arguments.length;
           if (!length) {
-            return "";
+            return '';
           }
-          var result = "";
+          var result = '';
           while (++index < length) {
             var codePoint = Number(arguments[index]);
             if (
@@ -5717,7 +5717,7 @@ function base64DetectIncompleteChar(buffer) {
               codePoint > 0x10ffff || // not a valid Unicode code point
               floor(codePoint) !== codePoint // not an integer
             ) {
-              throw RangeError("Invalid code point: " + codePoint);
+              throw RangeError('Invalid code point: ' + codePoint);
             }
             if (codePoint <= 0xffff) {
               // BMP code point
@@ -5739,7 +5739,7 @@ function base64DetectIncompleteChar(buffer) {
         };
         /* istanbul ignore next */
         if (Object.defineProperty) {
-          Object.defineProperty(String, "fromCodePoint", {
+          Object.defineProperty(String, 'fromCodePoint', {
             value: fromCodePoint,
             configurable: true,
             writable: true,
@@ -5758,7 +5758,7 @@ var arrayHelper = {
       return Array.isArray(value);
     }
     // fallback for older browsers like  IE 8
-    return Object.prototype.toString.call(value) === "[object Array]";
+    return Object.prototype.toString.call(value) === '[object Array]';
   },
 };
 
@@ -5777,15 +5777,15 @@ var optionsHelper = {
   },
 
   ensureFlagExists: function (item, options) {
-    if (!(item in options) || typeof options[item] !== "boolean") {
+    if (!(item in options) || typeof options[item] !== 'boolean') {
       options[item] = false;
     }
   },
 
   ensureSpacesExists: function (options) {
     if (
-      !("spaces" in options) ||
-      (typeof options.spaces !== "number" && typeof options.spaces !== "string")
+      !('spaces' in options) ||
+      (typeof options.spaces !== 'number' && typeof options.spaces !== 'string')
     ) {
       options.spaces = 0;
     }
@@ -5793,8 +5793,8 @@ var optionsHelper = {
 
   ensureAlwaysArrayExists: function (options) {
     if (
-      !("alwaysArray" in options) ||
-      (typeof options.alwaysArray !== "boolean" &&
+      !('alwaysArray' in options) ||
+      (typeof options.alwaysArray !== 'boolean' &&
         !isArray$2(options.alwaysArray))
     ) {
       options.alwaysArray = false;
@@ -5802,13 +5802,13 @@ var optionsHelper = {
   },
 
   ensureKeyExists: function (key, options) {
-    if (!(key + "Key" in options) || typeof options[key + "Key"] !== "string") {
-      options[key + "Key"] = options.compact ? "_" + key : key;
+    if (!(key + 'Key' in options) || typeof options[key + 'Key'] !== 'string') {
+      options[key + 'Key'] = options.compact ? '_' + key : key;
     }
   },
 
   checkFnExists: function (key, options) {
-    return key + "Fn" in options;
+    return key + 'Fn' in options;
   },
 };
 
@@ -5821,34 +5821,34 @@ var currentElement$1;
 
 function validateOptions$2(userOptions) {
   options = helper$2.copyOptions(userOptions);
-  helper$2.ensureFlagExists("ignoreDeclaration", options);
-  helper$2.ensureFlagExists("ignoreInstruction", options);
-  helper$2.ensureFlagExists("ignoreAttributes", options);
-  helper$2.ensureFlagExists("ignoreText", options);
-  helper$2.ensureFlagExists("ignoreComment", options);
-  helper$2.ensureFlagExists("ignoreCdata", options);
-  helper$2.ensureFlagExists("ignoreDoctype", options);
-  helper$2.ensureFlagExists("compact", options);
-  helper$2.ensureFlagExists("alwaysChildren", options);
-  helper$2.ensureFlagExists("addParent", options);
-  helper$2.ensureFlagExists("trim", options);
-  helper$2.ensureFlagExists("nativeType", options);
-  helper$2.ensureFlagExists("nativeTypeAttributes", options);
-  helper$2.ensureFlagExists("sanitize", options);
-  helper$2.ensureFlagExists("instructionHasAttributes", options);
-  helper$2.ensureFlagExists("captureSpacesBetweenElements", options);
+  helper$2.ensureFlagExists('ignoreDeclaration', options);
+  helper$2.ensureFlagExists('ignoreInstruction', options);
+  helper$2.ensureFlagExists('ignoreAttributes', options);
+  helper$2.ensureFlagExists('ignoreText', options);
+  helper$2.ensureFlagExists('ignoreComment', options);
+  helper$2.ensureFlagExists('ignoreCdata', options);
+  helper$2.ensureFlagExists('ignoreDoctype', options);
+  helper$2.ensureFlagExists('compact', options);
+  helper$2.ensureFlagExists('alwaysChildren', options);
+  helper$2.ensureFlagExists('addParent', options);
+  helper$2.ensureFlagExists('trim', options);
+  helper$2.ensureFlagExists('nativeType', options);
+  helper$2.ensureFlagExists('nativeTypeAttributes', options);
+  helper$2.ensureFlagExists('sanitize', options);
+  helper$2.ensureFlagExists('instructionHasAttributes', options);
+  helper$2.ensureFlagExists('captureSpacesBetweenElements', options);
   helper$2.ensureAlwaysArrayExists(options);
-  helper$2.ensureKeyExists("declaration", options);
-  helper$2.ensureKeyExists("instruction", options);
-  helper$2.ensureKeyExists("attributes", options);
-  helper$2.ensureKeyExists("text", options);
-  helper$2.ensureKeyExists("comment", options);
-  helper$2.ensureKeyExists("cdata", options);
-  helper$2.ensureKeyExists("doctype", options);
-  helper$2.ensureKeyExists("type", options);
-  helper$2.ensureKeyExists("name", options);
-  helper$2.ensureKeyExists("elements", options);
-  helper$2.ensureKeyExists("parent", options);
+  helper$2.ensureKeyExists('declaration', options);
+  helper$2.ensureKeyExists('instruction', options);
+  helper$2.ensureKeyExists('attributes', options);
+  helper$2.ensureKeyExists('text', options);
+  helper$2.ensureKeyExists('comment', options);
+  helper$2.ensureKeyExists('cdata', options);
+  helper$2.ensureKeyExists('doctype', options);
+  helper$2.ensureKeyExists('type', options);
+  helper$2.ensureKeyExists('name', options);
+  helper$2.ensureKeyExists('elements', options);
+  helper$2.ensureKeyExists('parent', options);
   return options;
 }
 
@@ -5858,9 +5858,9 @@ function nativeType$1(value) {
     return nValue;
   }
   var bValue = value.toLowerCase();
-  if (bValue === "true") {
+  if (bValue === 'true') {
     return true;
-  } else if (bValue === "false") {
+  } else if (bValue === 'false') {
     return false;
   }
   return value;
@@ -5870,35 +5870,35 @@ function addField(type, value) {
   var key;
   if (options.compact) {
     if (
-      !currentElement$1[options[type + "Key"]] &&
+      !currentElement$1[options[type + 'Key']] &&
       (isArray$1(options.alwaysArray)
-        ? options.alwaysArray.indexOf(options[type + "Key"]) !== -1
+        ? options.alwaysArray.indexOf(options[type + 'Key']) !== -1
         : options.alwaysArray)
     ) {
-      currentElement$1[options[type + "Key"]] = [];
+      currentElement$1[options[type + 'Key']] = [];
     }
     if (
-      currentElement$1[options[type + "Key"]] &&
-      !isArray$1(currentElement$1[options[type + "Key"]])
+      currentElement$1[options[type + 'Key']] &&
+      !isArray$1(currentElement$1[options[type + 'Key']])
     ) {
-      currentElement$1[options[type + "Key"]] = [
-        currentElement$1[options[type + "Key"]],
+      currentElement$1[options[type + 'Key']] = [
+        currentElement$1[options[type + 'Key']],
       ];
     }
-    if (type + "Fn" in options && typeof value === "string") {
-      value = options[type + "Fn"](value, currentElement$1);
+    if (type + 'Fn' in options && typeof value === 'string') {
+      value = options[type + 'Fn'](value, currentElement$1);
     }
     if (
-      type === "instruction" &&
-      ("instructionFn" in options || "instructionNameFn" in options)
+      type === 'instruction' &&
+      ('instructionFn' in options || 'instructionNameFn' in options)
     ) {
       for (key in value) {
         if (value.hasOwnProperty(key)) {
-          if ("instructionFn" in options) {
+          if ('instructionFn' in options) {
             value[key] = options.instructionFn(
               value[key],
               key,
-              currentElement$1,
+              currentElement$1
             );
           } else {
             var temp = value[key];
@@ -5909,10 +5909,10 @@ function addField(type, value) {
         }
       }
     }
-    if (isArray$1(currentElement$1[options[type + "Key"]])) {
-      currentElement$1[options[type + "Key"]].push(value);
+    if (isArray$1(currentElement$1[options[type + 'Key']])) {
+      currentElement$1[options[type + 'Key']].push(value);
     } else {
-      currentElement$1[options[type + "Key"]] = value;
+      currentElement$1[options[type + 'Key']] = value;
     }
   } else {
     if (!currentElement$1[options.elementsKey]) {
@@ -5920,36 +5920,36 @@ function addField(type, value) {
     }
     var element = {};
     element[options.typeKey] = type;
-    if (type === "instruction") {
+    if (type === 'instruction') {
       for (key in value) {
         if (value.hasOwnProperty(key)) {
           break;
         }
       }
       element[options.nameKey] =
-        "instructionNameFn" in options
+        'instructionNameFn' in options
           ? options.instructionNameFn(key, value, currentElement$1)
           : key;
       if (options.instructionHasAttributes) {
         element[options.attributesKey] = value[key][options.attributesKey];
-        if ("instructionFn" in options) {
+        if ('instructionFn' in options) {
           element[options.attributesKey] = options.instructionFn(
             element[options.attributesKey],
             key,
-            currentElement$1,
+            currentElement$1
           );
         }
       } else {
-        if ("instructionFn" in options) {
+        if ('instructionFn' in options) {
           value[key] = options.instructionFn(value[key], key, currentElement$1);
         }
         element[options.instructionKey] = value[key];
       }
     } else {
-      if (type + "Fn" in options) {
-        value = options[type + "Fn"](value, currentElement$1);
+      if (type + 'Fn' in options) {
+        value = options[type + 'Fn'](value, currentElement$1);
       }
-      element[options[type + "Key"]] = value;
+      element[options[type + 'Key']] = value;
     }
     if (options.addParent) {
       element[options.parentKey] = currentElement$1;
@@ -5959,13 +5959,13 @@ function addField(type, value) {
 }
 
 function manipulateAttributes(attributes) {
-  if ("attributesFn" in options && attributes) {
+  if ('attributesFn' in options && attributes) {
     attributes = options.attributesFn(attributes, currentElement$1);
   }
   if (
     (options.trim ||
-      "attributeValueFn" in options ||
-      "attributeNameFn" in options ||
+      'attributeValueFn' in options ||
+      'attributeNameFn' in options ||
       options.nativeTypeAttributes) &&
     attributes
   ) {
@@ -5976,13 +5976,13 @@ function manipulateAttributes(attributes) {
         if (options.nativeTypeAttributes) {
           attributes[key] = nativeType$1(attributes[key]);
         }
-        if ("attributeValueFn" in options)
+        if ('attributeValueFn' in options)
           attributes[key] = options.attributeValueFn(
             attributes[key],
             key,
-            currentElement$1,
+            currentElement$1
           );
-        if ("attributeNameFn" in options) {
+        if ('attributeNameFn' in options) {
           var temp = attributes[key];
           delete attributes[key];
           attributes[
@@ -5999,7 +5999,7 @@ function onInstruction(instruction) {
   var attributes = {};
   if (
     instruction.body &&
-    (instruction.name.toLowerCase() === "xml" ||
+    (instruction.name.toLowerCase() === 'xml' ||
       options.instructionHasAttributes)
   ) {
     var attrsRegExp = /([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\w+))\s*/g;
@@ -6009,7 +6009,7 @@ function onInstruction(instruction) {
     }
     attributes = manipulateAttributes(attributes);
   }
-  if (instruction.name.toLowerCase() === "xml") {
+  if (instruction.name.toLowerCase() === 'xml') {
     if (options.ignoreDeclaration) {
       return;
     }
@@ -6036,18 +6036,18 @@ function onInstruction(instruction) {
     } else {
       value[instruction.name] = instruction.body;
     }
-    addField("instruction", value);
+    addField('instruction', value);
   }
 }
 
 function onStartElement(name, attributes) {
   var element;
-  if (typeof name === "object") {
+  if (typeof name === 'object') {
     attributes = name.attributes;
     name = name.name;
   }
   attributes = manipulateAttributes(attributes);
-  if ("elementNameFn" in options) {
+  if ('elementNameFn' in options) {
     name = options.elementNameFn(name, currentElement$1);
   }
   if (options.compact) {
@@ -6086,7 +6086,7 @@ function onStartElement(name, attributes) {
       currentElement$1[options.elementsKey] = [];
     }
     element = {};
-    element[options.typeKey] = "element";
+    element[options.typeKey] = 'element';
     element[options.nameKey] = name;
     if (
       !options.ignoreAttributes &&
@@ -6119,11 +6119,11 @@ function onText(text) {
   }
   if (options.sanitize) {
     text = text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
-  addField("text", text);
+  addField('text', text);
 }
 
 function onComment(comment) {
@@ -6133,7 +6133,7 @@ function onComment(comment) {
   if (options.trim) {
     comment = comment.trim();
   }
-  addField("comment", comment);
+  addField('comment', comment);
 }
 
 function onEndElement(name) {
@@ -6151,18 +6151,18 @@ function onCdata(cdata) {
   if (options.trim) {
     cdata = cdata.trim();
   }
-  addField("cdata", cdata);
+  addField('cdata', cdata);
 }
 
 function onDoctype(doctype) {
   if (options.ignoreDoctype) {
     return;
   }
-  doctype = doctype.replace(/^ /, "");
+  doctype = doctype.replace(/^ /, '');
   if (options.trim) {
     doctype = doctype.trim();
   }
-  addField("doctype", doctype);
+  addField('doctype', doctype);
 }
 
 function onError(error) {
@@ -6215,20 +6215,20 @@ var xml2json$1 = function (xml, userOptions) {
   var options, js, json, parentKey;
   options = validateOptions$1(userOptions);
   js = xml2js$1(xml, options);
-  parentKey = "compact" in options && options.compact ? "_parent" : "parent";
+  parentKey = 'compact' in options && options.compact ? '_parent' : 'parent';
   // parentKey = ptions.compact ? '_parent' : 'parent'; // consider this
-  if ("addParent" in options && options.addParent) {
+  if ('addParent' in options && options.addParent) {
     json = JSON.stringify(
       js,
       function (k, v) {
-        return k === parentKey ? "_" : v;
+        return k === parentKey ? '_' : v;
       },
-      options.spaces,
+      options.spaces
     );
   } else {
     json = JSON.stringify(js, null, options.spaces);
   }
-  return json.replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+  return json.replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 };
 
 var helper = optionsHelper;
@@ -6238,53 +6238,53 @@ var currentElement, currentElementName;
 
 function validateOptions(userOptions) {
   var options = helper.copyOptions(userOptions);
-  helper.ensureFlagExists("ignoreDeclaration", options);
-  helper.ensureFlagExists("ignoreInstruction", options);
-  helper.ensureFlagExists("ignoreAttributes", options);
-  helper.ensureFlagExists("ignoreText", options);
-  helper.ensureFlagExists("ignoreComment", options);
-  helper.ensureFlagExists("ignoreCdata", options);
-  helper.ensureFlagExists("ignoreDoctype", options);
-  helper.ensureFlagExists("compact", options);
-  helper.ensureFlagExists("indentText", options);
-  helper.ensureFlagExists("indentCdata", options);
-  helper.ensureFlagExists("indentAttributes", options);
-  helper.ensureFlagExists("indentInstruction", options);
-  helper.ensureFlagExists("fullTagEmptyElement", options);
-  helper.ensureFlagExists("noQuotesForNativeAttributes", options);
+  helper.ensureFlagExists('ignoreDeclaration', options);
+  helper.ensureFlagExists('ignoreInstruction', options);
+  helper.ensureFlagExists('ignoreAttributes', options);
+  helper.ensureFlagExists('ignoreText', options);
+  helper.ensureFlagExists('ignoreComment', options);
+  helper.ensureFlagExists('ignoreCdata', options);
+  helper.ensureFlagExists('ignoreDoctype', options);
+  helper.ensureFlagExists('compact', options);
+  helper.ensureFlagExists('indentText', options);
+  helper.ensureFlagExists('indentCdata', options);
+  helper.ensureFlagExists('indentAttributes', options);
+  helper.ensureFlagExists('indentInstruction', options);
+  helper.ensureFlagExists('fullTagEmptyElement', options);
+  helper.ensureFlagExists('noQuotesForNativeAttributes', options);
   helper.ensureSpacesExists(options);
-  if (typeof options.spaces === "number") {
-    options.spaces = Array(options.spaces + 1).join(" ");
+  if (typeof options.spaces === 'number') {
+    options.spaces = Array(options.spaces + 1).join(' ');
   }
-  helper.ensureKeyExists("declaration", options);
-  helper.ensureKeyExists("instruction", options);
-  helper.ensureKeyExists("attributes", options);
-  helper.ensureKeyExists("text", options);
-  helper.ensureKeyExists("comment", options);
-  helper.ensureKeyExists("cdata", options);
-  helper.ensureKeyExists("doctype", options);
-  helper.ensureKeyExists("type", options);
-  helper.ensureKeyExists("name", options);
-  helper.ensureKeyExists("elements", options);
+  helper.ensureKeyExists('declaration', options);
+  helper.ensureKeyExists('instruction', options);
+  helper.ensureKeyExists('attributes', options);
+  helper.ensureKeyExists('text', options);
+  helper.ensureKeyExists('comment', options);
+  helper.ensureKeyExists('cdata', options);
+  helper.ensureKeyExists('doctype', options);
+  helper.ensureKeyExists('type', options);
+  helper.ensureKeyExists('name', options);
+  helper.ensureKeyExists('elements', options);
   return options;
 }
 
 function writeIndentation(options, depth, firstLine) {
   return (
-    (!firstLine && options.spaces ? "\n" : "") +
+    (!firstLine && options.spaces ? '\n' : '') +
     Array(depth + 1).join(options.spaces)
   );
 }
 
 function writeAttributes(attributes, options, depth) {
   if (options.ignoreAttributes) {
-    return "";
+    return '';
   }
-  if ("attributesFn" in options) {
+  if ('attributesFn' in options) {
     attributes = options.attributesFn(
       attributes,
       currentElementName,
-      currentElement,
+      currentElement
     );
   }
   var key,
@@ -6300,38 +6300,38 @@ function writeAttributes(attributes, options, depth) {
     ) {
       quote =
         options.noQuotesForNativeAttributes &&
-        typeof attributes[key] !== "string"
-          ? ""
+        typeof attributes[key] !== 'string'
+          ? ''
           : '"';
-      attr = "" + attributes[key]; // ensure number and boolean are converted to String
-      attr = attr.replace(/"/g, "&quot;");
+      attr = '' + attributes[key]; // ensure number and boolean are converted to String
+      attr = attr.replace(/"/g, '&quot;');
       attrName =
-        "attributeNameFn" in options
+        'attributeNameFn' in options
           ? options.attributeNameFn(
               key,
               attr,
               currentElementName,
-              currentElement,
+              currentElement
             )
           : key;
       result.push(
         options.spaces && options.indentAttributes
           ? writeIndentation(options, depth + 1, false)
-          : " ",
+          : ' '
       );
       result.push(
         attrName +
-          "=" +
+          '=' +
           quote +
-          ("attributeValueFn" in options
+          ('attributeValueFn' in options
             ? options.attributeValueFn(
                 attr,
                 key,
                 currentElementName,
-                currentElement,
+                currentElement
               )
             : attr) +
-          quote,
+          quote
       );
     }
   }
@@ -6343,23 +6343,23 @@ function writeAttributes(attributes, options, depth) {
   ) {
     result.push(writeIndentation(options, depth, false));
   }
-  return result.join("");
+  return result.join('');
 }
 
 function writeDeclaration(declaration, options, depth) {
   currentElement = declaration;
-  currentElementName = "xml";
+  currentElementName = 'xml';
   return options.ignoreDeclaration
-    ? ""
-    : "<?" +
-        "xml" +
+    ? ''
+    : '<?' +
+        'xml' +
         writeAttributes(declaration[options.attributesKey], options, depth) +
-        "?>";
+        '?>';
 }
 
 function writeInstruction(instruction, options, depth) {
   if (options.ignoreInstruction) {
-    return "";
+    return '';
   }
   var key;
   for (key in instruction) {
@@ -6368,80 +6368,80 @@ function writeInstruction(instruction, options, depth) {
     }
   }
   var instructionName =
-    "instructionNameFn" in options
+    'instructionNameFn' in options
       ? options.instructionNameFn(
           key,
           instruction[key],
           currentElementName,
-          currentElement,
+          currentElement
         )
       : key;
-  if (typeof instruction[key] === "object") {
+  if (typeof instruction[key] === 'object') {
     currentElement = instruction;
     currentElementName = instructionName;
     return (
-      "<?" +
+      '<?' +
       instructionName +
       writeAttributes(instruction[key][options.attributesKey], options, depth) +
-      "?>"
+      '?>'
     );
   } else {
-    var instructionValue = instruction[key] ? instruction[key] : "";
-    if ("instructionFn" in options)
+    var instructionValue = instruction[key] ? instruction[key] : '';
+    if ('instructionFn' in options)
       instructionValue = options.instructionFn(
         instructionValue,
         key,
         currentElementName,
-        currentElement,
+        currentElement
       );
     return (
-      "<?" +
+      '<?' +
       instructionName +
-      (instructionValue ? " " + instructionValue : "") +
-      "?>"
+      (instructionValue ? ' ' + instructionValue : '') +
+      '?>'
     );
   }
 }
 
 function writeComment(comment, options) {
   return options.ignoreComment
-    ? ""
-    : "<!--" +
-        ("commentFn" in options
+    ? ''
+    : '<!--' +
+        ('commentFn' in options
           ? options.commentFn(comment, currentElementName, currentElement)
           : comment) +
-        "-->";
+        '-->';
 }
 
 function writeCdata(cdata, options) {
   return options.ignoreCdata
-    ? ""
-    : "<![CDATA[" +
-        ("cdataFn" in options
+    ? ''
+    : '<![CDATA[' +
+        ('cdataFn' in options
           ? options.cdataFn(cdata, currentElementName, currentElement)
-          : cdata.replace("]]>", "]]]]><![CDATA[>")) +
-        "]]>";
+          : cdata.replace(']]>', ']]]]><![CDATA[>')) +
+        ']]>';
 }
 
 function writeDoctype(doctype, options) {
   return options.ignoreDoctype
-    ? ""
-    : "<!DOCTYPE " +
-        ("doctypeFn" in options
+    ? ''
+    : '<!DOCTYPE ' +
+        ('doctypeFn' in options
           ? options.doctypeFn(doctype, currentElementName, currentElement)
           : doctype) +
-        ">";
+        '>';
 }
 
 function writeText(text, options) {
-  if (options.ignoreText) return "";
-  text = "" + text; // ensure Number and Boolean are converted to String
-  text = text.replace(/&amp;/g, "&"); // desanitize to avoid double sanitization
+  if (options.ignoreText) return '';
+  text = '' + text; // ensure Number and Boolean are converted to String
+  text = text.replace(/&amp;/g, '&'); // desanitize to avoid double sanitization
   text = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-  return "textFn" in options
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return 'textFn' in options
     ? options.textFn(text, currentElementName, currentElement)
     : text;
 }
@@ -6451,24 +6451,24 @@ function hasContent(element, options) {
   if (element.elements && element.elements.length) {
     for (i = 0; i < element.elements.length; ++i) {
       switch (element.elements[i][options.typeKey]) {
-        case "text":
+        case 'text':
           if (options.indentText) {
             return true;
           }
           break; // skip to next key
-        case "cdata":
+        case 'cdata':
           if (options.indentCdata) {
             return true;
           }
           break; // skip to next key
-        case "instruction":
+        case 'instruction':
           if (options.indentInstruction) {
             return true;
           }
           break; // skip to next key
-        case "doctype":
-        case "comment":
-        case "element":
+        case 'doctype':
+        case 'comment':
+        case 'element':
           return true;
         default:
           return true;
@@ -6483,26 +6483,26 @@ function writeElement(element, options, depth) {
   currentElementName = element.name;
   var xml = [],
     elementName =
-      "elementNameFn" in options
+      'elementNameFn' in options
         ? options.elementNameFn(element.name, element)
         : element.name;
-  xml.push("<" + elementName);
+  xml.push('<' + elementName);
   if (element[options.attributesKey]) {
     xml.push(writeAttributes(element[options.attributesKey], options, depth));
   }
   var withClosingTag =
     (element[options.elementsKey] && element[options.elementsKey].length) ||
     (element[options.attributesKey] &&
-      element[options.attributesKey]["xml:space"] === "preserve");
+      element[options.attributesKey]['xml:space'] === 'preserve');
   if (!withClosingTag) {
-    if ("fullTagEmptyElementFn" in options) {
+    if ('fullTagEmptyElementFn' in options) {
       withClosingTag = options.fullTagEmptyElementFn(element.name, element);
     } else {
       withClosingTag = options.fullTagEmptyElement;
     }
   }
   if (withClosingTag) {
-    xml.push(">");
+    xml.push('>');
     if (element[options.elementsKey] && element[options.elementsKey].length) {
       xml.push(writeElements(element[options.elementsKey], options, depth + 1));
       currentElement = element;
@@ -6510,54 +6510,54 @@ function writeElement(element, options, depth) {
     }
     xml.push(
       options.spaces && hasContent(element, options)
-        ? "\n" + Array(depth + 1).join(options.spaces)
-        : "",
+        ? '\n' + Array(depth + 1).join(options.spaces)
+        : ''
     );
-    xml.push("</" + elementName + ">");
+    xml.push('</' + elementName + '>');
   } else {
-    xml.push("/>");
+    xml.push('/>');
   }
-  return xml.join("");
+  return xml.join('');
 }
 
 function writeElements(elements, options, depth, firstLine) {
   return elements.reduce(function (xml, element) {
     var indent = writeIndentation(options, depth, firstLine && !xml);
     switch (element.type) {
-      case "element":
+      case 'element':
         return xml + indent + writeElement(element, options, depth);
-      case "comment":
+      case 'comment':
         return (
           xml + indent + writeComment(element[options.commentKey], options)
         );
-      case "doctype":
+      case 'doctype':
         return (
           xml + indent + writeDoctype(element[options.doctypeKey], options)
         );
-      case "cdata":
+      case 'cdata':
         return (
           xml +
-          (options.indentCdata ? indent : "") +
+          (options.indentCdata ? indent : '') +
           writeCdata(element[options.cdataKey], options)
         );
-      case "text":
+      case 'text':
         return (
           xml +
-          (options.indentText ? indent : "") +
+          (options.indentText ? indent : '') +
           writeText(element[options.textKey], options)
         );
-      case "instruction":
+      case 'instruction':
         var instruction = {};
         instruction[element[options.nameKey]] = element[options.attributesKey]
           ? element
           : element[options.instructionKey];
         return (
           xml +
-          (options.indentInstruction ? indent : "") +
+          (options.indentInstruction ? indent : '') +
           writeInstruction(instruction, options, depth)
         );
     }
-  }, "");
+  }, '');
 }
 
 function hasContentCompact(element, options, anyContent) {
@@ -6598,20 +6598,20 @@ function writeElementCompact(element, name, options, depth, indent) {
   currentElement = element;
   currentElementName = name;
   var elementName =
-    "elementNameFn" in options ? options.elementNameFn(name, element) : name;
-  if (typeof element === "undefined" || element === null || element === "") {
-    return ("fullTagEmptyElementFn" in options &&
+    'elementNameFn' in options ? options.elementNameFn(name, element) : name;
+  if (typeof element === 'undefined' || element === null || element === '') {
+    return ('fullTagEmptyElementFn' in options &&
       options.fullTagEmptyElementFn(name, element)) ||
       options.fullTagEmptyElement
-      ? "<" + elementName + "></" + elementName + ">"
-      : "<" + elementName + "/>";
+      ? '<' + elementName + '></' + elementName + '>'
+      : '<' + elementName + '/>';
   }
   var xml = [];
   if (name) {
-    xml.push("<" + elementName);
-    if (typeof element !== "object") {
-      xml.push(">" + writeText(element, options) + "</" + elementName + ">");
-      return xml.join("");
+    xml.push('<' + elementName);
+    if (typeof element !== 'object') {
+      xml.push('>' + writeText(element, options) + '</' + elementName + '>');
+      return xml.join('');
     }
     if (element[options.attributesKey]) {
       xml.push(writeAttributes(element[options.attributesKey], options, depth));
@@ -6619,19 +6619,19 @@ function writeElementCompact(element, name, options, depth, indent) {
     var withClosingTag =
       hasContentCompact(element, options, true) ||
       (element[options.attributesKey] &&
-        element[options.attributesKey]["xml:space"] === "preserve");
+        element[options.attributesKey]['xml:space'] === 'preserve');
     if (!withClosingTag) {
-      if ("fullTagEmptyElementFn" in options) {
+      if ('fullTagEmptyElementFn' in options) {
         withClosingTag = options.fullTagEmptyElementFn(name, element);
       } else {
         withClosingTag = options.fullTagEmptyElement;
       }
     }
     if (withClosingTag) {
-      xml.push(">");
+      xml.push('>');
     } else {
-      xml.push("/>");
-      return xml.join("");
+      xml.push('/>');
+      return xml.join('');
     }
   }
   xml.push(writeElementsCompact(element, options, depth + 1, false));
@@ -6639,13 +6639,13 @@ function writeElementCompact(element, name, options, depth, indent) {
   currentElementName = name;
   if (name) {
     xml.push(
-      (indent ? writeIndentation(options, depth, false) : "") +
-        "</" +
+      (indent ? writeIndentation(options, depth, false) : '') +
+        '</' +
         elementName +
-        ">",
+        '>'
     );
   }
-  return xml.join("");
+  return xml.join('');
 }
 
 function writeElementsCompact(element, options, depth, firstLine) {
@@ -6665,7 +6665,7 @@ function writeElementsCompact(element, options, depth, firstLine) {
             xml.push(
               (options.indentInstruction
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeInstruction(nodes[i], options, depth),
+                : '') + writeInstruction(nodes[i], options, depth)
             );
             break;
           case options.attributesKey:
@@ -6675,26 +6675,26 @@ function writeElementsCompact(element, options, depth, firstLine) {
             xml.push(
               (options.indentText
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeText(nodes[i], options),
+                : '') + writeText(nodes[i], options)
             );
             break;
           case options.cdataKey:
             xml.push(
               (options.indentCdata
                 ? writeIndentation(options, depth, firstLine)
-                : "") + writeCdata(nodes[i], options),
+                : '') + writeCdata(nodes[i], options)
             );
             break;
           case options.doctypeKey:
             xml.push(
               writeIndentation(options, depth, firstLine) +
-                writeDoctype(nodes[i], options),
+                writeDoctype(nodes[i], options)
             );
             break;
           case options.commentKey:
             xml.push(
               writeIndentation(options, depth, firstLine) +
-                writeComment(nodes[i], options),
+                writeComment(nodes[i], options)
             );
             break;
           default:
@@ -6705,22 +6705,22 @@ function writeElementsCompact(element, options, depth, firstLine) {
                   key,
                   options,
                   depth,
-                  hasContentCompact(nodes[i], options),
-                ),
+                  hasContentCompact(nodes[i], options)
+                )
             );
         }
         firstLine = firstLine && !xml.length;
       }
     }
   }
-  return xml.join("");
+  return xml.join('');
 }
 
 var js2xml$2 = function (js, options) {
   options = validateOptions(options);
   var xml = [];
   currentElement = js;
-  currentElementName = "_root_";
+  currentElementName = '_root_';
   if (options.compact) {
     xml.push(writeElementsCompact(js, options, 0, true));
   } else {
@@ -6731,7 +6731,7 @@ var js2xml$2 = function (js, options) {
       xml.push(writeElements(js[options.elementsKey], options, 0, !xml.length));
     }
   }
-  return xml.join("");
+  return xml.join('');
 };
 
 var js2xml$1 = js2xml$2;
@@ -6741,11 +6741,11 @@ var json2xml$1 = function (json, options) {
     json = json.toString();
   }
   var js = null;
-  if (typeof json === "string") {
+  if (typeof json === 'string') {
     try {
       js = JSON.parse(json);
     } catch (e) {
-      throw new Error("The JSON structure is invalid");
+      throw new Error('The JSON structure is invalid');
     }
   } else {
     js = json;
@@ -6775,10 +6775,10 @@ const nativeType = (value) => {
     return nValue;
   }
   const bValue = value.toLowerCase();
-  if (bValue === "true") {
+  if (bValue === 'true') {
     return true;
   }
-  if (bValue === "false") {
+  if (bValue === 'false') {
     return false;
   }
   return value;
@@ -6797,9 +6797,9 @@ const urlEquals = (urlA, urlB) => {
     return false;
   }
   const strippedUrlA =
-    trimmedUrlA.slice(-1) === "/" ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
+    trimmedUrlA.slice(-1) === '/' ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
   const strippedUrlB =
-    trimmedUrlB.slice(-1) === "/" ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
+    trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
   return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
 };
 const urlContains = (urlA, urlB) => {
@@ -6812,16 +6812,16 @@ const urlContains = (urlA, urlB) => {
   const trimmedUrlA = urlA.trim();
   const trimmedUrlB = urlB.trim();
   const strippedUrlA =
-    trimmedUrlA.slice(-1) === "/" ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
+    trimmedUrlA.slice(-1) === '/' ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
   const strippedUrlB =
-    trimmedUrlB.slice(-1) === "/" ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
+    trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
   return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
 };
 const getDAVAttribute = (nsArr) =>
   nsArr.reduce(
     (prev, curr) =>
       Object.assign(Object.assign({}, prev), { [DAVAttributeMap[curr]]: curr }),
-    {},
+    {}
   );
 const cleanupFalsy = (obj) =>
   Object.entries(obj).reduce((prev, [key, value]) => {
@@ -6837,7 +6837,7 @@ var requestHelpers = /*#__PURE__*/ Object.freeze({
   cleanupFalsy: cleanupFalsy,
 });
 
-const debug$5 = getLogger("tsdav:request");
+const debug$5 = getLogger('tsdav:request');
 const davRequest = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
@@ -6849,12 +6849,12 @@ const davRequest = (params) =>
             Object.assign(
               {
                 _declaration: {
-                  _attributes: { version: "1.0", encoding: "utf-8" },
+                  _attributes: { version: '1.0', encoding: 'utf-8' },
                 },
               },
-              body,
+              body
             ),
-            { _attributes: attributes },
+            { _attributes: attributes }
           ),
           {
             compact: true,
@@ -6866,7 +6866,7 @@ const davRequest = (params) =>
               }
               return name;
             },
-          },
+          }
         )
       : body;
     // debug('outgoing xml:');
@@ -6884,8 +6884,8 @@ const davRequest = (params) =>
     // debug(xmlBody);
     const davResponse = yield browserPonyfill.exports.fetch(url, {
       headers: Object.assign(
-        { "Content-Type": "text/xml;charset=UTF-8" },
-        cleanupFalsy(headers),
+        { 'Content-Type': 'text/xml;charset=UTF-8' },
+        cleanupFalsy(headers)
       ),
       body: xmlBody,
       method,
@@ -6897,9 +6897,9 @@ const davRequest = (params) =>
     // debug(davResponse);
     if (
       !davResponse.ok ||
-      !((_a = davResponse.headers.get("content-type")) === null || _a === void 0
+      !((_a = davResponse.headers.get('content-type')) === null || _a === void 0
         ? void 0
-        : _a.includes("xml")) ||
+        : _a.includes('xml')) ||
       !parseOutgoing
     ) {
       return [
@@ -6938,7 +6938,7 @@ const davRequest = (params) =>
       },
       // remove namespace & camelCase
       elementNameFn: (attributeName) =>
-        camelCase(attributeName.replace(/^.+:/, "")),
+        camelCase(attributeName.replace(/^.+:/, '')),
       attributesFn: (value) => {
         const newVal = Object.assign({}, value);
         delete newVal.xmlns;
@@ -6970,7 +6970,7 @@ const davRequest = (params) =>
               matchArr === null || matchArr === void 0
                 ? void 0
                 : matchArr.groups.status,
-              10,
+              10
             )
           : davResponse.status,
         statusText:
@@ -6992,7 +6992,7 @@ const davRequest = (params) =>
         ).reduce((prev, curr) => {
           return Object.assign(
             Object.assign({}, prev),
-            curr === null || curr === void 0 ? void 0 : curr.prop,
+            curr === null || curr === void 0 ? void 0 : curr.prop
           );
         }, {}),
       };
@@ -7004,7 +7004,7 @@ const propfind = (params) =>
     return davRequest({
       url,
       init: {
-        method: "PROPFIND",
+        method: 'PROPFIND',
         headers: cleanupFalsy(Object.assign({ depth }, headers)),
         namespace: DAVNamespaceShort.DAV,
         body: {
@@ -7026,7 +7026,7 @@ const createObject = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { url, data, headers } = params;
     return browserPonyfill.exports.fetch(url, {
-      method: "PUT",
+      method: 'PUT',
       body: data,
       headers,
     });
@@ -7035,17 +7035,17 @@ const updateObject = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { url, data, etag, headers } = params;
     return browserPonyfill.exports.fetch(url, {
-      method: "PUT",
+      method: 'PUT',
       body: data,
-      headers: cleanupFalsy(Object.assign({ "If-Match": etag }, headers)),
+      headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
     });
   });
 const deleteObject = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { url, headers, etag } = params;
     return browserPonyfill.exports.fetch(url, {
-      method: "DELETE",
-      headers: cleanupFalsy(Object.assign({ "If-Match": etag }, headers)),
+      method: 'DELETE',
+      headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
     });
   });
 
@@ -7068,11 +7068,11 @@ function hasFields(obj, fields) {
 const findMissingFieldNames = (obj, fields) =>
   fields.reduce(
     (prev, curr) =>
-      obj[curr] ? prev : `${prev.length ? `${prev},` : ""}${curr}`,
-    "",
+      obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr}`,
+    ''
   );
 
-const debug$4 = getLogger("tsdav:collection");
+const debug$4 = getLogger('tsdav:collection');
 const collectionQuery = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const {
@@ -7085,7 +7085,7 @@ const collectionQuery = (params) =>
     const queryResults = yield davRequest({
       url,
       init: {
-        method: "REPORT",
+        method: 'REPORT',
         headers: cleanupFalsy(Object.assign({ depth }, headers)),
         namespace: defaultNamespace,
         body,
@@ -7103,7 +7103,7 @@ const makeCollection = (params) =>
     return davRequest({
       url,
       init: {
-        method: "MKCOL",
+        method: 'MKCOL',
         headers: cleanupFalsy(Object.assign({ depth }, headers)),
         namespace: DAVNamespaceShort.DAV,
         body: props
@@ -7127,7 +7127,7 @@ const supportedReportSet = (params) =>
       props: {
         [`${DAVNamespaceShort.DAV}:supported-report-set`]: {},
       },
-      depth: "0",
+      depth: '0',
       headers,
     });
     return (_e =
@@ -7153,12 +7153,12 @@ const isCollectionDirty = (params) =>
       props: {
         [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
       },
-      depth: "0",
+      depth: '0',
       headers,
     });
     const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
     if (!res) {
-      throw new Error("Collection does not exist on server");
+      throw new Error('Collection does not exist on server');
     }
     return {
       isDirty:
@@ -7180,18 +7180,18 @@ const syncCollection = (params) => {
   return davRequest({
     url,
     init: {
-      method: "REPORT",
+      method: 'REPORT',
       namespace: DAVNamespaceShort.DAV,
       headers: Object.assign({}, headers),
       body: {
-        "sync-collection": {
+        'sync-collection': {
           _attributes: getDAVAttribute([
             DAVNamespace.CALDAV,
             DAVNamespace.CARDDAV,
             DAVNamespace.DAV,
           ]),
-          "sync-level": syncLevel,
-          "sync-token": syncToken,
+          'sync-level': syncLevel,
+          'sync-token': syncToken,
           [`${DAVNamespaceShort.DAV}:prop`]: props,
         },
       },
@@ -7203,16 +7203,16 @@ const smartCollectionSync = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
     const { collection, method, headers, account, detailedResult } = params;
-    const requiredFields = ["accountType", "homeUrl"];
+    const requiredFields = ['accountType', 'homeUrl'];
     if (!account || !hasFields(account, requiredFields)) {
       if (!account) {
-        throw new Error("no account for smartCollectionSync");
+        throw new Error('no account for smartCollectionSync');
       }
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields,
-        )} before smartCollectionSync`,
+          requiredFields
+        )} before smartCollectionSync`
       );
     }
     const syncMethod =
@@ -7221,24 +7221,24 @@ const smartCollectionSync = (params) =>
         : (
             (_j = collection.reports) === null || _j === void 0
               ? void 0
-              : _j.includes("syncCollection")
+              : _j.includes('syncCollection')
           )
-        ? "webdav"
-        : "basic";
+        ? 'webdav'
+        : 'basic';
     debug$4(
-      `smart collection sync with type ${account.accountType} and method ${syncMethod}`,
+      `smart collection sync with type ${account.accountType} and method ${syncMethod}`
     );
-    if (syncMethod === "webdav") {
+    if (syncMethod === 'webdav') {
       const result = yield syncCollection({
         url: collection.url,
         props: {
           [`${DAVNamespaceShort.DAV}:getetag`]: {},
           [`${
-            account.accountType === "caldav"
+            account.accountType === 'caldav'
               ? DAVNamespaceShort.CALDAV
               : DAVNamespaceShort.CARDDAV
           }:${
-            account.accountType === "caldav" ? "calendar-data" : "address-data"
+            account.accountType === 'caldav' ? 'calendar-data' : 'address-data'
           }`]: {},
           [`${DAVNamespaceShort.DAV}:displayname`]: {},
         },
@@ -7248,7 +7248,7 @@ const smartCollectionSync = (params) =>
       });
       const objectResponses = result.filter((r) => {
         var _a;
-        const extName = account.accountType === "caldav" ? ".ics" : ".vcf";
+        const extName = account.accountType === 'caldav' ? '.ics' : '.vcf';
         return (
           ((_a = r.href) === null || _a === void 0 ? void 0 : _a.slice(-4)) ===
           extName
@@ -7271,17 +7271,17 @@ const smartCollectionSync = (params) =>
                 props: {
                   [`${DAVNamespaceShort.DAV}:getetag`]: {},
                   [`${
-                    account.accountType === "caldav"
+                    account.accountType === 'caldav'
                       ? DAVNamespaceShort.CALDAV
                       : DAVNamespaceShort.CARDDAV
                   }:${
-                    account.accountType === "caldav"
-                      ? "calendar-data"
-                      : "address-data"
+                    account.accountType === 'caldav'
+                      ? 'calendar-data'
+                      : 'address-data'
                   }`]: {},
                 },
                 objectUrls: changedObjectUrls,
-                depth: "1",
+                depth: '1',
                 headers,
               })) !== null && _l !== void 0
           ? _l
@@ -7290,13 +7290,13 @@ const smartCollectionSync = (params) =>
       const remoteObjects = multiGetObjectResponse.map((res) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         return {
-          url: (_a = res.href) !== null && _a !== void 0 ? _a : "",
+          url: (_a = res.href) !== null && _a !== void 0 ? _a : '',
           etag:
             (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
           data:
             (account === null || account === void 0
               ? void 0
-              : account.accountType) === "caldav"
+              : account.accountType) === 'caldav'
               ? (_e =
                   (_d =
                     (_c = res.props) === null || _c === void 0
@@ -7325,7 +7325,7 @@ const smartCollectionSync = (params) =>
         (_m = collection.objects) !== null && _m !== void 0 ? _m : [];
       // no existing url
       const created = remoteObjects.filter((o) =>
-        localObjects.every((lo) => !urlContains(lo.url, o.url)),
+        localObjects.every((lo) => !urlContains(lo.url, o.url))
       );
       // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
       // have same url, but etag different
@@ -7339,13 +7339,13 @@ const smartCollectionSync = (params) =>
       // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
       const deleted = deletedObjectUrls.map((o) => ({
         url: o,
-        etag: "",
+        etag: '',
       }));
       // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
       const unchanged = localObjects.filter((lo) =>
         remoteObjects.some(
-          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag,
-        ),
+          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag
+        )
       );
       return Object.assign(Object.assign({}, collection), {
         objects: detailedResult
@@ -7367,7 +7367,7 @@ const smartCollectionSync = (params) =>
             : collection.syncToken,
       });
     }
-    if (syncMethod === "basic") {
+    if (syncMethod === 'basic') {
       const { isDirty, newCtag } = yield isCollectionDirty({
         collection,
         headers,
@@ -7383,7 +7383,7 @@ const smartCollectionSync = (params) =>
           : [];
       // no existing url
       const created = remoteObjects.filter((ro) =>
-        localObjects.every((lo) => !urlContains(lo.url, ro.url)),
+        localObjects.every((lo) => !urlContains(lo.url, ro.url))
       );
       // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
       // have same url, but etag different
@@ -7397,13 +7397,13 @@ const smartCollectionSync = (params) =>
       // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
       // does not present in remote
       const deleted = localObjects.filter((cal) =>
-        remoteObjects.every((ro) => !urlContains(ro.url, cal.url)),
+        remoteObjects.every((ro) => !urlContains(ro.url, cal.url))
       );
       // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
       const unchanged = localObjects.filter((lo) =>
         remoteObjects.some(
-          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag,
-        ),
+          (ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag
+        )
       );
       if (isDirty) {
         return Object.assign(Object.assign({}, collection), {
@@ -7435,14 +7435,14 @@ var collection = /*#__PURE__*/ Object.freeze({
   smartCollectionSync: smartCollectionSync,
 });
 
-const debug$3 = getLogger("tsdav:addressBook");
+const debug$3 = getLogger('tsdav:addressBook');
 const addressBookQuery = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { url, props, filters, depth, headers } = params;
     return collectionQuery({
       url,
       body: {
-        "addressbook-query": {
+        'addressbook-query': {
           _attributes: getDAVAttribute([
             DAVNamespace.CARDDAV,
             DAVNamespace.DAV,
@@ -7452,9 +7452,9 @@ const addressBookQuery = (params) =>
             filters !== null && filters !== void 0
               ? filters
               : {
-                  "prop-filter": {
+                  'prop-filter': {
                     _attributes: {
-                      name: "FN",
+                      name: 'FN',
                     },
                   },
                 },
@@ -7471,7 +7471,7 @@ const addressBookMultiGet = (params) =>
     return collectionQuery({
       url,
       body: {
-        "addressbook-multiget": {
+        'addressbook-multiget': {
           _attributes: getDAVAttribute([
             DAVNamespace.DAV,
             DAVNamespace.CARDDAV,
@@ -7492,16 +7492,16 @@ const fetchAddressBooks = (params) =>
       headers,
       props: customProps,
     } = params !== null && params !== void 0 ? params : {};
-    const requiredFields = ["homeUrl", "rootUrl"];
+    const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
       if (!account) {
-        throw new Error("no account for fetchAddressBooks");
+        throw new Error('no account for fetchAddressBooks');
       }
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields,
-        )} before fetchAddressBooks`,
+          requiredFields
+        )} before fetchAddressBooks`
       );
     }
     const res = yield propfind({
@@ -7515,7 +7515,7 @@ const fetchAddressBooks = (params) =>
               [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
               [`${DAVNamespaceShort.DAV}:sync-token`]: {},
             },
-      depth: "1",
+      depth: '1',
       headers,
     });
     return Promise.all(
@@ -7528,8 +7528,8 @@ const fetchAddressBooks = (params) =>
                 ? void 0
                 : _a.resourcetype) !== null && _b !== void 0
               ? _b
-              : {},
-          ).includes("addressbook");
+              : {}
+          ).includes('addressbook');
         })
         .map((rs) => {
           var _a, _b, _c, _d, _e, _f, _g, _h, _j;
@@ -7546,21 +7546,21 @@ const fetchAddressBooks = (params) =>
               ? void 0
               : _d.displayname;
           debug$3(`Found address book named ${
-            typeof displayName === "string" ? displayName : ""
+            typeof displayName === 'string' ? displayName : ''
           },
              props: ${JSON.stringify(rs.props)}`);
           return {
             url: new URL(
-              (_e = rs.href) !== null && _e !== void 0 ? _e : "",
-              (_f = account.rootUrl) !== null && _f !== void 0 ? _f : "",
+              (_e = rs.href) !== null && _e !== void 0 ? _e : '',
+              (_f = account.rootUrl) !== null && _f !== void 0 ? _f : ''
             ).href,
             ctag:
               (_g = rs.props) === null || _g === void 0 ? void 0 : _g.getctag,
-            displayName: typeof displayName === "string" ? displayName : "",
+            displayName: typeof displayName === 'string' ? displayName : '',
             resourcetype: Object.keys(
               (_h = rs.props) === null || _h === void 0
                 ? void 0
-                : _h.resourcetype,
+                : _h.resourcetype
             ),
             syncToken:
               (_j = rs.props) === null || _j === void 0 ? void 0 : _j.syncToken,
@@ -7571,8 +7571,8 @@ const fetchAddressBooks = (params) =>
             return Object.assign(Object.assign({}, addr), {
               reports: yield supportedReportSet({ collection: addr, headers }),
             });
-          }),
-        ),
+          })
+        )
     );
   });
 const fetchVCards = (params) =>
@@ -7583,18 +7583,18 @@ const fetchVCards = (params) =>
         addressBook === null || addressBook === void 0
           ? void 0
           : addressBook.url
-      }`,
+      }`
     );
-    const requiredFields = ["url"];
+    const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
       if (!addressBook) {
-        throw new Error("cannot fetchVCards for undefined addressBook");
+        throw new Error('cannot fetchVCards for undefined addressBook');
       }
       throw new Error(
         `addressBook must have ${findMissingFieldNames(
           addressBook,
-          requiredFields,
-        )} before fetchVCards`,
+          requiredFields
+        )} before fetchVCards`
       );
     }
     const vcardUrls = (
@@ -7604,24 +7604,24 @@ const fetchVCards = (params) =>
           (yield addressBookQuery({
             url: addressBook.url,
             props: { [`${DAVNamespaceShort.DAV}:getetag`]: {} },
-            depth: "1",
+            depth: '1',
             headers,
           })).map((res) => {
             var _a;
             return res.ok
               ? (_a = res.href) !== null && _a !== void 0
                 ? _a
-                : ""
-              : "";
+                : ''
+              : '';
           })
     )
       .map((url) =>
-        url.startsWith("http") || !url
+        url.startsWith('http') || !url
           ? url
-          : new URL(url, addressBook.url).href,
+          : new URL(url, addressBook.url).href
       )
       .filter(
-        urlFilter !== null && urlFilter !== void 0 ? urlFilter : (url) => url,
+        urlFilter !== null && urlFilter !== void 0 ? urlFilter : (url) => url
       )
       .map((url) => new URL(url).pathname);
     const vCardResults =
@@ -7633,7 +7633,7 @@ const fetchVCards = (params) =>
               [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
             },
             objectUrls: vcardUrls,
-            depth: "1",
+            depth: '1',
             headers,
           })
         : [];
@@ -7641,8 +7641,8 @@ const fetchVCards = (params) =>
       var _a, _b, _c, _d, _e, _f;
       return {
         url: new URL(
-          (_a = res.href) !== null && _a !== void 0 ? _a : "",
-          addressBook.url,
+          (_a = res.href) !== null && _a !== void 0 ? _a : '',
+          addressBook.url
         ).href,
         etag: (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
         data:
@@ -7667,8 +7667,8 @@ const createVCard = (params) =>
       url: new URL(filename, addressBook.url).href,
       data: vCardString,
       headers: Object.assign(
-        { "content-type": "text/vcard; charset=utf-8", "If-None-Match": "*" },
-        headers,
+        { 'content-type': 'text/vcard; charset=utf-8', 'If-None-Match': '*' },
+        headers
       ),
     });
   });
@@ -7680,8 +7680,8 @@ const updateVCard = (params) =>
       data: vCard.data,
       etag: vCard.etag,
       headers: Object.assign(
-        { "content-type": "text/vcard; charset=utf-8" },
-        headers,
+        { 'content-type': 'text/vcard; charset=utf-8' },
+        headers
       ),
     });
   });
@@ -7706,14 +7706,14 @@ var addressBook = /*#__PURE__*/ Object.freeze({
   deleteVCard: deleteVCard,
 });
 
-const debug$2 = getLogger("tsdav:calendar");
+const debug$2 = getLogger('tsdav:calendar');
 const calendarQuery = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const { url, props, filters, timezone, depth, headers } = params;
     return collectionQuery({
       url,
       body: {
-        "calendar-query": cleanupFalsy({
+        'calendar-query': cleanupFalsy({
           _attributes: getDAVAttribute([
             DAVNamespace.CALDAV,
             DAVNamespace.CALENDAR_SERVER,
@@ -7737,7 +7737,7 @@ const calendarMultiGet = (params) =>
     return collectionQuery({
       url,
       body: {
-        "calendar-multiget": {
+        'calendar-multiget': {
           _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
           [`${DAVNamespaceShort.DAV}:prop`]: props,
           [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
@@ -7756,7 +7756,7 @@ const makeCalendar = (params) =>
     return davRequest({
       url,
       init: {
-        method: "MKCALENDAR",
+        method: 'MKCALENDAR',
         headers: cleanupFalsy(Object.assign({ depth }, headers)),
         namespace: DAVNamespaceShort.DAV,
         body: {
@@ -7781,16 +7781,16 @@ const fetchCalendars = (params) =>
       account,
       props: customProps,
     } = params !== null && params !== void 0 ? params : {};
-    const requiredFields = ["homeUrl", "rootUrl"];
+    const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
       if (!account) {
-        throw new Error("no account for fetchCalendars");
+        throw new Error('no account for fetchCalendars');
       }
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields,
-        )} before fetchCalendars`,
+          requiredFields
+        )} before fetchCalendars`
       );
     }
     const res = yield propfind({
@@ -7809,7 +7809,7 @@ const fetchCalendars = (params) =>
                 {},
               [`${DAVNamespaceShort.DAV}:sync-token`]: {},
             },
-      depth: "1",
+      depth: '1',
       headers,
     });
     return Promise.all(
@@ -7822,8 +7822,8 @@ const fetchCalendars = (params) =>
                 ? void 0
                 : _a.resourcetype) !== null && _b !== void 0
               ? _b
-              : {},
-          ).includes("calendar");
+              : {}
+          ).includes('calendar');
         })
         .filter((rc) => {
           var _a, _b, _c;
@@ -7831,12 +7831,12 @@ const fetchCalendars = (params) =>
           const components = Array.isArray(
             (_a = rc.props) === null || _a === void 0
               ? void 0
-              : _a.supportedCalendarComponentSet.comp,
+              : _a.supportedCalendarComponentSet.comp
           )
             ? (_b = rc.props) === null || _b === void 0
               ? void 0
               : _b.supportedCalendarComponentSet.comp.map(
-                  (sc) => sc._attributes.name,
+                  (sc) => sc._attributes.name
                 )
             : [
                 (_c = rc.props) === null || _c === void 0
@@ -7857,11 +7857,11 @@ const fetchCalendars = (params) =>
               ? void 0
               : _b.calendarTimezone;
           return {
-            description: typeof description === "string" ? description : "",
-            timezone: typeof timezone === "string" ? timezone : "",
+            description: typeof description === 'string' ? description : '',
+            timezone: typeof timezone === 'string' ? timezone : '',
             url: new URL(
-              (_c = rs.href) !== null && _c !== void 0 ? _c : "",
-              (_d = account.rootUrl) !== null && _d !== void 0 ? _d : "",
+              (_c = rs.href) !== null && _c !== void 0 ? _c : '',
+              (_d = account.rootUrl) !== null && _d !== void 0 ? _d : ''
             ).href,
             ctag:
               (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
@@ -7881,12 +7881,12 @@ const fetchCalendars = (params) =>
             components: Array.isArray(
               (_k = rs.props) === null || _k === void 0
                 ? void 0
-                : _k.supportedCalendarComponentSet.comp,
+                : _k.supportedCalendarComponentSet.comp
             )
               ? (_l = rs.props) === null || _l === void 0
                 ? void 0
                 : _l.supportedCalendarComponentSet.comp.map(
-                    (sc) => sc._attributes.name,
+                    (sc) => sc._attributes.name
                   )
               : [
                   (_m = rs.props) === null || _m === void 0
@@ -7896,7 +7896,7 @@ const fetchCalendars = (params) =>
             resourcetype: Object.keys(
               (_o = rs.props) === null || _o === void 0
                 ? void 0
-                : _o.resourcetype,
+                : _o.resourcetype
             ),
             syncToken:
               (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken,
@@ -7907,8 +7907,8 @@ const fetchCalendars = (params) =>
             return Object.assign(Object.assign({}, cal), {
               reports: yield supportedReportSet({ collection: cal, headers }),
             });
-          }),
-        ),
+          })
+        )
     );
   });
 const fetchCalendarObjects = (params) =>
@@ -7933,24 +7933,24 @@ const fetchCalendarObjects = (params) =>
         (!ISO_8601_FULL.test(timeRange.start) ||
           !ISO_8601_FULL.test(timeRange.end))
       ) {
-        throw new Error("invalid timeRange format, not in ISO8601");
+        throw new Error('invalid timeRange format, not in ISO8601');
       }
     }
     debug$2(
       `Fetching calendar objects from ${
         calendar === null || calendar === void 0 ? void 0 : calendar.url
-      }`,
+      }`
     );
-    const requiredFields = ["url"];
+    const requiredFields = ['url'];
     if (!calendar || !hasFields(calendar, requiredFields)) {
       if (!calendar) {
-        throw new Error("cannot fetchCalendarObjects for undefined calendar");
+        throw new Error('cannot fetchCalendarObjects for undefined calendar');
       }
       throw new Error(
         `calendar must have ${findMissingFieldNames(
           calendar,
-          requiredFields,
-        )} before fetchCalendarObjects`,
+          requiredFields
+        )} before fetchCalendarObjects`
       );
     }
     // default to fetch all
@@ -7959,32 +7959,32 @@ const fetchCalendarObjects = (params) =>
         ? customFilters
         : [
             {
-              "comp-filter": {
+              'comp-filter': {
                 _attributes: {
-                  name: "VCALENDAR",
+                  name: 'VCALENDAR',
                 },
-                "comp-filter": Object.assign(
+                'comp-filter': Object.assign(
                   {
                     _attributes: {
-                      name: "VEVENT",
+                      name: 'VEVENT',
                     },
                   },
                   timeRange
                     ? {
-                        "time-range": {
+                        'time-range': {
                           _attributes: {
                             start: `${new Date(timeRange.start)
                               .toISOString()
                               .slice(0, 19)
-                              .replace(/[-:.]/g, "")}Z`,
+                              .replace(/[-:.]/g, '')}Z`,
                             end: `${new Date(timeRange.end)
                               .toISOString()
                               .slice(0, 19)
-                              .replace(/[-:.]/g, "")}Z`,
+                              .replace(/[-:.]/g, '')}Z`,
                           },
                         },
                       }
-                    : {},
+                    : {}
                 ),
               },
             },
@@ -7999,23 +7999,23 @@ const fetchCalendarObjects = (params) =>
               [`${DAVNamespaceShort.DAV}:getetag`]: {},
             },
             filters,
-            depth: "1",
+            depth: '1',
             headers,
           })).map((res) => {
             var _a;
-            return (_a = res.href) !== null && _a !== void 0 ? _a : "";
+            return (_a = res.href) !== null && _a !== void 0 ? _a : '';
           })
     )
       .map((url) =>
-        url.startsWith("http") || !url ? url : new URL(url, calendar.url).href,
+        url.startsWith('http') || !url ? url : new URL(url, calendar.url).href
       ) // patch up to full url if url is not full
       .filter(
         urlFilter !== null && urlFilter !== void 0
           ? urlFilter
           : (url) =>
               Boolean(
-                url === null || url === void 0 ? void 0 : url.includes(".ics"),
-              ),
+                url === null || url === void 0 ? void 0 : url.includes('.ics')
+              )
       ) // filter out non ics calendar objects since apple calendar might have those
       .map((url) => new URL(url).pathname); // obtain pathname of the url
     const calendarObjectResults =
@@ -8033,19 +8033,19 @@ const fetchCalendarObjects = (params) =>
                           start: `${new Date(timeRange.start)
                             .toISOString()
                             .slice(0, 19)
-                            .replace(/[-:.]/g, "")}Z`,
+                            .replace(/[-:.]/g, '')}Z`,
                           end: `${new Date(timeRange.end)
                             .toISOString()
                             .slice(0, 19)
-                            .replace(/[-:.]/g, "")}Z`,
+                            .replace(/[-:.]/g, '')}Z`,
                         },
                       },
                     }
-                  : {},
+                  : {}
               ),
             },
             objectUrls: calendarObjectUrls,
-            depth: "1",
+            depth: '1',
             headers,
           })
         : [];
@@ -8053,8 +8053,8 @@ const fetchCalendarObjects = (params) =>
       var _a, _b, _c, _d, _e, _f;
       return {
         url: new URL(
-          (_a = res.href) !== null && _a !== void 0 ? _a : "",
-          calendar.url,
+          (_a = res.href) !== null && _a !== void 0 ? _a : '',
+          calendar.url
         ).href,
         etag: `${
           (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag
@@ -8082,10 +8082,10 @@ const createCalendarObject = (params) =>
       data: iCalString,
       headers: Object.assign(
         {
-          "content-type": "text/calendar; charset=utf-8",
-          "If-None-Match": "*",
+          'content-type': 'text/calendar; charset=utf-8',
+          'If-None-Match': '*',
         },
-        headers,
+        headers
       ),
     });
   });
@@ -8097,8 +8097,8 @@ const updateCalendarObject = (params) =>
       data: calendarObject.data,
       etag: calendarObject.etag,
       headers: Object.assign(
-        { "content-type": "text/calendar; charset=utf-8" },
-        headers,
+        { 'content-type': 'text/calendar; charset=utf-8' },
+        headers
       ),
     });
   });
@@ -8119,7 +8119,7 @@ const syncCalendars = (params) =>
     var _a;
     const { oldCalendars, account, detailedResult, headers } = params;
     if (!account) {
-      throw new Error("Must have account before syncCalendars");
+      throw new Error('Must have account before syncCalendars');
     }
     const localCalendars =
       (_a =
@@ -8131,7 +8131,7 @@ const syncCalendars = (params) =>
     const remoteCalendars = yield fetchCalendars({ account, headers });
     // no existing url
     const created = remoteCalendars.filter((rc) =>
-      localCalendars.every((lc) => !urlContains(lc.url, rc.url)),
+      localCalendars.every((lc) => !urlContains(lc.url, rc.url))
     );
     debug$2(`new calendars: ${created.map((cc) => cc.displayName)}`);
     // have same url, but syncToken/ctag different
@@ -8154,17 +8154,17 @@ const syncCalendars = (params) =>
             collection: Object.assign(Object.assign({}, u), {
               objectMultiGet: calendarMultiGet,
             }),
-            method: "webdav",
+            method: 'webdav',
             headers,
             account,
           });
           return result;
-        }),
-      ),
+        })
+      )
     );
     // does not present in remote
     const deleted = localCalendars.filter((cal) =>
-      remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)),
+      remoteCalendars.every((rc) => !urlContains(rc.url, cal.url))
     );
     debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
     const unchanged = localCalendars.filter((cal) =>
@@ -8172,8 +8172,8 @@ const syncCalendars = (params) =>
         (rc) =>
           urlContains(rc.url, cal.url) &&
           ((rc.syncToken && rc.syncToken !== cal.syncToken) ||
-            (rc.ctag && rc.ctag !== cal.ctag)),
-      ),
+            (rc.ctag && rc.ctag !== cal.ctag))
+      )
     );
     // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
     return detailedResult
@@ -8198,26 +8198,26 @@ const freeBusyQuery = (params) =>
         (!ISO_8601_FULL.test(timeRange.start) ||
           !ISO_8601_FULL.test(timeRange.end))
       ) {
-        throw new Error("invalid timeRange format, not in ISO8601");
+        throw new Error('invalid timeRange format, not in ISO8601');
       }
     } else {
-      throw new Error("timeRange is required");
+      throw new Error('timeRange is required');
     }
     const result = yield collectionQuery({
       url,
       body: {
-        "free-busy-query": cleanupFalsy({
+        'free-busy-query': cleanupFalsy({
           _attributes: getDAVAttribute([DAVNamespace.CALDAV]),
           [`${DAVNamespaceShort.CALDAV}:time-range`]: {
             _attributes: {
               start: `${new Date(timeRange.start)
                 .toISOString()
                 .slice(0, 19)
-                .replace(/[-:.]/g, "")}Z`,
+                .replace(/[-:.]/g, '')}Z`,
               end: `${new Date(timeRange.end)
                 .toISOString()
                 .slice(0, 19)
-                .replace(/[-:.]/g, "")}Z`,
+                .replace(/[-:.]/g, '')}Z`,
             },
           },
         }),
@@ -8243,26 +8243,26 @@ var calendar = /*#__PURE__*/ Object.freeze({
   freeBusyQuery: freeBusyQuery,
 });
 
-const debug$1 = getLogger("tsdav:account");
+const debug$1 = getLogger('tsdav:account');
 const serviceDiscovery = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
-    debug$1("Service discovery...");
+    debug$1('Service discovery...');
     const { account, headers } = params;
     const endpoint = new URL(account.serverUrl);
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol =
-      (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : "http";
+      (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
       const response = yield browserPonyfill.exports.fetch(uri.href, {
         headers,
-        method: "PROPFIND",
-        redirect: "manual",
+        method: 'PROPFIND',
+        redirect: 'manual',
       });
       if (response.status >= 300 && response.status < 400) {
         // http redirect.
-        const location = response.headers.get("Location");
-        if (typeof location === "string" && location.length) {
+        const location = response.headers.get('Location');
+        if (typeof location === 'string' && location.length) {
           debug$1(`Service discovery redirected to ${location}`);
           const serviceURL = new URL(location, endpoint);
           if (
@@ -8273,7 +8273,7 @@ const serviceDiscovery = (params) =>
             serviceURL.port = uri.port;
           }
           serviceURL.protocol =
-            (_b = endpoint.protocol) !== null && _b !== void 0 ? _b : "http";
+            (_b = endpoint.protocol) !== null && _b !== void 0 ? _b : 'http';
           return serviceURL.href;
         }
       }
@@ -8286,13 +8286,13 @@ const fetchPrincipalUrl = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _c, _d, _e, _f, _g;
     const { account, headers } = params;
-    const requiredFields = ["rootUrl"];
+    const requiredFields = ['rootUrl'];
     if (!hasFields(account, requiredFields)) {
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields,
-        )} before fetchPrincipalUrl`,
+          requiredFields
+        )} before fetchPrincipalUrl`
       );
     }
     debug$1(`Fetching principal url from path ${account.rootUrl}`);
@@ -8301,13 +8301,13 @@ const fetchPrincipalUrl = (params) =>
       props: {
         [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
       },
-      depth: "0",
+      depth: '0',
       headers,
     });
     if (!response.ok) {
       debug$1(`Fetch principal url failed: ${response.statusText}`);
       if (response.status === 401) {
-        throw new Error("Invalid credentials");
+        throw new Error('Invalid credentials');
       }
     }
     debug$1(
@@ -8318,7 +8318,7 @@ const fetchPrincipalUrl = (params) =>
             : _c.currentUserPrincipal) === null || _d === void 0
           ? void 0
           : _d.href
-      }`,
+      }`
     );
     return new URL(
       (_g =
@@ -8329,41 +8329,41 @@ const fetchPrincipalUrl = (params) =>
           ? void 0
           : _f.href) !== null && _g !== void 0
         ? _g
-        : "",
-      account.rootUrl,
+        : '',
+      account.rootUrl
     ).href;
   });
 const fetchHomeUrl = (params) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _h, _j;
     const { account, headers } = params;
-    const requiredFields = ["principalUrl", "rootUrl"];
+    const requiredFields = ['principalUrl', 'rootUrl'];
     if (!hasFields(account, requiredFields)) {
       throw new Error(
         `account must have ${findMissingFieldNames(
           account,
-          requiredFields,
-        )} before fetchHomeUrl`,
+          requiredFields
+        )} before fetchHomeUrl`
       );
     }
     debug$1(`Fetch home url from ${account.principalUrl}`);
     const responses = yield propfind({
       url: account.principalUrl,
       props:
-        account.accountType === "caldav"
+        account.accountType === 'caldav'
           ? { [`${DAVNamespaceShort.CALDAV}:calendar-home-set`]: {} }
           : { [`${DAVNamespaceShort.CARDDAV}:addressbook-home-set`]: {} },
-      depth: "0",
+      depth: '0',
       headers,
     });
     const matched = responses.find((r) =>
-      urlContains(account.principalUrl, r.href),
+      urlContains(account.principalUrl, r.href)
     );
     if (!matched || !matched.ok) {
-      throw new Error("cannot find homeUrl");
+      throw new Error('cannot find homeUrl');
     }
     const result = new URL(
-      account.accountType === "caldav"
+      account.accountType === 'caldav'
         ? (_h =
             matched === null || matched === void 0 ? void 0 : matched.props) ===
             null || _h === void 0
@@ -8374,7 +8374,7 @@ const fetchHomeUrl = (params) =>
             null || _j === void 0
         ? void 0
         : _j.addressbookHomeSet.href,
-      account.rootUrl,
+      account.rootUrl
     ).href;
     debug$1(`Fetched home url ${result}`);
     return result;
@@ -8396,12 +8396,12 @@ const createAccount = (params) =>
     newAccount.homeUrl = yield fetchHomeUrl({ account: newAccount, headers });
     // to load objects you must first load collections
     if (loadCollections || loadObjects) {
-      if (account.accountType === "caldav") {
+      if (account.accountType === 'caldav') {
         newAccount.calendars = yield fetchCalendars({
           headers,
           account: newAccount,
         });
-      } else if (account.accountType === "carddav") {
+      } else if (account.accountType === 'carddav') {
         newAccount.addressBooks = yield fetchAddressBooks({
           headers,
           account: newAccount,
@@ -8409,25 +8409,25 @@ const createAccount = (params) =>
       }
     }
     if (loadObjects) {
-      if (account.accountType === "caldav" && newAccount.calendars) {
+      if (account.accountType === 'caldav' && newAccount.calendars) {
         newAccount.calendars = yield Promise.all(
           newAccount.calendars.map((cal) =>
             __awaiter(void 0, void 0, void 0, function* () {
               return Object.assign(Object.assign({}, cal), {
                 objects: yield fetchCalendarObjects({ calendar: cal, headers }),
               });
-            }),
-          ),
+            })
+          )
         );
-      } else if (account.accountType === "carddav" && newAccount.addressBooks) {
+      } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
         newAccount.addressBooks = yield Promise.all(
           newAccount.addressBooks.map((addr) =>
             __awaiter(void 0, void 0, void 0, function* () {
               return Object.assign(Object.assign({}, addr), {
                 objects: yield fetchVCards({ addressBook: addr, headers }),
               });
-            }),
-          ),
+            })
+          )
         );
       }
     }
@@ -8456,7 +8456,7 @@ var base64 = { exports: {} };
 
     // Detect free variable `global`, from Node.js or Browserified code, and use
     // it as `root`.
-    var freeGlobal = typeof commonjsGlobal == "object" && commonjsGlobal;
+    var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal;
     if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
       root = freeGlobal;
     }
@@ -8467,7 +8467,7 @@ var base64 = { exports: {} };
       this.message = message;
     };
     InvalidCharacterError.prototype = new Error();
-    InvalidCharacterError.prototype.name = "InvalidCharacterError";
+    InvalidCharacterError.prototype.name = 'InvalidCharacterError';
 
     var error = function (message) {
       // Note: the error messages used throughout this file match those used by
@@ -8476,7 +8476,7 @@ var base64 = { exports: {} };
     };
 
     var TABLE =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
     // http://whatwg.org/html/common-microsyntaxes.html#space-character
     var REGEX_SPACE_CHARACTERS = /[\t\n\f\r ]/g;
 
@@ -8485,10 +8485,10 @@ var base64 = { exports: {} };
     // The optimized base64-decoding algorithm used is based on @atk’s excellent
     // implementation. https://gist.github.com/atk/1020396
     var decode = function (input) {
-      input = String(input).replace(REGEX_SPACE_CHARACTERS, "");
+      input = String(input).replace(REGEX_SPACE_CHARACTERS, '');
       var length = input.length;
       if (length % 4 == 0) {
-        input = input.replace(/==?$/, "");
+        input = input.replace(/==?$/, '');
         length = input.length;
       }
       if (
@@ -8497,13 +8497,13 @@ var base64 = { exports: {} };
         /[^+a-zA-Z0-9/]/.test(input)
       ) {
         error(
-          "Invalid character: the string to be decoded is not correctly encoded.",
+          'Invalid character: the string to be decoded is not correctly encoded.'
         );
       }
       var bitCounter = 0;
       var bitStorage;
       var buffer;
-      var output = "";
+      var output = '';
       var position = -1;
       while (++position < length) {
         buffer = TABLE.indexOf(input.charAt(position));
@@ -8512,7 +8512,7 @@ var base64 = { exports: {} };
         if (bitCounter++ % 4) {
           // …convert the first 8 bits to a single ASCII character.
           output += String.fromCharCode(
-            0xff & (bitStorage >> ((-2 * bitCounter) & 6)),
+            0xff & (bitStorage >> ((-2 * bitCounter) & 6))
           );
         }
       }
@@ -8527,12 +8527,12 @@ var base64 = { exports: {} };
         // Note: no need to special-case astral symbols here, as surrogates are
         // matched, and the input is supposed to only contain ASCII anyway.
         error(
-          "The string to be encoded contains characters outside of the " +
-            "Latin1 range.",
+          'The string to be encoded contains characters outside of the ' +
+            'Latin1 range.'
         );
       }
       var padding = input.length % 3;
-      var output = "";
+      var output = '';
       var position = -1;
       var a;
       var b;
@@ -8564,11 +8564,11 @@ var base64 = { exports: {} };
           TABLE.charAt(buffer >> 10) +
           TABLE.charAt((buffer >> 4) & 0x3f) +
           TABLE.charAt((buffer << 2) & 0x3f) +
-          "=";
+          '=';
       } else if (padding == 1) {
         buffer = input.charCodeAt(position);
         output +=
-          TABLE.charAt(buffer >> 2) + TABLE.charAt((buffer << 4) & 0x3f) + "==";
+          TABLE.charAt(buffer >> 2) + TABLE.charAt((buffer << 4) & 0x3f) + '==';
       }
 
       return output;
@@ -8577,7 +8577,7 @@ var base64 = { exports: {} };
     var base64 = {
       encode: encode,
       decode: decode,
-      version: "1.0.0",
+      version: '1.0.0',
     };
 
     // Some AMD build optimizers, like r.js, check for specific condition patterns
@@ -8599,7 +8599,7 @@ var base64 = { exports: {} };
   })(commonjsGlobal);
 })(base64, base64.exports);
 
-const debug = getLogger("tsdav:authHelper");
+const debug = getLogger('tsdav:authHelper');
 /**
  * Provide given params as default params to given function with optional params.
  *
@@ -8614,34 +8614,34 @@ const defaultParam =
 const getBasicAuthHeaders = (credentials) => {
   debug(
     `Basic auth token generated: ${base64.exports.encode(
-      `${credentials.username}:${credentials.password}`,
-    )}`,
+      `${credentials.username}:${credentials.password}`
+    )}`
   );
   return {
     authorization: `Basic ${base64.exports.encode(
-      `${credentials.username}:${credentials.password}`,
+      `${credentials.username}:${credentials.password}`
     )}`,
   };
 };
 const fetchOauthTokens = (credentials) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const requireFields = [
-      "authorizationCode",
-      "redirectUrl",
-      "clientId",
-      "clientSecret",
-      "tokenUrl",
+      'authorizationCode',
+      'redirectUrl',
+      'clientId',
+      'clientSecret',
+      'tokenUrl',
     ];
     if (!hasFields(credentials, requireFields)) {
       throw new Error(
         `Oauth credentials missing: ${findMissingFieldNames(
           credentials,
-          requireFields,
-        )}`,
+          requireFields
+        )}`
       );
     }
     const param = new URLSearchParams({
-      grant_type: "authorization_code",
+      grant_type: 'authorization_code',
       code: credentials.authorizationCode,
       redirect_uri: credentials.redirectUrl,
       client_id: credentials.clientId,
@@ -8651,11 +8651,11 @@ const fetchOauthTokens = (credentials) =>
     debug(param.toString());
     console.log(param.toString());
     const response = yield browserPonyfill.exports.fetch(credentials.tokenUrl, {
-      method: "POST",
+      method: 'POST',
       body: param.toString(),
       headers: {
-        "content-length": `${param.toString().length}`,
-        "content-type": "application/x-www-form-urlencoded",
+        'content-length': `${param.toString().length}`,
+        'content-type': 'application/x-www-form-urlencoded',
       },
     });
     if (response.ok) {
@@ -8668,30 +8668,30 @@ const fetchOauthTokens = (credentials) =>
 const refreshAccessToken = (credentials) =>
   __awaiter(void 0, void 0, void 0, function* () {
     const requireFields = [
-      "refreshToken",
-      "clientId",
-      "clientSecret",
-      "tokenUrl",
+      'refreshToken',
+      'clientId',
+      'clientSecret',
+      'tokenUrl',
     ];
     if (!hasFields(credentials, requireFields)) {
       throw new Error(
         `Oauth credentials missing: ${findMissingFieldNames(
           credentials,
-          requireFields,
-        )}`,
+          requireFields
+        )}`
       );
     }
     const param = new URLSearchParams({
       client_id: credentials.clientId,
       client_secret: credentials.clientSecret,
       refresh_token: credentials.refreshToken,
-      grant_type: "refresh_token",
+      grant_type: 'refresh_token',
     });
     const response = yield browserPonyfill.exports.fetch(credentials.tokenUrl, {
-      method: "POST",
+      method: 'POST',
       body: param.toString(),
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
     if (response.ok) {
@@ -8704,7 +8704,7 @@ const refreshAccessToken = (credentials) =>
 const getOauthHeaders = (credentials) =>
   __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    debug("Fetching oauth headers");
+    debug('Fetching oauth headers');
     let tokens = {};
     if (!credentials.refreshToken) {
       // No refresh token, fetch new tokens
@@ -8743,9 +8743,9 @@ const createDAVClient = (params) =>
     const { serverUrl, credentials, authMethod, defaultAccountType } = params;
     const authHeaders =
       // eslint-disable-next-line no-nested-ternary
-      authMethod === "Basic"
+      authMethod === 'Basic'
         ? getBasicAuthHeaders(credentials)
-        : authMethod === "Oauth"
+        : authMethod === 'Oauth'
         ? (yield getOauthHeaders(credentials)).headers
         : {};
     const defaultAccount = defaultAccountType
@@ -8757,15 +8757,15 @@ const createDAVClient = (params) =>
     const davRequest$1 = (params0) =>
       __awaiter(void 0, void 0, void 0, function* () {
         const { init } = params0,
-          rest = __rest(params0, ["init"]);
+          rest = __rest(params0, ['init']);
         const { headers } = init,
-          restInit = __rest(init, ["headers"]);
+          restInit = __rest(init, ['headers']);
         return davRequest(
           Object.assign(Object.assign({}, rest), {
             init: Object.assign(Object.assign({}, restInit), {
               headers: Object.assign(Object.assign({}, authHeaders), headers),
             }),
-          }),
+          })
         );
       });
     const createObject$1 = defaultParam(createObject, {
@@ -8892,19 +8892,19 @@ class DAVClient {
     this.serverUrl = params.serverUrl;
     this.credentials = params.credentials;
     this.authMethod =
-      (_a = params.authMethod) !== null && _a !== void 0 ? _a : "Basic";
+      (_a = params.authMethod) !== null && _a !== void 0 ? _a : 'Basic';
     this.accountType =
       (_b = params.defaultAccountType) !== null && _b !== void 0
         ? _b
-        : "caldav";
+        : 'caldav';
   }
   login() {
     return __awaiter(this, void 0, void 0, function* () {
       this.authHeaders =
         // eslint-disable-next-line no-nested-ternary
-        this.authMethod === "Basic"
+        this.authMethod === 'Basic'
           ? getBasicAuthHeaders(this.credentials)
-          : this.authMethod === "Oauth"
+          : this.authMethod === 'Oauth'
           ? (yield getOauthHeaders(this.credentials)).headers
           : {};
       this.account = this.accountType
@@ -8922,18 +8922,18 @@ class DAVClient {
   davRequest(params0) {
     return __awaiter(this, void 0, void 0, function* () {
       const { init } = params0,
-        rest = __rest(params0, ["init"]);
+        rest = __rest(params0, ['init']);
       const { headers } = init,
-        restInit = __rest(init, ["headers"]);
+        restInit = __rest(init, ['headers']);
       return davRequest(
         Object.assign(Object.assign({}, rest), {
           init: Object.assign(Object.assign({}, restInit), {
             headers: Object.assign(
               Object.assign({}, this.authHeaders),
-              headers,
+              headers
             ),
           }),
-        }),
+        })
       );
     });
   }
@@ -8972,7 +8972,7 @@ class DAVClient {
       return createAccount({
         account: Object.assign(
           { serverUrl: this.serverUrl, credentials: this.credentials },
-          account,
+          account
         ),
         headers: Object.assign(Object.assign({}, this.authHeaders), headers),
         loadCollections,
@@ -8983,35 +8983,35 @@ class DAVClient {
   collectionQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(collectionQuery, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   makeCollection(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(makeCollection, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   syncCollection(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(syncCollection, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   supportedReportSet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(supportedReportSet, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   isCollectionDirty(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(isCollectionDirty, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
@@ -9026,21 +9026,21 @@ class DAVClient {
   calendarQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(calendarQuery, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   makeCalendar(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(makeCalendar, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   calendarMultiGet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(calendarMultiGet, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
@@ -9055,28 +9055,28 @@ class DAVClient {
   fetchCalendarObjects(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(fetchCalendarObjects, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   createCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(createCalendarObject, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   updateCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(updateCalendarObject, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   deleteCalendarObject(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(deleteCalendarObject, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
@@ -9091,14 +9091,14 @@ class DAVClient {
   addressBookQuery(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(addressBookQuery, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   addressBookMultiGet(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(addressBookMultiGet, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
@@ -9113,28 +9113,28 @@ class DAVClient {
   fetchVCards(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(fetchVCards, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   createVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(createVCard, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   updateVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(updateVCard, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
   deleteVCard(...params) {
     return __awaiter(this, void 0, void 0, function* () {
       return defaultParam(deleteVCard, { headers: this.authHeaders })(
-        params[0],
+        params[0]
       );
     });
   }
@@ -9155,21 +9155,21 @@ var index = Object.assign(
             Object.assign(
               Object.assign(
                 { DAVNamespace, DAVNamespaceShort, DAVAttributeMap },
-                client,
+                client
               ),
-              request,
+              request
             ),
-            collection,
+            collection
           ),
-          account,
+          account
         ),
-        addressBook,
+        addressBook
       ),
-      calendar,
+      calendar
     ),
-    authHelpers,
+    authHelpers
   ),
-  requestHelpers,
+  requestHelpers
 );
 
 export {

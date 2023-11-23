@@ -1,11 +1,28 @@
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
-//import localforage from 'localforage';
-//import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
-//import { accounts } from './app.js';
+import localforage from 'localforage';
+import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+import { google_cred } from './assets/js/google_cred.js';
 
+const google_oauth_url =
+  'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
+
+const google_acc = {
+  token_url: 'https://oauth2.googleapis.com/token',
+  redirect_url: 'https://greg.strukturart.com/redirect.html',
+};
 const channel = new BroadcastChannel('sw-messages');
-
+let accounts;
+async function loadAccounts() {
+  try {
+    accounts = (await localforage.getItem('accounts')) || [];
+    return true;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+loadAccounts();
 //parse calendar events and send back to mainscript
 const parse_ics = function (
   data,
@@ -105,27 +122,6 @@ const parse_ics = function (
   return imp;
 };
 
-self.addEventListener('message', (event) => {
-  // Receive a message from the main thread
-  if (!event.data) {
-    channel.postMessage({ action: 'error', content: 'error' });
-    return false;
-  }
-  let ff = parse_ics(
-    event.data.t.data,
-    false,
-    event.data.t.etag,
-    event.data.t.url,
-    event.data.e,
-    true,
-    false
-  );
-
-  // Post the result back to the main thread
-  channel.postMessage({ action: 'parse', content: ff });
-});
-
-/*
 //loggin
 //login handler
 const clientInstances = {};
@@ -162,11 +158,97 @@ async function getClientInstance(item) {
     }
     return clientInstances[item.id];
   } catch (e) {
-    channel.postMessage({ action: 'error', content: e });
+    console.log(e);
   }
 }
 
-*/
+let sync_caldav = async function () {
+  for (const item of accounts) {
+    let client = await getClientInstance(item);
+
+    try {
+      if (!isLoggedInMap[item.id]) {
+        await client.login();
+        isLoggedInMap[item.id] = true;
+      }
+
+      const calendars = await client.fetchCalendars();
+
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+        cn.push({
+          name: calendars[i].displayName,
+          url: calendars[i].url,
+          id: item.id,
+        });
+      }
+
+      const value = await localforage.getItem(item.id);
+      if (value == null) continue;
+
+      for (let i = 0; i < value.length; i++) {
+        let s = {
+          oldCalendars: [
+            {
+              url: value[i].url,
+              ctag: value[i].ctag,
+              syncToken: value[i].syncToken,
+              displayName: value[i].displayName,
+              objects: value[i].objects,
+            },
+          ],
+          detailedResult: true,
+          headers: client.authHeaders,
+        };
+        try {
+          const ma = await client.syncCalendars(s);
+          console.log('try to sync');
+          if (ma.updated.length && ma.updated.length > 0) {
+            break;
+          } else {
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  }
+};
+
+self.addEventListener('message', (event) => {
+  // Receive a message from the main thread
+  if (!event.data) {
+    channel.postMessage({ action: 'error', content: 'error' });
+    return false;
+  }
+  if (event.data.type == 'parse') {
+    let ff = parse_ics(
+      event.data.t.data,
+      false,
+      event.data.t.etag,
+      event.data.t.url,
+      event.data.e,
+      true,
+      false
+    );
+
+    // Post the result back to the main thread
+    channel.postMessage({ action: 'parse', content: ff });
+  }
+
+  if (event.data.type == 'test') {
+    sync_caldav();
+
+    channel.postMessage({
+      action: 'test',
+      content: 'try',
+    });
+  }
+});
 
 //System messages
 

@@ -4876,6 +4876,14 @@ function shortpress_action(param) {
         message: 'Hello from the web page!',
       });
 
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+
       break;
 
     case '0':
@@ -4959,7 +4967,10 @@ channel.addEventListener('message', (event) => {
   if (event.data.action == 'background_sync') {
     pushLocalNotification('hello', 'hello');
   }
-  console.log('hello');
+
+  if (event.data.action == 'test') {
+    console.log('hello');
+  }
 
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can no longer be closed
