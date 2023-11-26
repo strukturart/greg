@@ -1959,11 +1959,13 @@ export let page_options = {
                 },
 
                 oncreate: function () {
+                  /*
                   if ('b2g' in navigator) {
                     document.getElementById(
                       'background-sync-box'
-                    ).style.display = 'none';
+                    ).style.display = 'nonr';
                   }
+                  */
 
                   load_settings();
                   setTimeout(function () {
@@ -4969,7 +4971,7 @@ channel.addEventListener('message', (event) => {
   }
 
   if (event.data.action == 'test') {
-    console.log('hello');
+    alert(event.data.content);
   }
 
   //callback from Google OAuth

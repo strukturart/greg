@@ -1,11 +1,9 @@
+import './assets/js/shim-xhr-to-fetch.js';
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
 import localforage from 'localforage';
-import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+import { DAVClient } from './assets/js/tsdav-2.0.5.js';
 import { google_cred } from './assets/js/google_cred.js';
-
-const google_oauth_url =
-  'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
 
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
@@ -13,6 +11,7 @@ const google_acc = {
 };
 const channel = new BroadcastChannel('sw-messages');
 let accounts;
+
 async function loadAccounts() {
   try {
     accounts = (await localforage.getItem('accounts')) || [];
@@ -23,6 +22,18 @@ async function loadAccounts() {
   }
 }
 loadAccounts();
+
+let settings;
+localforage
+  .getItem('settings')
+  .then(function (e) {
+    settings = e;
+    console.log(e);
+  })
+  .catch(function (err) {
+    console.log(err);
+  });
+
 //parse calendar events and send back to mainscript
 const parse_ics = function (
   data,
@@ -159,6 +170,11 @@ async function getClientInstance(item) {
     return clientInstances[item.id];
   } catch (e) {
     console.log(e);
+
+    channel.postMessage({
+      action: 'test',
+      content: e,
+    });
   }
 }
 
@@ -205,16 +221,31 @@ let sync_caldav = async function () {
         try {
           const ma = await client.syncCalendars(s);
           console.log('try to sync');
+
           if (ma.updated.length && ma.updated.length > 0) {
+            channel.postMessage({
+              action: 'test',
+              content: 'update needed',
+            });
             break;
           } else {
           }
         } catch (e) {
           console.log(e);
+
+          channel.postMessage({
+            action: 'test',
+            content: 'error 2',
+          });
         }
       }
     } catch (err) {
       console.log(err);
+
+      channel.postMessage({
+        action: 'test',
+        content: 'error 1',
+      });
     }
   }
 };
@@ -242,11 +273,6 @@ self.addEventListener('message', (event) => {
 
   if (event.data.type == 'test') {
     sync_caldav();
-
-    channel.postMessage({
-      action: 'test',
-      content: 'try',
-    });
   }
 });
 
@@ -272,28 +298,36 @@ self.onsystemmessage = (evt) => {
         let m = evt.data.json();
 
         if (m.data.note == 'keep alive') {
-          // todo sync caldav
-          /*
+          sync_caldav();
+
           self.registration.showNotification('Test', {
             body: m.data.note,
           });
 
-          var d = new Date();
-          d.setMinutes(d.getMinutes() + 2);
+          localforage
+            .getItem('settings')
+            .then(function (e) {
+              if (e.background_sync == 'Yes') {
+                var d = new Date();
+                d.setMinutes(d.getMinutes() + 2);
 
-          let options = {
-            date: d,
-            data: { note: 'keep alive', type: 'background_sync' },
-            ignoreTimezone: false,
-          };
+                let options = {
+                  date: d,
+                  data: { note: 'keep alive', type: 'background_sync' },
+                  ignoreTimezone: false,
+                };
 
-          navigator.b2g.alarmManager
-            .add(options)
-            .then(
-              channel.postMessage({ action: 'background_sync', content: '' })
-            );
-
-            */
+                navigator.b2g.alarmManager.add(options).then(
+                  channel.postMessage({
+                    action: 'background_sync',
+                    content: '',
+                  })
+                );
+              }
+            })
+            .catch(function (err) {
+              console.log(err);
+            });
         } else {
           self.registration.showNotification('Greg', {
             body: m.data.note,

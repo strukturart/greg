@@ -23,7 +23,7 @@
   ],
 
   "b2g_features": {
-    "version": "3.0.241",
+    "version": "3.0.252",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
@@ -38,10 +38,7 @@
     "dependencies": {
       "ads-sdk": "1.5.8"
     },
-    "messages": [
-      { "serviceworker-notification": "index.html" },
-      "alarm"
-    ],
+    "messages": [{ "serviceworker-notification": "index.html" }, "alarm"],
 
     "activities": {
       "greg-oauth": {}
@@ -77,9 +74,6 @@
       "feature-detection": {
         "description": "query which keys are available"
       }
-      
-
-
     }
   }
 }

@@ -13,8 +13,11 @@
     "type": "git",
     "url": "git+https://github.com/strukturart/greg.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "KaiOs",
+    "Calendar"
+  ],
+  "author": "strukturart",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/strukturart/greg/issues"
@@ -39,7 +42,7 @@
     "https-browserify": "^1.0.0",
     "os-browserify": "^0.3.0",
     "parcel": "^2.6.2",
-    "parcel-plugin-static-files-copy": "^1.2.4",
+    "parcel-plugin-static-files-copy": "^2.6.0",
     "path-browserify": "^1.0.1",
     "postcss": "^8.4.6",
     "querystring-es3": "^0.2.1",
@@ -63,16 +66,5 @@
     "moment-timezone": "^0.5.34",
     "uid": "^2.0.0",
     "url-search-params-polyfill": "^8.1.1"
-  },
-  "staticFiles": {
-    "staticPath": [
-      {
-        "staticPath": "application/assets/",
-        "staticOutDir": "assets/"
-      },
-      {
-        "staticPath": "application/manifest.webapp"
-      }
-    ]
   }
 }
