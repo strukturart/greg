@@ -39,7 +39,7 @@ const moment = require('moment-timezone');
 dayjs.extend(dayjsPluginUTC);
 let channel = new BroadcastChannel('sw-messages');
 
-const debug = false;
+const debug = true;
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
 
@@ -109,6 +109,157 @@ export let settings = {
   firstday: 'sunday',
   background_sync: 'No',
 };
+
+if ('b2g' in navigator) {
+  try {
+    navigator.serviceWorker
+      .register(new URL('sw.js', import.meta.url), {
+        type: 'module',
+      })
+      .then((registration) => {
+        if (registration.waiting) {
+          // There's a new service worker waiting to activate
+          // You can prompt the user to reload the page to apply the update
+          // For example: show a message to the user
+
+          // Add a delay before reloading to allow the user to finish their interaction
+          setTimeout(() => {
+            window.location.reload(true); // Force reload from the server, skipping the cache
+          }, 1000); // Adjust the delay time as needed
+        } else {
+          // No waiting service worker, registration was successful
+        }
+        registration.systemMessageManager.subscribe('alarm').then(
+          (rv) => {
+            console.log(
+              'Successfully subscribe system messages of name "alarm".'
+            );
+          },
+          (error) => {
+            console.log('Fail to subscribe system message, error: ' + error);
+          }
+        );
+        registration.systemMessageManager.subscribe('activity').then(
+          (rv) => {},
+          (error) => {}
+        );
+      });
+  } catch (e) {
+    console.log(e);
+  }
+} else {
+  try {
+    navigator.serviceWorker
+      .register(new URL('sw.js', import.meta.url), {
+        type: 'module',
+      })
+      .then((registration) => {
+        if (registration.waiting) {
+          // There's a new service worker waiting to activate
+          // You can prompt the user to reload the page to apply the update
+          // For example: show a message to the user
+
+          // Add a delay before reloading to allow the user to finish their interaction
+          setTimeout(() => {
+            window.location.reload(true); // Force reload from the server, skipping the cache
+          }, 1000); // Adjust the delay time as needed
+        } else {
+          // No waiting service worker, registration was successful
+        }
+      });
+  } catch (e) {
+    console.error('Error during service worker registration:', e);
+  }
+}
+
+//load calendar names
+async function loadCalendarNames() {
+  await localforage.getItem('accounts').then((e) => {});
+  try {
+    const keys = await localforage.keys();
+    //set local calendar as default
+    if (keys.indexOf('calendarNames') == -1) {
+      console.log('no calendar set');
+      calendar_names = [
+        {
+          name: 'local',
+          id: 'local-id',
+          data: '',
+          type: 'local',
+          view: true,
+        },
+      ];
+      await localforage.setItem('calendarNames', calendar_names);
+    } else {
+      localforage.getItem('calendarNames').then((a) => {
+        calendar_names = a;
+      });
+    }
+  } catch (err) {
+    console.log(err);
+  }
+}
+
+loadCalendarNames();
+
+//load accounts data
+//load cached data
+
+async function loadAccounts() {
+  try {
+    accounts = (await localforage.getItem('accounts')) || [];
+
+    // Check if the browser supports service workers
+    if ('serviceWorker' in navigator) {
+      // Get the service worker registration
+      navigator.serviceWorker
+        .getRegistration()
+        .then((registration) => {
+          if (registration) {
+            // Service worker is installed, call your function
+            load_cached_caldav();
+          } else {
+            alert('Service Worker is not installed.');
+          }
+        })
+        .catch((error) => {
+          alert('Error while checking service worker registration:', error);
+        });
+    } else {
+      console.warn('Service Worker is not supported in this browser.');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('acc not loaded');
+  }
+}
+loadAccounts();
+
+export let load_settings = function () {
+  localforage
+    .getItem('settings')
+    .then(function (value) {
+      if (value == null) return false;
+      settings = value;
+      localStorage.setItem('background_sync', settings.background_sync);
+
+      if (settings.firstday == 'sunday' || settings.firstday == undefined) {
+        weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      } else {
+        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      }
+      document.querySelectorAll('.calendar-head div').forEach(function (e, i) {
+        e.innerText = weekday[i];
+      });
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+};
+
+load_settings();
+
+//style calendar cells
 
 let style_calendar_cell = function () {
   if (events.length > 0) {
@@ -248,7 +399,6 @@ async function load_caldav(callback = false) {
 
 let cache_caldav = function () {
   accounts.forEach(function (item) {
-    console.log(item);
     const client = '';
     if (item.type == 'oauth') {
       client = new DAVClient({
@@ -340,6 +490,7 @@ let cn = [
     id: 'local-id',
     data: '',
     type: 'local',
+    view: true,
   },
 ];
 
@@ -370,6 +521,7 @@ export let sync_caldav = async function (callback) {
           name: calendars[i].displayName,
           url: calendars[i].url,
           id: item.id,
+          view: true,
         });
       }
 
@@ -412,9 +564,19 @@ export let sync_caldav = async function (callback) {
   }
 
   if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
-    side_toaster('the calendar list has been updated', 2000);
-    localforage.setItem('calendarNames', cn);
-    loadCalendarNames();
+    //update new calendars with old calendar view attribut
+    cn.forEach((e) => {
+      const matchingCalendar = calendar_names.find((a) => a.name === e.name);
+
+      if (matchingCalendar) {
+        e.view = matchingCalendar.view;
+      }
+    });
+
+    //side_toaster('the calendar list has been updated', 2000);
+    localforage.setItem('calendarNames', cn).then(() => {
+      loadCalendarNames();
+    });
   }
 };
 
@@ -650,16 +812,23 @@ const load_cached_caldav = async () => {
             'serviceWorker' in navigator &&
             navigator.serviceWorker.controller
           ) {
-            navigator.serviceWorker.controller.postMessage({
-              type: 'parse',
-              t: m,
-              e: item.id,
-            });
+            try {
+              navigator.serviceWorker.controller.postMessage({
+                type: 'parse',
+                t: m,
+                e: item.id,
+              });
+            } catch (e) {
+              alert('send to sw');
+            }
+          } else {
+            alert('no sw');
           }
         }
       }
     } catch (e) {
       console.log(e);
+      alert('error loadCached');
     }
   }
 };
@@ -715,50 +884,6 @@ localforage
     console.log(err);
   });
 
-//load calendar names
-
-async function loadCalendarNames() {
-  await localforage.getItem('accounts').then((e) => {});
-  try {
-    const keys = await localforage.keys();
-    //set local calendar as default
-    if (keys.indexOf('calendarNames') == -1) {
-      calendar_names = [
-        {
-          name: 'local',
-          id: 'local-id',
-          data: '',
-          type: 'local',
-        },
-      ];
-      await localforage.setItem('calendarNames', calendar_names);
-    } else {
-      const e = await localforage.getItem('calendarNames');
-      calendar_names = e;
-    }
-  } catch (err) {
-    console.log(err);
-  }
-}
-
-loadCalendarNames();
-
-//load accounts data
-//load cached data
-
-async function loadAccounts() {
-  try {
-    accounts = (await localforage.getItem('accounts')) || [];
-    load_cached_caldav();
-
-    return true;
-  } catch (err) {
-    console.error(err);
-    return false;
-  }
-}
-loadAccounts();
-
 //store templates
 let store_event_as_template = function (
   title,
@@ -792,30 +917,6 @@ let currentYear = today.getFullYear();
 let currentDay = today.getDate();
 
 let update_event_date;
-
-export let load_settings = function () {
-  localforage
-    .getItem('settings')
-    .then(function (value) {
-      if (value == null) return false;
-      settings = value;
-      localStorage.setItem('background_sync', settings.background_sync);
-
-      if (settings.firstday == 'sunday' || settings.firstday == undefined) {
-        weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      } else {
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-      }
-      document.querySelectorAll('.calendar-head div').forEach(function (e, i) {
-        e.innerText = weekday[i];
-      });
-    })
-    .catch(function (err) {
-      console.log(err);
-    });
-};
-
-load_settings();
 
 //ads || ads free
 
@@ -1048,15 +1149,12 @@ let slider_navigation = function () {
   p[slider_index].classList.add('active');
 };
 
-////
-
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector('div#event-slider-indicator div');
   k.innerHTML = '';
 
   document.querySelector('div#event-slider').innerHTML = '';
-
   for (let i = 0; i < events.length; i++) {
     let a = new Date(events[i].dateStart).getTime();
     let b = new Date(events[i].dateEnd).getTime();
@@ -1247,26 +1345,6 @@ let highlight_current_day = function () {
 //BUILD CALENDAR
 //////////////
 
-//animation
-let calendar_animation = () => {
-  const calendarCells = document.querySelectorAll('div.calendar-cell');
-
-  function toggleOpacity(cell) {
-    const currentOpacity = getComputedStyle(cell).opacity;
-    cell.style.opacity = currentOpacity === '1' ? '0.3' : '1';
-  }
-  setInterval(() => {
-    const randomIndex = Math.floor(Math.random() * calendarCells.length);
-    const selectedCell = calendarCells[randomIndex];
-
-    toggleOpacity(selectedCell);
-
-    setTimeout(() => {
-      toggleOpacity(selectedCell);
-    }, 500);
-  }, 1000); // 2 seconds interval to allow 1-second blinking effect
-};
-
 // get weeknumber
 Date.prototype.getWeek = function () {
   var date = new Date(this.getTime());
@@ -1351,8 +1429,7 @@ let showCalendar = function (month, year) {
 
         let p = year + '-' + mmonth + '-' + day;
 
-        const d = new Date(p);
-        //cell.setAttribute("data-day", d.getDay());
+        //const d = new Date(p);
 
         moon.classList.add('moon-phase-' + getMoonPhase(year, month, date));
         cell.appendChild(moon);
@@ -1408,6 +1485,7 @@ let clear_form = function () {
 };
 
 let search_events = (term) => {
+  if (term) return false;
   let k = term.toUpperCase();
   document.querySelectorAll('#events-wrapper article').forEach((v, i) => {
     if (
@@ -1959,13 +2037,11 @@ export let page_options = {
                 },
 
                 oncreate: function () {
-                  /*
                   if ('b2g' in navigator) {
                     document.getElementById(
                       'background-sync-box'
-                    ).style.display = 'nonr';
+                    ).style.display = 'none';
                   }
-                  */
 
                   load_settings();
                   setTimeout(function () {
@@ -2154,7 +2230,7 @@ export let page_options = {
             m(
               'label',
               { for: 'events-category-filter' },
-              'select the category'
+              'Select the category'
             ),
             m(
               'select',
@@ -2172,17 +2248,62 @@ export let page_options = {
                   }, 1000);
                 },
               },
-              [
-                m('option', { value: '-' }, '-'),
-                ...Array.from(new Set(events.map((e) => e.CATEGORIES)))
-                  .filter((category) => category !== '')
-                  .map((category) =>
-                    m('option', { value: category }, category)
-                  ),
-              ]
+              events.length > 0
+                ? [
+                    m('option', { value: '-' }, '-'),
+                    ...events
+                      .map((e) => e.CATEGORIES)
+                      .filter(
+                        (category, index, array) =>
+                          category !== '' && array.indexOf(category) === index
+                      )
+                      .map((category) =>
+                        m('option', { value: category }, category)
+                      ),
+                  ]
+                : [m('option', { value: '-' }, 'No categories available')]
             ),
           ]
         ),
+
+        m('h2', 'Calendars'),
+        m('div', {}, [
+          calendar_names.map((e) => {
+            return m(
+              'button',
+              {
+                class: 'item',
+                'data-calendar-name': e.name,
+                oncreate: ({ dom }) => {
+                  if (e.view == false) dom.classList.add('active');
+                },
+                onclick: () => {
+                  calendar_names.forEach((i) => {
+                    if (
+                      i.name ==
+                      document.activeElement.getAttribute('data-calendar-name')
+                    ) {
+                      i.view = !i.view;
+                    }
+                  });
+
+                  document.activeElement.classList.toggle('active');
+
+                  localforage
+                    .setItem('calendarNames', calendar_names)
+                    .then(() => {
+                      loadCalendarNames();
+                      side_toaster(
+                        'will be applied the next time the app is started',
+                        2000
+                      );
+                    });
+                },
+              },
+              e.name
+            );
+          }),
+        ]),
 
         m('h2', 'Accounts'),
 
@@ -2190,7 +2311,6 @@ export let page_options = {
           'button',
           {
             class: 'item  google-button caldav-button',
-            //   tabindex: subscriptions.length + 9,
             onclick: function () {
               m.route.set('/page_accounts');
             },
@@ -2216,7 +2336,6 @@ export let page_options = {
           'button',
           {
             class: 'item google-button',
-            // tabindex: subscriptions.length + 10,
             onclick: function () {
               oauth_callback = setInterval(function () {
                 if (localStorage.getItem('oauth_callback') == 'true') {
@@ -2274,7 +2393,6 @@ export let page_options = {
               'data-account-type': item.type,
               'data-action': 'edit-delete-account',
 
-              //   tabindex: index + subscriptions.length + 8,
               onblur: function () {
                 bottom_bar('', '', '');
               },
@@ -2329,8 +2447,6 @@ var page_subscriptions = {
           tabindex: '0',
           oninit: () => {
             bottom_bar('', '', '');
-
-            //   p = m.route.param('url');
           },
 
           oncreate: function ({ dom }) {
@@ -2907,7 +3023,7 @@ var page_add_event = {
           [
             m('label', { for: 'event-calendar' }, 'Calendars'),
             m('select', { id: 'event-calendar', class: 'select-box' }, [
-              calendar_names.map(function (item, index) {
+              calendar_names.map(function (item) {
                 return m(
                   'option',
                   {
@@ -3730,11 +3846,33 @@ let nav = function (move) {
   const elY =
     rect.top - document.body.getBoundingClientRect().top + rect.height / 2;
 
-  document.activeElement.parentNode.scrollBy({
-    left: 0,
-    top: elY - window.innerHeight / 2,
-    behavior: 'smooth',
-  });
+  let scrollContainer = document.activeElement.parentNode;
+
+  // Find the first scrollable parent
+  while (scrollContainer) {
+    if (
+      scrollContainer.scrollHeight > scrollContainer.clientHeight ||
+      scrollContainer.scrollWidth > scrollContainer.clientWidth
+    ) {
+      break;
+    }
+    scrollContainer = scrollContainer.parentNode;
+  }
+
+  if (scrollContainer) {
+    scrollContainer.scrollBy({
+      left: 0,
+      top: elY - window.innerHeight / 2,
+      behavior: 'smooth',
+    });
+  } else {
+    // If no scrollable parent is found, scroll the document body
+    document.body.scrollBy({
+      left: 0,
+      top: elY - window.innerHeight / 2,
+      behavior: 'smooth',
+    });
+  }
 
   if (
     m.route.get() == '/page_calendar' ||
@@ -3747,59 +3885,7 @@ let nav = function (move) {
       event_slider(status.selected_day);
     } catch (e) {}
   }
-
-  // highlight_current_day();
 };
-
-if ('b2g' in navigator) {
-  try {
-    navigator.serviceWorker
-      .register(new URL('sw.js', import.meta.url), {
-        type: 'module',
-      })
-      .then((registration) => {
-        registration.systemMessageManager.subscribe('alarm').then(
-          (rv) => {
-            console.log(
-              'Successfully subscribe system messages of name "alarm".'
-            );
-          },
-          (error) => {
-            console.log('Fail to subscribe system message, error: ' + error);
-          }
-        );
-        registration.systemMessageManager.subscribe('activity').then(
-          (rv) => {},
-          (error) => {}
-        );
-      });
-  } catch (e) {
-    console.log(e);
-  }
-} else {
-  try {
-    navigator.serviceWorker
-      .register(new URL('sw.js', import.meta.url), {
-        type: 'module',
-      })
-      .then((registration) => {
-        if (registration.waiting) {
-          // There's a new service worker waiting to activate
-          // You can prompt the user to reload the page to apply the update
-          // For example: show a message to the user
-
-          // Add a delay before reloading to allow the user to finish their interaction
-          setTimeout(() => {
-            window.location.reload(true); // Force reload from the server, skipping the cache
-          }, 1000); // Adjust the delay time as needed
-        } else {
-          // No waiting service worker, registration was successful
-        }
-      });
-  } catch (e) {
-    console.error('Error during service worker registration:', e);
-  }
-}
 
 let add_alarm = function (date, message_text, id, type) {
   // KaiOs  2.xx
@@ -4317,7 +4403,6 @@ let update_event = function (etag, url, id, db_id, uid) {
     calendar_name: document.getElementById('event-calendar').value,
     allDay: allDay,
   };
-  console.log(event);
 
   if (event.alarm !== 'none') {
     event.BEGIN = 'VALARM';
@@ -4440,7 +4525,6 @@ let update_event = function (etag, url, id, db_id, uid) {
 ///////////
 
 let delete_event = function (etag, url, account_id, uid) {
-  console.log(etag);
   if (etag) {
     delete_caldav(etag, url, account_id, uid);
   } else {
@@ -4877,7 +4961,7 @@ function shortpress_action(param) {
         type: 'test',
         message: 'Hello from the web page!',
       });
-
+      /*
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (let registration of registrations) {
@@ -4885,6 +4969,7 @@ function shortpress_action(param) {
           }
         });
       }
+      */
 
       break;
 
@@ -4966,10 +5051,6 @@ let interval_is_running = false;
 let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
-  if (event.data.action == 'background_sync') {
-    pushLocalNotification('hello', 'hello');
-  }
-
   if (event.data.action == 'test') {
     alert(event.data.content);
   }
@@ -4986,7 +5067,9 @@ channel.addEventListener('message', (event) => {
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
-    events.push(event.data.content);
+    if (event.data.content != false) {
+      events.push(event.data.content);
+    }
     document.getElementById('icon-waiting').style.visibility = 'visible';
 
     if (interval_is_running == false) {
@@ -5017,18 +5100,18 @@ let interval = () => {
 };
 
 //MozAcitivty deepLink handler
-navigator.mozSetMessageHandler('activity', function (activityRequest) {
-  var option = activityRequest.source;
+try {
+  navigator.mozSetMessageHandler('activity', function (activityRequest) {
+    var option = activityRequest.source;
 
-  //link
-  if (option.name == 'view') {
-    p = option.data.url;
-    side_toaster(
-      'please open the subscriptions page and store the values',
-      15000
-    );
-    wakeLookCPU();
-
-    return false;
-  }
-});
+    //link
+    if (option.name == 'view') {
+      p = option.data.url;
+      side_toaster(
+        'please open the subscriptions page and store the values',
+        15000
+      );
+      wakeLookCPU();
+    }
+  });
+} catch (e) {}

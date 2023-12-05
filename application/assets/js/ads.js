@@ -1,6 +1,7 @@
 'use strict';
 
-import { bottom_bar, side_toaster } from './helper';
+import { bottom_bar } from './helper.js';
+import { settings } from '../../app.js';
 
 export let load_ads = function () {
   var js = document.createElement('script');

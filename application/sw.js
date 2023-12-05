@@ -10,32 +10,46 @@ const google_acc = {
   redirect_url: 'https://greg.strukturart.com/redirect.html',
 };
 const channel = new BroadcastChannel('sw-messages');
-let accounts;
 
+let accounts;
 async function loadAccounts() {
   try {
     accounts = (await localforage.getItem('accounts')) || [];
     return true;
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error('Error loading accounts:', error);
     return false;
   }
 }
 loadAccounts();
 
+let calendar_names;
+async function getCalendarNames() {
+  try {
+    calendar_names = await localforage.getItem('calendarNames');
+    // Do additional processing if needed
+  } catch (error) {
+    console.error('Error retrieving calendar names:', error);
+  }
+}
+getCalendarNames();
+
 let settings;
-localforage
-  .getItem('settings')
-  .then(function (e) {
-    settings = e;
-    console.log(e);
-  })
-  .catch(function (err) {
-    console.log(err);
-  });
+let load_settings = function () {
+  localforage
+    .getItem('settings')
+    .then(function (value) {
+      settings = value;
+    })
+    .catch(function (err) {
+      console.log(err);
+    });
+};
+
+load_settings();
 
 //parse calendar events and send back to mainscript
-const parse_ics = function (
+async function parse_ics(
   data,
   isSubscription,
   etag,
@@ -53,7 +67,16 @@ const parse_ics = function (
 
   var vevent = comp.getAllSubcomponents('vevent');
   let calendar_name = comp.getFirstPropertyValue('x-wr-calname') || '';
+
+  const matchingCalendar = calendar_names.find((a) => a.name === calendar_name);
+
+  //do not parse hidden calendars
+  if (!matchingCalendar || matchingCalendar.view === false) {
+    return false;
+  }
+
   let imp;
+
   vevent.forEach(function (ite) {
     let n = '';
     let rr_until = '';
@@ -131,7 +154,7 @@ const parse_ics = function (
     };
   });
   return imp;
-};
+}
 
 //loggin
 //login handler
@@ -197,7 +220,8 @@ let sync_caldav = async function () {
         cn.push({
           name: calendars[i].displayName,
           url: calendars[i].url,
-          id: item.id,
+          id: item.id + '-' + i,
+          view: true,
         });
       }
 
@@ -235,7 +259,7 @@ let sync_caldav = async function () {
 
           channel.postMessage({
             action: 'test',
-            content: 'error 2',
+            content: e.toString(),
           });
         }
       }
@@ -244,31 +268,37 @@ let sync_caldav = async function () {
 
       channel.postMessage({
         action: 'test',
-        content: 'error 1',
+        content: err.toString(),
       });
     }
   }
 };
 
-self.addEventListener('message', (event) => {
+self.addEventListener('message', async (event) => {
   // Receive a message from the main thread
   if (!event.data) {
     channel.postMessage({ action: 'error', content: 'error' });
-    return false;
   }
-  if (event.data.type == 'parse') {
-    let ff = parse_ics(
-      event.data.t.data,
-      false,
-      event.data.t.etag,
-      event.data.t.url,
-      event.data.e,
-      true,
-      false
-    );
 
-    // Post the result back to the main thread
-    channel.postMessage({ action: 'parse', content: ff });
+  if (event.data.type == 'parse') {
+    try {
+      // Call the parse_ics function asynchronously
+      let ff = await parse_ics(
+        event.data.t.data,
+        false,
+        event.data.t.etag,
+        event.data.t.url,
+        event.data.e,
+        true,
+        false
+      );
+
+      // Post the result back to the main thread
+      channel.postMessage({ action: 'parse', content: ff });
+    } catch (error) {
+      console.error('Error parsing:', error);
+      channel.postMessage({ action: 'error', content: 'error parsing' });
+    }
   }
 
   if (event.data.type == 'test') {
@@ -276,7 +306,32 @@ self.addEventListener('message', (event) => {
   }
 });
 
+/*
 //System messages
+self.addEventListener('error', (event) => {
+  const errorMessage = {
+    type: 'error',
+    message: event.message,
+    filename: event.filename,
+    lineno: event.lineno,
+    colno: event.colno,
+  };
+
+  // Send the error message to all clients (pages) controlled by the service worker
+  self.clients.matchAll().then((clients) => {
+    clients.forEach((client) => {
+      client.postMessage({
+        action: 'test',
+        content: JSON.stringify(errorMessage),
+      });
+    });
+  });
+});
+
+self.addEventListener('unhandledrejection', (event) => {
+  channel.postMessage({ action: 'test', content: event.reason });
+});
+*/
 
 self.onsystemmessage = (evt) => {
   try {

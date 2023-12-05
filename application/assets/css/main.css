@@ -118,6 +118,10 @@ button {
   font-family: 'Roboto' !important;
 }
 
+button.active {
+  opacity: 0.5;
+}
+
 button img {
   margin: 0 10px 0 0;
   width: 20px;
