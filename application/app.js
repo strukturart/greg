@@ -34,12 +34,15 @@ import { google_cred } from './assets/js/google_cred.js';
 import dayjs from 'dayjs';
 import dayjsPluginUTC from 'dayjs-plugin-utc';
 
+const timeZoneName = '';
+
 //const dayjs = require('dayjs');
-const moment = require('moment-timezone');
 dayjs.extend(dayjsPluginUTC);
+const moment = require('moment-timezone');
+
 let channel = new BroadcastChannel('sw-messages');
 
-const debug = true;
+const debug = false;
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
 
@@ -63,6 +66,13 @@ localforage.getItem('subscriptions').then((e) => {
   }
 });
 
+let view_history = [];
+let view_history_update = () => {
+  view_history.push(m.route.get());
+};
+const get_last_view = () => {
+  m.route.set(view_history[view_history.length - 2]);
+};
 wakeLookCPU();
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
@@ -72,8 +82,6 @@ const google_acc = {
 let oauth_callback = '';
 localforage.setDriver(localforage.INDEXEDDB);
 
-//set default local calendar
-test_is_background_sync();
 export let months = [
   'Jan',
   'Feb',
@@ -99,6 +107,8 @@ export let status = {
   event_calendar_changed: false,
   startup: false,
   sortEvents: 'startDate',
+  shortCut: false,
+  previous_view: '',
 };
 
 export let settings = {
@@ -109,6 +119,10 @@ export let settings = {
   firstday: 'sunday',
   background_sync: 'No',
 };
+
+alert(settings.timezone);
+
+test_is_background_sync();
 
 if ('b2g' in navigator) {
   try {
@@ -155,16 +169,10 @@ if ('b2g' in navigator) {
       })
       .then((registration) => {
         if (registration.waiting) {
-          // There's a new service worker waiting to activate
-          // You can prompt the user to reload the page to apply the update
-          // For example: show a message to the user
-
-          // Add a delay before reloading to allow the user to finish their interaction
           setTimeout(() => {
             window.location.reload(true); // Force reload from the server, skipping the cache
           }, 1000); // Adjust the delay time as needed
         } else {
-          // No waiting service worker, registration was successful
         }
       });
   } catch (e) {
@@ -173,13 +181,12 @@ if ('b2g' in navigator) {
 }
 
 //load calendar names
+let calendar_not_visible = [];
 async function loadCalendarNames() {
-  await localforage.getItem('accounts').then((e) => {});
   try {
     const keys = await localforage.keys();
     //set local calendar as default
     if (keys.indexOf('calendarNames') == -1) {
-      console.log('no calendar set');
       calendar_names = [
         {
           name: 'local',
@@ -189,50 +196,38 @@ async function loadCalendarNames() {
           view: true,
         },
       ];
-      await localforage.setItem('calendarNames', calendar_names);
+      console.log('default calendars loaded');
     } else {
       localforage.getItem('calendarNames').then((a) => {
         calendar_names = a;
+        console.log(a);
+        //visible or not visible
+        calendar_names.forEach((e) => {
+          if (e.view == false) calendar_not_visible.push(e.name);
+        });
       });
     }
   } catch (err) {
-    console.log(err);
+    alert(err);
   }
 }
-
-loadCalendarNames();
 
 //load accounts data
-//load cached data
+let loadAccounts = () => {
+  localforage
+    .getItem('accounts')
+    .then((value) => {
+      accounts = value;
+      loadCalendarNames();
 
-async function loadAccounts() {
-  try {
-    accounts = (await localforage.getItem('accounts')) || [];
+      if (accounts != null) {
+        load_cached_caldav();
+        sync_caldav(sync_caldav_callback);
+      }
+    })
+    .catch(() => {});
+};
 
-    // Check if the browser supports service workers
-    if ('serviceWorker' in navigator) {
-      // Get the service worker registration
-      navigator.serviceWorker
-        .getRegistration()
-        .then((registration) => {
-          if (registration) {
-            // Service worker is installed, call your function
-            load_cached_caldav();
-          } else {
-            alert('Service Worker is not installed.');
-          }
-        })
-        .catch((error) => {
-          alert('Error while checking service worker registration:', error);
-        });
-    } else {
-      console.warn('Service Worker is not supported in this browser.');
-    }
-  } catch (err) {
-    console.error(err);
-    alert('acc not loaded');
-  }
-}
 loadAccounts();
 
 export let load_settings = function () {
@@ -398,6 +393,8 @@ async function load_caldav(callback = false) {
 }
 
 let cache_caldav = function () {
+  closing_prohibited = true;
+
   accounts.forEach(function (item) {
     const client = '';
     if (item.type == 'oauth') {
@@ -431,19 +428,22 @@ let cache_caldav = function () {
         await client.login();
       } catch (e) {
         if (e.message == 'Network request failed') {
-          toaster(
+          closing_prohibited = false;
+
+          side_toaster(
             'the data of the accounts' + item.name + ' could not be loaded',
             5000
           );
         }
 
-        if (e.message == 'Invalid credentials')
-          toaster(
-            'there was a problem logging into your account ' +
-              item.name +
-              ' please check your account details',
-            5000
-          );
+        if (e.message == 'Invalid credentials') closing_prohibited = false;
+
+        side_toaster(
+          'there was a problem logging into your account ' +
+            item.name +
+            ' please check your account details',
+          5000
+        );
       }
 
       try {
@@ -472,12 +472,15 @@ let cache_caldav = function () {
             })
             .catch(function (err) {
               console.log(err);
+              closing_prohibited = false;
             });
-
-          side_toaster('Data synchronized', 3000);
         }
+        closing_prohibited = false;
+
+        side_toaster('Data synchronized', 3000);
       } catch (e) {
         console.log(e);
+        closing_prohibited = false;
       }
     })();
   });
@@ -551,29 +554,37 @@ export let sync_caldav = async function (callback) {
             if (!status.visible) window.close();
           }
         } catch (e) {
-          if (!status.visible) window.close();
-
           if (!navigator.onLine)
             pushLocalNotification('greg', 'device offline');
         }
       }
     } catch (err) {
-      if (!status.visible) window.close();
       if (!navigator.onLine) pushLocalNotification('greg', 'device offline');
     }
   }
 
   if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
     //update new calendars with old calendar view attribut
-    cn.forEach((e) => {
-      const matchingCalendar = calendar_names.find((a) => a.name === e.name);
+    try {
+      cn.forEach((e) => {
+        let matchingCalendar;
+        if (Array.isArray(calendar_names)) {
+          matchingCalendar = calendar_names.find((a) => a.name === e.name);
 
-      if (matchingCalendar) {
-        e.view = matchingCalendar.view;
-      }
-    });
+          // Rest of your code using matchingCalendar
+        } else {
+          console.error('calendar_names is not an array or is undefined');
+          // Handle the case where calendar_names is not an array or is undefined
+        }
 
-    //side_toaster('the calendar list has been updated', 2000);
+        if (matchingCalendar) {
+          e.view = matchingCalendar.view;
+        }
+      });
+    } catch (e) {
+      console.log(e);
+    }
+
     localforage.setItem('calendarNames', cn).then(() => {
       loadCalendarNames();
     });
@@ -600,7 +611,6 @@ export let create_caldav = async function (
       if (!isLoggedInMap[matchingAccount.id]) {
         await client.login();
         isLoggedInMap[matchingAccount.id] = true;
-        console.log('client' + client);
       }
 
       const calendars = await client.fetchCalendars();
@@ -614,12 +624,6 @@ export let create_caldav = async function (
           filename: event_id + '.ics',
           iCalString: event_data,
           headers: client.authHeaders,
-          /*
-          headers: {
-            'content-type': 'text/calendar; charset=utf-8',
-            authorization: client.authHeaders,
-          },
-          */
         });
 
         if (result.ok) {
@@ -641,20 +645,9 @@ export let create_caldav = async function (
             console.log(e);
           }
 
-          parse_ics(
-            event_data,
-
-            false,
-            event.etag,
-            event.url,
-            event.id,
-            true
-          );
-
+          parse_ics(event_data, false, event.etag, event.url, event.id, true);
           popup('', 'close');
           cache_caldav();
-
-          m.route.set('/page_calendar');
         } else {
           popup('There was a problem saving, please try again later.', 'show');
           setTimeout(function () {
@@ -701,13 +694,16 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
         const index = events.findIndex((event) => event.UID === uid);
         if (index !== -1) {
           events.splice(index, 1);
-          console.log('deleted');
-          remove_alarm(uid);
           cache_caldav();
+
+          remove_alarm(uid);
           clear_form();
           style_calendar_cell(currentYear, currentMonth);
-          m.route.set('/page_calendar');
           popup('', 'close');
+
+          if (status.shortCut == false) {
+            get_last_view();
+          }
         }
       } else {
         popup('There was a problem deleting, please try again later.', 'show');
@@ -758,7 +754,6 @@ export let update_caldav = async function (etag, url, data, account_id) {
 
       if (result.ok) {
         popup('', 'close');
-        m.route.set('/page_calendar');
 
         try {
           const [res] = await client.propfind({
@@ -775,6 +770,8 @@ export let update_caldav = async function (etag, url, data, account_id) {
               item.etag = res.props.getetag;
             }
           });
+
+          get_last_view();
 
           cache_caldav();
         } catch (e) {
@@ -796,6 +793,11 @@ export let update_caldav = async function (etag, url, data, account_id) {
 };
 
 const load_cached_caldav = async () => {
+  if (!accounts) {
+    console.log('no accounts');
+    return false;
+  }
+
   for (const item of accounts) {
     try {
       const w = await localforage.getItem(item.id);
@@ -836,7 +838,6 @@ const load_cached_caldav = async () => {
 //load subscriptions
 
 const load_subscriptions = () => {
-  //if (!subscriptions || subscriptions.length === 0) return false;
   subscriptions.forEach((e) => {
     fetch_ics(e.url, e.id);
   });
@@ -904,7 +905,7 @@ let store_event_as_template = function (
     .setItem('event_templates', event_templates)
     .then(function (value) {
       side_toaster('template saved', 2000);
-      m.route.set('/page_calendar');
+      get_last_view();
     })
     .catch(function (err) {
       console.log(err);
@@ -1485,9 +1486,8 @@ let clear_form = function () {
 };
 
 let search_events = (term) => {
-  if (term) return false;
   let k = term.toUpperCase();
-  document.querySelectorAll('#events-wrapper article').forEach((v, i) => {
+  document.querySelectorAll('#events-wrapper article').forEach((v) => {
     if (
       v.getAttribute('data-summary').indexOf(k) >= 0 ||
       v.getAttribute('data-category').indexOf(k) >= 0
@@ -1586,6 +1586,7 @@ var page_calendar = {
         class: 'width-100 height-100',
         id: 'calendar',
         oninit: function () {
+          view_history_update();
           load_settings();
           clear_form();
         },
@@ -1708,6 +1709,10 @@ var page_events = {
       {
         class: 'flex',
         id: 'events-wrapper',
+        oninit: () => {
+          view_history_update();
+          status.shortCut = false;
+        },
         onremove: () => {
           status.selected_day =
             document.activeElement.getAttribute('data-date');
@@ -1817,6 +1822,10 @@ var page_events_filtered = {
           status.selected_day_id =
             document.activeElement.getAttribute('data-id');
         },
+        oninit: () => {
+          view_history_update();
+          status.shortCut = false;
+        },
         oncreate: function () {
           document.querySelectorAll('.item')[0].focus();
           bottom_bar(
@@ -1889,6 +1898,10 @@ export let page_options = {
       'div',
       {
         id: 'options',
+        oninit: () => {
+          view_history_update();
+          status.shortCut = false;
+        },
         oncreate: () => {
           if (settings.ads) {
             load_ads();
@@ -2267,44 +2280,47 @@ export let page_options = {
         ),
 
         m('h2', 'Calendars'),
-        m('div', {}, [
-          calendar_names.map((e) => {
-            return m(
-              'button',
-              {
-                class: 'item',
-                'data-calendar-name': e.name,
-                oncreate: ({ dom }) => {
-                  if (e.view == false) dom.classList.add('active');
-                },
-                onclick: () => {
-                  calendar_names.forEach((i) => {
-                    if (
-                      i.name ==
-                      document.activeElement.getAttribute('data-calendar-name')
-                    ) {
-                      i.view = !i.view;
-                    }
-                  });
 
-                  document.activeElement.classList.toggle('active');
-
-                  localforage
-                    .setItem('calendarNames', calendar_names)
-                    .then(() => {
-                      loadCalendarNames();
-                      side_toaster(
-                        'will be applied the next time the app is started',
-                        2000
-                      );
+        calendar_names != null
+          ? calendar_names.map((e) => {
+              return m(
+                'button',
+                {
+                  class: 'item',
+                  'data-calendar-name': e.name,
+                  oncreate: ({ dom }) => {
+                    if (e.view == false) dom.classList.add('active');
+                  },
+                  onclick: () => {
+                    calendar_names.forEach((i) => {
+                      if (
+                        i.name ==
+                        document.activeElement.getAttribute(
+                          'data-calendar-name'
+                        )
+                      ) {
+                        i.view = !i.view;
+                      }
                     });
-                },
-              },
-              e.name
-            );
-          }),
-        ]),
 
+                    document.activeElement.classList.toggle('active');
+
+                    localforage
+                      .setItem('calendarNames', calendar_names)
+                      .then(() => {
+                        loadCalendarNames();
+                        side_toaster(
+                          'will be applied the next time the app is started',
+                          2000
+                        );
+                      });
+                  },
+                },
+                e.name
+              );
+            })
+          : '',
+        ,
         m('h2', 'Accounts'),
 
         m(
@@ -2382,35 +2398,38 @@ export let page_options = {
             ),
           ]
         ),
+
         m('div', { id: 'subscription-text' }, 'Your accounts'),
 
-        accounts.map(function (item, index) {
-          return m(
-            'button',
-            {
-              class: 'item subscriptions-item',
-              'data-id': item.id,
-              'data-account-type': item.type,
-              'data-action': 'edit-delete-account',
+        accounts != null
+          ? accounts.map(function (item) {
+              return m(
+                'button',
+                {
+                  class: 'item subscriptions-item',
+                  'data-id': item.id,
+                  'data-account-type': item.type,
+                  'data-action': 'edit-delete-account',
 
-              onblur: function () {
-                bottom_bar('', '', '');
-              },
-              onfocus: function () {
-                if (item.type == 'oauth') {
-                  bottom_bar("<img src='assets/image/delete.svg'>", '', '');
-                } else {
-                  bottom_bar(
-                    "<img src='assets/image/delete.svg'>",
-                    '',
-                    "<img src='assets/image/pencil.svg'>"
-                  );
-                }
-              },
-            },
-            item.name
-          );
-        }),
+                  onblur: function () {
+                    bottom_bar('', '', '');
+                  },
+                  onfocus: function () {
+                    if (item.type == 'oauth') {
+                      bottom_bar("<img src='assets/image/delete.svg'>", '', '');
+                    } else {
+                      bottom_bar(
+                        "<img src='assets/image/delete.svg'>",
+                        '',
+                        "<img src='assets/image/pencil.svg'>"
+                      );
+                    }
+                  },
+                },
+                item.name
+              );
+            })
+          : '',
         m('h2', { class: 'ads-title' }, 'Ads'),
 
         m('div', {
@@ -2447,6 +2466,9 @@ var page_subscriptions = {
           tabindex: '0',
           oninit: () => {
             bottom_bar('', '', '');
+
+            view_history_update();
+            status.shortCut = false;
           },
 
           oncreate: function ({ dom }) {
@@ -2518,8 +2540,12 @@ var page_edit_account = {
           class: 'item input-parent',
           tabindex: '0',
 
+          oninit: () => {},
+
           oncreate: function ({ dom }) {
             dom.focus();
+            view_history_update();
+            status.shortCut = false;
           },
         },
         [
@@ -2639,6 +2665,9 @@ var page_accounts = {
         {
           class: 'item input-parent',
           tabindex: '0',
+          oninit: () => {
+            view_history_update();
+          },
           oncreate: function ({ dom }) {
             dom.focus();
           },
@@ -2757,6 +2786,10 @@ var page_add_event = {
       {
         id: 'add-edit-event',
         tabindex: '0',
+        oninit: () => {
+          view_history_update();
+          status.shortCut = false;
+        },
       },
       [
         m(
@@ -2769,7 +2802,6 @@ var page_add_event = {
               setTimeout(function () {
                 dom.focus();
                 bottom_bar('', '', '');
-                settings.timezone = moment.tz.guess();
               }, 500);
             },
           },
@@ -3070,6 +3102,11 @@ var page_edit_event = {
       'div',
       {
         id: 'add-edit-event',
+        oninit: () => {},
+        omcreate: () => {
+          view_history_update();
+          status.shortCut = false;
+        },
       },
       [
         m(
@@ -3430,10 +3467,6 @@ let callback_getfile = function (result) {
       .setItem('events', only_local_events)
       .then(function () {
         backup_events();
-        side_toaster("<img src='assets/image/E25C.svg'", 2000);
-        setTimeout(function () {
-          m.route.set('/page_calendar');
-        }, 200);
       })
       .catch(function (err) {
         console.log(err);
@@ -3451,6 +3484,9 @@ var page_list_files = {
       'div',
       {
         id: 'options',
+        oninit: () => {
+          view_history_update();
+        },
       },
       [
         m('h2', { class: 'text-center', id: 'file-head' }, 'files'),
@@ -3488,6 +3524,9 @@ var page_event_templates = {
       'div',
       {
         id: 'options',
+        oninit: () => {
+          view_history_update();
+        },
         oncreate: function () {
           bottom_bar(
             "<img src='assets/image/delete.svg'>",
@@ -3556,9 +3595,7 @@ let store_settings = function () {
 
   localforage
     .setItem('settings', settings)
-    .then(function () {
-      side_toaster('settings saved', 2000);
-    })
+    .then(function () {})
     .catch(function (err) {
       console.log(err);
     });
@@ -3584,7 +3621,6 @@ let store_subscription = function () {
     document.querySelector('input#cal-subs-url').val = '';
 
     localforage.setItem('subscriptions', subscriptions).then(function (value) {
-      side_toaster("<img src='assets/image/E25C.svg'", 2000);
       m.route.set('/page_options');
     });
     //create db to store data
@@ -3718,9 +3754,7 @@ localforage
       } catch (e) {
         console.log(e);
       }
-      sync_caldav(sync_caldav_callback);
     } else {
-      sync_caldav(sync_caldav_callback);
     }
   })
   .catch(function (err) {});
@@ -3806,6 +3840,16 @@ let nav = function (move) {
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
+    status.shortCut = false;
+  }
+
+  if (m.route.get() == '/page_calendar') {
+    status.shortCut = false;
+    bottom_bar(
+      "<img src='assets/image/add.svg'>",
+      "<img src='assets/image/list.svg'>",
+      "<img src='assets/image/option.svg'>"
+    );
   }
 
   if (
@@ -3961,8 +4005,6 @@ let remove_alarm = function (id) {
 
       request.onsuccess = function () {
         this.result.forEach(function (alarm) {
-          console.log(JSON.stringify(alarm));
-
           if (alarm.data.event_id == id) {
             let req = navigator.b2g.alarmManager.remove(alarm.id);
 
@@ -4203,6 +4245,8 @@ let store_event = function (db_id, cal_name) {
     try {
       dd = dd.trim();
 
+      console.log(dd);
+
       parse_ics(dd, false, '', '', 'local-id', false, bn);
     } catch (e) {
       console.log(e);
@@ -4215,13 +4259,8 @@ let store_event = function (db_id, cal_name) {
     localforage
       .setItem('events', without_subscription)
       .then(function () {
-        clear_form();
-        side_toaster("<img src='assets/image/E25C.svg'", 2000);
-        setTimeout(function () {
-          m.route.set('/page_calendar');
-          style_calendar_cell(currentYear, currentMonth);
-          backup_events();
-        }, 200);
+        get_last_view();
+        backup_events();
       })
       .catch(function (err) {
         console.log(err);
@@ -4281,8 +4320,10 @@ let store_event = function (db_id, cal_name) {
     event_data = event_data.trim();
 
     create_caldav(event_data, event.id, cal_name, event, event.UID);
+    get_last_view();
   }
-  style_calendar_cell(currentYear, currentMonth);
+
+  //style_calendar_cell(currentYear, currentMonth);
 };
 
 // ////////////
@@ -4462,9 +4503,8 @@ let update_event = function (etag, url, id, db_id, uid) {
       .then(function () {
         clear_form();
         backup_events();
-        side_toaster("<img src='assets/image/E25C.svg'", 2000);
         setTimeout(function () {
-          m.route.set('/page_calendar');
+          get_last_view();
         }, 200);
       })
       .catch(function (err) {
@@ -4480,7 +4520,12 @@ let update_event = function (etag, url, id, db_id, uid) {
     }
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
-    const alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
+    // Check if notification_time is not null or "none" before adding the alarm
+    const isNotificationTimeValid =
+      notification_time !== null && notification_time.toLowerCase() !== 'none';
+    const alarm = isNotificationTimeValid
+      ? `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`
+      : '';
 
     if (event.RRULE !== '') {
       event.DTEND =
@@ -4526,9 +4571,10 @@ let update_event = function (etag, url, id, db_id, uid) {
 
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
-    delete_caldav(etag, url, account_id, uid);
+    delete_caldav(etag, url, account_id, uid).then((e) => {});
   } else {
     //remove event
+
     events = events.filter((person) => person.UID != uid);
     remove_alarm(uid);
     //store only local events
@@ -4536,21 +4582,16 @@ let delete_event = function (etag, url, account_id, uid) {
       (event) => event.id === 'local-id'
     );
 
-    clear_form();
-
     localforage
       .setItem('events', without_subscription)
       .then(function (value) {
         backup_events();
-        side_toaster('event deleted', 2000);
-        if (events.length != 0) {
-          m.route.set('/page_events');
-        } else {
-          m.route.set('/page_calendar');
-        }
+        setTimeout(() => {
+          style_calendar_cell(currentYear, currentMonth);
+          get_last_view();
+        }, 1000);
       })
       .catch(function (err) {
-        // This code runs if there were any errors
         console.log(err);
       });
   }
@@ -4591,12 +4632,35 @@ let backup_events = function () {
   localforage
     .getItem('events')
     .then(function (value) {
-      let only_local_events = value.filter((events) => events.id == 'local-id');
+      // Make sure value is not null or undefined
+      if (value) {
+        // Use a replacer function to handle circular references
+        const circularReplacer = () => {
+          const seen = new WeakSet();
+          return (key, value) => {
+            if (typeof value === 'object' && value !== null) {
+              if (seen.has(value)) {
+                return '[Circular Reference]';
+              }
+              seen.add(value);
+            }
+            return value;
+          };
+        };
 
-      try {
-        export_ical('others/greg.ics', value);
-      } catch (e) {
-        console.log(e);
+        // Log the contents of the value object as a string
+        console.log('Value:', JSON.stringify(value, circularReplacer(), 2));
+
+        // Parse the JSON string to an object
+        value = JSON.parse(value);
+
+        let only_local_events = value.filter((event) => event.id == 'local-id');
+
+        try {
+          export_ical('others/greg.ics', only_local_events);
+        } catch (e) {
+          console.log(e);
+        }
       }
     })
     .catch(function (err) {
@@ -4650,9 +4714,7 @@ function longpress_action(param) {
 // /////////////
 // //SHORTPRESS
 // ////////////
-let block_keys = false;
 function shortpress_action(param) {
-  //if (block_keys) return false;
   switch (param.key) {
     case '*':
       if (m.route.get() == '/page_calendar') {
@@ -4721,6 +4783,7 @@ function shortpress_action(param) {
 
     case '1':
       if (m.route.get() == '/page_calendar') previous();
+
       break;
     case '3':
       if (m.route.get() == '/page_calendar') next();
@@ -4732,24 +4795,14 @@ function shortpress_action(param) {
 
     case '5':
       if (m.route.get() == '/page_calendar') {
-        let n = '';
-        let f = document.querySelectorAll('#event-slider article');
-        f.forEach((e, i) => {
-          if (e.style.display == 'block') n = e;
-
-          if (f.length - 1 == i) {
-            update_event_date = events.filter(function (arr) {
-              if (arr.isSubscription == true) return false;
-              return arr.UID == n.getAttribute('data-uid');
-            })[0];
-
-            if (update_event_date == undefined) {
-              side_toaster('subscriptions events cannot be edited', 4000);
-            } else {
-              m.route.set('/page_edit_event');
-            }
-          }
-        });
+        if (document.activeElement.classList.contains('event')) {
+          status.shortCut = true;
+          bottom_bar(
+            "<img src='assets/image/pencil.svg'>",
+            '',
+            "<img src='assets/image/delete-red.svg'>"
+          );
+        }
       }
       break;
 
@@ -4764,6 +4817,7 @@ function shortpress_action(param) {
       break;
 
     case '7':
+      load_cached_caldav();
       break;
 
     case '8':
@@ -4772,7 +4826,34 @@ function shortpress_action(param) {
       break;
     case 'SoftRight':
     case 'Alt':
-      if (m.route.get() == '/page_calendar') {
+      if (m.route.get() == '/page_calendar' && status.shortCut) {
+        let n = '';
+        let f = document.querySelectorAll('#event-slider article');
+        f.forEach((e, i) => {
+          if (e.style.display == 'block') n = e;
+
+          if (f.length - 1 == i) {
+            update_event_date = events.filter(function (arr) {
+              if (arr.isSubscription == true) return false;
+              return arr.UID == n.getAttribute('data-uid');
+            })[0];
+
+            if (update_event_date == undefined) {
+              side_toaster('subscriptions events cannot be edited', 4000);
+            } else {
+              delete_event(
+                update_event_date.etag,
+                update_event_date.url,
+                update_event_date.id,
+                update_event_date.UID
+              );
+            }
+          }
+        });
+        return true;
+      }
+
+      if (m.route.get() == '/page_calendar' && !status.shortCut) {
         m.route.set('/page_options');
         return true;
       }
@@ -4845,6 +4926,28 @@ function shortpress_action(param) {
         }
       }
 
+      if (m.route.get() == '/page_calendar' && status.shortCut) {
+        let n = '';
+        let f = document.querySelectorAll('#event-slider article');
+        f.forEach((e, i) => {
+          if (e.style.display == 'block') n = e;
+
+          if (f.length - 1 == i) {
+            update_event_date = events.filter(function (arr) {
+              if (arr.isSubscription == true) return false;
+              return arr.UID == n.getAttribute('data-uid');
+            })[0];
+
+            if (update_event_date == undefined) {
+              side_toaster('subscriptions events cannot be edited', 4000);
+            } else {
+              m.route.set('/page_edit_event');
+            }
+          }
+        });
+        return true;
+      }
+
       if (m.route.get() == '/page_calendar') {
         m.route.set('/page_add_event');
 
@@ -4886,7 +4989,6 @@ function shortpress_action(param) {
       }
 
       //toggle month/events
-      if (m.route.get() == '/page_edit_event') return false;
 
       if (events.length > 0) {
         if (m.route.get().startsWith('/page_events')) {
@@ -4956,12 +5058,13 @@ function shortpress_action(param) {
       break;
 
     case '9':
+      /*
       // Example of sending a message to a service worker from a web page
       navigator.serviceWorker.controller.postMessage({
         type: 'test',
         message: 'Hello from the web page!',
       });
-      /*
+      
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then((registrations) => {
           for (let registration of registrations) {
@@ -5067,10 +5170,14 @@ channel.addEventListener('message', (event) => {
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
-    if (event.data.content != false) {
+    document.getElementById('icon-waiting').style.visibility = 'visible';
+
+    if (
+      event.data.content != false &&
+      calendar_not_visible.indexOf(event.data.content.calendar_name) == -1
+    ) {
       events.push(event.data.content);
     }
-    document.getElementById('icon-waiting').style.visibility = 'visible';
 
     if (interval_is_running == false) {
       interval();

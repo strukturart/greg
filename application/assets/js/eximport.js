@@ -10,9 +10,7 @@ export let export_ical = function (filename, event_data) {
     var sdcard = navigator.getDeviceStorage('sdcard');
 
     var request_del = sdcard.delete(filename);
-    request_del.onsuccess = function () {
-      console.log('file deleted');
-    };
+    request_del.onsuccess = function () {};
   } catch (e) {
     // alert(e);
   }
@@ -30,7 +28,6 @@ export let export_ical = function (filename, event_data) {
     result += 'VERSION:2.0' + '\r\n';
     result += 'PRODID:GREG' + '\r\n';
     result += 'METHOD:PUBLISHED' + '\r\n';
-    console.log(event_data);
     event_data.forEach((e, i) => {
       let index = -1;
       for (let key in e) {
@@ -91,7 +88,7 @@ export let export_ical = function (filename, event_data) {
 
       var request = sdcard.addNamed(file, filename);
       request.onsuccess = function () {
-        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+        console.log('backup written');
       };
 
       request.onerror = function () {
@@ -108,7 +105,7 @@ export let export_ical = function (filename, event_data) {
         var request = sdcard.addNamed(file, filename);
 
         request.onsuccess = function () {
-          side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+          console.log('backup written');
         };
 
         request.onerror = function () {

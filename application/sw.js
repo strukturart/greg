@@ -18,6 +18,8 @@ async function loadAccounts() {
     return true;
   } catch (error) {
     console.error('Error loading accounts:', error);
+    channel.postMessage({ action: 'error', content: 'error' });
+
     return false;
   }
 }
@@ -29,6 +31,8 @@ async function getCalendarNames() {
     calendar_names = await localforage.getItem('calendarNames');
     // Do additional processing if needed
   } catch (error) {
+    channel.postMessage({ action: 'error', content: 'error' });
+
     console.error('Error retrieving calendar names:', error);
   }
 }
@@ -43,13 +47,14 @@ let load_settings = function () {
     })
     .catch(function (err) {
       console.log(err);
+      channel.postMessage({ action: 'error', content: 'error' });
     });
 };
 
 load_settings();
 
 //parse calendar events and send back to mainscript
-async function parse_ics(
+function parse_ics(
   data,
   isSubscription,
   etag,
@@ -61,21 +66,16 @@ async function parse_ics(
   let jcalData;
   try {
     jcalData = ICAL.parse(data);
-  } catch (e) {}
+  } catch (e) {
+    channel.postMessage({ action: 'error', content: 'error' });
+  }
 
   var comp = new ICAL.Component(jcalData);
 
   var vevent = comp.getAllSubcomponents('vevent');
   let calendar_name = comp.getFirstPropertyValue('x-wr-calname') || '';
 
-  const matchingCalendar = calendar_names.find((a) => a.name === calendar_name);
-
-  //do not parse hidden calendars
-  if (!matchingCalendar || matchingCalendar.view === false) {
-    return false;
-  }
-
-  let imp;
+  let imp = null;
 
   vevent.forEach(function (ite) {
     let n = '';
@@ -158,6 +158,7 @@ async function parse_ics(
 
 //loggin
 //login handler
+
 const clientInstances = {};
 const isLoggedInMap = {};
 
@@ -283,7 +284,7 @@ self.addEventListener('message', async (event) => {
   if (event.data.type == 'parse') {
     try {
       // Call the parse_ics function asynchronously
-      let ff = await parse_ics(
+      let ff = parse_ics(
         event.data.t.data,
         false,
         event.data.t.etag,
