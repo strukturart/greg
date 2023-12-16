@@ -2,8 +2,7 @@ import { side_toaster } from './helper.js';
 import localforage from 'localforage';
 import { events } from '../../app.js';
 import ICAL from 'ical.js';
-
-const dayjs = require('dayjs');
+import dayjs from 'dayjs';
 
 export let export_ical = function (filename, event_data) {
   try {
@@ -27,49 +26,74 @@ export let export_ical = function (filename, event_data) {
     result += 'BEGIN:VCALENDAR' + '\r\n';
     result += 'VERSION:2.0' + '\r\n';
     result += 'PRODID:GREG' + '\r\n';
+    result += 'X-WR-CALNAME:GREG' + '\r\n';
     result += 'METHOD:PUBLISHED' + '\r\n';
-    event_data.forEach((e, i) => {
-      let index = -1;
+
+    event_data.forEach((e) => {
+      result += 'BEGIN:VEVENT' + '\r\n';
+
       for (let key in e) {
-        index++;
-
-        //clean data
-        if (e[key] == null || typeof e[key] == 'object') {
-          console.log(e.RRULE);
-
-          e.RRULE = '';
-        }
-
-        if (index == 0) result += 'BEGIN:VEVENT' + '\r\n';
-
+        // Skip certain keys
         if (
-          key != 'BEGIN' &&
-          key != 'END' &&
-          key != 'date' &&
-          key != 'time_start' &&
-          key != 'time_end' &&
-          key != 'dateStart' &&
-          key != 'dateEnd' &&
-          key != 'alarm' &&
-          key != 'isSubscription' &&
-          key != 'multidayevent' &&
-          key != 'alarmTrigger' &&
-          key != 'isCalDav' &&
-          key != 'id' &&
-          key != 'allDay' &&
-          key != 'isCaldav' &&
-          key != 'tzid' &&
-          key != 'rrule_json' &&
-          key != 'etag' &&
-          key != 'url' &&
-          key != 'id' &&
-          key != 'dateStartUnix' &&
-          key != 'dateEndUnix'
+          [
+            'BEGIN',
+            'END',
+            'date',
+            'time_start',
+            'time_end',
+            'dateStart',
+            'dateEnd',
+            'alarm',
+            'isSubscription',
+            'multidayevent',
+            'alarmTrigger',
+            'isCalDav',
+            'id',
+            'allDay',
+            'isCaldav',
+            'tzid',
+            'rrule_json',
+            'etag',
+            'url',
+            'dateStartUnix',
+            'dateEndUnix',
+            'calendar_name',
+            'RRULE',
+          ].includes(key)
         ) {
-          result += `${key}:${e[key]}` + '\r\n';
+          continue;
         }
-        if (index == Object.keys(e).length - 1) result += 'END:VEVENT' + '\r\n';
+
+        //convert back to ical datetime format with tz
+        let value = e[key];
+        if (typeof value == 'object') {
+          try {
+            let dateComponents = value.wrappedJSObject._time;
+            console.log(value.wrappedJSObject.timezone);
+            let tz = value.wrappedJSObject.timezone;
+            // Create a new Date object using the components
+            const dateObject = new Date(
+              dateComponents.year,
+              dateComponents.month - 1, // Months are zero-based in JavaScript Date objects
+              dateComponents.day,
+              dateComponents.hour || 0, // Default to 0 if hour is not provided
+              dateComponents.minute || 0 // Default to 0 if minute is not provided
+            );
+
+            // Get the ISO string
+            let isoString = dateObject.toISOString();
+            value = ';TZID=' + tz + ':' + isoString.replace(/[-:]/g, '');
+          } catch (e) {
+            console.log(e);
+          }
+        } else {
+          value = ':' + e[key];
+        }
+
+        result += `${key}${value}` + '\r\n';
       }
+
+      result += 'END:VEVENT' + '\r\n';
     });
 
     result += 'END:VCALENDAR' + '\r\n';

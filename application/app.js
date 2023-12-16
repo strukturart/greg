@@ -120,8 +120,6 @@ export let settings = {
   background_sync: 'No',
 };
 
-alert(settings.timezone);
-
 test_is_background_sync();
 
 if ('b2g' in navigator) {
@@ -4634,25 +4632,7 @@ let backup_events = function () {
     .then(function (value) {
       // Make sure value is not null or undefined
       if (value) {
-        // Use a replacer function to handle circular references
-        const circularReplacer = () => {
-          const seen = new WeakSet();
-          return (key, value) => {
-            if (typeof value === 'object' && value !== null) {
-              if (seen.has(value)) {
-                return '[Circular Reference]';
-              }
-              seen.add(value);
-            }
-            return value;
-          };
-        };
-
-        // Log the contents of the value object as a string
-        console.log('Value:', JSON.stringify(value, circularReplacer(), 2));
-
         // Parse the JSON string to an object
-        value = JSON.parse(value);
 
         let only_local_events = value.filter((event) => event.id == 'local-id');
 
@@ -4817,7 +4797,7 @@ function shortpress_action(param) {
       break;
 
     case '7':
-      load_cached_caldav();
+      export_ical(events);
       break;
 
     case '8':
