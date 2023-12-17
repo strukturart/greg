@@ -15,7 +15,6 @@ import {
   get_contact,
   validate,
   get_file,
-  popup,
   list_files,
 } from './assets/js/helper.js';
 
@@ -34,13 +33,12 @@ import { google_cred } from './assets/js/google_cred.js';
 import dayjs from 'dayjs';
 import dayjsPluginUTC from 'dayjs-plugin-utc';
 
-const timeZoneName = '';
-
 //const dayjs = require('dayjs');
 dayjs.extend(dayjsPluginUTC);
 const moment = require('moment-timezone');
 
 let channel = new BroadcastChannel('sw-messages');
+localforage.setDriver(localforage.INDEXEDDB);
 
 const debug = false;
 const google_oauth_url =
@@ -59,28 +57,30 @@ let last_sync = localStorage.getItem('last_sync') || '';
 let subscriptions = [];
 localforage.getItem('subscriptions').then((e) => {
   if (e == null) {
-    console.log(subscriptions);
   } else {
     subscriptions = e;
-    console.log(subscriptions);
   }
 });
 
+//back to last view
 let view_history = [];
 let view_history_update = () => {
   view_history.push(m.route.get());
 };
 const get_last_view = () => {
-  m.route.set(view_history[view_history.length - 2]);
+  setTimeout(() => {
+    m.route.set(view_history[view_history.length - 2]);
+  }, 1000);
 };
 wakeLookCPU();
+
+//google oAuth
 const google_acc = {
   token_url: 'https://oauth2.googleapis.com/token',
   redirect_url: 'https://greg.strukturart.com/redirect.html',
 };
 
 let oauth_callback = '';
-localforage.setDriver(localforage.INDEXEDDB);
 
 export let months = [
   'Jan',
@@ -108,7 +108,6 @@ export let status = {
   startup: false,
   sortEvents: 'startDate',
   shortCut: false,
-  previous_view: '',
 };
 
 export let settings = {
@@ -168,8 +167,8 @@ if ('b2g' in navigator) {
       .then((registration) => {
         if (registration.waiting) {
           setTimeout(() => {
-            window.location.reload(true); // Force reload from the server, skipping the cache
-          }, 1000); // Adjust the delay time as needed
+            window.location.reload(true);
+          }, 1000);
         } else {
         }
       });
@@ -198,12 +197,14 @@ async function loadCalendarNames() {
     } else {
       localforage.getItem('calendarNames').then((a) => {
         calendar_names = a;
-        console.log(a);
         //visible or not visible
         calendar_names.forEach((e) => {
           if (e.view == false) calendar_not_visible.push(e.name);
         });
       });
+
+      if (calendar_not_visible.includes('local')) {
+      }
     }
   } catch (err) {
     alert(err);
@@ -219,8 +220,10 @@ let loadAccounts = () => {
       loadCalendarNames();
 
       if (accounts != null) {
-        load_cached_caldav();
-        sync_caldav(sync_caldav_callback);
+        load_cached_caldav().then(() => {
+          console.log('cached data loaded');
+          sync_caldav(sync_caldav_callback);
+        });
       }
     })
     .catch(() => {});
@@ -329,15 +332,31 @@ async function load_caldav(callback = false) {
 
     try {
       if (!isLoggedInMap[item.id]) {
-        await client.login();
-        isLoggedInMap[item.id] = true;
+        try {
+          await client.login();
+          isLoggedInMap[item.id] = true;
+        } catch (loginError) {
+          alert(loginError);
+          isLoggedInMap[item.id] = false; // Set flag to indicate login failure
+          continue; // Skip to the next account in case of login failure
+        }
+      } else {
+        console.log('login in');
       }
 
       if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'visible';
       }
+      let calendars;
+      try {
+        calendars = await client.fetchCalendars();
+      } catch (fetchCalendarsError) {
+        alert(fetchCalendarsError);
 
-      const calendars = await client.fetchCalendars();
+        // Handle the error (e.g., show a user-friendly message)
+        continue; // Skip to the next account in case of fetch failure
+      }
+
       const dataToCache = [];
 
       for (const calendar of calendars) {
@@ -357,9 +376,11 @@ async function load_caldav(callback = false) {
           console.log('Data cached');
         } catch (err) {
           console.log(err);
+          closing_prohibited = false;
         }
 
         // Parse data
+
         for (const obj of objects) {
           if (
             'serviceWorker' in navigator &&
@@ -379,7 +400,7 @@ async function load_caldav(callback = false) {
         if (callback) side_toaster('all event reloaded', 2000);
       }
       closing_prohibited = false;
-      style_calendar_cell(currentYear, currentMonth);
+      // style_calendar_cell(currentYear, currentMonth);
       side_toaster('Data loaded', 3000);
     } catch (e) {
       if (m.route.get() === '/page_calendar') {
@@ -390,98 +411,50 @@ async function load_caldav(callback = false) {
   }
 }
 
-let cache_caldav = function () {
+let cache_caldav = async function () {
   closing_prohibited = true;
 
-  accounts.forEach(function (item) {
-    const client = '';
-    if (item.type == 'oauth') {
-      client = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          tokenUrl: google_acc.token_url,
-          refreshToken: item.tokens.refresh_token,
-          clientId: google_cred.clientId,
-          clientSecret: google_cred.clientSecret,
-          authorizationCode: item.authorizationCode,
-          redirectUrl: google_acc.redirect_url,
-        },
-        authMethod: 'Oauth',
-        defaultAccountType: 'caldav',
-      });
-    } else {
-      client = new DAVClient({
-        serverUrl: item.server_url,
-        credentials: {
-          username: item.user,
-          password: item.password,
-        },
-        authMethod: 'Basic',
-        defaultAccountType: 'caldav',
-      });
-    }
+  // Load data from every account
+  for (const item of accounts) {
+    const client = await getClientInstance(item);
+    try {
+      const calendars = await client.fetchCalendars();
+      let k = [];
 
-    (async () => {
-      try {
-        await client.login();
-      } catch (e) {
-        if (e.message == 'Network request failed') {
+      for (let i = 0; i < calendars.length; i++) {
+        const objects = await client.fetchCalendarObjects({
+          calendar: calendars[i],
+        });
+        //cache data
+        let data_to_store = {
+          displayName: calendars[i].displayName,
+          syncToken: calendars[i].syncToken,
+          ctag: calendars[i].ctag,
+          url: calendars[i].url,
+          objects: objects,
+        };
+
+        k.push(data_to_store);
+      }
+
+      localforage
+        .setItem(item.id, k)
+        .then(function () {
+          console.log('data cached');
           closing_prohibited = false;
+        })
+        .catch(function (err) {
+          console.log(err);
+          closing_prohibited = false;
+        });
+      closing_prohibited = false;
 
-          side_toaster(
-            'the data of the accounts' + item.name + ' could not be loaded',
-            5000
-          );
-        }
-
-        if (e.message == 'Invalid credentials') closing_prohibited = false;
-
-        side_toaster(
-          'there was a problem logging into your account ' +
-            item.name +
-            ' please check your account details',
-          5000
-        );
-      }
-
-      try {
-        const calendars = await client.fetchCalendars();
-        let k = [];
-
-        for (let i = 0; i < calendars.length; i++) {
-          const objects = await client.fetchCalendarObjects({
-            calendar: calendars[i],
-          });
-          //cache data
-          let data_to_store = {
-            displayName: calendars[i].displayName,
-            syncToken: calendars[i].syncToken,
-            ctag: calendars[i].ctag,
-            url: calendars[i].url,
-            objects: objects,
-          };
-
-          k.push(data_to_store);
-
-          localforage
-            .setItem(item.id, k)
-            .then(function () {
-              console.log('data cached');
-            })
-            .catch(function (err) {
-              console.log(err);
-              closing_prohibited = false;
-            });
-        }
-        closing_prohibited = false;
-
-        side_toaster('Data synchronized', 3000);
-      } catch (e) {
-        console.log(e);
-        closing_prohibited = false;
-      }
-    })();
-  });
+      side_toaster('Data synchronized', 3000);
+    } catch (e) {
+      console.log(e);
+      closing_prohibited = false;
+    }
+  }
 };
 
 //default calendar
@@ -503,6 +476,8 @@ export let sync_caldav = async function (callback) {
     'last_sync',
     dayjs().format(settings.dateformat + ' hh:mm')
   );
+
+  console.log('acc: ' + JSON.stringify(accounts));
   for (const item of accounts) {
     const client = await getClientInstance(item);
 
@@ -598,7 +573,7 @@ export let create_caldav = async function (
   event,
   event_id
 ) {
-  popup('Please wait...', 'show');
+  document.querySelector('.loading-spinner').style.display = 'block';
 
   const matchingAccount = accounts.find((p) => p.id === calendar_id);
 
@@ -644,12 +619,15 @@ export let create_caldav = async function (
           }
 
           parse_ics(event_data, false, event.etag, event.url, event.id, true);
-          popup('', 'close');
-          cache_caldav();
+          document.querySelector('.loading-spinner').style.display = 'none';
+
+          cache_caldav().then(() => {});
         } else {
-          popup('There was a problem saving, please try again later.', 'show');
+          side_toaster(
+            'There was a problem saving, please try again later.',
+            5000
+          );
           setTimeout(function () {
-            popup('', 'close');
             try {
               sort_array(events, 'dateStartUnix', 'number');
             } catch (e) {
@@ -667,7 +645,7 @@ export let create_caldav = async function (
 //delete event
 
 export let delete_caldav = async function (etag, url, account_id, uid) {
-  popup('Please wait...', 'show');
+  document.querySelector('.loading-spinner').style.display = 'block';
 
   const matchingAccount = accounts.find((p) => p.id === account_id);
 
@@ -697,24 +675,27 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
           remove_alarm(uid);
           clear_form();
           style_calendar_cell(currentYear, currentMonth);
-          popup('', 'close');
+          document.querySelector('.loading-spinner').style.display = 'none';
 
           if (status.shortCut == false) {
             get_last_view();
           }
         }
       } else {
-        popup('There was a problem deleting, please try again later.', 'show');
-        setTimeout(function () {
-          popup('', 'close');
-        }, 5000);
+        side_toaster(
+          'There was a problem deleting, please try again later.',
+          5000
+        );
+        setTimeout(function () {}, 5000);
       }
     } catch (e) {
       console.log(e);
 
-      popup('There was a problem deleting, please try again later.', 'show');
+      side_toaster(
+        'There was a problem deleting, please try again later.',
+        5000
+      );
       setTimeout(function () {
-        popup('', 'close');
         try {
           sort_array(events, 'dateStartUnix', 'number');
         } catch (e) {
@@ -728,7 +709,7 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 //update event
 
 export let update_caldav = async function (etag, url, data, account_id) {
-  popup('Please wait...', 'show');
+  document.querySelector('.loading-spinner').style.display = 'block';
 
   const matchingAccount = accounts.find((p) => p.id === account_id);
 
@@ -751,7 +732,7 @@ export let update_caldav = async function (etag, url, data, account_id) {
       });
 
       if (result.ok) {
-        popup('', 'close');
+        document.querySelector('.loading-spinner').style.display = 'none';
 
         try {
           const [res] = await client.propfind({
@@ -776,21 +757,20 @@ export let update_caldav = async function (etag, url, data, account_id) {
           console.log(e);
         }
       } else {
-        popup('There was a problem saving, please try again later.', 'show');
-        setTimeout(function () {
-          popup('', 'close');
-        }, 5000);
+        side_toaster(
+          'There was a problem saving, please try again later.',
+          5000
+        );
       }
     } catch (e) {
-      popup('There was a problem saving, please try again later.', 'show');
-      setTimeout(function () {
-        popup('', 'close');
-      }, 5000);
+      side_toaster('There was a problem saving, please try again later.', 5000);
     }
   }
 };
 
 const load_cached_caldav = async () => {
+  events = events.filter((e) => !e.isCaldav);
+
   if (!accounts) {
     console.log('no accounts');
     return false;
@@ -803,7 +783,10 @@ const load_cached_caldav = async () => {
       // Load content if never cached
       if (w === null) {
         load_caldav();
-        return false;
+        console.log('all new');
+        events = events.filter((e) => !e.isCaldav);
+
+        return; // Use return to exit the function
       }
 
       for (const b of w) {
@@ -819,18 +802,20 @@ const load_cached_caldav = async () => {
                 e: item.id,
               });
             } catch (e) {
-              alert('send to sw');
+              console.log('send to sw');
             }
           } else {
-            alert('no sw');
+            console.log('no sw');
           }
         }
       }
     } catch (e) {
       console.log(e);
-      alert('error loadCached');
     }
   }
+
+  // The code here will be executed if the loop completes without encountering a 'null' value
+  console.log('Rest of the function after the loop');
 };
 
 //load subscriptions
@@ -849,15 +834,6 @@ export let sync_caldav_callback = function () {
       window.close();
       return false;
     }
-    /*
-    if (
-      confirm(
-        'There are new calendar entries, would you like to display them?'
-      ) == true
-    ) {
-      m.route.set('/page_events', { query: 'sort_by_last_mod' });
-    }
-    */
   });
 };
 
@@ -1719,6 +1695,8 @@ var page_events = {
             document.activeElement.getAttribute('data-id');
         },
         oncreate: function () {
+          document.querySelector('.loading-spinner').style.display = 'none';
+
           if (!query) find_closest_date();
           if (query == 'sort_by_last_mod') {
             sort_array_last_mod();
@@ -1786,6 +1764,7 @@ var page_events = {
               'data-date': item.dateStart,
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
+              'data-calendar-name': item.calendar_name || '',
             },
             [
               m('div', { class: 'icons-bar' }, [
@@ -2288,6 +2267,7 @@ export let page_options = {
                   'data-calendar-name': e.name,
                   oncreate: ({ dom }) => {
                     if (e.view == false) dom.classList.add('active');
+                    if (e.name == 'local') dom.style.display = 'none';
                   },
                   onclick: () => {
                     calendar_names.forEach((i) => {
@@ -4242,9 +4222,6 @@ let store_event = function (db_id, cal_name) {
 
     try {
       dd = dd.trim();
-
-      console.log(dd);
-
       parse_ics(dd, false, '', '', 'local-id', false, bn);
     } catch (e) {
       console.log(e);
@@ -4261,7 +4238,6 @@ let store_event = function (db_id, cal_name) {
         backup_events();
       })
       .catch(function (err) {
-        console.log(err);
         side_toaster('no data to export', 2000);
       });
   } else {
@@ -4317,11 +4293,10 @@ let store_event = function (db_id, cal_name) {
 
     event_data = event_data.trim();
 
-    create_caldav(event_data, event.id, cal_name, event, event.UID);
-    get_last_view();
+    create_caldav(event_data, event.id, cal_name, event, event.UID).then(() => {
+      get_last_view();
+    });
   }
-
-  //style_calendar_cell(currentYear, currentMonth);
 };
 
 // ////////////
@@ -4797,7 +4772,6 @@ function shortpress_action(param) {
       break;
 
     case '7':
-      export_ical(events);
       break;
 
     case '8':
@@ -4963,33 +4937,42 @@ function shortpress_action(param) {
         });
 
         export_ical(export_data[0].UID + '.ics', export_data);
-        toaster('event exported', 2000);
+        side_toaster('event exported', 2000);
 
         return true;
       }
 
       //toggle month/events
 
+      const currentRoute = m.route.get();
+
       if (events.length > 0) {
-        if (m.route.get().startsWith('/page_events')) {
+        if (currentRoute.startsWith('/page_calendar')) {
+          document.querySelector('.loading-spinner').style.display = 'block';
+        }
+
+        if (currentRoute.startsWith('/page_events')) {
+          // Redirect to '/page_calendar' when on '/page_events'
           m.route.set('/page_calendar');
 
-          if (document.activeElement.tagName == 'INPUT')
-            setTimeout(() => {
-              jump_to_today();
-            }, 1000);
+          // Delayed jump to today if focused on an input element
+          if (document.activeElement.tagName === 'INPUT') {
+            setTimeout(jump_to_today, 1000);
+          }
         } else if (
-          m.route.get() === '/page_calendar' ||
-          m.route.get() === '/page_events'
+          currentRoute === '/page_calendar' ||
+          currentRoute === '/page_events'
         ) {
+          // Toggle between '/page_calendar' and '/page_events'
           m.route.set(
-            m.route.get() === '/page_calendar'
+            currentRoute === '/page_calendar'
               ? '/page_events'
               : '/page_calendar'
           );
         }
       } else {
-        if (m.route.get() === '/page_calendar') {
+        // Display a message when there are no calendar entries
+        if (currentRoute === '/page_calendar') {
           side_toaster('There are no calendar entries to display', 3000);
         }
       }
@@ -5126,7 +5109,7 @@ if (debug) {
 }
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 2000; // Time in milliseconds
+const waitTimeout = 500; // Time in milliseconds
 const checkMessagesInterval = 100; // Interval to check for new messages
 let waitForNoMessages;
 let interval_is_running = false;
@@ -5174,10 +5157,13 @@ let interval = () => {
     if (!running) return false;
     const currentTime = Date.now();
     if (currentTime - lastMessageTime >= waitTimeout) {
+      console.log('start styling');
+
+      style_calendar_cell(currentYear, currentMonth);
+
       document.getElementById('icon-waiting').style.visibility = 'hidden';
       running = false;
       sort_array(events, 'dateStartUnix', 'number');
-      style_calendar_cell(currentYear, currentMonth);
       interval_is_running = false;
 
       clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
