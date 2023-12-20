@@ -477,7 +477,6 @@ export let sync_caldav = async function (callback) {
     dayjs().format(settings.dateformat + ' hh:mm')
   );
 
-  console.log('acc: ' + JSON.stringify(accounts));
   for (const item of accounts) {
     const client = await getClientInstance(item);
 
@@ -564,8 +563,59 @@ export let sync_caldav = async function (callback) {
   }
 };
 
-//create event
+//load cached
 
+const load_cached_caldav = async () => {
+  let should_be_loaded = false;
+  events = events.filter((e) => !e.isCaldav);
+
+  if (!accounts) {
+    console.log('no accounts');
+    return false;
+  }
+
+  for (const item of accounts) {
+    try {
+      const w = await localforage.getItem(item.id);
+
+      // Load content if never cached
+      if (w === null) {
+        should_be_loaded = true;
+      }
+
+      for (const b of w) {
+        for (const m of b.objects) {
+          if (
+            'serviceWorker' in navigator &&
+            navigator.serviceWorker.controller
+          ) {
+            try {
+              navigator.serviceWorker.controller.postMessage({
+                type: 'parse',
+                t: m,
+                e: item.id,
+              });
+            } catch (e) {
+              console.log('send to sw');
+            }
+          } else {
+            console.log('no sw');
+          }
+        }
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  if (should_be_loaded) {
+    load_caldav();
+    events = events.filter((e) => !e.isCaldav);
+    console.log('load content');
+  }
+};
+
+//create event
 export let create_caldav = async function (
   event_data,
   calendar_id,
@@ -643,7 +693,6 @@ export let create_caldav = async function (
 };
 
 //delete event
-
 export let delete_caldav = async function (etag, url, account_id, uid) {
   document.querySelector('.loading-spinner').style.display = 'block';
 
@@ -766,56 +815,6 @@ export let update_caldav = async function (etag, url, data, account_id) {
       side_toaster('There was a problem saving, please try again later.', 5000);
     }
   }
-};
-
-const load_cached_caldav = async () => {
-  events = events.filter((e) => !e.isCaldav);
-
-  if (!accounts) {
-    console.log('no accounts');
-    return false;
-  }
-
-  for (const item of accounts) {
-    try {
-      const w = await localforage.getItem(item.id);
-
-      // Load content if never cached
-      if (w === null) {
-        load_caldav();
-        console.log('all new');
-        events = events.filter((e) => !e.isCaldav);
-
-        return; // Use return to exit the function
-      }
-
-      for (const b of w) {
-        for (const m of b.objects) {
-          if (
-            'serviceWorker' in navigator &&
-            navigator.serviceWorker.controller
-          ) {
-            try {
-              navigator.serviceWorker.controller.postMessage({
-                type: 'parse',
-                t: m,
-                e: item.id,
-              });
-            } catch (e) {
-              console.log('send to sw');
-            }
-          } else {
-            console.log('no sw');
-          }
-        }
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  // The code here will be executed if the loop completes without encountering a 'null' value
-  console.log('Rest of the function after the loop');
 };
 
 //load subscriptions
@@ -3637,6 +3636,7 @@ let store_account = function (edit, id) {
         password: document.getElementById('account-password').value,
         name: document.getElementById('account-name').value,
         id: id,
+        type: 'basic',
       });
     } else {
       accounts.push({
@@ -3645,6 +3645,7 @@ let store_account = function (edit, id) {
         password: document.getElementById('account-password').value,
         name: document.getElementById('account-name').value,
         id: uid(32),
+        type: 'basic',
       });
     }
 
@@ -5166,8 +5167,7 @@ let interval = () => {
       sort_array(events, 'dateStartUnix', 'number');
       interval_is_running = false;
 
-      clearInterval(waitForNoMessages); // Clear the interval since we're done waiting
-      // Your code to proceed after no more messages arrive
+      clearInterval(waitForNoMessages);
     }
   }, checkMessagesInterval);
 };
