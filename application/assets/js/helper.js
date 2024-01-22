@@ -4,7 +4,7 @@ import { events, background_sync_interval } from '../../app.js';
 import { status } from '../../app.js';
 import { uid } from 'uid';
 
-export function sort_array(arr, itemKey, type) {
+export async function sort_array(arr, itemKey, type) {
   const sortFunction = (a, b) => {
     if (type === 'date') {
       return new Date(b[itemKey]) - new Date(a[itemKey]);
@@ -17,7 +17,33 @@ export function sort_array(arr, itemKey, type) {
     }
   };
 
-  arr.sort(sortFunction);
+  if (itemKey == 'lastmod') {
+    // Custom comparison function to sort by date-like properties
+    function compareDateObjects(a, b) {
+      const dateA = new Date(
+        a['LAST-MODIFIED']['_time'].year,
+        a['LAST-MODIFIED']['_time'].month - 1,
+        a['LAST-MODIFIED']['_time'].day,
+        a['LAST-MODIFIED']['_time'].hour,
+        a['LAST-MODIFIED']['_time'].minute,
+        a['LAST-MODIFIED']['_time'].second
+      );
+      const dateB = new Date(
+        b['LAST-MODIFIED']['_time'].year,
+        b['LAST-MODIFIED']['_time'].month - 1,
+        b['LAST-MODIFIED']['_time'].day,
+        b['LAST-MODIFIED']['_time'].hour,
+        b['LAST-MODIFIED']['_time'].minute,
+        b['LAST-MODIFIED']['_time'].second
+      );
+
+      return dateB - dateA;
+    }
+
+    events.sort(compareDateObjects);
+  } else {
+    arr.sort(sortFunction);
+  }
 }
 
 export async function sort_array_last_mod() {

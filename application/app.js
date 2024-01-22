@@ -932,7 +932,6 @@ const find_closest_date = function (date) {
     try {
       let m = events.findIndex((event) => dayjs(event.DTSTAMP).unix() < search);
       t = events[m].UID;
-      // console.log(m);
 
       focusAndScroll();
     } catch (e) {
@@ -1660,6 +1659,7 @@ var page_calendar = {
           if (item.getAttribute('data-date') == status.selected_day) {
             item.focus();
             event_slider(status.selected_day);
+            return;
           }
         });
       //run only once
@@ -1801,13 +1801,14 @@ var page_events_filtered = {
         oninit: () => {
           view_history_update();
           status.shortCut = false;
+          side_toaster('Category: ' + query, 8000);
         },
         oncreate: function () {
           document.querySelectorAll('.item')[0].focus();
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
             "<img src='assets/image/calendar.svg'>",
-            ''
+            "<img src='assets/image/E257.svg'>"
           );
         },
       },
@@ -4582,24 +4583,29 @@ export let set_tabindex = () => {
       }
     });
 };
+let h = 0;
 
 const sort_events = () => {
-  document.getElementById('search').value = '';
-  if (status.sortEvents == 'startDate') {
-    sort_array_last_mod().then(() => {
-      m.route.set('/page_events');
-      status.sortEvents = 'lastmod';
-    });
-    document.activeElement.parentElement.firstChild.focus();
+  let sort_mode = settings.eventsfilter
+    ? ['dateEndUnix', 'lastmod', settings.eventsfilter]
+    : ['dateEndUnix', 'lastmod'];
 
-    side_toaster('the last modified ones now appear at the top', 6000);
+  h++;
+  if (h === sort_mode.length) h = 0;
+
+  document.getElementById('search').value = '';
+
+  if (h == 2) {
+    m.route.set('/page_events_filtered', { query: settings.eventsfilter });
   } else {
-    sort_array(events, 'dateEndUnix', 'date');
-    document.activeElement.parentElement.firstChild.focus();
-    side_toaster('the date start ones now appear at the top', 6000);
-    status.sortEvents = 'startDate';
+    sort_array(events, sort_mode[h], 'date').then(() => {
+      m.redraw();
+      if (h == 0)
+        side_toaster('The last modified ones now appear at the top', 8000);
+      if (h == 1)
+        side_toaster('The date start ones now appear at the top', 8000);
+    });
   }
-  m.redraw();
 };
 
 let backup_events = function () {
@@ -4772,15 +4778,18 @@ function shortpress_action(param) {
         });
       break;
 
-    case '7':
-      break;
-
     case '8':
       m.route.set('/page_events', { query: 'sort_by_last_mod' });
 
       break;
     case 'SoftRight':
     case 'Alt':
+      if (m.route.get().startsWith('/page_events_filtered')) {
+        m.route.set('/page_events');
+
+        return true;
+      }
+
       if (m.route.get() == '/page_calendar' && status.shortCut) {
         let n = '';
         let f = document.querySelectorAll('#event-slider article');
@@ -4817,6 +4826,7 @@ function shortpress_action(param) {
         sort_events();
         return true;
       }
+
       if (m.route.get().startsWith('/page_add_event')) {
         get_contact(callback_get_contact);
       }
