@@ -16,6 +16,8 @@ import {
   validate,
   get_file,
   list_files,
+  formatDT,
+  autocomplete,
 } from './assets/js/helper.js';
 
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
@@ -902,8 +904,7 @@ try {
 // finde closest event to selected date in list view
 // ////////
 const find_closest_date = function (date) {
-  let search;
-  search = date ? dayjs().unix() : dayjs(status.selected_day).unix();
+  let search = date ? dayjs().unix() : dayjs(status.selected_day).unix();
 
   if (events.length === 0) {
     document.getElementById('events-wrapper').innerHTML =
@@ -1487,61 +1488,6 @@ let focus_after_selection = function () {
   });
 };
 
-/*--------------*/
-//autocomplete locations
-/*--------------*/
-
-let autocomplete = function (e, key) {
-  let myList = document.getElementById('search-result');
-  document.querySelectorAll('.search-item').forEach(function (e) {
-    e.remove();
-  });
-
-  let matches = events.filter(function (val, i) {
-    if (events[i][key].indexOf(e) >= 0) return events[i];
-  });
-
-  if (matches.length === 0 || e == '') {
-    document.querySelectorAll('.search-item').forEach(function (e) {
-      // e.remove();
-    });
-    return;
-  }
-  matches.forEach((val, i) => {
-    if (i > 2) return;
-
-    myList.insertAdjacentHTML(
-      'afterend',
-      "<div class='item search-item'>" + val[key] + '</div>'
-    );
-
-    document.querySelectorAll('.item').forEach(function (e, index) {
-      e.tabIndex = index;
-    });
-  });
-
-  document.querySelectorAll('.search-item').forEach(function (e) {
-    e.addEventListener('focus', function () {
-      document.getElementById('event-location').value =
-        document.activeElement.innerText;
-    });
-  });
-
-  if (e == 'close') {
-    document.querySelectorAll('.search-item').forEach(function (e) {
-      e.remove();
-    });
-    document.querySelectorAll('.item').forEach(function (e, index) {
-      e.tabIndex = index;
-    });
-    return false;
-  }
-
-  if (e == 'click') {
-    set_tabindex();
-    document.querySelectorAll('.item').forEach(function (e, index) {});
-  }
-};
 /*
 ///////////////////
 //VIEWS
@@ -1649,6 +1595,7 @@ var page_calendar = {
       );
 
       let t = new Date(status.selected_day);
+      console.log(status.selected_day);
       currentMonth = t.getMonth();
       currentYear = t.getFullYear();
       showCalendar(currentMonth, currentYear);
@@ -1739,17 +1686,24 @@ var page_events = {
           if (item.allDay) {
             se = 'all day';
           } else {
-            se = dayjs.unix(item.dateStartUnix).format('HH:mm');
+            //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
+            se = formatDT(item.DTSTART._time).format('HH:mm');
           }
 
           //date
-          if (item.dateStart != item.dateEnd && !item.allDay) {
+          if (
+            item.DTSTART != null &&
+            item.DTEND != null &&
+            formatDT(item.DTSTART._time).format(settings.dateformat) !=
+              formatDT(item.DTEND._time).format(settings.dateformat) &&
+            !item.allDay
+          ) {
             de =
-              dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
+              formatDT(item.DTSTART._time).format(settings.dateformat) +
               ' - ' +
-              dayjs.unix(item.dateEndUnix).format(settings.dateformat);
+              formatDT(item.DTEND._time).format(settings.dateformat);
           } else {
-            de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
+            de = formatDT(item.DTSTART._time).format(settings.dateformat);
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -1760,7 +1714,8 @@ var page_events = {
               class: 'item events ' + u + ' ' + a,
               tabindex: index + 1,
               'data-id': item.UID,
-              'data-date': item.dateStart,
+              'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
+
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
               'data-calendar-name': item.calendar_name || '',
@@ -1831,13 +1786,20 @@ var page_events_filtered = {
             }
 
             //date
-            if (item.dateStart != item.dateEnd && !item.allDay) {
+            //date
+            if (
+              item.DTSTART != null &&
+              item.DTEND != null &&
+              formatDT(item.DTSTART._time).format(settings.dateformat) !=
+                formatDT(item.DTEND._time).format(settings.dateformat) &&
+              !item.allDay
+            ) {
               de =
-                dayjs(item.dateStart).format(settings.dateformat) +
+                formatDT(item.DTSTART._time).format(settings.dateformat) +
                 ' - ' +
-                dayjs(item.dateEnd).format(settings.dateformat);
+                formatDT(item.DTEND._time).format(settings.dateformat);
             } else {
-              de = dayjs(item.dateStart).format(settings.dateformat);
+              de = formatDT(item.DTSTART._time).format(settings.dateformat);
             }
 
             let u = item.isSubscription ? 'subscription' : '';
@@ -1848,7 +1810,7 @@ var page_events_filtered = {
                 class: 'item events ' + u + ' ' + a,
                 tabindex: tindex,
                 'data-id': item.UID,
-                'data-date': item.dateStart,
+                'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
                 'data-category': (item.CATEGORIES || '').toUpperCase(),
                 'data-summary': (item.SUMMARY || '').toUpperCase(),
               },

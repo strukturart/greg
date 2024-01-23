@@ -3,6 +3,70 @@
 import { events, background_sync_interval } from '../../app.js';
 import { status } from '../../app.js';
 import { uid } from 'uid';
+import dayjs from 'dayjs';
+
+/*--------------*/
+//autocomplete locations
+/*--------------*/
+
+export let autocomplete = function (e, key) {
+  let myList = document.getElementById('search-result');
+  document.querySelectorAll('.search-item').forEach(function (e) {
+    e.remove();
+  });
+
+  let matches = events.filter(function (val, i) {
+    if (events[i][key].indexOf(e) >= 0) return events[i];
+  });
+
+  if (matches.length === 0 || e == '') {
+    document.querySelectorAll('.search-item').forEach(function (e) {
+      // e.remove();
+    });
+    return;
+  }
+  matches.forEach((val, i) => {
+    if (i > 2) return;
+
+    myList.insertAdjacentHTML(
+      'afterend',
+      "<div class='item search-item'>" + val[key] + '</div>'
+    );
+
+    document.querySelectorAll('.item').forEach(function (e, index) {
+      e.tabIndex = index;
+    });
+  });
+
+  document.querySelectorAll('.search-item').forEach(function (e) {
+    e.addEventListener('focus', function () {
+      document.getElementById('event-location').value =
+        document.activeElement.innerText;
+    });
+  });
+
+  if (e == 'close') {
+    document.querySelectorAll('.search-item').forEach(function (e) {
+      e.remove();
+    });
+    document.querySelectorAll('.item').forEach(function (e, index) {
+      e.tabIndex = index;
+    });
+    return false;
+  }
+
+  if (e == 'click') {
+    set_tabindex();
+    document.querySelectorAll('.item').forEach(function (e, index) {});
+  }
+};
+
+export let formatDT = (dt) => {
+  //  console.log(dt);
+  return dayjs(
+    `${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}`
+  );
+};
 
 export async function sort_array(arr, itemKey, type) {
   const sortFunction = (a, b) => {
