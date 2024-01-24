@@ -5,7 +5,6 @@ import {
   restart_background_sync,
   side_toaster,
   sort_array,
-  sort_array_last_mod,
   wakeLookCPU,
   bottom_bar,
   test_is_background_sync,
@@ -1403,8 +1402,6 @@ let showCalendar = function (month, year) {
 
         let p = year + '-' + mmonth + '-' + day;
 
-        //const d = new Date(p);
-
         moon.classList.add('moon-phase-' + getMoonPhase(year, month, date));
         cell.appendChild(moon);
 
@@ -1632,6 +1629,9 @@ var page_events = {
         oninit: () => {
           view_history_update();
           status.shortCut = false;
+          sort_array(events, 'dateStartUnix', 'number').then(() => {
+            console.log('sorted');
+          });
         },
         onremove: () => {
           status.selected_day =
@@ -1679,23 +1679,26 @@ var page_events = {
             se = 'all day';
           } else {
             //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
-            se = dayjs(item.dateStartUnix).format('HH:mm');
+            se = formatDT(item.DTSTART._time).format('HH:mm');
           }
 
           //date
           if (
             item.DTSTART != null &&
             item.DTEND != null &&
-            dayjs.unix(item.dateStartUnix).format(settings.dateformat) !=
-              dayjs.unix(item.dateEndUnix).format(settings.dateformat) &&
+            formatDT(item.DTSTART._time).format(settings.dateformat) !=
+              formatDT(item.DTEND._time).format(settings.dateformat) &&
             !item.allDay
           ) {
             de =
-              dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
+              formatDT(item.DTSTART._time).format(settings.dateformat) +
               ' - ' +
-              dayjs.unix(item.dateEndUnix).format(settings.dateformat);
+              formatDT(item.DTEND._time).format(settings.dateformat);
           } else {
-            de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
+            de =
+              formatDT(item.DTSTART._time).format(settings.dateformat) +
+              ' | ' +
+              weekday[dayjs(formatDT(item.DTSTART._time)).day()];
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -1706,7 +1709,7 @@ var page_events = {
               class: 'item events ' + u + ' ' + a,
               tabindex: index + 1,
               'data-id': item.UID,
-              'data-date': dayjs.unix(item.dateStartUnix).format('YYYY-MM-DD'),
+              'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
 
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
@@ -1778,19 +1781,20 @@ var page_events_filtered = {
             }
 
             //date
+            //date
             if (
               item.DTSTART != null &&
               item.DTEND != null &&
-              dayjs.unix(item.dateStartUnix).format(settings.dateformat) !=
-                dayjs.unix(item.dateEndUnix).format(settings.dateformat) &&
+              formatDT(item.DTSTART._time).format(settings.dateformat) !=
+                formatDT(item.DTEND._time).format(settings.dateformat) &&
               !item.allDay
             ) {
               de =
-                dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
+                formatDT(item.DTSTART._time).format(settings.dateformat) +
                 ' - ' +
-                dayjs.unix(item.dateEndUnix).format(settings.dateformat);
+                formatDT(item.DTEND._time).format(settings.dateformat);
             } else {
-              de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
+              de = formatDT(item.DTSTART._time).format(settings.dateformat);
             }
 
             let u = item.isSubscription ? 'subscription' : '';
@@ -1801,9 +1805,7 @@ var page_events_filtered = {
                 class: 'item events ' + u + ' ' + a,
                 tabindex: tindex,
                 'data-id': item.UID,
-                'data-date': dayjs
-                  .unix(item.dateStartUnix)
-                  .format('YYYY-MM-DD'),
+                'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
                 'data-category': (item.CATEGORIES || '').toUpperCase(),
                 'data-summary': (item.SUMMARY || '').toUpperCase(),
               },
@@ -4180,6 +4182,7 @@ let store_event = function (db_id, cal_name) {
     try {
       dd = dd.trim();
       parse_ics(dd, false, '', '', 'local-id', false, bn);
+      sort_array(events, 'dateStartUnix', 'number');
     } catch (e) {
       console.log(e);
     }
@@ -4555,13 +4558,11 @@ const sort_events = () => {
   } else {
     sort_array(events, sort_mode[h], 'date').then(() => {
       m.redraw();
-      if (h == 0)
-        side_toaster('The date start ones now appear at the top', 4000);
-      document.activeElement.parentElement.firstChild.focus();
+      if (h == 0) side_toaster('latest', 4000);
+      document.getElementById('search').focus();
 
-      if (h == 1)
-        side_toaster('The last modified ones now appear at the top', 4000);
-      document.activeElement.parentElement.firstChild.focus();
+      if (h == 1) side_toaster('last modified', 4000);
+      document.getElementById('search').focus();
     });
   }
 };
@@ -4572,8 +4573,6 @@ let backup_events = function () {
     .then(function (value) {
       // Make sure value is not null or undefined
       if (value) {
-        // Parse the JSON string to an object
-
         let only_local_events = value.filter((event) => event.id == 'local-id');
 
         try {
@@ -4584,7 +4583,6 @@ let backup_events = function () {
       }
     })
     .catch(function (err) {
-      // This code runs if there were any errors
       console.log(err);
     });
 };
@@ -4736,10 +4734,6 @@ function shortpress_action(param) {
         });
       break;
 
-    case '8':
-      m.route.set('/page_events', { query: 'sort_by_last_mod' });
-
-      break;
     case 'SoftRight':
     case 'Alt':
       if (m.route.get().startsWith('/page_events_filtered')) {
@@ -5087,7 +5081,6 @@ let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
   if (event.data.action == 'test') {
-    alert(event.data.content);
   }
 
   //callback from Google OAuth
@@ -5126,8 +5119,6 @@ let interval = () => {
     if (!running) return false;
     const currentTime = Date.now();
     if (currentTime - lastMessageTime >= waitTimeout) {
-      console.log('start styling');
-
       style_calendar_cell(currentYear, currentMonth);
 
       document.getElementById('icon-waiting').style.visibility = 'hidden';

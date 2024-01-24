@@ -69,6 +69,7 @@ export let formatDT = (dt) => {
 };
 
 export async function sort_array(arr, itemKey, type) {
+  console.log(events);
   const sortFunction = (a, b) => {
     if (type === 'date') {
       return new Date(b[itemKey]) - new Date(a[itemKey]);
@@ -81,8 +82,7 @@ export async function sort_array(arr, itemKey, type) {
     }
   };
 
-  if (itemKey == 'lastmod') {
-    // Custom comparison function to sort by date-like properties
+  if (itemKey === 'lastmod') {
     function compareDateObjects(a, b) {
       const dateA = new Date(
         a['LAST-MODIFIED']['_time'].year,
@@ -108,32 +108,6 @@ export async function sort_array(arr, itemKey, type) {
   } else {
     arr.sort(sortFunction);
   }
-}
-
-export async function sort_array_last_mod() {
-  // Custom comparison function to sort by date-like properties
-  function compareDateObjects(a, b) {
-    const dateA = new Date(
-      a['LAST-MODIFIED']['_time'].year,
-      a['LAST-MODIFIED']['_time'].month - 1,
-      a['LAST-MODIFIED']['_time'].day,
-      a['LAST-MODIFIED']['_time'].hour,
-      a['LAST-MODIFIED']['_time'].minute,
-      a['LAST-MODIFIED']['_time'].second
-    );
-    const dateB = new Date(
-      b['LAST-MODIFIED']['_time'].year,
-      b['LAST-MODIFIED']['_time'].month - 1,
-      b['LAST-MODIFIED']['_time'].day,
-      b['LAST-MODIFIED']['_time'].hour,
-      b['LAST-MODIFIED']['_time'].minute,
-      b['LAST-MODIFIED']['_time'].second
-    );
-
-    return dateB - dateA;
-  }
-
-  events.sort(compareDateObjects);
 }
 
 export let get_contact = (callback) => {
