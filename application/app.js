@@ -1643,11 +1643,7 @@ var page_events = {
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          if (!query) find_closest_date();
-          if (query == 'sort_by_last_mod') {
-            sort_array_last_mod();
-            status.sortEvents = 'startDate';
-          }
+          find_closest_date();
 
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
@@ -1661,11 +1657,7 @@ var page_events = {
         class: 'width-90 item',
         id: 'search',
         tabIndex: 0,
-        oncreate: ({ dom }) => {
-          if (query == 'sort_by_last_mod') {
-            dom.focus();
-          }
-        },
+        oncreate: ({ dom }) => {},
         onfocus: () => {
           window.scroll({
             top: 20,
@@ -1687,23 +1679,23 @@ var page_events = {
             se = 'all day';
           } else {
             //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
-            se = formatDT(item.DTSTART._time).format('HH:mm');
+            se = dayjs(item.dateStartUnix).format('HH:mm');
           }
 
           //date
           if (
             item.DTSTART != null &&
             item.DTEND != null &&
-            formatDT(item.DTSTART._time).format(settings.dateformat) !=
-              formatDT(item.DTEND._time).format(settings.dateformat) &&
+            dayjs.unix(item.dateStartUnix).format(settings.dateformat) !=
+              dayjs.unix(item.dateEndUnix).format(settings.dateformat) &&
             !item.allDay
           ) {
             de =
-              formatDT(item.DTSTART._time).format(settings.dateformat) +
+              dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
               ' - ' +
-              formatDT(item.DTEND._time).format(settings.dateformat);
+              dayjs.unix(item.dateEndUnix).format(settings.dateformat);
           } else {
-            de = formatDT(item.DTSTART._time).format(settings.dateformat);
+            de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -1714,7 +1706,7 @@ var page_events = {
               class: 'item events ' + u + ' ' + a,
               tabindex: index + 1,
               'data-id': item.UID,
-              'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
+              'data-date': dayjs.unix(item.dateStartUnix).format('YYYY-MM-DD'),
 
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
@@ -1786,20 +1778,19 @@ var page_events_filtered = {
             }
 
             //date
-            //date
             if (
               item.DTSTART != null &&
               item.DTEND != null &&
-              formatDT(item.DTSTART._time).format(settings.dateformat) !=
-                formatDT(item.DTEND._time).format(settings.dateformat) &&
+              dayjs.unix(item.dateStartUnix).format(settings.dateformat) !=
+                dayjs.unix(item.dateEndUnix).format(settings.dateformat) &&
               !item.allDay
             ) {
               de =
-                formatDT(item.DTSTART._time).format(settings.dateformat) +
+                dayjs.unix(item.dateStartUnix).format(settings.dateformat) +
                 ' - ' +
-                formatDT(item.DTEND._time).format(settings.dateformat);
+                dayjs.unix(item.dateEndUnix).format(settings.dateformat);
             } else {
-              de = formatDT(item.DTSTART._time).format(settings.dateformat);
+              de = dayjs.unix(item.dateStartUnix).format(settings.dateformat);
             }
 
             let u = item.isSubscription ? 'subscription' : '';
@@ -1810,7 +1801,9 @@ var page_events_filtered = {
                 class: 'item events ' + u + ' ' + a,
                 tabindex: tindex,
                 'data-id': item.UID,
-                'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
+                'data-date': dayjs
+                  .unix(item.dateStartUnix)
+                  .format('YYYY-MM-DD'),
                 'data-category': (item.CATEGORIES || '').toUpperCase(),
                 'data-summary': (item.SUMMARY || '').toUpperCase(),
               },
@@ -4563,9 +4556,12 @@ const sort_events = () => {
     sort_array(events, sort_mode[h], 'date').then(() => {
       m.redraw();
       if (h == 0)
-        side_toaster('The last modified ones now appear at the top', 8000);
+        side_toaster('The date start ones now appear at the top', 4000);
+      document.activeElement.parentElement.firstChild.focus();
+
       if (h == 1)
-        side_toaster('The date start ones now appear at the top', 8000);
+        side_toaster('The last modified ones now appear at the top', 4000);
+      document.activeElement.parentElement.firstChild.focus();
     });
   }
 };
