@@ -8,4 +8,5 @@ build
 .cache
 application/assets/js/google_cred.js
 application/google_cred.js
+.env
 

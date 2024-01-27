@@ -69,7 +69,6 @@ export let formatDT = (dt) => {
 };
 
 export async function sort_array(arr, itemKey, type) {
-  console.log(events);
   const sortFunction = (a, b) => {
     if (type === 'date') {
       return new Date(b[itemKey]) - new Date(a[itemKey]);
@@ -657,6 +656,7 @@ try {
         if (localStorage.getItem('background_sync') == 'Yes') {
           restart_background_sync();
         }
+        //background sync close app when device is offline
         if (!status.visible && !navigator.onLine) window.close();
       } else {
         pushLocalNotification('Greg', alarm.data.note);

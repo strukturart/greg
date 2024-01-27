@@ -222,7 +222,6 @@ let loadAccounts = () => {
 
       if (accounts != null) {
         load_cached_caldav().then(() => {
-          console.log('cached data loaded');
           sync_caldav(sync_caldav_callback);
         });
       }
@@ -240,7 +239,11 @@ export let load_settings = function () {
       settings = value;
       localStorage.setItem('background_sync', settings.background_sync);
 
-      if (settings.firstday == 'sunday' || settings.firstday == undefined) {
+      if (settings.default_duration === undefined) {
+        settings.default_duration = 30;
+      }
+
+      if (settings.firstday == 'sunday' || settings.firstday === undefined) {
         weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       } else {
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -252,6 +255,7 @@ export let load_settings = function () {
     .catch(function (err) {
       console.log(err);
     });
+  //console.log(settings);
 };
 
 load_settings();
@@ -352,8 +356,6 @@ async function load_caldav(callback = false) {
       try {
         calendars = await client.fetchCalendars();
       } catch (fetchCalendarsError) {
-        alert(fetchCalendarsError);
-
         // Handle the error (e.g., show a user-friendly message)
         continue; // Skip to the next account in case of fetch failure
       }
@@ -398,11 +400,15 @@ async function load_caldav(callback = false) {
 
       if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-        if (callback) side_toaster('all event reloaded', 2000);
+        if (callback) side_toaster('all events reloaded', 2000);
       }
       closing_prohibited = false;
-      // style_calendar_cell(currentYear, currentMonth);
       side_toaster('Data loaded', 3000);
+      //background sync close app
+      if (!status.visible && settings.background_sync == 'Yes') {
+        window.close();
+        return;
+      }
     } catch (e) {
       if (m.route.get() === '/page_calendar') {
         closing_prohibited = false;
@@ -830,9 +836,8 @@ export let sync_caldav_callback = function () {
   load_caldav().then(() => {
     //close app because is background sync
     if (!status.visible) {
-      //pushLocalNotification('greg', 'updated');
       window.close();
-      return false;
+      return;
     }
   });
 };
@@ -1592,7 +1597,6 @@ var page_calendar = {
       );
 
       let t = new Date(status.selected_day);
-      console.log(status.selected_day);
       currentMonth = t.getMonth();
       currentYear = t.getFullYear();
       showCalendar(currentMonth, currentYear);
@@ -1629,9 +1633,11 @@ var page_events = {
         oninit: () => {
           view_history_update();
           status.shortCut = false;
-          sort_array(events, 'dateStartUnix', 'number').then(() => {
-            console.log('sorted');
-          });
+          if (query == '' || query == undefined) {
+            sort_array(events, 'dateStartUnix', 'number').then(() => {});
+          } else {
+            console.log(query);
+          }
         },
         onremove: () => {
           status.selected_day =
@@ -1643,7 +1649,11 @@ var page_events = {
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          find_closest_date();
+          if (query == '' || query == undefined) {
+            find_closest_date();
+          } else {
+            console.log(query);
+          }
 
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
@@ -1657,7 +1667,6 @@ var page_events = {
         class: 'width-90 item',
         id: 'search',
         tabIndex: 0,
-        oncreate: ({ dom }) => {},
         onfocus: () => {
           window.scroll({
             top: 20,
@@ -1678,9 +1687,13 @@ var page_events = {
           if (item.allDay) {
             se = 'all day';
           } else {
-            //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
             se = formatDT(item.DTSTART._time).format('HH:mm');
           }
+
+          let weekDay =
+            settings.firstday == 'sunday'
+              ? weekday[dayjs(formatDT(item.DTSTART._time)).day()]
+              : weekday[dayjs(formatDT(item.DTSTART._time)).day() - 1];
 
           //date
           if (
@@ -1698,7 +1711,7 @@ var page_events = {
             de =
               formatDT(item.DTSTART._time).format(settings.dateformat) +
               ' | ' +
-              weekday[dayjs(formatDT(item.DTSTART._time)).day()];
+              weekDay;
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -2050,6 +2063,48 @@ export let page_options = {
               [
                 m('option', { value: 'sunday' }, 'Sunday'),
                 m('option', { value: 'monday' }, 'Monday'),
+              ]
+            ),
+          ]
+        ),
+        m(
+          'div',
+          {
+            class: 'item input-parent',
+            id: 'event-duration-wrapper',
+            tabindex: '5',
+          },
+          [
+            m('label', { for: 'default-duration-time' }, 'default Duration'),
+            m(
+              'select',
+              {
+                id: 'default-duration-time',
+                class: 'select-box',
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  load_settings();
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (!settings.default_duration) {
+                      document.querySelector(
+                        '#default-duration-time'
+                      ).value = 30;
+                    } else {
+                      document.querySelector(
+                        '#default-notification-time'
+                      ).value = settings.default_duration;
+                    }
+                  }, 1000);
+                },
+              },
+              [
+                m('option', { value: '30' }, '30 minutes'),
+                m('option', { value: '60' }, '60 minutes'),
+                m('option', { value: '120' }, '120 minutes'),
+                m('option', { value: '240' }, '240 minutes'),
               ]
             ),
           ]
@@ -2899,7 +2954,14 @@ var page_add_event = {
             },
 
             oncreate: function ({ dom }) {
-              dom.value = dayjs().add(1, 'hour').format('HH:mm');
+              console.log('h' + settings.default_duration);
+              if (settings.default_duration) {
+                dom.value = dayjs()
+                  .add(settings.default_duration, 'minutes')
+                  .format('HH:mm');
+              } else {
+                dom.value = dayjs().add(1, 'hour').format('HH:mm');
+              }
             },
           }),
         ]),
@@ -3512,6 +3574,10 @@ m.route.prefix = '#';
 let store_settings = function () {
   settings.default_notification = document.getElementById(
     'default-notification-time'
+  ).value;
+
+  settings.default_duration = document.getElementById(
+    'default-duration-time'
   ).value;
 
   settings.dateformat = document.getElementById('event-date-format').value;
@@ -4737,8 +4803,7 @@ function shortpress_action(param) {
     case 'SoftRight':
     case 'Alt':
       if (m.route.get().startsWith('/page_events_filtered')) {
-        m.route.set('/page_events');
-
+        m.route.set('/page_events?query=hey');
         return true;
       }
 
@@ -5050,9 +5115,6 @@ function handleKeyDown(evt) {
 function handleKeyUp(evt) {
   if (status.visible === false) return false;
 
-  if (evt.key == 'Backspace' && document.activeElement.tagName == 'INPUT') {
-  }
-
   clearTimeout(timeout);
   if (!longpress) {
     shortpress_action(evt);
@@ -5072,7 +5134,7 @@ if (debug) {
 }
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 500; // Time in milliseconds
+const waitTimeout = 400; // Time in milliseconds
 const checkMessagesInterval = 100; // Interval to check for new messages
 let waitForNoMessages;
 let interval_is_running = false;
@@ -5125,6 +5187,7 @@ let interval = () => {
       running = false;
       sort_array(events, 'dateStartUnix', 'number');
       interval_is_running = false;
+      //close app because is background sync
 
       clearInterval(waitForNoMessages);
     }
