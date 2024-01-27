@@ -401,7 +401,6 @@ async function load_caldav(callback = false) {
         if (callback) side_toaster('all event reloaded', 2000);
       }
       closing_prohibited = false;
-      // style_calendar_cell(currentYear, currentMonth);
       side_toaster('Data loaded', 3000);
     } catch (e) {
       if (m.route.get() === '/page_calendar') {
@@ -1682,6 +1681,11 @@ var page_events = {
             se = formatDT(item.DTSTART._time).format('HH:mm');
           }
 
+          let weekDay =
+            settings.firstday == 'sunday'
+              ? weekday[dayjs(formatDT(item.DTSTART._time)).day()]
+              : weekday[dayjs(formatDT(item.DTSTART._time)).day() - 1];
+
           //date
           if (
             item.DTSTART != null &&
@@ -1698,7 +1702,7 @@ var page_events = {
             de =
               formatDT(item.DTSTART._time).format(settings.dateformat) +
               ' | ' +
-              weekday[dayjs(formatDT(item.DTSTART._time)).day()];
+              weekDay;
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -2050,6 +2054,48 @@ export let page_options = {
               [
                 m('option', { value: 'sunday' }, 'Sunday'),
                 m('option', { value: 'monday' }, 'Monday'),
+              ]
+            ),
+          ]
+        ),
+        m(
+          'div',
+          {
+            class: 'item input-parent',
+            id: 'event-duration-wrapper',
+            tabindex: '5',
+          },
+          [
+            m('label', { for: 'default-duration-time' }, 'default Duration'),
+            m(
+              'select',
+              {
+                id: 'default-duration-time',
+                class: 'select-box',
+                onchange: function () {
+                  store_settings();
+                },
+                oncreate: function () {
+                  load_settings();
+                  setTimeout(function () {
+                    focus_after_selection();
+                    if (settings.default_duration == '') {
+                      document.querySelector('#default-duration-time').value =
+                        'none';
+                    } else {
+                      document.querySelector(
+                        '#default-notification-time'
+                      ).value = settings.default_duration;
+                    }
+                  }, 1000);
+                },
+              },
+              [
+                m('option', { value: 'none' }, 'none'),
+                m('option', { value: '30' }, '30 minutes'),
+                m('option', { value: '60' }, '60 minutes'),
+                m('option', { value: '120' }, '120 minutes'),
+                m('option', { value: '240' }, '240 minutes'),
               ]
             ),
           ]
@@ -2899,7 +2945,14 @@ var page_add_event = {
             },
 
             oncreate: function ({ dom }) {
-              dom.value = dayjs().add(1, 'hour').format('HH:mm');
+              console.log(settings.default_duration);
+              if (settings.default_duration != '') {
+                dom.value = dayjs()
+                  .add(settings.default_duration, 'minutes')
+                  .format('HH:mm');
+              } else {
+                dom.value = dayjs().add(1, 'hour').format('HH:mm');
+              }
             },
           }),
         ]),
@@ -3512,6 +3565,10 @@ m.route.prefix = '#';
 let store_settings = function () {
   settings.default_notification = document.getElementById(
     'default-notification-time'
+  ).value;
+
+  settings.default_duration = document.getElementById(
+    'default-duration-time'
   ).value;
 
   settings.dateformat = document.getElementById('event-date-format').value;
@@ -5050,9 +5107,6 @@ function handleKeyDown(evt) {
 function handleKeyUp(evt) {
   if (status.visible === false) return false;
 
-  if (evt.key == 'Backspace' && document.activeElement.tagName == 'INPUT') {
-  }
-
   clearTimeout(timeout);
   if (!longpress) {
     shortpress_action(evt);
@@ -5072,7 +5126,7 @@ if (debug) {
 }
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 500; // Time in milliseconds
+const waitTimeout = 400; // Time in milliseconds
 const checkMessagesInterval = 100; // Interval to check for new messages
 let waitForNoMessages;
 let interval_is_running = false;
