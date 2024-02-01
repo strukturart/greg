@@ -83,6 +83,7 @@ function parse_ics(
     let allday = false;
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end = ite.getFirstPropertyValue('dtend');
+    if (date_end == null) date_end = date_start;
     const rrule = ite.getFirstPropertyValue('rrule');
 
     if (date_start.isDate && date_end.isDate) allday = true;
@@ -115,7 +116,7 @@ function parse_ics(
       }
       //allDay
       if (allday) {
-        let f = ite.getFirstPropertyValue('dtend').toJSDate();
+        let f = date_end.toJSDate();
         f = new Date(dayjs(f).subtract(1, 'day'));
         dateEnd = dayjs(f).format('YYYY-MM-DD');
         timeEnd = dayjs(f).format('HH:mm:ss');
@@ -133,9 +134,9 @@ function parse_ics(
       RRULE: ite.getFirstPropertyValue('rrule') || '',
       'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified'),
       CLASS: ite.getFirstPropertyValue('class') || '',
-      DTSTAMP: ite.getFirstPropertyValue('dtstart'),
-      DTSTART: ite.getFirstPropertyValue('dtstart'),
-      DTEND: ite.getFirstPropertyValue('dtend'),
+      DTSTAMP: date_start,
+      DTSTART: date_start,
+      DTEND: date_end,
       END: 'VEVENT',
       isSubscription: isSubscription,
       isCaldav: isCaldav,

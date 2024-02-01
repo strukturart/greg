@@ -1023,6 +1023,7 @@ let rrule_check = function (date) {
       let c = new Date(date).getTime();
       let d = events[t].RRULE.freq;
       let e = events[t].RRULE;
+      let interval = events[t].RRULE.interval;
 
       if (typeof e !== 'undefined' && e !== undefined && e != null) {
         //recurrences
@@ -1030,7 +1031,7 @@ let rrule_check = function (date) {
         if (events[t].RRULE != null) {
           //endless || with end
           if (events[t].RRULE.until == null) {
-            b = new Date('3000-01-01').getTime();
+            b = determine_recurrence_end_date(new Date(events[t].dateStart), events[t].RRULE);
           } else {
             b = new Date(events[t].RRULE.until).getTime();
           }
@@ -1054,7 +1055,9 @@ let rrule_check = function (date) {
 
           if (d == 'WEEKLY') {
             if (
-              new Date(events[t].dateStart).getDay() === new Date(date).getDay()
+                ((interval == null || interval == 1)
+                    && new Date(events[t].dateStart).getDay() == new Date(date).getDay())
+                || Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
             ) {
               feedback.rrule = true;
               feedback.event = true;
@@ -1128,6 +1131,30 @@ let slider_navigation = function () {
   p[slider_index].classList.add('active');
 };
 
+function determine_recurrence_end_date(dateStart, rrule) {
+  let dt = dayjs(dateStart);
+  if (rrule.count != null) {
+    switch (rrule.freq) {
+      case 'DAILY':
+        return dt.add(rrule.count, 'days').valueOf();
+      case  'MONTHLY':
+        return dt.add(rrule.count, 'months').valueOf();
+      case 'BIWEEKLY':
+        return dt.add(rrule.count * 2, 'weeks').valueOf();
+      case 'WEEKLY':
+        return dt.add(rrule.count, 'weeks').valueOf();
+      case 'YEARLY':
+        return dt.add(rrule.count, 'years').valueOf();
+      default:
+        console.log('Unexpected frequency: ' + rrule.freq);
+        return new Date('3000-01-01').getTime();
+    }
+  }
+  //workaround if enddate is not set, and neither is count.
+  //AKA infinity
+  return new Date('3000-01-01').getTime();
+}
+
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector('div#event-slider-indicator div');
@@ -1139,6 +1166,7 @@ let event_slider = function (date) {
     let b = new Date(events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
     let d = events[i].RRULE.freq;
+    let interval = events[i].RRULE.interval;
 
     if (d === 'none' || d === '' || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
@@ -1146,13 +1174,9 @@ let event_slider = function (date) {
         k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
       }
     } else {
-      //workaround if enddate is not set
-      //AKA infinity
-
-      if (events[i].RRULE != null) {
-        if (events[i].RRULE.until == null) {
-          b = new Date('3000-01-01').getTime();
-        }
+      if (events[i].RRULE != null
+          && events[i].RRULE.until == null) { // apparently until = dateEnd in this case?
+        b = determine_recurrence_end_date(new Date(events[i].dateStart), events[i].RRULE);
       }
 
       if (a === c || b === c || (a < c && b > c)) {
@@ -1175,7 +1199,9 @@ let event_slider = function (date) {
         //WEEK
         if (d == 'WEEKLY') {
           if (
-            new Date(events[i].dateStart).getDay() == new Date(date).getDay()
+              ((interval == null || interval == 1)
+            && new Date(events[i].dateStart).getDay() == new Date(date).getDay())
+              || Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
           ) {
             slider.push(events[i]);
             k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
