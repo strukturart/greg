@@ -1012,6 +1012,7 @@ let rrule_check = function (date) {
     subscription: false,
     multidayevent: false,
     rrule: 'none',
+    event_data: '',
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -1052,6 +1053,7 @@ let rrule_check = function (date) {
               feedback.event = true;
               feedback.rrule = true;
               t = events.length;
+              feedback.event_data = events[t];
               return feedback;
             }
           }
@@ -1069,6 +1071,7 @@ let rrule_check = function (date) {
               feedback.rrule = true;
               feedback.event = true;
               t = events.length;
+              feedback.event_data = events[t];
 
               return feedback;
             }
@@ -1079,6 +1082,7 @@ let rrule_check = function (date) {
               feedback.rrule = true;
               feedback.event = true;
               t = events.length;
+              feedback.event_data = events[t];
 
               return feedback;
             }
@@ -1094,6 +1098,8 @@ let rrule_check = function (date) {
               feedback.rrule = true;
               feedback.event = true;
               t = events.length;
+              feedback.event_data = events[t];
+
               return feedback;
             }
           }
@@ -1168,6 +1174,12 @@ let event_slider = function (date) {
   k.innerHTML = '';
 
   document.querySelector('div#event-slider').innerHTML = '';
+
+  if (rrule_check(p).rrule) {
+    k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
+    slider.push(rrule_check(p).event_data);
+  }
+  /*
   for (let i = 0; i < events.length; i++) {
     let a = new Date(events[i].dateStart).getTime();
     let b = new Date(events[i].dateEnd).getTime();
@@ -1247,6 +1259,7 @@ let event_slider = function (date) {
       }
     }
   }
+  */
 
   if (slider.length >= 0) {
     slider.forEach(function (item, i) {
