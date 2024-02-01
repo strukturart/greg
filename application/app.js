@@ -160,21 +160,28 @@ if ('b2g' in navigator) {
     console.log(e);
   }
 } else {
-  try {
-    navigator.serviceWorker
-      .register(new URL('sw.js', import.meta.url), {
-        type: 'module',
-      })
-      .then((registration) => {
-        if (registration.waiting) {
-          setTimeout(() => {
-            window.location.reload(true);
-          }, 1000);
-        } else {
-        }
-      });
-  } catch (e) {
-    console.error('Error during service worker registration:', e);
+
+    if ('serviceWorker' in navigator &&
+        navigator.serviceWorker.controller) {
+      console.log('Service worker found')
+    } else {
+      try {
+        console.log('Try to register service worker');
+        navigator.serviceWorker
+            .register(new URL('sw.js', import.meta.url), {
+              type: 'module',
+            })
+            .then((registration) => {
+              if (registration.waiting) {
+                setTimeout(() => {
+                  window.location.reload(true);
+                }, 1000);
+              } else {
+              }
+            });
+      } catch (e) {
+        console.error('Error during service worker registration:', e);
+      }
   }
 }
 
@@ -345,7 +352,7 @@ async function load_caldav(callback = false) {
         console.log('login in');
       }
 
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         document.getElementById('icon-loading').style.visibility = 'visible';
       }
       let calendars;
@@ -396,14 +403,14 @@ async function load_caldav(callback = false) {
         }
       }
 
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         document.getElementById('icon-loading').style.visibility = 'hidden';
         if (callback) side_toaster('all event reloaded', 2000);
       }
       closing_prohibited = false;
       side_toaster('Data loaded', 3000);
     } catch (e) {
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         closing_prohibited = false;
         document.getElementById('icon-loading').style.visibility = 'hidden';
       }
@@ -1244,8 +1251,8 @@ let event_slider = function (date) {
     document.getElementById('event-slider-indicator').style.opacity = 1;
     document.querySelector('div#event-slider article').style.display = 'block';
     document
-      .querySelectorAll('div#event-slider .indicator')[0]
-      .style.classList.add('active');
+      .querySelectorAll('div .indicator')[0]
+      .classList.add('active');
   }
 };
 
@@ -1278,7 +1285,7 @@ function previous() {
 }
 
 let highlight_current_day = function () {
-  if (m.route.get() != '/page_calendar') return false;
+  if (!currentPage('page_calendar')) return false;
   setTimeout(function () {
     //reset weekday
     document
@@ -3825,19 +3832,19 @@ let nav = function (move) {
   let items = 0;
 
   if (
-    m.route.get() == '/page_calendar' ||
-    m.route.get() == '/page_options' ||
-    m.route.get() == '/page_events' ||
-    m.route.get() == '/page_event_templates' ||
-    m.route.get() == '/page_list_files' ||
-    m.route.get().startsWith('/page_events')
+    currentPage('page_calendar') ||
+      currentPage('page_options') ||
+      currentPage('page_events') ||
+      currentPage('page_event_templates') ||
+      currentPage('page_list_files') ||
+      currentPageStartsWith('page_events')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
     status.shortCut = false;
   }
 
-  if (m.route.get() == '/page_calendar') {
+  if (currentPage('page_calendar')) {
     status.shortCut = false;
     bottom_bar(
       "<img src='assets/image/add.svg'>",
@@ -3847,17 +3854,17 @@ let nav = function (move) {
   }
 
   if (
-    m.route.get() == '/page_subscriptions' ||
-    m.route.get() == '/page_accounts' ||
-    m.route.get() == '/page_edit_account'
+    currentPage('page_subscriptions') ||
+    currentPage('page_accounts') ||
+    currentPage('page_edit_account')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item');
   }
 
   if (
-    m.route.get() == '/page_add_event' ||
-    m.route.get() == '/page_edit_event'
+    currentPage('page_add_event') ||
+    currentPage('page_edit_event')
   ) {
     items = document.querySelectorAll('.item');
 
@@ -3913,9 +3920,9 @@ let nav = function (move) {
   }
 
   if (
-    m.route.get() == '/page_calendar' ||
-    m.route.get() == '/page_events' ||
-    m.route.get().startsWith('/page_events')
+    currentPage('page_calendar') ||
+      currentPage('page_events') ||
+      currentPageStartsWith('page_events')
   ) {
     try {
       status.selected_day = targetElement.getAttribute('data-date');
@@ -4648,6 +4655,16 @@ let stop_scan_callback = function () {
   document.getElementById('qr-screen').style.display = 'none';
 };
 
+function currentPage(page_name) {
+  let current_page = m.route.get();
+  return current_page == page_name || current_page == '/' + page_name;
+}
+
+function currentPageStartsWith(page_name) {
+  let current_page = m.route.get();
+  return current_page.startsWith(page_name) || current_page.startsWith('/' + page_name);
+}
+
 // ////////////////////////////
 // //KEYPAD HANDLER////////////
 // ////////////////////////////
@@ -4692,49 +4709,49 @@ function longpress_action(param) {
 function shortpress_action(param) {
   switch (param.key) {
     case '*':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         jump_to_today();
       }
-      if (m.route.get() == '/page_events') {
+      if (currentPage('page_events')) {
         find_closest_date(true);
       }
 
       break;
 
     case 'ArrowUp':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         nav(-7);
       }
       if (
-        m.route.get() == '/page_events' ||
-        m.route.get() == '/page_options' ||
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_add_event' ||
-        m.route.get() == '/page_edit_event' ||
-        m.route.get() == '/page_event_templates' ||
-        m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events')
+        currentPage('page_events') ||
+        currentPage('page_options') ||
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_add_event') ||
+        currentPage('page_edit_event') ||
+        currentPage('page_event_templates') ||
+        currentPage('page_list_files') ||
+        currentPageStartsWith('page_events')
       ) {
         nav(-1);
       }
       break;
     case 'ArrowDown':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         nav(+7);
       }
       if (
-        m.route.get() == '/page_events' ||
-        m.route.get() == '/page_options' ||
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_add_event' ||
-        m.route.get() == '/page_edit_event' ||
-        m.route.get() == '/page_event_templates' ||
-        m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events')
+        currentPage('page_events') ||
+        currentPage('page_options') ||
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_add_event') ||
+        currentPage('page_edit_event') ||
+        currentPage('page_event_templates') ||
+        currentPage('page_list_files') ||
+        currentPageStartsWith('page_events')
       ) {
         nav(+1);
       }
@@ -4745,31 +4762,31 @@ function shortpress_action(param) {
 
       break;
     case 'ArrowRight':
-      if (m.route.get() != '/page_calendar') return true;
+      if (!currentPage('page_calendar')) return true;
 
       nav(1);
       break;
     case 'ArrowLeft':
-      if (m.route.get() != '/page_calendar') return true;
+      if (!currentPage('page_calendar')) return true;
 
       nav(-1);
 
       break;
 
     case '1':
-      if (m.route.get() == '/page_calendar') previous();
+      if (currentPage('page_calendar')) previous();
 
       break;
     case '3':
-      if (m.route.get() == '/page_calendar') next();
+      if (currentPage('page_calendar')) next();
       break;
 
     case '2':
-      if (m.route.get() == '/page_calendar') slider_navigation();
+      if (currentPage('page_calendar')) slider_navigation();
       break;
 
     case '5':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         if (document.activeElement.classList.contains('event')) {
           status.shortCut = true;
           bottom_bar(
@@ -4793,13 +4810,14 @@ function shortpress_action(param) {
 
     case 'SoftRight':
     case 'Alt':
-      if (m.route.get().startsWith('/page_events_filtered')) {
+    case 'm':
+      if (currentPageStartsWith('page_events_filtered')) {
         m.route.set('/page_events');
 
         return true;
       }
 
-      if (m.route.get() == '/page_calendar' && status.shortCut) {
+      if (currentPage('page_calendar') && status.shortCut) {
         let n = '';
         let f = document.querySelectorAll('#event-slider article');
         f.forEach((e, i) => {
@@ -4826,17 +4844,17 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_calendar' && !status.shortCut) {
+      if (currentPage('page_calendar') && !status.shortCut) {
         m.route.set('/page_options');
         return true;
       }
 
-      if (m.route.get().startsWith('/page_events')) {
+      if (currentPageStartsWith('page_events')) {
         sort_events();
         return true;
       }
 
-      if (m.route.get().startsWith('/page_add_event')) {
+      if (currentPageStartsWith('page_add_event')) {
         get_contact(callback_get_contact);
       }
 
@@ -4857,10 +4875,10 @@ function shortpress_action(param) {
 
     case 'SoftLeft':
     case 'Control':
-      if (m.route.get() == '/page_event_templates') {
+      if (currentPage('page_event_templates')) {
         delete_template(document.activeElement.getAttribute('data-id'));
       }
-      if (m.route.get().startsWith('/page_events')) {
+      if (currentPageStartsWith('page_events')) {
         if (document.activeElement.classList.contains('subscription')) {
           toaster('a subscription cannot be edited', 2000);
           return false;
@@ -4874,8 +4892,8 @@ function shortpress_action(param) {
         return true;
       }
       if (
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts'
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts')
       ) {
         if (document.activeElement.getAttribute('data-scan-action') == 'true') {
           start_scan(callback_scan);
@@ -4884,7 +4902,7 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_options') {
+      if (currentPage('page_options')) {
         if (
           document.activeElement.getAttribute('data-action') ==
           'delete-subscription'
@@ -4900,7 +4918,7 @@ function shortpress_action(param) {
         }
       }
 
-      if (m.route.get() == '/page_calendar' && status.shortCut) {
+      if (currentPage('page_calendar') && status.shortCut) {
         let n = '';
         let f = document.querySelectorAll('#event-slider article');
         f.forEach((e, i) => {
@@ -4922,7 +4940,7 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         m.route.set('/page_add_event');
 
         return true;
@@ -4964,14 +4982,12 @@ function shortpress_action(param) {
 
       //toggle month/events
 
-      const currentRoute = m.route.get();
-
       if (events.length > 0) {
-        if (currentRoute.startsWith('/page_calendar')) {
+        if (currentPageStartsWith('page_calendar')) {
           document.querySelector('.loading-spinner').style.display = 'block';
         }
 
-        if (currentRoute.startsWith('/page_events')) {
+        if (currentPageStartsWith('page_events')) {
           // Redirect to '/page_calendar' when on '/page_events'
           m.route.set('/page_calendar');
 
@@ -4980,19 +4996,19 @@ function shortpress_action(param) {
             setTimeout(jump_to_today, 1000);
           }
         } else if (
-          currentRoute === '/page_calendar' ||
-          currentRoute === '/page_events'
+            currentPage('page_calendar') ||
+            currentPage('page_events')
         ) {
           // Toggle between '/page_calendar' and '/page_events'
           m.route.set(
-            currentRoute === '/page_calendar'
+              currentPage('page_calendar')
               ? '/page_events'
               : '/page_calendar'
           );
         }
       } else {
         // Display a message when there are no calendar entries
-        if (currentRoute === '/page_calendar') {
+        if (currentPage('page_calendar')) {
           side_toaster('There are no calendar entries to display', 3000);
         }
       }
@@ -5001,36 +5017,36 @@ function shortpress_action(param) {
 
     case 'Backspace':
       if (
-        m.route.get() == '/page_add_event' &&
+        currentPage('page_add_event') &&
         document.activeElement.tagName != 'INPUT'
       ) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_events_filtered') {
+      if (currentPage('page_events_filtered')) {
         m.route.set('/page_calendar');
       }
 
       if (
-        m.route.get() == '/page_edit_event' &&
+        currentPage('page_edit_event') &&
         document.activeElement.tagName != 'INPUT'
       ) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_options') {
+      if (currentPage('page_options')) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_event_templates') {
+      if (currentPage('page_event_templates')) {
         m.route.set('/page_calendar');
       }
 
       if (
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_list_files'
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_list_files')
       ) {
         m.route.set('/page_options');
         if (document.getElementById('qr-screen').style == 'block')
@@ -5077,11 +5093,11 @@ function shortpress_action(param) {
 // //////////////////////////////
 
 function handleKeyDown(evt) {
-  if (evt.key === 'Backspace' && m.route.get() != '/page_calendar') {
+  if (evt.key === 'Backspace' && !currentPage('page_calendar')) {
     evt.preventDefault();
   }
 
-  if (evt.key === 'Backspace' && m.route.get() == '/page_calendar') {
+  if (evt.key === 'Backspace' && currentPage('page_calendar')) {
     if (closing_prohibited == false) window.close();
   }
 
