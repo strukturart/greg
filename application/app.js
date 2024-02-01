@@ -622,7 +622,6 @@ const load_cached_caldav = async () => {
   if (should_be_loaded) {
     load_caldav();
     events = events.filter((e) => !e.isCaldav);
-    console.log('load content');
   }
 };
 
@@ -1033,8 +1032,6 @@ let rrule_check = function (date) {
       let interval = events[t].RRULE.interval;
 
       if (typeof e !== 'undefined' && e !== undefined && e != null) {
-        //recurrences
-
         if (events[t].RRULE != null) {
           //endless || with end
           if (events[t].RRULE.until == null) {
@@ -1055,8 +1052,9 @@ let rrule_check = function (date) {
             ) {
               feedback.event = true;
               feedback.rrule = true;
-              t = events.length;
               feedback.event_data = events[t];
+
+              t = events.length;
               return feedback;
             }
           }
@@ -1073,8 +1071,9 @@ let rrule_check = function (date) {
             ) {
               feedback.rrule = true;
               feedback.event = true;
-              t = events.length;
               feedback.event_data = events[t];
+
+              t = events.length;
 
               return feedback;
             }
@@ -1084,8 +1083,9 @@ let rrule_check = function (date) {
             if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
               feedback.rrule = true;
               feedback.event = true;
-              t = events.length;
               feedback.event_data = events[t];
+
+              t = events.length;
 
               return feedback;
             }
@@ -1100,8 +1100,8 @@ let rrule_check = function (date) {
             ) {
               feedback.rrule = true;
               feedback.event = true;
-              t = events.length;
               feedback.event_data = events[t];
+              t = events.length;
 
               return feedback;
             }
@@ -1178,22 +1178,13 @@ let event_slider = function (date) {
 
   document.querySelector('div#event-slider').innerHTML = '';
 
-  console
-    .log
-
-    // JSON.stringify(event_check(date)) + JSON.stringify(rrule_check(date))
-    ();
-
   if (rrule_check(date).rrule === true) {
-    k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
-    slider.push(rrule_check(date).event_data);
+    slider.push([rrule_check(date).event_data]);
   }
 
   if (event_check(date).event === true) {
-    k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
     slider.push(event_check(date).event_data);
   }
-  console.log(slider);
   /*
   for (let i = 0; i < events.length; i++) {
     let a = new Date(events[i].dateStart).getTime();
@@ -1278,24 +1269,29 @@ let event_slider = function (date) {
 
   if (slider.length >= 0) {
     slider.forEach(function (item) {
-      console.log(item[0]);
-      let l = '';
-      if (!item[0].allDay) {
-        l = dayjs.unix(item[0].dateStartUnix).format('HH:mm');
-      }
+      console.log(item);
 
-      document
-        .querySelector('div#event-slider')
-        .insertAdjacentHTML(
-          'beforeend',
-          "<article data-uid='" +
-            item[0].UID +
-            "'><div class='width-100'>" +
-            item[0].SUMMARY +
-            "</div><div class='width-100'>" +
-            l +
-            '</div></article>'
-        );
+      item.forEach(function (i) {
+        k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
+
+        let l = '';
+        if (!i.allDay) {
+          l = dayjs.unix(i.dateStartUnix).format('HH:mm');
+        }
+
+        document
+          .querySelector('div#event-slider')
+          .insertAdjacentHTML(
+            'beforeend',
+            "<article data-uid='" +
+              i.UID +
+              "'><div class='width-100'>" +
+              i.SUMMARY +
+              "</div><div class='width-100'>" +
+              l +
+              '</div></article>'
+          );
+      });
     });
 
     if (slider.length > 0) {
@@ -1338,14 +1334,14 @@ function next() {
   currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
   currentMonth = (currentMonth + 1) % 12;
   showCalendar(currentMonth, currentYear);
-  event_slider(status.selected_day);
+  // event_slider(status.selected_day);
 }
 
 function previous() {
   currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
   currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   showCalendar(currentMonth, currentYear);
-  event_slider(status.selected_day);
+  //  event_slider(status.selected_day);
 }
 
 let highlight_current_day = function () {
