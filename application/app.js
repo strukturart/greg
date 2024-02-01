@@ -965,6 +965,7 @@ const event_check = function (date) {
   let feedback = {
     event: false,
     multidayevent: false,
+    event_data: '',
   };
 
   let eventsOnTargetDate = events.filter((event) => {
@@ -980,6 +981,7 @@ const event_check = function (date) {
   });
 
   feedback.event = eventsOnTargetDate.length > 0;
+  feedback.event_data = eventsOnTargetDate;
 
   // Check for multiday events
   if (eventsOnTargetDate.length > 1) {
@@ -996,6 +998,7 @@ const event_check = function (date) {
 
       if (prevEventEndTime >= currentEventStartTime) {
         feedback.multidayevent = true;
+        feedback.event_data = eventsOnTargetDate;
         break;
       }
     }
@@ -1175,10 +1178,22 @@ let event_slider = function (date) {
 
   document.querySelector('div#event-slider').innerHTML = '';
 
-  if (rrule_check(p).rrule) {
+  console
+    .log
+
+    // JSON.stringify(event_check(date)) + JSON.stringify(rrule_check(date))
+    ();
+
+  if (rrule_check(date).rrule === true) {
     k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
-    slider.push(rrule_check(p).event_data);
+    slider.push(rrule_check(date).event_data);
   }
+
+  if (event_check(date).event === true) {
+    k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
+    slider.push(event_check(date).event_data);
+  }
+  console.log(slider);
   /*
   for (let i = 0; i < events.length; i++) {
     let a = new Date(events[i].dateStart).getTime();
@@ -1262,10 +1277,11 @@ let event_slider = function (date) {
   */
 
   if (slider.length >= 0) {
-    slider.forEach(function (item, i) {
+    slider.forEach(function (item) {
+      console.log(item[0]);
       let l = '';
-      if (!item.allDay) {
-        l = dayjs.unix(item.dateStartUnix).format('HH:mm');
+      if (!item[0].allDay) {
+        l = dayjs.unix(item[0].dateStartUnix).format('HH:mm');
       }
 
       document
@@ -1273,9 +1289,9 @@ let event_slider = function (date) {
         .insertAdjacentHTML(
           'beforeend',
           "<article data-uid='" +
-            item.UID +
+            item[0].UID +
             "'><div class='width-100'>" +
-            item.SUMMARY +
+            item[0].SUMMARY +
             "</div><div class='width-100'>" +
             l +
             '</div></article>'
