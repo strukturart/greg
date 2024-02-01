@@ -160,21 +160,26 @@ if ('b2g' in navigator) {
     console.log(e);
   }
 } else {
-  try {
-    navigator.serviceWorker
-      .register(new URL('sw.js', import.meta.url), {
-        type: 'module',
-      })
-      .then((registration) => {
-        if (registration.waiting) {
-          setTimeout(() => {
-            window.location.reload(true);
-          }, 1000);
-        } else {
-        }
-      });
-  } catch (e) {
-    console.error('Error during service worker registration:', e);
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    console.log('Service worker found');
+  } else {
+    try {
+      console.log('Try to register service worker');
+      navigator.serviceWorker
+        .register(new URL('sw.js', import.meta.url), {
+          type: 'module',
+        })
+        .then((registration) => {
+          if (registration.waiting) {
+            setTimeout(() => {
+              window.location.reload(true);
+            }, 1000);
+          } else {
+          }
+        });
+    } catch (e) {
+      console.error('Error during service worker registration:', e);
+    }
   }
 }
 
@@ -255,7 +260,6 @@ export let load_settings = function () {
     .catch(function (err) {
       console.log(err);
     });
-  //console.log(settings);
 };
 
 load_settings();
@@ -349,7 +353,7 @@ async function load_caldav(callback = false) {
         console.log('login in');
       }
 
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         document.getElementById('icon-loading').style.visibility = 'visible';
       }
       let calendars;
@@ -398,7 +402,7 @@ async function load_caldav(callback = false) {
         }
       }
 
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         document.getElementById('icon-loading').style.visibility = 'hidden';
         if (callback) side_toaster('all events reloaded', 2000);
       }
@@ -410,7 +414,7 @@ async function load_caldav(callback = false) {
         return;
       }
     } catch (e) {
-      if (m.route.get() === '/page_calendar') {
+      if (currentPage('page_calendar')) {
         closing_prohibited = false;
         document.getElementById('icon-loading').style.visibility = 'hidden';
       }
@@ -1022,6 +1026,7 @@ let rrule_check = function (date) {
       let c = new Date(date).getTime();
       let d = events[t].RRULE.freq;
       let e = events[t].RRULE;
+      let interval = events[t].RRULE.interval;
 
       if (typeof e !== 'undefined' && e !== undefined && e != null) {
         //recurrences
@@ -1029,7 +1034,10 @@ let rrule_check = function (date) {
         if (events[t].RRULE != null) {
           //endless || with end
           if (events[t].RRULE.until == null) {
-            b = new Date('3000-01-01').getTime();
+            b = determine_recurrence_end_date(
+              new Date(events[t].dateStart),
+              events[t].RRULE
+            );
           } else {
             b = new Date(events[t].RRULE.until).getTime();
           }
@@ -1053,7 +1061,10 @@ let rrule_check = function (date) {
 
           if (d == 'WEEKLY') {
             if (
-              new Date(events[t].dateStart).getDay() === new Date(date).getDay()
+              ((interval == null || interval == 1) &&
+                new Date(events[t].dateStart).getDay() ==
+                  new Date(date).getDay()) ||
+              Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
             ) {
               feedback.rrule = true;
               feedback.event = true;
@@ -1127,6 +1138,30 @@ let slider_navigation = function () {
   p[slider_index].classList.add('active');
 };
 
+function determine_recurrence_end_date(dateStart, rrule) {
+  let dt = dayjs(dateStart);
+  if (rrule.count != null) {
+    switch (rrule.freq) {
+      case 'DAILY':
+        return dt.add(rrule.count, 'days').valueOf();
+      case 'MONTHLY':
+        return dt.add(rrule.count, 'months').valueOf();
+      case 'BIWEEKLY':
+        return dt.add(rrule.count * 2, 'weeks').valueOf();
+      case 'WEEKLY':
+        return dt.add(rrule.count, 'weeks').valueOf();
+      case 'YEARLY':
+        return dt.add(rrule.count, 'years').valueOf();
+      default:
+        console.log('Unexpected frequency: ' + rrule.freq);
+        return new Date('3000-01-01').getTime();
+    }
+  }
+  //workaround if enddate is not set, and neither is count.
+  //AKA infinity
+  return new Date('3000-01-01').getTime();
+}
+
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector('div#event-slider-indicator div');
@@ -1138,6 +1173,7 @@ let event_slider = function (date) {
     let b = new Date(events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
     let d = events[i].RRULE.freq;
+    let interval = events[i].RRULE.interval;
 
     if (d === 'none' || d === '' || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
@@ -1145,13 +1181,12 @@ let event_slider = function (date) {
         k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
       }
     } else {
-      //workaround if enddate is not set
-      //AKA infinity
-
-      if (events[i].RRULE != null) {
-        if (events[i].RRULE.until == null) {
-          b = new Date('3000-01-01').getTime();
-        }
+      if (events[i].RRULE != null && events[i].RRULE.until == null) {
+        // apparently until = dateEnd in this case?
+        b = determine_recurrence_end_date(
+          new Date(events[i].dateStart),
+          events[i].RRULE
+        );
       }
 
       if (a === c || b === c || (a < c && b > c)) {
@@ -1174,7 +1209,10 @@ let event_slider = function (date) {
         //WEEK
         if (d == 'WEEKLY') {
           if (
-            new Date(events[i].dateStart).getDay() == new Date(date).getDay()
+            ((interval == null || interval == 1) &&
+              new Date(events[i].dateStart).getDay() ==
+                new Date(date).getDay()) ||
+            Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
           ) {
             slider.push(events[i]);
             k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
@@ -1249,9 +1287,7 @@ let event_slider = function (date) {
   } else {
     document.getElementById('event-slider-indicator').style.opacity = 1;
     document.querySelector('div#event-slider article').style.display = 'block';
-    document
-      .querySelectorAll('div#event-slider .indicator')[0]
-      .style.classList.add('active');
+    document.querySelectorAll('div .indicator')[0].classList.add('active');
   }
 };
 
@@ -1284,7 +1320,7 @@ function previous() {
 }
 
 let highlight_current_day = function () {
-  if (m.route.get() != '/page_calendar') return false;
+  if (!currentPage('page_calendar')) return false;
   setTimeout(function () {
     //reset weekday
     document
@@ -2088,10 +2124,9 @@ export let page_options = {
                   load_settings();
                   setTimeout(function () {
                     focus_after_selection();
-                    if (!settings.default_duration) {
-                      document.querySelector(
-                        '#default-duration-time'
-                      ).value = 30;
+                    if (settings.default_duration == '') {
+                      document.querySelector('#default-duration-time').value =
+                        'none';
                     } else {
                       document.querySelector(
                         '#default-notification-time'
@@ -2101,6 +2136,7 @@ export let page_options = {
                 },
               },
               [
+                m('option', { value: 'none' }, 'none'),
                 m('option', { value: '30' }, '30 minutes'),
                 m('option', { value: '60' }, '60 minutes'),
                 m('option', { value: '120' }, '120 minutes'),
@@ -2954,8 +2990,8 @@ var page_add_event = {
             },
 
             oncreate: function ({ dom }) {
-              console.log('h' + settings.default_duration);
-              if (settings.default_duration) {
+              console.log(settings.default_duration);
+              if (settings.default_duration != '') {
                 dom.value = dayjs()
                   .add(settings.default_duration, 'minutes')
                   .format('HH:mm');
@@ -3834,19 +3870,19 @@ let nav = function (move) {
   let items = 0;
 
   if (
-    m.route.get() == '/page_calendar' ||
-    m.route.get() == '/page_options' ||
-    m.route.get() == '/page_events' ||
-    m.route.get() == '/page_event_templates' ||
-    m.route.get() == '/page_list_files' ||
-    m.route.get().startsWith('/page_events')
+    currentPage('page_calendar') ||
+    currentPage('page_options') ||
+    currentPage('page_events') ||
+    currentPage('page_event_templates') ||
+    currentPage('page_list_files') ||
+    currentPageStartsWith('page_events')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
     status.shortCut = false;
   }
 
-  if (m.route.get() == '/page_calendar') {
+  if (currentPage('page_calendar')) {
     status.shortCut = false;
     bottom_bar(
       "<img src='assets/image/add.svg'>",
@@ -3856,18 +3892,15 @@ let nav = function (move) {
   }
 
   if (
-    m.route.get() == '/page_subscriptions' ||
-    m.route.get() == '/page_accounts' ||
-    m.route.get() == '/page_edit_account'
+    currentPage('page_subscriptions') ||
+    currentPage('page_accounts') ||
+    currentPage('page_edit_account')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item');
   }
 
-  if (
-    m.route.get() == '/page_add_event' ||
-    m.route.get() == '/page_edit_event'
-  ) {
+  if (currentPage('page_add_event') || currentPage('page_edit_event')) {
     items = document.querySelectorAll('.item');
 
     if (document.activeElement.parentNode.classList.contains('input-parent')) {
@@ -3922,9 +3955,9 @@ let nav = function (move) {
   }
 
   if (
-    m.route.get() == '/page_calendar' ||
-    m.route.get() == '/page_events' ||
-    m.route.get().startsWith('/page_events')
+    currentPage('page_calendar') ||
+    currentPage('page_events') ||
+    currentPageStartsWith('page_events')
   ) {
     try {
       status.selected_day = targetElement.getAttribute('data-date');
@@ -4657,6 +4690,19 @@ let stop_scan_callback = function () {
   document.getElementById('qr-screen').style.display = 'none';
 };
 
+function currentPage(page_name) {
+  let current_page = m.route.get();
+  return current_page == page_name || current_page == '/' + page_name;
+}
+
+function currentPageStartsWith(page_name) {
+  let current_page = m.route.get();
+  return (
+    current_page.startsWith(page_name) ||
+    current_page.startsWith('/' + page_name)
+  );
+}
+
 // ////////////////////////////
 // //KEYPAD HANDLER////////////
 // ////////////////////////////
@@ -4701,49 +4747,49 @@ function longpress_action(param) {
 function shortpress_action(param) {
   switch (param.key) {
     case '*':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         jump_to_today();
       }
-      if (m.route.get() == '/page_events') {
+      if (currentPage('page_events')) {
         find_closest_date(true);
       }
 
       break;
 
     case 'ArrowUp':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         nav(-7);
       }
       if (
-        m.route.get() == '/page_events' ||
-        m.route.get() == '/page_options' ||
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_add_event' ||
-        m.route.get() == '/page_edit_event' ||
-        m.route.get() == '/page_event_templates' ||
-        m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events')
+        currentPage('page_events') ||
+        currentPage('page_options') ||
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_add_event') ||
+        currentPage('page_edit_event') ||
+        currentPage('page_event_templates') ||
+        currentPage('page_list_files') ||
+        currentPageStartsWith('page_events')
       ) {
         nav(-1);
       }
       break;
     case 'ArrowDown':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         nav(+7);
       }
       if (
-        m.route.get() == '/page_events' ||
-        m.route.get() == '/page_options' ||
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_add_event' ||
-        m.route.get() == '/page_edit_event' ||
-        m.route.get() == '/page_event_templates' ||
-        m.route.get() == '/page_list_files' ||
-        m.route.get().startsWith('/page_events')
+        currentPage('page_events') ||
+        currentPage('page_options') ||
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_add_event') ||
+        currentPage('page_edit_event') ||
+        currentPage('page_event_templates') ||
+        currentPage('page_list_files') ||
+        currentPageStartsWith('page_events')
       ) {
         nav(+1);
       }
@@ -4754,31 +4800,31 @@ function shortpress_action(param) {
 
       break;
     case 'ArrowRight':
-      if (m.route.get() != '/page_calendar') return true;
+      if (!currentPage('page_calendar')) return true;
 
       nav(1);
       break;
     case 'ArrowLeft':
-      if (m.route.get() != '/page_calendar') return true;
+      if (!currentPage('page_calendar')) return true;
 
       nav(-1);
 
       break;
 
     case '1':
-      if (m.route.get() == '/page_calendar') previous();
+      if (currentPage('page_calendar')) previous();
 
       break;
     case '3':
-      if (m.route.get() == '/page_calendar') next();
+      if (currentPage('page_calendar')) next();
       break;
 
     case '2':
-      if (m.route.get() == '/page_calendar') slider_navigation();
+      if (currentPage('page_calendar')) slider_navigation();
       break;
 
     case '5':
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         if (document.activeElement.classList.contains('event')) {
           status.shortCut = true;
           bottom_bar(
@@ -4802,12 +4848,14 @@ function shortpress_action(param) {
 
     case 'SoftRight':
     case 'Alt':
-      if (m.route.get().startsWith('/page_events_filtered')) {
-        m.route.set('/page_events?query=hey');
+    case 'm':
+      if (currentPageStartsWith('page_events_filtered')) {
+        m.route.set('/page_events');
+
         return true;
       }
 
-      if (m.route.get() == '/page_calendar' && status.shortCut) {
+      if (currentPage('page_calendar') && status.shortCut) {
         let n = '';
         let f = document.querySelectorAll('#event-slider article');
         f.forEach((e, i) => {
@@ -4834,17 +4882,17 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_calendar' && !status.shortCut) {
+      if (currentPage('page_calendar') && !status.shortCut) {
         m.route.set('/page_options');
         return true;
       }
 
-      if (m.route.get().startsWith('/page_events')) {
+      if (currentPageStartsWith('page_events')) {
         sort_events();
         return true;
       }
 
-      if (m.route.get().startsWith('/page_add_event')) {
+      if (currentPageStartsWith('page_add_event')) {
         get_contact(callback_get_contact);
       }
 
@@ -4865,10 +4913,10 @@ function shortpress_action(param) {
 
     case 'SoftLeft':
     case 'Control':
-      if (m.route.get() == '/page_event_templates') {
+      if (currentPage('page_event_templates')) {
         delete_template(document.activeElement.getAttribute('data-id'));
       }
-      if (m.route.get().startsWith('/page_events')) {
+      if (currentPageStartsWith('page_events')) {
         if (document.activeElement.classList.contains('subscription')) {
           toaster('a subscription cannot be edited', 2000);
           return false;
@@ -4881,10 +4929,7 @@ function shortpress_action(param) {
 
         return true;
       }
-      if (
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts'
-      ) {
+      if (currentPage('page_subscriptions') || currentPage('page_accounts')) {
         if (document.activeElement.getAttribute('data-scan-action') == 'true') {
           start_scan(callback_scan);
         }
@@ -4892,7 +4937,7 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_options') {
+      if (currentPage('page_options')) {
         if (
           document.activeElement.getAttribute('data-action') ==
           'delete-subscription'
@@ -4908,7 +4953,7 @@ function shortpress_action(param) {
         }
       }
 
-      if (m.route.get() == '/page_calendar' && status.shortCut) {
+      if (currentPage('page_calendar') && status.shortCut) {
         let n = '';
         let f = document.querySelectorAll('#event-slider article');
         f.forEach((e, i) => {
@@ -4930,7 +4975,7 @@ function shortpress_action(param) {
         return true;
       }
 
-      if (m.route.get() == '/page_calendar') {
+      if (currentPage('page_calendar')) {
         m.route.set('/page_add_event');
 
         return true;
@@ -4972,14 +5017,12 @@ function shortpress_action(param) {
 
       //toggle month/events
 
-      const currentRoute = m.route.get();
-
       if (events.length > 0) {
-        if (currentRoute.startsWith('/page_calendar')) {
+        if (currentPageStartsWith('page_calendar')) {
           document.querySelector('.loading-spinner').style.display = 'block';
         }
 
-        if (currentRoute.startsWith('/page_events')) {
+        if (currentPageStartsWith('page_events')) {
           // Redirect to '/page_calendar' when on '/page_events'
           m.route.set('/page_calendar');
 
@@ -4987,20 +5030,15 @@ function shortpress_action(param) {
           if (document.activeElement.tagName === 'INPUT') {
             setTimeout(jump_to_today, 1000);
           }
-        } else if (
-          currentRoute === '/page_calendar' ||
-          currentRoute === '/page_events'
-        ) {
+        } else if (currentPage('page_calendar') || currentPage('page_events')) {
           // Toggle between '/page_calendar' and '/page_events'
           m.route.set(
-            currentRoute === '/page_calendar'
-              ? '/page_events'
-              : '/page_calendar'
+            currentPage('page_calendar') ? '/page_events' : '/page_calendar'
           );
         }
       } else {
         // Display a message when there are no calendar entries
-        if (currentRoute === '/page_calendar') {
+        if (currentPage('page_calendar')) {
           side_toaster('There are no calendar entries to display', 3000);
         }
       }
@@ -5009,36 +5047,36 @@ function shortpress_action(param) {
 
     case 'Backspace':
       if (
-        m.route.get() == '/page_add_event' &&
+        currentPage('page_add_event') &&
         document.activeElement.tagName != 'INPUT'
       ) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_events_filtered') {
+      if (currentPage('page_events_filtered')) {
         m.route.set('/page_calendar');
       }
 
       if (
-        m.route.get() == '/page_edit_event' &&
+        currentPage('page_edit_event') &&
         document.activeElement.tagName != 'INPUT'
       ) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_options') {
+      if (currentPage('page_options')) {
         m.route.set('/page_calendar');
       }
 
-      if (m.route.get() == '/page_event_templates') {
+      if (currentPage('page_event_templates')) {
         m.route.set('/page_calendar');
       }
 
       if (
-        m.route.get() == '/page_subscriptions' ||
-        m.route.get() == '/page_accounts' ||
-        m.route.get() == '/page_edit_account' ||
-        m.route.get() == '/page_list_files'
+        currentPage('page_subscriptions') ||
+        currentPage('page_accounts') ||
+        currentPage('page_edit_account') ||
+        currentPage('page_list_files')
       ) {
         m.route.set('/page_options');
         if (document.getElementById('qr-screen').style == 'block')
@@ -5085,11 +5123,11 @@ function shortpress_action(param) {
 // //////////////////////////////
 
 function handleKeyDown(evt) {
-  if (evt.key === 'Backspace' && m.route.get() != '/page_calendar') {
+  if (evt.key === 'Backspace' && !currentPage('page_calendar')) {
     evt.preventDefault();
   }
 
-  if (evt.key === 'Backspace' && m.route.get() == '/page_calendar') {
+  if (evt.key === 'Backspace' && currentPage('page_calendar')) {
     if (closing_prohibited == false) window.close();
   }
 
