@@ -282,7 +282,7 @@ let style_calendar_cell = function () {
         if (rrule_check(p).rrule == true) {
           e.classList.add('rrule');
 
-          if (rrule_check(p).count > 1) e.classList.add('multievent');
+          // if (rrule_check(p).count > 1) e.classList.add('multievent');
         }
       });
     } catch (e) {}
@@ -1269,8 +1269,6 @@ let event_slider = function (date) {
 
   if (slider.length >= 0) {
     slider.forEach(function (item) {
-      console.log(item);
-
       item.forEach(function (i) {
         k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
 
@@ -3015,7 +3013,6 @@ var page_add_event = {
             },
 
             oncreate: function ({ dom }) {
-              console.log(settings.default_duration);
               if (settings.default_duration != '') {
                 dom.value = dayjs()
                   .add(settings.default_duration, 'minutes')

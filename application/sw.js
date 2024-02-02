@@ -78,7 +78,6 @@ function parse_ics(
   let imp = null;
 
   vevent.forEach(function (ite) {
-    let n = '';
     let rr_until = '';
     let allday = false;
     let date_start = ite.getFirstPropertyValue('dtstart');
@@ -88,9 +87,48 @@ function parse_ics(
 
     if (date_start.isDate && date_end.isDate) allday = true;
 
+    if (ite.getFirstPropertyValue('summary') == 'test count')
+      console.log(rrule);
+
     if (rrule && typeof rrule === 'object' && rrule.freq) {
-      n = rrule;
-      rr_until = n.until || '';
+      rr_until = new Date('3000-01-01').getTime();
+
+      if (rrule.until !== null) {
+        rr_until = rrule.until;
+
+        switch (rrule.freq) {
+          case 'DAILY':
+            rr_until = dt.add(rrule.count, 'days').valueOf();
+          case 'MONTHLY':
+            rr_until = dt.add(rrule.count, 'months').valueOf();
+          case 'BIWEEKLY':
+            rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+          case 'WEEKLY':
+            rr_until = dt.add(rrule.count, 'weeks').valueOf();
+          case 'YEARLY':
+            rr_until = dt.add(rrule.count, 'years').valueOf();
+          default:
+            rr_until = new Date('3000-01-01').getTime();
+        }
+      } else {
+        let dt = dayjs(date_start);
+        if (rrule.count != null) {
+          switch (rrule.freq) {
+            case 'DAILY':
+              rr_until = dt.add(rrule.count, 'days').valueOf();
+            case 'MONTHLY':
+              rr_until = dt.add(rrule.count, 'months').valueOf();
+            case 'BIWEEKLY':
+              rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+            case 'WEEKLY':
+              rr_until = dt.add(rrule.count, 'weeks').valueOf();
+            case 'YEARLY':
+              rr_until = dt.add(rrule.count, 'years').valueOf();
+            default:
+              rr_until = new Date('3000-01-01').getTime();
+          }
+        }
+      }
     }
     //date start
     let dateStart, timeStart, dateStartUnix;
@@ -109,10 +147,10 @@ function parse_ics(
       timeEnd = a.format('HH:mm:ss');
       dateEndUnix = a.unix();
 
-      if (rr_until != '') {
-        dateEnd = dayjs(n.until).format('YYYY-MM-DD');
-        timeEnd = dayjs(n.until).format('HH:mm:ss');
-        dateEndUnix = new Date(n.until).getTime() / 1000;
+      if (rrule !== null) {
+        dateEnd = dayjs(rr_until).format('YYYY-MM-DD');
+        timeEnd = dayjs(rr_until).format('HH:mm:ss');
+        dateEndUnix = new Date(rr_until).getTime() / 1000;
       }
       //allDay
       if (allday) {
