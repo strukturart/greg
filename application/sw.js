@@ -83,18 +83,29 @@ function parse_ics(
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end = ite.getFirstPropertyValue('dtend');
     if (date_end == null) date_end = date_start;
-    const rrule = ite.getFirstPropertyValue('rrule');
+    let rrule = ite.getFirstPropertyValue('rrule');
 
     if (date_start.isDate && date_end.isDate) allday = true;
-
-    if (ite.getFirstPropertyValue('summary') == 'test count')
-      console.log(rrule);
+    //RRULE
 
     if (rrule && typeof rrule === 'object' && rrule.freq) {
+      //console.log(rrule);
       rr_until = new Date('3000-01-01').getTime();
+
+      if (rrule && typeof rrule === 'object' && rrule.freq) {
+        n = rrule;
+        rr_until = n.until || '';
+      }
+
+      if (ite.getFirstPropertyValue('rrule').isFinite() === false)
+        rr_until = new Date('3000-01-01').getTime();
 
       if (rrule.until !== null) {
         rr_until = rrule.until;
+      }
+
+      if (ite.getFirstPropertyValue('rrule').isByCount()) {
+        let dt = dayjs(date_start);
 
         switch (rrule.freq) {
           case 'DAILY':
@@ -110,26 +121,9 @@ function parse_ics(
           default:
             rr_until = new Date('3000-01-01').getTime();
         }
-      } else {
-        let dt = dayjs(date_start);
-        if (rrule.count != null) {
-          switch (rrule.freq) {
-            case 'DAILY':
-              rr_until = dt.add(rrule.count, 'days').valueOf();
-            case 'MONTHLY':
-              rr_until = dt.add(rrule.count, 'months').valueOf();
-            case 'BIWEEKLY':
-              rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
-            case 'WEEKLY':
-              rr_until = dt.add(rrule.count, 'weeks').valueOf();
-            case 'YEARLY':
-              rr_until = dt.add(rrule.count, 'years').valueOf();
-            default:
-              rr_until = new Date('3000-01-01').getTime();
-          }
-        }
       }
     }
+
     //date start
     let dateStart, timeStart, dateStartUnix;
     if (date_start) {
@@ -147,7 +141,7 @@ function parse_ics(
       timeEnd = a.format('HH:mm:ss');
       dateEndUnix = a.unix();
 
-      if (rrule !== null) {
+      if (rr_until != '') {
         dateEnd = dayjs(rr_until).format('YYYY-MM-DD');
         timeEnd = dayjs(rr_until).format('HH:mm:ss');
         dateEndUnix = new Date(rr_until).getTime() / 1000;
