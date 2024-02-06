@@ -58,7 +58,6 @@ export let export_ical = function (filename, event_data) {
             'dateStartUnix',
             'dateEndUnix',
             'calendar_name',
-            'RRULE',
           ].includes(key)
         ) {
           continue;
@@ -66,10 +65,10 @@ export let export_ical = function (filename, event_data) {
 
         //convert back to ical datetime format with tz
         let value = e[key];
+
         if (typeof value == 'object') {
           try {
             let dateComponents = value.wrappedJSObject._time;
-            console.log(value.wrappedJSObject.timezone);
             let tz = value.wrappedJSObject.timezone;
             // Create a new Date object using the components
             const dateObject = new Date(
@@ -89,6 +88,8 @@ export let export_ical = function (filename, event_data) {
         } else {
           value = ':' + e[key];
         }
+
+        if (key == 'RRULE') value = e[key].toString();
 
         result += `${key}${value}` + '\r\n';
       }
