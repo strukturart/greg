@@ -62,6 +62,34 @@ localforage.getItem('subscriptions').then((e) => {
     subscriptions = e;
   }
 });
+/*
+try {
+  // Retrieve all keys stored in localForage
+  localforage
+    .keys()
+    .then(function (keys) {
+      // Loop through each key
+      keys.forEach(function (key) {
+        // Fetch the value associated with the key
+        localforage
+          .getItem(key)
+          .then(function (value) {
+            // Display the key and value
+            console.log('Key: ', key);
+            console.log('Value: ', value);
+          })
+          .catch(function (err) {
+            // Handle errors if any
+            console.error('Error fetching value for key', key, ':', err);
+          });
+      });
+    })
+    .catch(function (err) {
+      // Handle errors if any
+      console.error('Error fetching keys:', err);
+    });
+} catch (e) {}
+*/
 
 //back to last view
 let view_history = [];
@@ -208,9 +236,6 @@ async function loadCalendarNames() {
           if (e.view == false) calendar_not_visible.push(e.name);
         });
       });
-
-      if (calendar_not_visible.includes('local')) {
-      }
     }
   } catch (err) {
     alert(err);
@@ -243,12 +268,9 @@ export let load_settings = function () {
       if (value == null) return false;
       settings = value;
       localStorage.setItem('background_sync', settings.background_sync);
-
-      if (settings.default_duration === undefined) {
+      if (settings.default_duration == undefined)
         settings.default_duration = 30;
-      }
-
-      if (settings.firstday == 'sunday' || settings.firstday === undefined) {
+      if (settings.firstday == 'sunday' || settings.firstday == undefined) {
         weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       } else {
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -280,6 +302,7 @@ let style_calendar_cell = function () {
         }
 
         if (rrule_check(p).rrule == true) {
+          console.log(rrule_check());
           e.classList.add('rrule');
 
           if (rrule_check(p).count > 1) e.classList.add('multievent');
@@ -353,13 +376,15 @@ async function load_caldav(callback = false) {
         console.log('login in');
       }
 
-      if (currentPage('page_calendar')) {
+      if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'visible';
       }
       let calendars;
       try {
         calendars = await client.fetchCalendars();
       } catch (fetchCalendarsError) {
+        alert(fetchCalendarsError);
+
         // Handle the error (e.g., show a user-friendly message)
         continue; // Skip to the next account in case of fetch failure
       }
@@ -402,19 +427,14 @@ async function load_caldav(callback = false) {
         }
       }
 
-      if (currentPage('page_calendar')) {
+      if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-        if (callback) side_toaster('all events reloaded', 2000);
+        if (callback) side_toaster('all event reloaded', 2000);
       }
       closing_prohibited = false;
       side_toaster('Data loaded', 3000);
-      //background sync close app
-      if (!status.visible && settings.background_sync == 'Yes') {
-        window.close();
-        return;
-      }
     } catch (e) {
-      if (currentPage('page_calendar')) {
+      if (m.route.get() === '/page_calendar') {
         closing_prohibited = false;
         document.getElementById('icon-loading').style.visibility = 'hidden';
       }
@@ -581,7 +601,6 @@ const load_cached_caldav = async () => {
   events = events.filter((e) => !e.isCaldav);
 
   if (!accounts) {
-    console.log('no accounts');
     return false;
   }
 
@@ -622,7 +641,6 @@ const load_cached_caldav = async () => {
   if (should_be_loaded) {
     load_caldav();
     events = events.filter((e) => !e.isCaldav);
-    console.log('load content');
   }
 };
 
@@ -678,8 +696,26 @@ export let create_caldav = async function (
           } catch (e) {
             console.log(e);
           }
-
           parse_ics(event_data, false, event.etag, event.url, event.id, true);
+          //todo: use sw
+          /*
+          if (
+            'serviceWorker' in navigator &&
+            navigator.serviceWorker.controller
+          ) {
+            collectionOfData = {
+              data: event_data,
+              etag: event.etag,
+              url: event.url,
+            };
+            navigator.serviceWorker.controller.postMessage({
+              type: 'parse',
+              t: collectionOfData,
+              e: event.id,
+            });
+          }
+          */
+
           document.querySelector('.loading-spinner').style.display = 'none';
 
           cache_caldav().then(() => {});
@@ -840,8 +876,9 @@ export let sync_caldav_callback = function () {
   load_caldav().then(() => {
     //close app because is background sync
     if (!status.visible) {
+      //pushLocalNotification('greg', 'updated');
       window.close();
-      return;
+      return false;
     }
   });
 };
@@ -965,6 +1002,7 @@ const event_check = function (date) {
   let feedback = {
     event: false,
     multidayevent: false,
+    event_data: '',
   };
 
   let eventsOnTargetDate = events.filter((event) => {
@@ -980,6 +1018,7 @@ const event_check = function (date) {
   });
 
   feedback.event = eventsOnTargetDate.length > 0;
+  feedback.event_data = eventsOnTargetDate;
 
   // Check for multiday events
   if (eventsOnTargetDate.length > 1) {
@@ -996,6 +1035,7 @@ const event_check = function (date) {
 
       if (prevEventEndTime >= currentEventStartTime) {
         feedback.multidayevent = true;
+        feedback.event_data = eventsOnTargetDate;
         break;
       }
     }
@@ -1012,6 +1052,7 @@ let rrule_check = function (date) {
     subscription: false,
     multidayevent: false,
     rrule: 'none',
+    event_data: '',
   };
 
   for (let t = 0; t < events.length; t++) {
@@ -1020,30 +1061,29 @@ let rrule_check = function (date) {
       feedback.multidayevent = false;
       feedback.rrule = false;
       feedback.date = date;
+      feedback.event_data = '';
 
       let a = new Date(events[t].dateStart).getTime();
       let b = new Date(events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
       let d = events[t].RRULE.freq;
       let e = events[t].RRULE;
-      let interval = events[t].RRULE.interval;
 
-      if (typeof e !== 'undefined' && e !== undefined && e != null) {
+      if (e !== undefined && e !== null) {
         //recurrences
 
         if (events[t].RRULE != null) {
           //endless || with end
           if (events[t].RRULE.until == null) {
-            b = determine_recurrence_end_date(
-              new Date(events[t].dateStart),
-              events[t].RRULE
-            );
+            b = new Date('3000-01-01').getTime();
           } else {
             b = new Date(events[t].RRULE.until).getTime();
           }
         }
 
         if (a === c || b === c || (a < c && b > c)) {
+          feedback.event_data = events[t];
+
           if (d == 'MONTHLY') {
             if (
               new Date(events[t].dateStart).getDate() ===
@@ -1051,23 +1091,21 @@ let rrule_check = function (date) {
             ) {
               feedback.event = true;
               feedback.rrule = true;
+
               t = events.length;
+
               return feedback;
             }
           }
 
-          if (d == 'DAILY') {
-          }
-
           if (d == 'WEEKLY') {
             if (
-              ((interval == null || interval == 1) &&
-                new Date(events[t].dateStart).getDay() ==
-                  new Date(date).getDay()) ||
-              Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
+              new Date(events[t].dateStart).getDay() === new Date(date).getDay()
             ) {
               feedback.rrule = true;
               feedback.event = true;
+              feedback.event_data = events[t];
+
               t = events.length;
 
               return feedback;
@@ -1078,6 +1116,8 @@ let rrule_check = function (date) {
             if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
               feedback.rrule = true;
               feedback.event = true;
+              feedback.event_data = events[t];
+
               t = events.length;
 
               return feedback;
@@ -1093,6 +1133,8 @@ let rrule_check = function (date) {
             ) {
               feedback.rrule = true;
               feedback.event = true;
+              feedback.event_data = events[t];
+
               t = events.length;
               return feedback;
             }
@@ -1138,30 +1180,6 @@ let slider_navigation = function () {
   p[slider_index].classList.add('active');
 };
 
-function determine_recurrence_end_date(dateStart, rrule) {
-  let dt = dayjs(dateStart);
-  if (rrule.count != null) {
-    switch (rrule.freq) {
-      case 'DAILY':
-        return dt.add(rrule.count, 'days').valueOf();
-      case 'MONTHLY':
-        return dt.add(rrule.count, 'months').valueOf();
-      case 'BIWEEKLY':
-        return dt.add(rrule.count * 2, 'weeks').valueOf();
-      case 'WEEKLY':
-        return dt.add(rrule.count, 'weeks').valueOf();
-      case 'YEARLY':
-        return dt.add(rrule.count, 'years').valueOf();
-      default:
-        console.log('Unexpected frequency: ' + rrule.freq);
-        return new Date('3000-01-01').getTime();
-    }
-  }
-  //workaround if enddate is not set, and neither is count.
-  //AKA infinity
-  return new Date('3000-01-01').getTime();
-}
-
 let event_slider = function (date) {
   slider = [];
   let k = document.querySelector('div#event-slider-indicator div');
@@ -1173,20 +1191,19 @@ let event_slider = function (date) {
     let b = new Date(events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
     let d = events[i].RRULE.freq;
-    let interval = events[i].RRULE.interval;
 
     if (d === 'none' || d === '' || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
         slider.push(events[i]);
-        k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
       }
     } else {
-      if (events[i].RRULE != null && events[i].RRULE.until == null) {
-        // apparently until = dateEnd in this case?
-        b = determine_recurrence_end_date(
-          new Date(events[i].dateStart),
-          events[i].RRULE
-        );
+      //workaround if enddate is not set
+      //AKA infinity
+
+      if (events[i].RRULE != null) {
+        if (events[i].RRULE.until == null) {
+          b = new Date('3000-01-01').getTime();
+        }
       }
 
       if (a === c || b === c || (a < c && b > c)) {
@@ -1202,20 +1219,15 @@ let event_slider = function (date) {
             pp.getDate() + '-' + pp.getMonth()
           ) {
             slider.push(events[i]);
-            k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
           }
         }
 
         //WEEK
         if (d == 'WEEKLY') {
           if (
-            ((interval == null || interval == 1) &&
-              new Date(events[i].dateStart).getDay() ==
-                new Date(date).getDay()) ||
-            Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (interval * 7) == 0
+            new Date(events[i].dateStart).getDay() == new Date(date).getDay()
           ) {
             slider.push(events[i]);
-            k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
           }
         }
 
@@ -1223,7 +1235,6 @@ let event_slider = function (date) {
         if (d == 'BIWEEKLY') {
           if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
             slider.push(events[i]);
-            k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
           }
         }
 
@@ -1234,14 +1245,12 @@ let event_slider = function (date) {
             new Date(events[i].dateStart).getDate() == new Date(date).getDate()
           ) {
             slider.push(events[i]);
-            k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
           }
         }
 
         if (d == 'DAILY') {
           if (a === c || b === c || (a < c && b > c)) {
             slider.push(events[i]);
-            k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
           }
         }
       }
@@ -1249,7 +1258,9 @@ let event_slider = function (date) {
   }
 
   if (slider.length >= 0) {
-    slider.forEach(function (item, i) {
+    slider.forEach(function (item) {
+      k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
+
       let l = '';
       if (!item.allDay) {
         l = dayjs.unix(item.dateStartUnix).format('HH:mm');
@@ -1287,7 +1298,9 @@ let event_slider = function (date) {
   } else {
     document.getElementById('event-slider-indicator').style.opacity = 1;
     document.querySelector('div#event-slider article').style.display = 'block';
-    document.querySelectorAll('div .indicator')[0].classList.add('active');
+    document
+      .querySelectorAll('div#event-slider .indicator')[0]
+      .style.classList.add('active');
   }
 };
 
@@ -1320,7 +1333,7 @@ function previous() {
 }
 
 let highlight_current_day = function () {
-  if (!currentPage('page_calendar')) return false;
+  if (m.route.get() != '/page_calendar') return false;
   setTimeout(function () {
     //reset weekday
     document
@@ -1669,11 +1682,9 @@ var page_events = {
         oninit: () => {
           view_history_update();
           status.shortCut = false;
-          if (query == '' || query == undefined) {
-            sort_array(events, 'dateStartUnix', 'number').then(() => {});
-          } else {
-            console.log(query);
-          }
+          sort_array(events, 'dateStartUnix', 'number').then(() => {
+            console.log('sorted');
+          });
         },
         onremove: () => {
           status.selected_day =
@@ -1685,11 +1696,7 @@ var page_events = {
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          if (query == '' || query == undefined) {
-            find_closest_date();
-          } else {
-            console.log(query);
-          }
+          find_closest_date();
 
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
@@ -1703,6 +1710,7 @@ var page_events = {
         class: 'width-90 item',
         id: 'search',
         tabIndex: 0,
+        oncreate: ({ dom }) => {},
         onfocus: () => {
           window.scroll({
             top: 20,
@@ -1723,6 +1731,7 @@ var page_events = {
           if (item.allDay) {
             se = 'all day';
           } else {
+            //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
             se = formatDT(item.DTSTART._time).format('HH:mm');
           }
 
@@ -2124,19 +2133,13 @@ export let page_options = {
                   load_settings();
                   setTimeout(function () {
                     focus_after_selection();
-                    if (settings.default_duration == '') {
-                      document.querySelector('#default-duration-time').value =
-                        'none';
-                    } else {
-                      document.querySelector(
-                        '#default-notification-time'
-                      ).value = settings.default_duration;
-                    }
+
+                    document.querySelector('#default-duration-time').value =
+                      settings.default_duration;
                   }, 1000);
                 },
               },
               [
-                m('option', { value: 'none' }, 'none'),
                 m('option', { value: '30' }, '30 minutes'),
                 m('option', { value: '60' }, '60 minutes'),
                 m('option', { value: '120' }, '120 minutes'),
@@ -2991,13 +2994,9 @@ var page_add_event = {
 
             oncreate: function ({ dom }) {
               console.log(settings.default_duration);
-              if (settings.default_duration != '') {
-                dom.value = dayjs()
-                  .add(settings.default_duration, 'minutes')
-                  .format('HH:mm');
-              } else {
-                dom.value = dayjs().add(1, 'hour').format('HH:mm');
-              }
+              dom.value = dayjs()
+                .add(settings.default_duration, 'minutes')
+                .format('HH:mm');
             },
           }),
         ]),
@@ -3492,6 +3491,8 @@ let cb = function (result) {
 
 let callback_getfile = function (result) {
   try {
+    //todo: use sw
+
     parse_ics(result, false, '', '', 'local-id', false);
 
     let only_local_events = events.filter((events) => events.id == 'local-id');
@@ -3632,7 +3633,9 @@ let store_settings = function () {
 
   localforage
     .setItem('settings', settings)
-    .then(function () {})
+    .then(function () {
+      load_settings();
+    })
     .catch(function (err) {
       console.log(err);
     });
@@ -3870,19 +3873,19 @@ let nav = function (move) {
   let items = 0;
 
   if (
-    currentPage('page_calendar') ||
-    currentPage('page_options') ||
-    currentPage('page_events') ||
-    currentPage('page_event_templates') ||
-    currentPage('page_list_files') ||
-    currentPageStartsWith('page_events')
+    m.route.get() == '/page_calendar' ||
+    m.route.get() == '/page_options' ||
+    m.route.get() == '/page_events' ||
+    m.route.get() == '/page_event_templates' ||
+    m.route.get() == '/page_list_files' ||
+    m.route.get().startsWith('/page_events')
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item:not([style*="display: none"]');
     status.shortCut = false;
   }
 
-  if (currentPage('page_calendar')) {
+  if (m.route.get() == '/page_calendar') {
     status.shortCut = false;
     bottom_bar(
       "<img src='assets/image/add.svg'>",
@@ -3892,15 +3895,18 @@ let nav = function (move) {
   }
 
   if (
-    currentPage('page_subscriptions') ||
-    currentPage('page_accounts') ||
-    currentPage('page_edit_account')
+    m.route.get() == '/page_subscriptions' ||
+    m.route.get() == '/page_accounts' ||
+    m.route.get() == '/page_edit_account'
   ) {
     let b = document.activeElement.parentNode.parentNode;
     items = b.querySelectorAll('.item');
   }
 
-  if (currentPage('page_add_event') || currentPage('page_edit_event')) {
+  if (
+    m.route.get() == '/page_add_event' ||
+    m.route.get() == '/page_edit_event'
+  ) {
     items = document.querySelectorAll('.item');
 
     if (document.activeElement.parentNode.classList.contains('input-parent')) {
@@ -3955,9 +3961,9 @@ let nav = function (move) {
   }
 
   if (
-    currentPage('page_calendar') ||
-    currentPage('page_events') ||
-    currentPageStartsWith('page_events')
+    m.route.get() == '/page_calendar' ||
+    m.route.get() == '/page_events' ||
+    m.route.get().startsWith('/page_events')
   ) {
     try {
       status.selected_day = targetElement.getAttribute('data-date');
@@ -4024,8 +4030,6 @@ let remove_alarm = function (id) {
           req.onerror = function () {
             console.log('An error occurred: ' + this.error.name);
           };
-        } else {
-          console.log('no alarm founded');
         }
       });
     };
@@ -4051,8 +4055,6 @@ let remove_alarm = function (id) {
             req.onerror = function () {
               console.log('An error occurred: ' + this.error.name);
             };
-          } else {
-            console.log('no alarm founded');
           }
         });
       };
@@ -4278,9 +4280,16 @@ let store_event = function (db_id, cal_name) {
       delete event.RRULE;
     }
 
+    if (event.RRULE != '') {
+      event.DTEND =
+        ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
+    }
+
     try {
       dd = dd.trim();
+      //todo: use sw
       parse_ics(dd, false, '', '', 'local-id', false, bn);
+
       sort_array(events, 'dateStartUnix', 'number');
     } catch (e) {
       console.log(e);
@@ -4521,6 +4530,7 @@ let update_event = function (etag, url, id, db_id, uid) {
 
   if (db_id == 'local-id') {
     try {
+      //todo: use sw
       parse_ics(dd, false, '', '', 'local-id', false, event.alarm);
     } catch (e) {
       console.log(e);
@@ -4545,6 +4555,8 @@ let update_event = function (etag, url, id, db_id, uid) {
       });
   } else {
     try {
+      //todo: use sw
+
       parse_ics(dd, false, '', '', db_id, false, event.alarm);
       style_calendar_cell(currentYear, currentMonth);
     } catch (e) {
@@ -5106,14 +5118,16 @@ function shortpress_action(param) {
       break;
 
     case '0':
-      if (!settings.eventsfilter) {
-        side_toaster(
-          'no category selected, you can do that in the settings',
-          4000
-        );
+      if (currentPage('page_calendar') || currentPage('page_events')) {
+        if (!settings.eventsfilter) {
+          side_toaster(
+            'no category selected, you can do that in the settings',
+            4000
+          );
+        }
+        if (document.activeElement.tagName == 'INPUT') return false;
+        m.route.set('/page_events_filtered', { query: settings.eventsfilter });
       }
-      if (document.activeElement.tagName == 'INPUT') return false;
-      m.route.set('/page_events_filtered', { query: settings.eventsfilter });
       break;
   }
 }
