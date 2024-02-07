@@ -57,11 +57,9 @@ let last_sync = localStorage.getItem('last_sync') || '';
 
 let subscriptions = [];
 localforage.getItem('subscriptions').then((e) => {
-  if (e == null) {
-  } else {
-    subscriptions = e;
-  }
+  console.log(e);
 });
+console.log('ddd' + subscriptions);
 /*
 try {
   // Retrieve all keys stored in localForage
@@ -274,7 +272,18 @@ let load_or_create_local_account = () => {
     .then((value) => {
       if (value != null) {
         local_account.data = value.data;
-        console.log(local_account);
+
+        local_account.data.forEach((e) => {
+          try {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'parse',
+              t: e,
+              e: 'local-id',
+            });
+          } catch (e) {
+            console.log('send to sw');
+          }
+        });
       } else {
         // If local_account doesn't exist, create it
         localforage
@@ -335,9 +344,7 @@ let style_calendar_cell = function () {
         }
 
         if (rrule_check(p).rrule == true) {
-          console.log(rrule_check());
           e.classList.add('rrule');
-
           if (rrule_check(p).count > 1) e.classList.add('multievent');
         }
       });
@@ -461,7 +468,11 @@ async function load_caldav(callback = false) {
       }
 
       if (m.route.get() === '/page_calendar') {
-        document.getElementById('icon-loading').style.visibility = 'hidden';
+        try {
+          try {
+            document.getElementById('icon-waiting').style.visibility = 'hidden';
+          } catch (e) {}
+        } catch (e) {}
         if (callback) side_toaster('all event reloaded', 2000);
       }
       closing_prohibited = false;
@@ -469,7 +480,9 @@ async function load_caldav(callback = false) {
     } catch (e) {
       if (m.route.get() === '/page_calendar') {
         closing_prohibited = false;
-        document.getElementById('icon-loading').style.visibility = 'hidden';
+        try {
+          document.getElementById('icon-waiting').style.visibility = 'hidden';
+        } catch (e) {}
       }
     }
   }
@@ -1124,6 +1137,7 @@ let rrule_check = function (date) {
             ) {
               feedback.event = true;
               feedback.rrule = true;
+              feedback.event_data = events[t];
 
               t = events.length;
 
@@ -3161,6 +3175,7 @@ var page_add_event = {
     bottom_bar('', '', '');
   },
 };
+
 var page_edit_event = {
   view: function () {
     return m(
@@ -3678,24 +3693,29 @@ let callback_scan = function (url) {
   document.activeElement.value = url;
 };
 
-let store_subscription = function () {
+let store_subscription = () => {
+  let id;
+  if (subscriptions == null) subscriptions = [];
+
   if (
     validate(document.getElementById('cal-subs-url').value) &&
     document.getElementById('cal-subs-name').value != ''
   ) {
-    let id = uid(32);
+    id = uid(32);
+
     subscriptions.push({
       url: document.getElementById('cal-subs-url').value,
       name: document.getElementById('cal-subs-name').value,
       id: id,
     });
 
-    document.querySelector('input#cal-subs-name').val = '';
-    document.querySelector('input#cal-subs-url').val = '';
+    document.querySelector('input#cal-subs-name').value = '';
+    document.querySelector('input#cal-subs-url').value = '';
 
     localforage.setItem('subscriptions', subscriptions).then(function (value) {
       m.route.set('/page_options');
     });
+
     //create db to store data
     localforage
       .setItem(id, '')
@@ -4309,7 +4329,7 @@ let store_event = function (db_id, cal_name) {
     '\nEND:VEVENT\nEND:VCALENDAR';
 
   if (event.id == 'local-id') {
-    if (!event.RRULE) {
+    if (!event.RRULE || event.RRULE == '') {
       delete event.RRULE;
     }
 
@@ -4320,33 +4340,27 @@ let store_event = function (db_id, cal_name) {
 
     try {
       dd = dd.trim();
-      //todo: use sw
-      parse_ics(dd, false, '', '', 'local-id', false, bn);
-      sort_array(events, 'dateStartUnix', 'number');
 
       local_account.data.push({ uid: event.UID, data: dd });
 
       localforage
         .setItem('local_account', local_account)
-        .then(function () {})
+        .then(function () {
+          try {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'parse',
+              t: { uid: event.UID, data: dd },
+              e: 'local-id',
+            });
+          } catch (e) {
+            console.log('send to sw');
+          }
+          get_last_view();
+        })
         .catch(function (err) {});
     } catch (e) {
       console.log(e);
     }
-
-    let without_subscription = events.filter(
-      (events) => events.id == 'local-id'
-    );
-
-    localforage
-      .setItem('events', without_subscription)
-      .then(function () {
-        get_last_view();
-        backup_events();
-      })
-      .catch(function (err) {
-        side_toaster('no data to export', 2000);
-      });
   } else {
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
@@ -4564,34 +4578,34 @@ let update_event = function (etag, url, id, db_id, uid) {
     '\nEND:VEVENT\nEND:VCALENDAR';
 
   events = events.filter((person) => person.UID != uid);
-  //remove orginal event
-  //to replace with new content
 
   if (db_id == 'local-id') {
-    try {
-      //todo: use sw
-      parse_ics(dd, false, '', '', 'local-id', false, event.alarm);
-    } catch (e) {
-      console.log(e);
-    }
-
-    let without_subscription = events.filter(
-      (events) => events.id == 'local-id'
+    // Find the index of the object with the matching UID
+    const index = local_account.data.findIndex(
+      (item) => item.uid === event.UID
     );
 
+    if (index !== -1) {
+      local_account.data[index].data = dd;
+    }
+
     localforage
-      .setItem('events', without_subscription)
+      .setItem('local_account', local_account)
       .then(function () {
+        try {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'parse',
+            t: { uid: event.UID, data: dd },
+            e: 'local-id',
+          });
+        } catch (e) {
+          console.log('send to sw');
+        }
         clear_form();
-        backup_events();
-        setTimeout(function () {
-          get_last_view();
-        }, 200);
+
+        get_last_view();
       })
-      .catch(function (err) {
-        console.log(err);
-        side_toaster('no data to export', 2000);
-      });
+      .catch(function (err) {});
   } else {
     try {
       //todo: use sw
@@ -4658,25 +4672,22 @@ let delete_event = function (etag, url, account_id, uid) {
   } else {
     //remove event
 
-    events = events.filter((person) => person.UID != uid);
-    remove_alarm(uid);
-    //store only local events
-    let without_subscription = events.filter(
-      (event) => event.id === 'local-id'
-    );
+    // Find the index of the object with the matching UID
+    const index = local_account.data.findIndex((item) => item.uid === uid);
+    if (index !== -1) {
+      local_account.data.splice(index, 1);
+      events = events.filter((person) => person.UID != uid);
 
-    localforage
-      .setItem('events', without_subscription)
-      .then(function (value) {
-        backup_events();
-        setTimeout(() => {
-          style_calendar_cell(currentYear, currentMonth);
+      localforage
+        .setItem('local_account', local_account)
+        .then(function () {
           get_last_view();
-        }, 1000);
-      })
-      .catch(function (err) {
-        console.log(err);
-      });
+          style_calendar_cell(currentYear, currentMonth);
+        })
+        .catch(function (err) {});
+    }
+
+    remove_alarm(uid);
   }
 };
 
@@ -5248,7 +5259,9 @@ channel.addEventListener('message', (event) => {
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
-    document.getElementById('icon-waiting').style.visibility = 'visible';
+    try {
+      document.getElementById('icon-waiting').style.visibility = 'visible';
+    } catch (e) {}
 
     if (
       event.data.content != false &&
@@ -5262,7 +5275,9 @@ channel.addEventListener('message', (event) => {
     }
   }
   if (event.data.action == 'error') {
-    document.getElementById('icon-waiting').style.visibility = 'hidden';
+    try {
+      document.getElementById('icon-waiting').style.visibility = 'hidden';
+    } catch (e) {}
   }
 });
 
@@ -5274,7 +5289,9 @@ let interval = () => {
     if (currentTime - lastMessageTime >= waitTimeout) {
       style_calendar_cell(currentYear, currentMonth);
 
-      document.getElementById('icon-waiting').style.visibility = 'hidden';
+      try {
+        document.getElementById('icon-waiting').style.visibility = 'hidden';
+      } catch (e) {}
       running = false;
       sort_array(events, 'dateStartUnix', 'number');
       interval_is_running = false;

@@ -68,6 +68,7 @@ function parse_ics(
     jcalData = ICAL.parse(data);
   } catch (e) {
     channel.postMessage({ action: 'error', content: 'error' });
+    console.log(e);
   }
 
   var comp = new ICAL.Component(jcalData);
