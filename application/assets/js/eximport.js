@@ -298,39 +298,3 @@ function share(url, name) {
   activity.onsuccess = function () {};
   activity.onerror = function () {};
 }
-
-// ///////////////////////
-// ///Load ICS///////////
-// /////////////////////
-
-export function loadICS(filename, callback) {
-  var sdcard = navigator.getDeviceStorage('sdcard');
-
-  if ('b2g' in Navigator) {
-    sdcard = navigator.b2g.getDeviceStorage('sdcard');
-  }
-
-  var request = sdcard.get(filename);
-
-  request.onsuccess = function () {
-    var file = this.result;
-
-    let reader = new FileReader();
-
-    reader.onerror = function (event) {
-      side_toaster("can't read file", 3000);
-      reader.abort();
-    };
-
-    reader.onloadend = function (event) {
-      parse_ics(event.target.result, callback, true, false);
-      document.getElementById('import-text').style.display = 'block';
-    };
-
-    reader.readAsText(file);
-  };
-
-  request.onerror = function () {
-    console.warn('Unable to get the file: ' + this.error);
-  };
-}

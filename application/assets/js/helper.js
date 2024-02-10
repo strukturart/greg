@@ -15,6 +15,8 @@ export let autocomplete = function (e, key) {
     e.remove();
   });
 
+  if (events.length == 0) return;
+
   let matches = events.filter(function (val, i) {
     if (events[i][key].indexOf(e) >= 0) return events[i];
   });
@@ -423,10 +425,6 @@ export let list_files = function (filetype, callback) {
 };
 
 //polyfill
-if (window.NodeList && !NodeList.prototype.forEach) {
-  NodeList.prototype.forEach = Array.prototype.forEach;
-}
-
 function share(url) {
   var activity = new MozActivity({
     name: 'share',
@@ -651,6 +649,7 @@ try {
   if ('mozAlarms' in navigator) {
     navigator.mozSetMessageHandler('alarm', function (alarm) {
       if (alarm.data.note == 'keep alive') {
+        status.background_sync_running = true;
         wakeLookCPU();
         remove_sync_alarm();
         if (localStorage.getItem('background_sync') == 'Yes') {

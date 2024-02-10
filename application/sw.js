@@ -61,13 +61,16 @@ function parse_ics(
   url,
   account_id,
   isCaldav,
-  alarm
+  alarm,
+  notification,
+  store
 ) {
   let jcalData;
   try {
     jcalData = ICAL.parse(data);
   } catch (e) {
     channel.postMessage({ action: 'error', content: 'error' });
+    console.log(e);
   }
 
   var comp = new ICAL.Component(jcalData);
@@ -186,7 +189,17 @@ function parse_ics(
       id: account_id,
     };
   });
-  return imp;
+
+  let a = { parsed_data: imp };
+  if (store) {
+    a.raw_data = data;
+  }
+
+  if (store) {
+    a.notification = true;
+  }
+
+  return a;
 }
 
 //loggin
@@ -324,7 +337,9 @@ self.addEventListener('message', async (event) => {
         event.data.t.url,
         event.data.e,
         true,
-        false
+        false,
+        event.data.notification || false,
+        event.data.store || false
       );
 
       // Post the result back to the main thread
