@@ -61,25 +61,36 @@ export let load_ads = function () {
 // Get a reference to the element you want to add the focus event listener to
 
 //KaiOS ads
+
 export let getManifest = function (callback) {
-  if (!navigator.mozApps) {
-    return false;
+  if (navigator.mozApps) {
+    let self = navigator.mozApps.getSelf();
+    self.onsuccess = function () {
+      callback(self.result);
+    };
+    self.onerror = function () {};
   }
-  let self = navigator.mozApps.getSelf();
-  self.onsuccess = function () {
-    callback(self.result);
-  };
-  self.onerror = function () {};
+
+  if ('b2g' in navigator) {
+    fetch('/manifest.webmanifest')
+      .then((r) => r.json())
+      .then((r) => callback(r.b2g_features));
+  }
 };
 
 //KaiOs store true||false
 export function manifest(a) {
-  self = a.origin;
-  document.getElementById('version').innerText =
-    'Version: ' + a.manifest.version;
-  if (a.installOrigin == 'app://kaios-plus.kaiostech.com') {
-    settings.ads = true;
-  } else {
+  if (navigator.mozApps) {
+    self = a.origin;
+    document.querySelector('#version kbd').innerText = a.manifest.version;
+    if (a.installOrigin == 'app://kaios-plus.kaiostech.com') {
+      settings.ads = true;
+    } else {
+      settings.ads = true;
+    }
+  }
+  if ('b2g' in navigator) {
+    document.querySelector('#version kbd').innerText = a.version;
     settings.ads = true;
   }
 }

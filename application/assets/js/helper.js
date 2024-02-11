@@ -69,7 +69,13 @@ export let formatDT = (dt) => {
   );
 };
 
-export async function sort_array(arr, itemKey, type, sortDirection = 'desc') {
+export async function sort_array(
+  arr,
+  itemKey,
+  type,
+  sortDirection = 'desc',
+  value
+) {
   // Define a function for comparing dates
   function compareDates(a, b) {
     if (sortDirection === 'desc') {
@@ -103,22 +109,8 @@ export async function sort_array(arr, itemKey, type, sortDirection = 'desc') {
 
   // Define a function for comparing dates in 'lastmod' case
   function compareDateObjects(a, b) {
-    const dateA = new Date(
-      a['LAST-MODIFIED']['_time'].year,
-      a['LAST-MODIFIED']['_time'].month - 1,
-      a['LAST-MODIFIED']['_time'].day,
-      a['LAST-MODIFIED']['_time'].hour,
-      a['LAST-MODIFIED']['_time'].minute,
-      a['LAST-MODIFIED']['_time'].second
-    );
-    const dateB = new Date(
-      b['LAST-MODIFIED']['_time'].year,
-      b['LAST-MODIFIED']['_time'].month - 1,
-      b['LAST-MODIFIED']['_time'].day,
-      b['LAST-MODIFIED']['_time'].hour,
-      b['LAST-MODIFIED']['_time'].minute,
-      b['LAST-MODIFIED']['_time'].second
-    );
+    const dateA = new Date(b['modified']);
+    const dateB = new Date(a['modified']);
 
     if (sortDirection === 'desc') {
       return dateB - dateA; // Reverse order

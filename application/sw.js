@@ -62,7 +62,7 @@ function parse_ics(
   account_id,
   isCaldav,
   alarm,
-  notification,
+  callback,
   store
 ) {
   let jcalData;
@@ -182,20 +182,23 @@ function parse_ics(
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || 'none',
-      etag: etag,
+      etag: etag || '',
       url: url,
       calendar_name: calendar_name,
       id: account_id,
+      modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
   });
 
+  //when importing data callback to store
   let a = { parsed_data: imp };
   if (store) {
     a.raw_data = data;
   }
 
-  if (store) {
-    a.notification = true;
+  //callback or not
+  if (callback) {
+    a.calback = true;
   }
 
   return a;
@@ -335,9 +338,9 @@ self.addEventListener('message', async (event) => {
         event.data.t.etag,
         event.data.t.url,
         event.data.e,
-        true,
+        event.data.e == 'local-id' ? false : true,
         false,
-        event.data.notification || false,
+        event.data.callback || false,
         event.data.store || false
       );
 
