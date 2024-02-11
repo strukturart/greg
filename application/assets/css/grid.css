@@ -559,6 +559,14 @@
   min-height: 100vh;
 }
 
+.width-95 {
+  min-width: 95%;
+}
+
+.width-98 {
+  min-width: 98%;
+}
+
 .width-50 {
   min-width: 50%;
 }
