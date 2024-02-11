@@ -1722,9 +1722,6 @@ var page_events = {
         oninit: () => {
           view_history_update();
           status.shortCut = false;
-          sort_array(events, 'dateStartUnix', 'number').then(() => {
-            console.log('sorted');
-          });
         },
         onremove: () => {
           status.selected_day =
@@ -1736,7 +1733,7 @@ var page_events = {
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          find_closest_date();
+          if (query == undefined) find_closest_date();
 
           bottom_bar(
             "<img src='assets/image/pencil.svg'>",
@@ -1745,24 +1742,129 @@ var page_events = {
           );
         },
       },
+
       m('input', {
         type: 'search',
-        class: 'width-90 item',
+        class: 'width-98 item',
         id: 'search',
         tabIndex: 0,
-        oncreate: ({ dom }) => {},
         onfocus: () => {
           window.scroll({
             top: 20,
             left: 0,
             behavior: 'smooth',
           });
+          document.querySelector('#filter-menu').style.display = 'none';
         },
         oninput: () => {
           search_events(document.activeElement.value);
         },
       }),
+      /*
+      m(
+        'div',
+        {
+          id: 'filter-menu',
+          class: 'flex justify-content-spacearound',
+          oncreate: function (vnode) {
+            vnode.dom.style.display = 'none';
+          },
+          onfocus: () => {
+            window.scroll({
+              top: 20,
+              left: 0,
+              behavior: 'smooth',
+            });
+          },
+        },
+        [
+          m(
+            'button',
+            {
+              class: 'item',
+              tabindex: 0,
+
+              onkeyup: (event) => {
+                if (event.key === 'Enter') {
+                  sort_array(events, 'lastmod', 'date');
+                  document.querySelector('#filter-menu').style.display = 'none';
+                }
+              },
+            },
+            'by last modified'
+          ),
+          m(
+            'button',
+            {
+              class: 'item',
+              tabindex: 0,
+
+              onkeyup: (event) => {
+                if (event.key === 'Enter') {
+                  sort_array(events, 'dateStartUnix', 'date', 'asc');
+                  document.querySelector('#filter-menu').style.display = 'none';
+                }
+              },
+            },
+            'latest on top'
+          ),
+          m(
+            'button',
+            {
+              class: 'item',
+              tabindex: 0,
+
+              onkeyup: (event) => {
+                if (event.key === 'Enter') {
+                  sort_array(events, 'dateStartUnix', 'date', 'desc');
+                  document.querySelector('#filter-menu').style.display = 'none';
+                }
+              },
+            },
+            'newest on top'
+          ),
+          m(
+            'button',
+            {
+              class: 'item category-filter-button',
+              tabindex: 0,
+
+              oncreate: () => {
+                if (settings.eventsfilter == undefined) {
+                  document.querySelector(
+                    '.category-filter-button'
+                  ).style.display = 'none';
+                }
+              },
+              onkeyup: (event) => {
+                if (event.key === 'Enter') {
+                  m.route.set('/page_events_filtered', {
+                    query: settings.eventsfilter,
+                  });
+                }
+              },
+            },
+            'show only category: ' + settings.eventsfilter
+          ),
+        ]
+      ),
+      */
       [
+        m(
+          'button',
+          {
+            class: 'item',
+            tabindex: 0,
+            /*
+            onkeyup: (event) => {
+              if (event.key === 'Enter') {
+                sort_array(events, 'lastmod', 'date');
+                document.querySelector('#filter-menu').style.display = 'none';
+              }
+            },*/
+          },
+          'by last modified'
+        ),
         events.map(function (item, index) {
           let de,
             se = '';
@@ -1771,7 +1873,6 @@ var page_events = {
           if (item.allDay) {
             se = 'all day';
           } else {
-            //se = dayjs.unix(item.dateStartUnix).format('HH:mm');
             se = formatDT(item.DTSTART._time).format('HH:mm');
           }
 
@@ -1805,10 +1906,10 @@ var page_events = {
             'article',
             {
               class: 'item events ' + u + ' ' + a,
-              tabindex: index + 1,
+              tabindex: 0,
+
               'data-id': item.UID,
               'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
-
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
               'data-calendar-name': item.calendar_name || '',
@@ -4719,51 +4820,6 @@ export let set_tabindex = () => {
       }
     });
 };
-let h = 0;
-
-const sort_events = () => {
-  let sort_mode = settings.eventsfilter
-    ? ['dateEndUnix', 'lastmod', settings.eventsfilter]
-    : ['dateEndUnix', 'lastmod'];
-
-  h++;
-  if (h === sort_mode.length) h = 0;
-
-  document.getElementById('search').value = '';
-
-  if (h == 2) {
-    m.route.set('/page_events_filtered', { query: settings.eventsfilter });
-  } else {
-    sort_array(events, sort_mode[h], 'date').then(() => {
-      m.redraw();
-      if (h == 0) side_toaster('latest', 4000);
-      document.getElementById('search').focus();
-
-      if (h == 1) side_toaster('last modified', 4000);
-      document.getElementById('search').focus();
-    });
-  }
-};
-
-let backup_events = function () {
-  localforage
-    .getItem('events')
-    .then(function (value) {
-      // Make sure value is not null or undefined
-      if (value) {
-        let only_local_events = value.filter((event) => event.id == 'local-id');
-
-        try {
-          export_ical('others/greg.ics', only_local_events);
-        } catch (e) {
-          console.log(e);
-        }
-      }
-    })
-    .catch(function (err) {
-      console.log(err);
-    });
-};
 
 let stop_scan_callback = function () {
   document.getElementById('qr-screen').style.display = 'none';
@@ -4967,7 +5023,13 @@ function shortpress_action(param) {
       }
 
       if (currentPageStartsWith('page_events')) {
-        sort_events();
+        document.querySelector('#filter-menu').style.display = 'flex';
+        document.querySelector('#filter-menu').firstChild.focus();
+        window.scroll({
+          top: 20,
+          left: 0,
+          behavior: 'smooth',
+        });
         return true;
       }
 
@@ -5089,7 +5151,7 @@ function shortpress_action(param) {
         });
 
         export_ical(export_data[0].UID + '.ics', export_data);
-        side_toaster('event exported', 2000);
+        side_toaster('event exported', 5000);
 
         return true;
       }
@@ -5103,7 +5165,12 @@ function shortpress_action(param) {
 
         if (currentPageStartsWith('page_events')) {
           // Redirect to '/page_calendar' when on '/page_events'
-          m.route.set('/page_calendar');
+          if (document.activeElement.tagName !== 'BUTTON')
+            m.route.set('/page_calendar');
+
+          if (document.activeElement.tagName === 'BUTTON') {
+            console.log('filter');
+          }
 
           // Delayed jump to today if focused on an input element
           if (document.activeElement.tagName === 'INPUT') {
@@ -5288,8 +5355,24 @@ channel.addEventListener('message', (event) => {
         ) === -1)
     ) {
       events.push(event.data.content.parsed_data);
-      // console.log(event.data.content.raw_data);
-      // console.log(event.data.content.notification);
+      if (event.data.content.notification) {
+        side_toaster('event imported', 5000);
+      }
+      if (event.data.content.raw_data) {
+        local_account.data.push({
+          uid: uid(),
+          data: event.data.content.raw_data,
+        });
+
+        localforage
+          .setItem('local_account', local_account)
+          .then(() => {
+            console.log('stored');
+          })
+          .catch(() => {
+            console.log(e);
+          });
+      }
     }
 
     if (event.data.notification) {
@@ -5319,7 +5402,7 @@ let interval = () => {
       running = false;
       interval_is_running = false;
       style_calendar_cell(currentYear, currentMonth);
-      //  sort_array(events, 'dateStartUnix', 'number');
+      sort_array(events, 'dateStartUnix', 'number');
 
       clearInterval(waitForNoMessages);
     }

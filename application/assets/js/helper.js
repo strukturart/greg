@@ -64,51 +64,87 @@ export let autocomplete = function (e, key) {
 };
 
 export let formatDT = (dt) => {
-  //  console.log(dt);
   return dayjs(
     `${dt.year}-${dt.month}-${dt.day} ${dt.hour}:${dt.minute}:${dt.second}`
   );
 };
 
-export async function sort_array(arr, itemKey, type) {
-  const sortFunction = (a, b) => {
-    if (type === 'date') {
-      return new Date(b[itemKey]) - new Date(a[itemKey]);
-    } else if (type === 'number') {
-      return b[itemKey] - a[itemKey];
-    } else if (type === 'string') {
+export async function sort_array(arr, itemKey, type, sortDirection = 'desc') {
+  // Define a function for comparing dates
+  function compareDates(a, b) {
+    if (sortDirection === 'desc') {
+      return new Date(b[itemKey]) - new Date(a[itemKey]); // Reverse order
+    } else {
+      return new Date(a[itemKey]) - new Date(b[itemKey]); // Default order
+    }
+  }
+
+  // Define a function for comparing numbers
+  function compareNumbers(a, b) {
+    if (sortDirection === 'desc') {
+      return b[itemKey] - a[itemKey]; // Reverse order
+    } else {
+      return a[itemKey] - b[itemKey]; // Default order
+    }
+  }
+
+  // Define a function for comparing strings
+  function compareStrings(a, b) {
+    if (sortDirection === 'desc') {
+      return b[itemKey].localeCompare(a[itemKey], undefined, {
+        sensitivity: 'base',
+      }); // Reverse order
+    } else {
       return a[itemKey].localeCompare(b[itemKey], undefined, {
         sensitivity: 'base',
-      });
+      }); // Default order
     }
-  };
-
-  if (itemKey === 'lastmod') {
-    function compareDateObjects(a, b) {
-      const dateA = new Date(
-        a['LAST-MODIFIED']['_time'].year,
-        a['LAST-MODIFIED']['_time'].month - 1,
-        a['LAST-MODIFIED']['_time'].day,
-        a['LAST-MODIFIED']['_time'].hour,
-        a['LAST-MODIFIED']['_time'].minute,
-        a['LAST-MODIFIED']['_time'].second
-      );
-      const dateB = new Date(
-        b['LAST-MODIFIED']['_time'].year,
-        b['LAST-MODIFIED']['_time'].month - 1,
-        b['LAST-MODIFIED']['_time'].day,
-        b['LAST-MODIFIED']['_time'].hour,
-        b['LAST-MODIFIED']['_time'].minute,
-        b['LAST-MODIFIED']['_time'].second
-      );
-
-      return dateB - dateA;
-    }
-
-    events.sort(compareDateObjects);
-  } else {
-    arr.sort(sortFunction);
   }
+
+  // Define a function for comparing dates in 'lastmod' case
+  function compareDateObjects(a, b) {
+    const dateA = new Date(
+      a['LAST-MODIFIED']['_time'].year,
+      a['LAST-MODIFIED']['_time'].month - 1,
+      a['LAST-MODIFIED']['_time'].day,
+      a['LAST-MODIFIED']['_time'].hour,
+      a['LAST-MODIFIED']['_time'].minute,
+      a['LAST-MODIFIED']['_time'].second
+    );
+    const dateB = new Date(
+      b['LAST-MODIFIED']['_time'].year,
+      b['LAST-MODIFIED']['_time'].month - 1,
+      b['LAST-MODIFIED']['_time'].day,
+      b['LAST-MODIFIED']['_time'].hour,
+      b['LAST-MODIFIED']['_time'].minute,
+      b['LAST-MODIFIED']['_time'].second
+    );
+
+    if (sortDirection === 'desc') {
+      return dateB - dateA; // Reverse order
+    } else {
+      return dateA - dateB; // Default order
+    }
+  }
+
+  // Use appropriate comparison function based on the type
+  let compareFunction;
+  if (type === 'date') {
+    if (itemKey === 'lastmod') {
+      compareFunction = compareDateObjects;
+    } else {
+      compareFunction = compareDates;
+    }
+  } else if (type === 'number') {
+    compareFunction = compareNumbers;
+  } else if (type === 'string') {
+    compareFunction = compareStrings;
+  }
+
+  // Sort the array using the chosen comparison function
+  arr.sort(compareFunction);
+
+  return arr;
 }
 
 export let get_contact = (callback) => {
@@ -423,6 +459,11 @@ export let list_files = function (filetype, callback) {
     }
   }
 };
+
+//polyfill
+if (window.NodeList && !NodeList.prototype.forEach) {
+  NodeList.prototype.forEach = Array.prototype.forEach;
+}
 
 //polyfill
 function share(url) {
