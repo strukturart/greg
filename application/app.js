@@ -1760,7 +1760,7 @@ var page_events = {
           search_events(document.activeElement.value);
         },
       }),
-      /*
+      
       m(
         'div',
         {
@@ -1783,13 +1783,10 @@ var page_events = {
             {
               class: 'item',
               tabindex: 0,
+              "data-action":"filter-last-modified",
 
-              onkeyup: (event) => {
-                if (event.key === 'Enter') {
-                  sort_array(events, 'lastmod', 'date');
-                  document.querySelector('#filter-menu').style.display = 'none';
-                }
-              },
+
+           
             },
             'by last modified'
           ),
@@ -1798,13 +1795,7 @@ var page_events = {
             {
               class: 'item',
               tabindex: 0,
-
-              onkeyup: (event) => {
-                if (event.key === 'Enter') {
-                  sort_array(events, 'dateStartUnix', 'date', 'asc');
-                  document.querySelector('#filter-menu').style.display = 'none';
-                }
-              },
+              "data-action":"filter-desc",
             },
             'latest on top'
           ),
@@ -1813,13 +1804,10 @@ var page_events = {
             {
               class: 'item',
               tabindex: 0,
+              "data-action":"filter-asc",
 
-              onkeyup: (event) => {
-                if (event.key === 'Enter') {
-                  sort_array(events, 'dateStartUnix', 'date', 'desc');
-                  document.querySelector('#filter-menu').style.display = 'none';
-                }
-              },
+
+            
             },
             'newest on top'
           ),
@@ -1828,6 +1816,7 @@ var page_events = {
             {
               class: 'item category-filter-button',
               tabindex: 0,
+              "data-action":"filter-category",
 
               oncreate: () => {
                 if (settings.eventsfilter == undefined) {
@@ -1836,35 +1825,15 @@ var page_events = {
                   ).style.display = 'none';
                 }
               },
-              onkeyup: (event) => {
-                if (event.key === 'Enter') {
-                  m.route.set('/page_events_filtered', {
-                    query: settings.eventsfilter,
-                  });
-                }
-              },
+            
             },
             'show only category: ' + settings.eventsfilter
           ),
         ]
       ),
-      */
+      
       [
-        m(
-          'button',
-          {
-            class: 'item',
-            tabindex: 0,
-            /*
-            onkeyup: (event) => {
-              if (event.key === 'Enter') {
-                sort_array(events, 'lastmod', 'date');
-                document.querySelector('#filter-menu').style.display = 'none';
-              }
-            },*/
-          },
-          'by last modified'
-        ),
+        
         events.map(function (item, index) {
           let de,
             se = '';
@@ -5168,8 +5137,34 @@ function shortpress_action(param) {
           if (document.activeElement.tagName !== 'BUTTON')
             m.route.set('/page_calendar');
 
+            //filter button
           if (document.activeElement.tagName === 'BUTTON') {
-            console.log('filter');
+            let m=document.activeElement.getAttribute("data-action")
+            if(m=="filter-category"){
+              m.route.set('/page_events_filtered', {
+                query: settings.eventsfilter,
+              });
+            }
+
+            if(m=="filter-last-modified"){
+              sort_array(events, 'lastmod', 'date');
+            }
+
+            if(m=="filter-asc"){
+              sort_array(events, 'dateStartUnix', 'date', 'asc');
+
+          
+            }
+
+            if(m=="filter-desc"){
+              sort_array(events, 'dateStartUnix', 'date', 'desc');
+            
+            }
+            document.querySelector('#filter-menu').style.display = 'none';
+
+
+            
+            
           }
 
           // Delayed jump to today if focused on an input element
