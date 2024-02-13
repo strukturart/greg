@@ -58,6 +58,17 @@ let subscriptions = [];
 localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
+
+//store events
+try {
+  localforage
+    .getItem('events')
+    .then((e) => {
+      export_ical_versionChangment('greg-backup.ics', e);
+    })
+    .catch((e) => {});
+} catch (e) {}
+
 /*
 try {
   // Retrieve all keys stored in localForage

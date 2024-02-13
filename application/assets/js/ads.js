@@ -2,6 +2,8 @@
 
 import { bottom_bar } from './helper.js';
 import { settings } from '../../app.js';
+import { export_ical_versionChangment } from './eximport.js';
+import localforage from 'localforage';
 
 export let load_ads = function () {
   var js = document.createElement('script');
@@ -83,14 +85,16 @@ export function manifest(a) {
   if (navigator.mozApps) {
     self = a.origin;
     document.querySelector('#version kbd').innerText = a.manifest.version;
+
     if (a.installOrigin == 'app://kaios-plus.kaiostech.com') {
       settings.ads = true;
     } else {
-      settings.ads = true;
+      settings.ads = false;
     }
   }
   if ('b2g' in navigator) {
     document.querySelector('#version kbd').innerText = a.version;
+
     settings.ads = true;
   }
 }
