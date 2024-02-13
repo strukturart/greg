@@ -745,8 +745,6 @@ export let create_caldav = async function (
           } catch (e) {
             console.log(e);
           }
-          // parse_ics(event_data, false, event.etag, event.url, event.id, true);
-          //todo: use sw
 
           if (
             'serviceWorker' in navigator &&
@@ -1558,6 +1556,7 @@ let clear_form = function () {
 
 let search_events = (term) => {
   let k = term.toUpperCase();
+  if (k.length < 1) return false;
   document.querySelectorAll('#events-wrapper article').forEach((v) => {
     if (
       v.getAttribute('data-summary').indexOf(k) >= 0 ||
@@ -5145,11 +5144,17 @@ function shortpress_action(param) {
       if (document.activeElement.id == 'export-event') {
         events.forEach(function (index) {
           if (index.UID == status.selected_day_id) {
-            export_data.push(index);
+            export_data.push(index.data);
           }
         });
-
-        export_ical(export_data[0].UID + '.ics', export_data);
+        let export_ical_callback = (e) => {
+          side_toaster(e, 3000);
+        };
+        export_ical(
+          export_data[0].UID + '.ics',
+          export_data,
+          export_ical_callback
+        );
         side_toaster('event exported', 5000);
 
         return true;
