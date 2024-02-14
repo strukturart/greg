@@ -44,7 +44,7 @@ const debug = false;
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
 
-export let events = [];
+export let parsed_events = [];
 export let accounts = [];
 export let event_templates = [];
 export let closing_prohibited = false;
@@ -65,8 +65,11 @@ try {
     .getItem('events')
     .then((e) => {
       export_ical_versionChangment('greg-backup.ics', e);
+      alert();
     })
-    .catch((e) => {});
+    .catch((e) => {
+      console.log('error');
+    });
 } catch (e) {}
 
 /*
@@ -404,7 +407,7 @@ async function getClientInstance(item) {
 async function load_caldav(callback = false) {
   closing_prohibited = true;
   //remove events with local events
-  events = events.filter((e) => !e.isCaldav);
+  parsed_events = parsed_events.filter((e) => !e.isCaldav);
 
   // Load data from every account
   for (const item of accounts) {
@@ -822,9 +825,9 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
       });
 
       if (result.ok) {
-        const index = events.findIndex((event) => event.UID === uid);
+        const index = parsed_events.findIndex((event) => event.UID === uid);
         if (index !== -1) {
-          events.splice(index, 1);
+          parsed_events.splice(index, 1);
           cache_caldav();
 
           remove_alarm(uid);
@@ -899,7 +902,7 @@ export let update_caldav = async function (etag, url, data, account_id) {
             headers: client.authHeaders,
           });
 
-          events.forEach((item) => {
+          parsed_events.forEach((item) => {
             if (item.etag === etag) {
               item.etag = res.props.getetag;
             }
@@ -945,7 +948,7 @@ export let sync_caldav_callback = function () {
 //get event data
 let get_event_date = function () {
   status.selected_day_id = document.activeElement.getAttribute('data-id');
-  update_event_date = events.filter(function (arr) {
+  update_event_date = parsed_events.filter(function (arr) {
     return arr.UID == status.selected_day_id;
   })[0];
 };
@@ -1009,7 +1012,7 @@ try {
 // ////////
 const find_closest_date = function (date) {
   let search = date ? dayjs().unix() : dayjs(status.selected_day).unix();
-  if (events.length === 0) {
+  if (parsed_events.length === 0) {
     document.getElementById('events-wrapper').innerHTML =
       "You haven't made any calendar entries yet.";
     return false;
@@ -1036,19 +1039,19 @@ const find_closest_date = function (date) {
 
   let smallerOrFirst = function () {
     try {
-      let m = events.findIndex((event) => event.dateStartUnix < search);
-      t = events[m - 1].UID;
+      let m = parsed_events.findIndex((event) => event.dateStartUnix < search);
+      t = parsed_events[m - 1].UID;
 
       focusAndScroll();
     } catch (e) {
-      t = events[0].UID;
+      t = parsed_events[0].UID;
       focusAndScroll();
     }
   };
 
   try {
-    let m = events.findIndex((event) => event.dateStartUnix === search);
-    t = events[m - 1].UID;
+    let m = parsed_events.findIndex((event) => event.dateStartUnix === search);
+    t = parsed_events[m - 1].UID;
 
     focusAndScroll();
   } catch (e) {
@@ -1063,7 +1066,7 @@ const event_check = function (date) {
     event_data: '',
   };
 
-  let eventsOnTargetDate = events.filter((event) => {
+  let eventsOnTargetDate = parsed_events.filter((event) => {
     const eventStartTime = new Date(event.dateStart).getTime();
     const eventEndTime = new Date(event.dateEnd).getTime();
     const targetTime = new Date(date).getTime();
@@ -1085,7 +1088,7 @@ const event_check = function (date) {
         new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
     );
 
-    for (let i = 1; i < sortedEvents.length; i++) {
+    for (let i = 1; i < sortedparsed_events.length; i++) {
       const prevEventEndTime = new Date(sortedEvents[i - 1].dateEnd).getTime();
       const currentEventStartTime = new Date(
         sortedEvents[i].dateStart
@@ -1113,42 +1116,42 @@ let rrule_check = function (date) {
     event_data: '',
   };
 
-  for (let t = 0; t < events.length; t++) {
-    if (typeof events[t] === 'object') {
+  for (let t = 0; t < parsed_events.length; t++) {
+    if (typeof parsed_events[t] === 'object') {
       feedback.event = false;
       feedback.multidayevent = false;
       feedback.rrule = false;
       feedback.date = date;
       feedback.event_data = '';
 
-      let a = new Date(events[t].dateStart).getTime();
-      let b = new Date(events[t].dateEnd).getTime();
+      let a = new Date(parsed_events[t].dateStart).getTime();
+      let b = new Date(parsed_events[t].dateEnd).getTime();
       let c = new Date(date).getTime();
-      let d = events[t].RRULE.freq;
-      let e = events[t].RRULE;
+      let d = parsed_events[t].RRULE.freq;
+      let e = parsed_events[t].RRULE;
 
       if (e !== undefined && e !== null) {
         //recurrences
 
-        if (events[t].RRULE != null) {
+        if (parsed_events[t].RRULE != null) {
           //endless || with end
-          if (events[t].RRULE.until == null) {
+          if (parsed_events[t].RRULE.until == null) {
             b = new Date('3000-01-01').getTime();
           }
         }
 
         if (a === c || (a < c && b > c)) {
-          feedback.event_data = events[t];
+          feedback.event_data = parsed_events[t];
           if (d == 'MONTHLY') {
             if (
-              new Date(events[t].dateStart).getDate() ===
+              new Date(parsed_events[t].dateStart).getDate() ===
               new Date(date).getDate()
             ) {
               feedback.event = true;
               feedback.rrule = true;
-              feedback.event_data = events[t];
+              feedback.event_data = parsed_events[t];
 
-              t = events.length;
+              t = parsed_events.length;
 
               return feedback;
             }
@@ -1156,13 +1159,14 @@ let rrule_check = function (date) {
 
           if (d == 'WEEKLY') {
             if (
-              new Date(events[t].dateStart).getDay() === new Date(date).getDay()
+              new Date(parsed_events[t].dateStart).getDay() ===
+              new Date(date).getDay()
             ) {
               feedback.rrule = true;
               feedback.event = true;
-              feedback.event_data = events[t];
+              feedback.event_data = parsed_events[t];
 
-              t = events.length;
+              t = parsed_events.length;
 
               return feedback;
             }
@@ -1172,16 +1176,16 @@ let rrule_check = function (date) {
             if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
               feedback.rrule = true;
               feedback.event = true;
-              feedback.event_data = events[t];
+              feedback.event_data = parsed_events[t];
 
-              t = events.length;
+              t = parsed_events.length;
 
               return feedback;
             }
           }
 
           if (d == 'YEARLY') {
-            let tt = new Date(events[t].dateStart);
+            let tt = new Date(parsed_events[t].dateStart);
             let pp = new Date(date);
             if (
               tt.getDate() + '-' + tt.getMonth() ===
@@ -1189,9 +1193,9 @@ let rrule_check = function (date) {
             ) {
               feedback.rrule = true;
               feedback.event = true;
-              feedback.event_data = events[t];
+              feedback.event_data = parsed_events[t];
 
-              t = events.length;
+              t = parsed_events.length;
               return feedback;
             }
           }
@@ -1242,22 +1246,22 @@ let event_slider = function (date) {
   k.innerHTML = '';
 
   document.querySelector('div#event-slider').innerHTML = '';
-  for (let i = 0; i < events.length; i++) {
-    let a = new Date(events[i].dateStart).getTime();
-    let b = new Date(events[i].dateEnd).getTime();
+  for (let i = 0; i < parsed_events.length; i++) {
+    let a = new Date(parsed_events[i].dateStart).getTime();
+    let b = new Date(parsed_events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
-    let d = events[i].RRULE.freq;
+    let d = parsed_events[i].RRULE.freq;
 
     if (d === 'none' || d === '' || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
-        slider.push(events[i]);
+        slider.push(parsed_events[i]);
       }
     } else {
       //workaround if enddate is not set
       //AKA infinity
 
-      if (events[i].RRULE != null) {
-        if (events[i].RRULE.until == null) {
+      if (parsed_events[i].RRULE != null) {
+        if (parsed_events[i].RRULE.until == null) {
           b = new Date('3000-01-01').getTime();
         }
       }
@@ -1267,30 +1271,31 @@ let event_slider = function (date) {
 
         //YEAR
         if (d == 'YEARLY') {
-          let tt = new Date(events[i].dateStart);
+          let tt = new Date(parsed_events[i].dateStart);
           let pp = new Date(date);
 
           if (
             tt.getDate() + '-' + tt.getMonth() ===
             pp.getDate() + '-' + pp.getMonth()
           ) {
-            slider.push(events[i]);
+            slider.push(parsed_events[i]);
           }
         }
 
         //WEEK
         if (d == 'WEEKLY') {
           if (
-            new Date(events[i].dateStart).getDay() == new Date(date).getDay()
+            new Date(parsed_events[i].dateStart).getDay() ==
+            new Date(date).getDay()
           ) {
-            slider.push(events[i]);
+            slider.push(parsed_events[i]);
           }
         }
 
         //BIWEEK
         if (d == 'BIWEEKLY') {
           if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
-            slider.push(events[i]);
+            slider.push(parsed_events[i]);
           }
         }
 
@@ -1298,15 +1303,16 @@ let event_slider = function (date) {
 
         if (d == 'MONTHLY') {
           if (
-            new Date(events[i].dateStart).getDate() == new Date(date).getDate()
+            new Date(parsed_events[i].dateStart).getDate() ==
+            new Date(date).getDate()
           ) {
-            slider.push(events[i]);
+            slider.push(parsed_events[i]);
           }
         }
 
         if (d == 'DAILY') {
           if (a === c || b === c || (a < c && b > c)) {
-            slider.push(events[i]);
+            slider.push(parsed_events[i]);
           }
         }
       }
@@ -1867,7 +1873,7 @@ var page_events = {
       ),
 
       [
-        events.map(function (item, index) {
+        parsed_events.map(function (item, index) {
           let de,
             se = '';
 
@@ -1965,7 +1971,7 @@ var page_events_filtered = {
       },
 
       [
-        events.map(function (item) {
+        parsed_events.map(function (item) {
           if (
             item.CATEGORIES &&
             item.CATEGORIES.toLowerCase() === query.toLowerCase()
@@ -2432,7 +2438,7 @@ export let page_options = {
                   }, 1000);
                 },
               },
-              events.length > 0
+              parsed_events.length > 0
                 ? [
                     m('option', { value: '-' }, '-'),
                     ...events
@@ -4688,7 +4694,7 @@ let update_event = function (etag, url, id, db_id, uid) {
     event.CATEGORIES +
     '\nEND:VEVENT\nEND:VCALENDAR';
 
-  events = events.filter((person) => person.UID != uid);
+  parsed_events = parsed_events.filter((person) => person.UID != uid);
 
   if (db_id == 'local-id') {
     // Find the index of the object with the matching UID
@@ -4801,7 +4807,7 @@ let delete_event = function (etag, url, account_id, uid) {
     const index = local_account.data.findIndex((item) => item.uid === uid);
     if (index !== -1) {
       local_account.data.splice(index, 1);
-      events = events.filter((person) => person.UID != uid);
+      parsed_events = parsed_events.filter((person) => person.UID != uid);
 
       localforage
         .setItem('local_account', local_account)
@@ -5005,7 +5011,7 @@ function shortpress_action(param) {
           if (e.style.display == 'block') n = e;
 
           if (f.length - 1 == i) {
-            update_event_date = events.filter(function (arr) {
+            update_event_date = parsed_events.filter(function (arr) {
               if (arr.isSubscription == true) return false;
               return arr.UID == n.getAttribute('data-uid');
             })[0];
@@ -5110,7 +5116,7 @@ function shortpress_action(param) {
           if (e.style.display == 'block') n = e;
 
           if (f.length - 1 == i) {
-            update_event_date = events.filter(function (arr) {
+            update_event_date = parsed_events.filter(function (arr) {
               if (arr.isSubscription == true) return false;
               return arr.UID == n.getAttribute('data-uid');
             })[0];
@@ -5153,7 +5159,7 @@ function shortpress_action(param) {
       }
 
       if (document.activeElement.id == 'export-event') {
-        events.forEach(function (index) {
+        parsed_events.forEach(function (index) {
           if (index.UID == status.selected_day_id) {
             export_data.push(index.data);
           }
@@ -5173,7 +5179,7 @@ function shortpress_action(param) {
 
       //toggle month/events
 
-      if (events.length > 0) {
+      if (parsed_events.length > 0) {
         if (currentPageStartsWith('page_calendar')) {
           document.querySelector('.loading-spinner').style.display = 'block';
         }
@@ -5403,7 +5409,7 @@ channel.addEventListener('message', (event) => {
           event.data.content.parsed_data.calendar_name
         ) === -1)
     ) {
-      events.push(event.data.content.parsed_data);
+      parsed_events.push(event.data.content.parsed_data);
       //notify user when data stored
 
       if (event.data.content.callback) {

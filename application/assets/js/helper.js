@@ -1,6 +1,6 @@
 'use strict';
 
-import { events, background_sync_interval } from '../../app.js';
+import { parsed_events, background_sync_interval } from '../../app.js';
 import { status } from '../../app.js';
 import { uid } from 'uid';
 import dayjs from 'dayjs';
@@ -15,10 +15,10 @@ export let autocomplete = function (e, key) {
     e.remove();
   });
 
-  if (events.length == 0) return;
+  if (parsed_events.length == 0) return;
 
   let matches = events.filter(function (val, i) {
-    if (events[i][key].indexOf(e) >= 0) return events[i];
+    if (parsed_events[i][key].indexOf(e) >= 0) return parsed_events[i];
   });
 
   if (matches.length === 0 || e == '') {
