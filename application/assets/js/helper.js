@@ -17,7 +17,7 @@ export let autocomplete = function (e, key) {
 
   if (parsed_events.length == 0) return;
 
-  let matches = events.filter(function (val, i) {
+  let matches = parsed_events.filter(function (val, i) {
     if (parsed_events[i][key].indexOf(e) >= 0) return parsed_events[i];
   });
 

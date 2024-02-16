@@ -65,17 +65,19 @@ function parse_ics(
   callback,
   store
 ) {
-  let jcalData;
-  try {
-    jcalData = ICAL.parse(data);
-  } catch (e) {
-    channel.postMessage({ action: 'error', content: 'error' });
-  }
+  let comp = new ICAL.Component(ICAL.parse(data), {
+    parseEvent: true,
+  });
 
-  var comp = new ICAL.Component(jcalData);
+  comp.onerror = function (error) {
+    console.log('Error occurred:', error);
+  };
+
+  comp.oncomplete = function () {
+    console.log('succesfull parsed');
+  };
 
   var vevent = comp.getAllSubcomponents('vevent');
-  let calendar_name = comp.getFirstPropertyValue('x-wr-calname') || '';
 
   let imp = null;
 
@@ -83,47 +85,51 @@ function parse_ics(
     let rr_until = '';
     let allday = false;
     let date_start = ite.getFirstPropertyValue('dtstart');
-    let date_end = ite.getFirstPropertyValue('dtend');
-    if (date_end == null) date_end = date_start;
-    let rrule = ite.getFirstPropertyValue('rrule');
+    let date_end =
+      ite.getFirstPropertyValue('dtend') ||
+      ite.getFirstPropertyValue('dtstart');
 
     if (date_start.isDate && date_end.isDate) allday = true;
-    //RRULE
 
-    if (rrule && typeof rrule === 'object' && rrule.freq) {
-      //console.log(rrule);
-      rr_until = new Date('3000-01-01').getTime();
+    try {
+      let rrule = ite.getFirstPropertyValue('rrule');
 
       if (rrule && typeof rrule === 'object' && rrule.freq) {
-        n = rrule;
-        rr_until = n.until || '';
-      }
-
-      if (ite.getFirstPropertyValue('rrule').isFinite() === false)
         rr_until = new Date('3000-01-01').getTime();
 
-      if (rrule.until !== null) {
-        rr_until = rrule.until;
-      }
+        if (rrule && typeof rrule === 'object' && rrule.freq) {
+          n = rrule;
+          rr_until = n.until || '';
+        }
 
-      if (ite.getFirstPropertyValue('rrule').isByCount()) {
-        let dt = dayjs(date_start);
+        if (ite.getFirstPropertyValue('rrule').isFinite() === false)
+          rr_until = new Date('3000-01-01').getTime();
 
-        switch (rrule.freq) {
-          case 'DAILY':
-            rr_until = dt.add(rrule.count, 'days').valueOf();
-          case 'MONTHLY':
-            rr_until = dt.add(rrule.count, 'months').valueOf();
-          case 'BIWEEKLY':
-            rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
-          case 'WEEKLY':
-            rr_until = dt.add(rrule.count, 'weeks').valueOf();
-          case 'YEARLY':
-            rr_until = dt.add(rrule.count, 'years').valueOf();
-          default:
-            rr_until = new Date('3000-01-01').getTime();
+        if (rrule.until !== null) {
+          rr_until = rrule.until;
+        }
+
+        if (ite.getFirstPropertyValue('rrule').isByCount()) {
+          let dt = dayjs(date_start);
+
+          switch (rrule.freq) {
+            case 'DAILY':
+              rr_until = dt.add(rrule.count, 'days').valueOf();
+            case 'MONTHLY':
+              rr_until = dt.add(rrule.count, 'months').valueOf();
+            case 'BIWEEKLY':
+              rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+            case 'WEEKLY':
+              rr_until = dt.add(rrule.count, 'weeks').valueOf();
+            case 'YEARLY':
+              rr_until = dt.add(rrule.count, 'years').valueOf();
+            default:
+              rr_until = new Date('3000-01-01').getTime();
+          }
         }
       }
+    } catch (e) {
+      console.log(e);
     }
 
     //date start
@@ -137,38 +143,34 @@ function parse_ics(
 
     //date end
     let dateEnd, timeEnd, dateEndUnix;
+
     if (date_end) {
       let a = dayjs(date_end);
+
+      if (rr_until != '') {
+        a = dayjs(rr_until);
+      }
+
+      if (allday) {
+        a = a.subtract(1, 'day');
+      }
+
       dateEnd = a.format('YYYY-MM-DD');
       timeEnd = a.format('HH:mm:ss');
       dateEndUnix = a.unix();
-
-      if (rr_until != '') {
-        dateEnd = dayjs(rr_until).format('YYYY-MM-DD');
-        timeEnd = dayjs(rr_until).format('HH:mm:ss');
-        dateEndUnix = new Date(rr_until).getTime() / 1000;
-      }
-      //allDay
-      if (allday) {
-        let f = date_end.toJSDate();
-        f = new Date(dayjs(f).subtract(1, 'day'));
-        dateEnd = dayjs(f).format('YYYY-MM-DD');
-        timeEnd = dayjs(f).format('HH:mm:ss');
-        dateEndUnix = f.getTime() / 1000;
-      }
     }
 
     imp = {
       BEGIN: 'VEVENT',
-      UID: ite.getFirstPropertyValue('uid'),
-      SUMMARY: ite.getFirstPropertyValue('summary'),
-      LOCATION: ite.getFirstPropertyValue('location'),
-      DESCRIPTION: ite.getFirstPropertyValue('description'),
+      UID: ite.getFirstPropertyValue('uid') || '',
+      SUMMARY: ite.getFirstPropertyValue('summary') || '',
+      LOCATION: ite.getFirstPropertyValue('location') || '',
+      DESCRIPTION: ite.getFirstPropertyValue('description') || '',
       CATEGORIES: ite.getFirstPropertyValue('categories') || '',
       RRULE: ite.getFirstPropertyValue('rrule') || '',
-      'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified'),
+      'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified') || '',
       CLASS: ite.getFirstPropertyValue('class') || '',
-      DTSTAMP: date_start,
+      DTSTAMP: ite.getFirstPropertyValue('dtstamp') || '',
       DTSTART: date_start,
       DTEND: date_end,
       END: 'VEVENT',
@@ -184,7 +186,7 @@ function parse_ics(
       alarm: alarm || 'none',
       etag: etag || '',
       url: url,
-      calendar_name: calendar_name,
+      calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
@@ -347,13 +349,16 @@ self.addEventListener('message', async (event) => {
       // Post the result back to the main thread
       channel.postMessage({ action: 'parse', content: ff });
     } catch (error) {
-      console.error('Error parsing:', error);
-      channel.postMessage({ action: 'error', content: 'error parsing' });
+      console.log('hello' + error);
+      channel.postMessage({
+        action: 'error',
+        content: 'error parsing ' + error,
+      });
     }
   }
 
   if (event.data.type == 'test') {
-    sync_caldav();
+    // sync_caldav();
   }
 });
 

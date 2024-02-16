@@ -20,7 +20,10 @@ import {
 } from './assets/js/helper.js';
 
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
-import { fetch_ics } from './assets/js/eximport.js';
+import {
+  fetch_ics,
+  export_ical_versionChangment,
+} from './assets/js/eximport.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
@@ -64,42 +67,21 @@ try {
   localforage
     .getItem('events')
     .then((e) => {
+      console.log(e);
       export_ical_versionChangment('greg-backup.ics', e);
-      alert();
     })
     .catch((e) => {
       console.log('error');
     });
-} catch (e) {}
+} catch (e) {
+  console.log(e);
+}
 
-/*
-try {
-  // Retrieve all keys stored in localForage
-  localforage
-    .keys()
-    .then(function (keys) {
-      // Loop through each key
-      keys.forEach(function (key) {
-        // Fetch the value associated with the key
-        localforage
-          .getItem(key)
-          .then(function (value) {
-            // Display the key and value
-            console.log('Key: ', key);
-            console.log('Value: ', value);
-          })
-          .catch(function (err) {
-            // Handle errors if any
-            console.error('Error fetching value for key', key, ':', err);
-          });
-      });
-    })
-    .catch(function (err) {
-      // Handle errors if any
-      console.error('Error fetching keys:', err);
-    });
-} catch (e) {}
-*/
+const intro_animation = () => {
+  document.querySelector('#intro').classList.add('intro-animation');
+  document.querySelector('#version').classList.add('intro-version-animation');
+  document.querySelector('#intro img').classList.add('intro-img-anmation');
+};
 
 //back to last view
 let view_history = [];
@@ -256,6 +238,8 @@ let loadAccounts = () => {
   localforage
     .getItem('accounts')
     .then((value) => {
+      intro_animation();
+
       accounts = value;
       loadCalendarNames();
 
@@ -505,6 +489,7 @@ async function load_caldav(callback = false) {
 
 let cache_caldav = async function () {
   closing_prohibited = true;
+  let data_to_store;
 
   // Load data from every account
   for (const item of accounts) {
@@ -518,7 +503,7 @@ let cache_caldav = async function () {
           calendar: calendars[i],
         });
         //cache data
-        let data_to_store = {
+        data_to_store = {
           displayName: calendars[i].displayName,
           syncToken: calendars[i].syncToken,
           ctag: calendars[i].ctag,
@@ -542,6 +527,7 @@ let cache_caldav = async function () {
       closing_prohibited = false;
 
       side_toaster('Data synchronized', 3000);
+      return data_to_store;
     } catch (e) {
       console.log(e);
       closing_prohibited = false;
@@ -659,7 +645,6 @@ export let sync_caldav = async function (callback) {
 
 const load_cached_caldav = async () => {
   let should_be_loaded = false;
-  // events = events.filter((e) => !e.isCaldav);
 
   if (!accounts) {
     return false;
@@ -703,7 +688,6 @@ const load_cached_caldav = async () => {
 
   if (should_be_loaded) {
     load_caldav();
-    // events = events.filter((e) => !e.isCaldav);
   }
 };
 
@@ -756,43 +740,21 @@ export let create_caldav = async function (
             event.url = result.url;
             event.isCaldav = true;
             event.id = calendar_id;
+            event.calendar_name = calendar_name;
+            document.querySelector('.loading-spinner').style.display = 'none';
+            cache_caldav().then((e) => {});
+
+            return event;
           } catch (e) {
             console.log(e);
           }
-
-          if (
-            'serviceWorker' in navigator &&
-            navigator.serviceWorker.controller
-          ) {
-            collectionOfData = {
-              data: event_data,
-              etag: event.etag,
-              url: event.url,
-            };
-            navigator.serviceWorker.controller.postMessage({
-              type: 'parse',
-              t: collectionOfData,
-              e: event.id,
-              callback: false,
-              store: false,
-            });
-          }
-
+        } else {
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          cache_caldav().then(() => {});
-        } else {
           side_toaster(
             'There was a problem saving, please try again later.',
             5000
           );
-          setTimeout(function () {
-            try {
-              sort_array(events, 'dateStartUnix', 'number');
-            } catch (e) {
-              console.log(e);
-            }
-          }, 5000);
         }
       }
     } catch (e) {
@@ -855,7 +817,8 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
       );
       setTimeout(function () {
         try {
-          sort_array(events, 'dateStartUnix', 'number');
+          sort_array(parsed_events, 'dateStartUnix', 'number');
+          style_calendar_cell(currentYear, currentMonth);
         } catch (e) {
           console.log(e);
         }
@@ -907,10 +870,6 @@ export let update_caldav = async function (etag, url, data, account_id) {
               item.etag = res.props.getetag;
             }
           });
-
-          get_last_view();
-
-          cache_caldav();
         } catch (e) {
           console.log(e);
         }
@@ -1088,7 +1047,7 @@ const event_check = function (date) {
         new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
     );
 
-    for (let i = 1; i < sortedparsed_events.length; i++) {
+    for (let i = 1; i < sortedEvents.length; i++) {
       const prevEventEndTime = new Date(sortedEvents[i - 1].dateEnd).getTime();
       const currentEventStartTime = new Date(
         sortedEvents[i].dateStart
@@ -1756,6 +1715,8 @@ var page_events = {
         class: 'flex',
         id: 'events-wrapper',
         oninit: () => {
+          document.querySelector('.loading-spinner').style.display = 'block';
+
           view_history_update();
           status.shortCut = false;
         },
@@ -1803,7 +1764,6 @@ var page_events = {
           class: 'flex justify-content-spacearound',
           oncreate: function (vnode) {
             vnode.dom.style.display = 'none';
-            console.log(events);
           },
           onfocus: () => {
             window.scroll({
@@ -2441,7 +2401,7 @@ export let page_options = {
               parsed_events.length > 0
                 ? [
                     m('option', { value: '-' }, '-'),
-                    ...events
+                    ...parsed_events
                       .map((e) => e.CATEGORIES)
                       .filter(
                         (category, index, array) =>
@@ -3496,7 +3456,7 @@ var page_edit_event = {
                 },
               },
               [
-                calendar_names.map(function (item, index) {
+                calendar_names.map(function (item) {
                   let t = '';
                   if (update_event_date.calendar_name == item.name) {
                     t = 'selected';
@@ -3944,25 +3904,6 @@ let delete_account = function () {
     });
 };
 
-//load indexedDB
-/*
-localforage
-  .getItem('events')
-  .then(function (value) {
-    if (value != null) {
-      events = value;
-      try {
-        style_calendar_cell(currentYear, currentMonth);
-      } catch (e) {
-        console.log(e);
-      }
-    } else {
-    }
-  })
-  .catch(function (err) {});
-
-  */
-
 localforage
   .getItem('subscriptions')
   .then(function (s) {
@@ -4336,8 +4277,6 @@ let store_event = function (db_id, cal_name) {
     'event-notification-time'
   ).value;
 
-  let bn = notification_time;
-
   let calc_notification;
   if (notification_time !== 'none') {
     calc_notification = new Date(convert_dt_start);
@@ -4374,7 +4313,7 @@ let store_event = function (db_id, cal_name) {
     'LAST-MODIFIED':
       ';TZID=' + settings.timezone + convert_ics_date(new Date()),
     CLASS: 'PRIVATE',
-    DTSTAMP: ';TZID=' + settings.timezone + convert_ics_date(convert_dt_start),
+    DTSTAMP: ';TZID=' + settings.timezone + convert_ics_date(new Date()),
     DTSTART:
       ';TZID=' + settings.timezone + convert_ics_date(convert_dt_start, allDay),
     DTEND:
@@ -4433,6 +4372,7 @@ let store_event = function (db_id, cal_name) {
     event.DTEND +
     '\nDTSTAMP' +
     event.DTSTAMP +
+    '\nCLASS:Private' +
     '\nLOCATION:' +
     event.LOCATION +
     '\nDESCRIPTION:' +
@@ -4441,19 +4381,19 @@ let store_event = function (db_id, cal_name) {
     event.CATEGORIES +
     '\nEND:VEVENT\nEND:VCALENDAR';
 
+  if (event.RRULE != '') {
+    event.DTEND =
+      ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
+  }
+
+  if (event.alarm !== 'none') {
+    event.BEGIN = 'VALARM';
+    event['TRIGGER;VALUE=DATE-TIME'] = notification_time;
+    event.ACTION = 'AUDIO';
+    event.END = 'VALARM';
+  }
+
   if (event.id == 'local-id') {
-    if (event.RRULE != '') {
-      event.DTEND =
-        ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
-    }
-
-    if (event.alarm !== 'none') {
-      event.BEGIN = 'VALARM';
-      event['TRIGGER;VALUE=DATE-TIME'] = notification_time;
-      event.ACTION = 'AUDIO';
-      event.END = 'VALARM';
-    }
-
     try {
       dd = dd.trim();
 
@@ -4481,28 +4421,17 @@ let store_event = function (db_id, cal_name) {
     }
   } else {
     //caldav
-    //rrule event should end on the same day, but rrule.until should set the end date
 
-    if (event.RRULE != '') {
-      event.DTEND =
-        ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
-    }
-
-    if (event.alarm !== 'none') {
-      event.BEGIN = 'VALARM';
-      event['TRIGGER;VALUE=DATE-TIME'] = notification_time;
-      event.ACTION = 'AUDIO';
-      event.END = 'VALARM';
-    }
-
-    let alarm = ''; // Initialize alarm as an empty string
+    let alarm = '';
 
     if (notification_time !== null && notification_time !== 'none') {
       alarm = `\nBEGIN:VALARM\nTRIGGER;VALUE=DATE-TIME:${notification_time}\nACTION:AUDIO\nEND:VALARM`;
     }
 
     let event_data =
-      'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:' +
+      'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:' +
+      cal_name +
+      '\nBEGIN:VEVENT\nSUMMARY:' +
       event.SUMMARY +
       '\nUID:' +
       event.UID +
@@ -4514,6 +4443,7 @@ let store_event = function (db_id, cal_name) {
       event.DTEND +
       '\nDTSTAMP' +
       event.DTSTAMP +
+      '\nCLASS:Private' +
       '\nLOCATION:' +
       event.LOCATION +
       '\nDESCRIPTION:' +
@@ -4529,11 +4459,27 @@ let store_event = function (db_id, cal_name) {
       event_data = event_data.replace('RRULE:null', '');
       event_data = event_data.replace('RRULE:', '');
     }
+    // Remove empty lines
+    event_data = event_data.replace(/\bDESCRIPTION:[^\S\n]*\n/g, '');
+    event_data = event_data.replace(/\bLOCATION:[^\S\n]*\n/g, '');
+    event_data = event_data.replace(/\bCATEGORIES:[^\S\n]*\n/g, '');
+    event_data = event_data.replace(/^\s*[\r\n]/gm, '');
 
     event_data = event_data.trim();
 
-    create_caldav(event_data, event.id, cal_name, event, event.UID).then(() => {
-      get_last_view();
+    create_caldav(event_data, db_id, cal_name, event, event.UID).then((e) => {
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'parse',
+          t: { uid: e.UID, data: dd, url: e.url, etag: e.etag },
+          e: e.calendar_name,
+          callback: false,
+          store: false,
+        });
+        get_last_view();
+      } catch (e) {
+        console.log('send to sw');
+      }
     });
   }
 };
@@ -4611,8 +4557,7 @@ let update_event = function (etag, url, id, db_id, uid) {
   }
 
   let lastmod = ';TZID=' + settings.timezone + convert_ics_date(new Date());
-  let dtstamp =
-    ';TZID=' + settings.timezone + convert_ics_date(convert_dt_start);
+  let dtstamp = ';TZID=' + settings.timezone + convert_ics_date(new Date());
 
   let dtstart =
     ';TZID=' + settings.timezone + convert_ics_date(convert_dt_start, allDay);
@@ -4726,26 +4671,6 @@ let update_event = function (etag, url, id, db_id, uid) {
       })
       .catch(function (err) {});
   } else {
-    try {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        collectionOfData = {
-          data: event_data,
-          etag: event.etag,
-          url: event.url,
-        };
-        navigator.serviceWorker.controller.postMessage({
-          type: 'parse',
-          t: collectionOfData,
-          e: event.id,
-          callback: false,
-          store: false,
-        });
-      }
-
-      style_calendar_cell(currentYear, currentMonth);
-    } catch (e) {
-      console.log('error parsing' + e);
-    }
     //caldav
     //rrule event should end on the same day, but rrule.until should set the end date
     // Check if notification_time is not null or "none" before adding the alarm
@@ -4789,7 +4714,33 @@ let update_event = function (etag, url, id, db_id, uid) {
     event_data = event_data.replace('\n\n', '\n');
     event_data = event_data.trim();
 
-    update_caldav(etag, url, event_data, id);
+    update_caldav(etag, url, event_data, id).then(() => {
+      try {
+        if (
+          'serviceWorker' in navigator &&
+          navigator.serviceWorker.controller
+        ) {
+          collectionOfData = {
+            data: event_data,
+            etag: event.etag,
+            url: event.url,
+          };
+          navigator.serviceWorker.controller.postMessage({
+            type: 'parse',
+            t: collectionOfData,
+            e: event.id,
+            callback: false,
+            store: false,
+          });
+        }
+
+        style_calendar_cell(currentYear, currentMonth);
+      } catch (e) {
+        console.log('error parsing' + e);
+      }
+      get_last_view();
+      cache_caldav();
+    });
   }
 };
 
@@ -4801,8 +4752,6 @@ let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid).then((e) => {});
   } else {
-    //remove event
-
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex((item) => item.uid === uid);
     if (index !== -1) {
@@ -4812,7 +4761,7 @@ let delete_event = function (etag, url, account_id, uid) {
       localforage
         .setItem('local_account', local_account)
         .then(function () {
-          get_last_view();
+          if (!status.shortCut) get_last_view();
           style_calendar_cell(currentYear, currentMonth);
         })
         .catch(function (err) {});
@@ -5202,24 +5151,28 @@ function shortpress_action(param) {
             }
 
             if (m == 'filter-last-modified') {
-              sort_array(events, 'lastmod', 'date', 'asc').then(() => {
+              sort_array(parsed_events, 'lastmod', 'date', 'asc').then(() => {
                 document.querySelector('#search').focus();
                 set_tabindex();
               });
             }
 
             if (m == 'filter-asc') {
-              sort_array(events, 'dateStartUnix', 'date', 'asc').then(() => {
-                document.querySelector('#search').focus();
-                set_tabindex();
-              });
+              sort_array(parsed_events, 'dateStartUnix', 'date', 'asc').then(
+                () => {
+                  document.querySelector('#search').focus();
+                  set_tabindex();
+                }
+              );
             }
 
             if (m == 'filter-desc') {
-              sort_array(events, 'dateStartUnix', 'date', 'desc').then(() => {
-                document.querySelector('#search').focus();
-                set_tabindex();
-              });
+              sort_array(parsed_events, 'dateStartUnix', 'date', 'desc').then(
+                () => {
+                  document.querySelector('#search').focus();
+                  set_tabindex();
+                }
+              );
             }
             document.querySelector('#filter-menu').style.display = 'none';
             document.querySelectorAll('#filter-menu button').forEach((e) => {
@@ -5284,25 +5237,6 @@ function shortpress_action(param) {
           document.getElementById('qr-screen').style = 'none';
         stop_scan(stop_scan_callback);
       }
-
-      break;
-
-    case '9':
-      /*
-      // Example of sending a message to a service worker from a web page
-      navigator.serviceWorker.controller.postMessage({
-        type: 'test',
-        message: 'Hello from the web page!',
-      });
-      
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          for (let registration of registrations) {
-            registration.unregister();
-          }
-        });
-      }
-      */
 
       break;
 
@@ -5387,7 +5321,7 @@ channel.addEventListener('message', (event) => {
   }
 
   //callback from Google OAuth
-  //ugly method to open a new window, because a window from sw clients.open can no longer be closed
+  //ugly method to open a new window, because a window from sw clients.open can not be closed
 
   if (event.data.oauth_success) {
     const l = event.data.oauth_success;
@@ -5403,22 +5337,25 @@ channel.addEventListener('message', (event) => {
     } catch (e) {}
 
     if (
-      event.data.content !== false &&
+      event.data.content.parsed_data !== false &&
       (calendar_not_visible.length === 0 ||
         calendar_not_visible.indexOf(
           event.data.content.parsed_data.calendar_name
         ) === -1)
     ) {
       parsed_events.push(event.data.content.parsed_data);
+
       //notify user when data stored
 
       if (event.data.content.callback) {
         side_toaster('event imported', 5000);
       }
       //store data
+      //when importing data
+      //When importing, the data is first parsed and then the RAW and parsed data are returned
       if (event.data.content.raw_data) {
         local_account.data.push({
-          UID: uid(),
+          UID: uid(32),
           data: event.data.content.raw_data,
         });
 
@@ -5431,6 +5368,7 @@ channel.addEventListener('message', (event) => {
             console.log(e);
           });
       }
+    } else {
     }
 
     if (interval_is_running == false) {
@@ -5456,12 +5394,12 @@ let interval = () => {
       running = false;
       interval_is_running = false;
       style_calendar_cell(currentYear, currentMonth);
-      sort_array(events, 'dateStartUnix', 'number');
+      sort_array(parsed_events, 'dateStartUnix', 'number');
       //store parsed data in events array
       //to load the data when starting the app
       //only parse the raw data again if has changments
       /*
-      localforage.setItem('events', events).then(() => {
+      localforage.setItem('parsed_events', 'parsed_events').then(() => {
         console.log(events);
       });
       */

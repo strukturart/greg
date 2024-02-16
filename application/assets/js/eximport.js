@@ -63,31 +63,14 @@ export let export_ical = function (filename, data, callback) {
 //export events
 
 export let export_ical_versionChangment = function (filename, event_data) {
-  try {
-    var sdcard = navigator.getDeviceStorage('sdcard');
-
-    var request_del = sdcard.delete(filename);
-    request_del.onsuccess = function () {
-      console.log('file deleted');
-    };
-  } catch (e) {
-    // alert(e);
-  }
-  if ('b2g' in Navigator) {
-    try {
-      var sdcard = navigator.b2g.getDeviceStorage('sdcard');
-      var request_del = sdcard.delete(filename);
-    } catch (e) {}
-  }
-
-  setTimeout(function () {
+  console.log(event_data);
+  let export_data = function () {
     let result = '';
 
     result += 'BEGIN:VCALENDAR' + '\r\n';
     result += 'VERSION:2.0' + '\r\n';
     result += 'PRODID:GREG' + '\r\n';
     result += 'METHOD:PUBLISHED' + '\r\n';
-    console.log(event_data);
     event_data.forEach((e, i) => {
       let index = -1;
       for (let key in e) {
@@ -95,8 +78,6 @@ export let export_ical_versionChangment = function (filename, event_data) {
 
         //clean data
         if (e[key] == null || typeof e[key] == 'object') {
-          console.log(e.RRULE);
-
           e.RRULE = '';
         }
 
@@ -142,13 +123,15 @@ export let export_ical_versionChangment = function (filename, event_data) {
     let regex = /^\s*$(?:\r\n?|\n)/gm;
     result = result.replace(regex, '');
 
+    console.log(result);
+
     var file = new Blob([result], { type: 'text/calendar' });
     try {
       var sdcard = navigator.getDeviceStorage('sdcard');
 
       var request = sdcard.addNamed(file, filename);
       request.onsuccess = function () {
-        side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+        console.log(filename + 'success');
       };
 
       request.onerror = function () {
@@ -165,7 +148,7 @@ export let export_ical_versionChangment = function (filename, event_data) {
         var request = sdcard.addNamed(file, filename);
 
         request.onsuccess = function () {
-          side_toaster("<img src='assets/image/E25C.svg'>", 2500);
+          console.log(filename + 'success');
         };
 
         request.onerror = function () {
@@ -175,7 +158,30 @@ export let export_ical_versionChangment = function (filename, event_data) {
         console.log(e);
       }
     }
-  }, 2000);
+  };
+
+  try {
+    var sdcard = navigator.getDeviceStorage('sdcard');
+
+    var request_del = sdcard.delete(filename);
+    request_del.onsuccess = function () {
+      console.log('file deleted');
+      try {
+        export_data();
+      } catch (e) {
+        console.log(e);
+      }
+    };
+  } catch (e) {
+    // alert(e);
+  }
+  if ('b2g' in Navigator) {
+    try {
+      var sdcard = navigator.b2g.getDeviceStorage('sdcard');
+      var request_del = sdcard.delete(filename);
+      export_data();
+    } catch (e) {}
+  }
 };
 
 /////////////

@@ -50,7 +50,7 @@ kbd {
 #intro kbd {
   border: 2px solid pink;
   box-shadow: 2px 2px pink;
-  font-size: 0.85em;
+  font-size: 0.6em;
   line-height: 0.85em;
   display: inline-block;
   font-weight: 600;
@@ -313,6 +313,8 @@ div#intro {
   z-index: 100000;
   min-width: 100%;
   height: 100%;
+}
+.intro-animation {
   animation-name: intro;
   animation-duration: 2s;
   animation-delay: 6s;
@@ -328,6 +330,9 @@ div#intro #version {
   color: white;
   text-align: center;
   font-size: 1.2rem;
+}
+
+.intro-version-animation {
   animation-name: intro_img_2;
   animation-duration: 2s;
   animation-delay: 6s;
@@ -342,6 +347,9 @@ div#intro img {
   top: 50px;
   left: 50%;
   margin-left: -90px;
+}
+
+.intro-img-anmation {
   animation-name: intro_img;
   animation-duration: 2s;
   animation-delay: 6s;
