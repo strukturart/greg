@@ -80,7 +80,7 @@ function parse_ics(
   var vevent = comp.getAllSubcomponents('vevent');
 
   let imp = null;
-
+  let return_array = [];
   vevent.forEach(function (ite) {
     let rr_until = '';
     let allday = false;
@@ -91,45 +91,47 @@ function parse_ics(
 
     if (date_start.isDate && date_end.isDate) allday = true;
 
-    try {
-      let rrule = ite.getFirstPropertyValue('rrule');
-
-      if (rrule && typeof rrule === 'object' && rrule.freq) {
-        rr_until = new Date('3000-01-01').getTime();
+    if (ite.getFirstPropertyValue('rrule')) {
+      try {
+        let rrule = ite.getFirstPropertyValue('rrule');
 
         if (rrule && typeof rrule === 'object' && rrule.freq) {
-          n = rrule;
-          rr_until = n.until || '';
-        }
-
-        if (ite.getFirstPropertyValue('rrule').isFinite() === false)
           rr_until = new Date('3000-01-01').getTime();
 
-        if (rrule.until !== null) {
-          rr_until = rrule.until;
-        }
+          if (rrule && typeof rrule === 'object' && rrule.freq) {
+            n = rrule;
+            rr_until = n.until || '';
+          }
 
-        if (ite.getFirstPropertyValue('rrule').isByCount()) {
-          let dt = dayjs(date_start);
+          if (ite.getFirstPropertyValue('rrule').isFinite() === false)
+            rr_until = new Date('3000-01-01').getTime();
 
-          switch (rrule.freq) {
-            case 'DAILY':
-              rr_until = dt.add(rrule.count, 'days').valueOf();
-            case 'MONTHLY':
-              rr_until = dt.add(rrule.count, 'months').valueOf();
-            case 'BIWEEKLY':
-              rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
-            case 'WEEKLY':
-              rr_until = dt.add(rrule.count, 'weeks').valueOf();
-            case 'YEARLY':
-              rr_until = dt.add(rrule.count, 'years').valueOf();
-            default:
-              rr_until = new Date('3000-01-01').getTime();
+          if (rrule.until !== null) {
+            rr_until = rrule.until;
+          }
+
+          if (ite.getFirstPropertyValue('rrule').isByCount()) {
+            let dt = dayjs(date_start);
+
+            switch (rrule.freq) {
+              case 'DAILY':
+                rr_until = dt.add(rrule.count, 'days').valueOf();
+              case 'MONTHLY':
+                rr_until = dt.add(rrule.count, 'months').valueOf();
+              case 'BIWEEKLY':
+                rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+              case 'WEEKLY':
+                rr_until = dt.add(rrule.count, 'weeks').valueOf();
+              case 'YEARLY':
+                rr_until = dt.add(rrule.count, 'years').valueOf();
+              default:
+                rr_until = new Date('3000-01-01').getTime();
+            }
           }
         }
+      } catch (e) {
+        console.log(e);
       }
-    } catch (e) {
-      console.log(e);
     }
 
     //date start
@@ -161,7 +163,6 @@ function parse_ics(
     }
 
     imp = {
-      BEGIN: 'VEVENT',
       UID: ite.getFirstPropertyValue('uid') || '',
       SUMMARY: ite.getFirstPropertyValue('summary') || '',
       LOCATION: ite.getFirstPropertyValue('location') || '',
@@ -173,7 +174,6 @@ function parse_ics(
       DTSTAMP: ite.getFirstPropertyValue('dtstamp') || '',
       DTSTART: date_start,
       DTEND: date_end,
-      END: 'VEVENT',
       isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
@@ -190,20 +190,20 @@ function parse_ics(
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
+    //when importing data callback to store
+    let a = { parsed_data: imp };
+    if (store) {
+      a.raw_data = data;
+      a.uid = imp.UID;
+    }
+
+    //callback or not
+    if (callback) {
+      a.calback = true;
+    }
+    return_array.push(a);
   });
-
-  //when importing data callback to store
-  let a = { parsed_data: imp };
-  if (store) {
-    a.raw_data = data;
-  }
-
-  //callback or not
-  if (callback) {
-    a.calback = true;
-  }
-
-  return a;
+  return return_array;
 }
 
 //loggin
@@ -347,7 +347,10 @@ self.addEventListener('message', async (event) => {
       );
 
       // Post the result back to the main thread
-      channel.postMessage({ action: 'parse', content: ff });
+
+      ff.forEach((e) => {
+        channel.postMessage({ action: 'parse', content: e });
+      });
     } catch (error) {
       console.log('hello' + error);
       channel.postMessage({

@@ -1176,3 +1176,161 @@ div#time {
     transform: translateY(-30px);
   }
 }
+
+/*Success animation*/
+
+.success-checkmark {
+  width: 40px; /* Half the width */
+  height: 57.5px; /* Half the height */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  z-index: 50000;
+  animation: hide ease-in forwards;
+  animation-duration: 6.25s;
+}
+
+.success-checkmark .check-icon {
+  width: 40px; /* Half the width */
+  height: 40px; /* Half the height */
+  position: relative;
+  border-radius: 50%;
+  box-sizing: content-box;
+  border: 3px solid #4caf50; /* Half the border thickness */
+}
+
+.success-checkmark .check-icon::before {
+  top: 1.5px; /* Half the value */
+  left: -1px; /* Half the value */
+  width: 15px; /* Half the width */
+  transform-origin: 100% 50%;
+  border-radius: 50px 0 0 50px;
+}
+
+.success-checkmark .check-icon::after {
+  top: 0;
+  left: 15px;
+  width: 30px; /* Half the width */
+  transform-origin: 0 50%;
+  border-radius: 0 50px 50px 0;
+}
+
+.success-checkmark .check-icon::before,
+.success-checkmark .check-icon::after {
+  content: '';
+  height: 50px; /* Half the height */
+  position: absolute;
+  background: #ffffff;
+  transform: rotate(-45deg);
+}
+
+.success-checkmark .check-icon .icon-line {
+  height: 2.5px; /* Half the height */
+  background-color: #1a721d;
+  display: block;
+  border-radius: 1px; /* Half the value */
+  position: absolute;
+  z-index: 10;
+}
+
+.success-checkmark .check-icon .icon-line.line-tip {
+  top: 23px;
+  left: 7px;
+  width: 12.5px;
+  transform: rotate(45deg);
+  animation: icon-line-tip 0.75s forwards;
+}
+
+.success-checkmark .check-icon .icon-line.line-long {
+  top: 19px;
+  right: 4px;
+  width: 23.5px;
+  transform: rotate(-45deg);
+  animation: icon-line-long 0.75s;
+}
+
+.success-checkmark .check-icon .icon-circle {
+  top: -2px;
+  left: -2px;
+  z-index: 10;
+  width: 40px; /* Half the width */
+  height: 40px; /* Half the height */
+  border-radius: 50%;
+  position: absolute;
+  box-sizing: content-box;
+  border: 3px solid rgba(76, 175, 80, 0.5);
+}
+
+.success-checkmark .check-icon .icon-fix {
+  top: 4px;
+  width: 2.5px; /* Half the width */
+  left: 13px;
+  z-index: 1;
+  height: 42.5px;
+  position: absolute;
+  transform: rotate(-45deg);
+  background-color: #ffffff;
+}
+
+@keyframes icon-line-tip {
+  0% {
+    width: 0;
+    left: 0.5px;
+    top: 9.5px;
+  }
+  54% {
+    width: 0;
+    left: 0.5px;
+    top: 9.5px;
+  }
+  70% {
+    width: 25px;
+    left: -4px;
+    top: 18.5px;
+  }
+  84% {
+    width: 8.5px;
+    left: 10.5px;
+    top: 24px;
+  }
+  100% {
+    width: 12.5px;
+    left: 7px;
+    top: 22.5px;
+  }
+}
+
+@keyframes icon-line-long {
+  0% {
+    width: 0;
+    right: 23px;
+    top: 27px;
+  }
+  65% {
+    width: 0;
+    right: 23px;
+    top: 27px;
+  }
+  84% {
+    width: 27.5px;
+    right: 0px;
+    top: 17.5px;
+  }
+  100% {
+    width: 23.5px;
+    right: 4px;
+    top: 19px;
+  }
+}
+
+@keyframes hide {
+  0% {
+    display: 100;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}

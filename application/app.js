@@ -62,17 +62,26 @@ localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
 
-//store events
+//version changment
+//export events
 try {
-  localforage
-    .getItem('events')
-    .then((e) => {
-      console.log(e);
-      export_ical_versionChangment('greg-backup.ics', e);
-    })
-    .catch((e) => {
-      console.log('error');
-    });
+  if (localStorage.getItem('export_versionChangment') != '1') {
+    setTimeout(() => {
+      localforage
+        .getItem('events')
+        .then((e) => {
+          console.log(e.length);
+          if (e == null || e.length == 0) return false;
+          export_ical_versionChangment('greg-backup.ics', e);
+          alert(
+            "In the new app version, events in the local calendar are saved differently. That's why it was exported and saved on your device. You can now import it again, please use the import button in the settings area. I apologize for the circumstances."
+          );
+        })
+        .catch((e) => {
+          console.log('error');
+        });
+    }, 10000);
+  }
 } catch (e) {
   console.log(e);
 }
@@ -81,6 +90,16 @@ const intro_animation = () => {
   document.querySelector('#intro').classList.add('intro-animation');
   document.querySelector('#version').classList.add('intro-version-animation');
   document.querySelector('#intro img').classList.add('intro-img-anmation');
+};
+
+const show_success_animation = () => {
+  setTimeout(() => {
+    document.querySelector('.success-checkmark').style.display = 'block';
+  }, 2000);
+
+  setTimeout(() => {
+    document.querySelector('.success-checkmark').style.display = 'none';
+  }, 4000);
 };
 
 //back to last view
@@ -799,6 +818,8 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 
           if (status.shortCut == false) {
             get_last_view();
+          } else {
+            show_success_animation();
           }
         }
       } else {
@@ -806,7 +827,6 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
           'There was a problem deleting, please try again later.',
           5000
         );
-        setTimeout(function () {}, 5000);
       }
     } catch (e) {
       console.log(e);
@@ -3615,8 +3635,6 @@ let callback_getfile = function (result) {
         store: true,
       });
     }
-
-    side_toaster('event imported', 3000);
   } catch (e) {
     alert(
       'event could not be imported because the file content is invalid' + e
@@ -4752,6 +4770,9 @@ let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid).then((e) => {});
   } else {
+    console.log(local_account.data);
+    console.log(parsed_events);
+
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex((item) => item.uid === uid);
     if (index !== -1) {
@@ -4761,8 +4782,10 @@ let delete_event = function (etag, url, account_id, uid) {
       localforage
         .setItem('local_account', local_account)
         .then(function () {
-          if (!status.shortCut) get_last_view();
           style_calendar_cell(currentYear, currentMonth);
+
+          if (!status.shortCut) get_last_view();
+          show_success_animation();
         })
         .catch(function (err) {});
     }
@@ -5296,6 +5319,8 @@ function handleKeyUp(evt) {
   }
 }
 
+console.log(local_account);
+
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 document.addEventListener('visibilitychange', handleVisibilityChange, false);
@@ -5348,24 +5373,24 @@ channel.addEventListener('message', (event) => {
       //notify user when data stored
 
       if (event.data.content.callback) {
-        side_toaster('event imported', 5000);
+        show_success_animation();
       }
       //store data
       //when importing data
       //When importing, the data is first parsed and then the RAW and parsed data are returned
       if (event.data.content.raw_data) {
         local_account.data.push({
-          UID: uid(32),
+          uid: event.data.content.uid,
           data: event.data.content.raw_data,
         });
 
         localforage
           .setItem('local_account', local_account)
           .then(() => {
-            console.log('stored');
+            show_success_animation();
           })
           .catch(() => {
-            console.log(e);
+            side_toaster('problem', 5000);
           });
       }
     } else {
@@ -5395,15 +5420,7 @@ let interval = () => {
       interval_is_running = false;
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
-      //store parsed data in events array
-      //to load the data when starting the app
-      //only parse the raw data again if has changments
-      /*
-      localforage.setItem('parsed_events', 'parsed_events').then(() => {
-        console.log(events);
-      });
-      */
-
+      console.log(page_add_events);
       clearInterval(waitForNoMessages);
     }
   }, checkMessagesInterval);

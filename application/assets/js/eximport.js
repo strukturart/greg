@@ -1,5 +1,6 @@
 import { side_toaster } from './helper.js';
 import localforage from 'localforage';
+import dayjs from 'dayjs';
 
 export let export_ical = function (filename, data, callback) {
   try {
@@ -18,11 +19,7 @@ export let export_ical = function (filename, data, callback) {
   }
 
   setTimeout(function () {
-    let result = data;
-
-    //remove empty lines
-    let regex = /^\s*$(?:\r\n?|\n)/gm;
-    result = result.replace(regex, '');
+    let result = data.trim();
 
     var file = new Blob([result], { type: 'text/calendar' });
     try {
@@ -63,25 +60,67 @@ export let export_ical = function (filename, data, callback) {
 //export events
 
 export let export_ical_versionChangment = function (filename, event_data) {
-  console.log(event_data);
+  let store_file = (result) => {
+    var a = new Blob([result], { type: 'text/calendar; charset=utf-8' });
+    try {
+      var sdcard = navigator.getDeviceStorage('sdcard');
+
+      var request = sdcard.addNamed(a, filename);
+      request.onsuccess = function () {
+        localStorage.setItem('export_versionChangment', '1');
+      };
+
+      request.onerror = function () {
+        toaster('Unable to write the file', 2000);
+      };
+    } catch (e) {
+      console.log(e);
+    }
+
+    //KaiOS 3.x
+    if ('b2g' in Navigator) {
+      try {
+        var sdcard = navigator.b2g.getDeviceStorage('sdcard');
+        var request = sdcard.addNamed(a, filename);
+
+        request.onsuccess = function () {
+          console.log(filename + 'success');
+          localStorage.setItem('export_versionChangment', '1');
+        };
+
+        request.onerror = function () {
+          toaster('Unable to write the file', 2000);
+        };
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  };
+
   let export_data = function () {
     let result = '';
 
-    result += 'BEGIN:VCALENDAR' + '\r\n';
-    result += 'VERSION:2.0' + '\r\n';
-    result += 'PRODID:GREG' + '\r\n';
-    result += 'METHOD:PUBLISHED' + '\r\n';
+    result += 'BEGIN:VCALENDAR' + '\n';
+    result += 'VERSION:2.0' + '\n';
+    result += 'PRODID:GREG' + '\n';
+    result += 'X-WR-CALNAME:local' + '\n';
+    result += 'CALSCALE:GREGORIAN' + '\n';
+    result += 'METHOD:PUBLISHED' + '\n';
     event_data.forEach((e, i) => {
       let index = -1;
       for (let key in e) {
         index++;
 
-        //clean data
-        if (e[key] == null || typeof e[key] == 'object') {
-          e.RRULE = '';
-        }
+        if (index == 0) result += 'BEGIN:VEVENT' + '\n';
 
-        if (index == 0) result += 'BEGIN:VEVENT' + '\r\n';
+        if (key == 'DTSTART')
+          e[key] = dayjs(e.dateStartUnix * 1000).format('YYYYMMDDTHHmmss');
+        if (key == 'DTEND')
+          e[key] = dayjs(e.dateEndUnix * 1000).format('YYYYMMDDTHHmmss');
+        if (key == 'DTSTAMP')
+          e[key] = dayjs(e.dateStartUnix * 1000).format('YYYYMMDDTHHmmss');
+        if (key == 'LAST-MODIFIED')
+          e[key] = dayjs(e.dateStartUnix * 1000).format('YYYYMMDDTHHmmss');
 
         if (
           key != 'BEGIN' &&
@@ -105,59 +144,30 @@ export let export_ical_versionChangment = function (filename, event_data) {
           key != 'url' &&
           key != 'id' &&
           key != 'dateStartUnix' &&
-          key != 'dateEndUnix'
+          key != 'dateEndUnix' &&
+          key != 'calendar_name' &&
+          key != 'RRULE' &&
+          key != 'CLASS'
         ) {
-          result += `${key}:${e[key]}` + '\r\n';
+          result += `${key}:${e[key]}` + '\n';
         }
-        if (index == Object.keys(e).length - 1) result += 'END:VEVENT' + '\r\n';
+        if (index == Object.keys(e).length - 1) result += 'END:VEVENT' + '\n';
       }
     });
 
-    result += 'END:VCALENDAR' + '\r\n';
+    result += 'END:VCALENDAR' + '\n';
 
     result = result.replace(/:;TZID/g, ';TZID');
     result = result.replace(/RRULE:FREQ=null/g, 'RRULE:');
     result = result.replace(/: undefined/g, 'RRULE:');
 
     //remove empty lines
-    let regex = /^\s*$(?:\r\n?|\n)/gm;
+    let regex = /^\s*$(?:\n\n?|\n)/gm;
     result = result.replace(regex, '');
 
-    console.log(result);
-
-    var file = new Blob([result], { type: 'text/calendar' });
-    try {
-      var sdcard = navigator.getDeviceStorage('sdcard');
-
-      var request = sdcard.addNamed(file, filename);
-      request.onsuccess = function () {
-        console.log(filename + 'success');
-      };
-
-      request.onerror = function () {
-        toaster('Unable to write the file', 2000);
-      };
-    } catch (e) {
-      console.log(e);
-    }
-
-    //KaiOS 3.x
-    if ('b2g' in Navigator) {
-      try {
-        var sdcard = navigator.b2g.getDeviceStorage('sdcard');
-        var request = sdcard.addNamed(file, filename);
-
-        request.onsuccess = function () {
-          console.log(filename + 'success');
-        };
-
-        request.onerror = function () {
-          toaster('Unable to write the file', 2000);
-        };
-      } catch (e) {
-        console.log(e);
-      }
-    }
+    setTimeout(() => {
+      store_file(result);
+    }, 10000);
   };
 
   try {
