@@ -63,9 +63,9 @@ localforage.getItem('subscriptions').then((e) => {
 });
 
 let cache_caldav_events = () => {
-  parsed_events.filter((e) => e.isCaldav === true);
+  const pe = parsed_events.filter((e) => e.isCaldav === true);
 
-  localforage.setItem('parsed_events_cached', parsed_events).then(() => {
+  localforage.setItem('parsed_events_cached', pe).then(() => {
     window.close();
   });
 };
@@ -904,12 +904,10 @@ export let update_caldav = async function (etag, url, data, account_id) {
             depth: '0',
             headers: client.authHeaders,
           });
-
-          parsed_events.forEach((item) => {
-            if (item.etag === etag) {
-              item.etag = res.props.getetag;
-            }
-          });
+          let event = {};
+          event.etag = res.props.getetag;
+          event.url = result.url;
+          return event;
         } catch (e) {
           console.log(e);
         }
@@ -4504,7 +4502,6 @@ let store_event = function (db_id, cal_name) {
     event_data = event_data.replace(/\bLOCATION:[^\S\n]*\n/g, '');
     event_data = event_data.replace(/\bCATEGORIES:[^\S\n]*\n/g, '');
     event_data = event_data.replace(/^\s*[\r\n]/gm, '');
-
     event_data = event_data.trim();
 
     create_caldav(event_data, db_id, cal_name, event, event.UID).then((e) => {
@@ -4527,7 +4524,8 @@ let store_event = function (db_id, cal_name) {
 // ////////////
 // UPDATE EVENT
 // /////////
-let update_event = function (etag, url, id, db_id, uid) {
+let update_event = function (etag, url, id, db_id, uid, cal_name) {
+  console.log(cal_name);
   let validation = true;
   if (document.getElementById('event-title').value == '') {
     toaster("Title can't be empty", 2000);
@@ -4725,7 +4723,9 @@ let update_event = function (etag, url, id, db_id, uid) {
         ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
     }
     let event_data =
-      'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nBEGIN:VEVENT\nSUMMARY:' +
+      'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:' +
+      cal_name +
+      '\nBEGIN:VEVENT\nSUMMARY:' +
       event.SUMMARY +
       '\nUID:' +
       event.UID +
@@ -4751,35 +4751,30 @@ let update_event = function (etag, url, id, db_id, uid) {
       event_data = event_data.replace('RRULE:null', '');
       event_data = event_data.replace('\nRRULE:', '');
     }
+    event_data = event_data.replace(/^\s*[\r\n]/gm, '');
     event_data = event_data.replace('\n\n', '\n');
+    event_data = event_data.replace(/\bDESCRIPTION:[^\S\n]*\n/g, '');
+    event_data = event_data.replace(/\bLOCATION:[^\S\n]*\n/g, '');
+    event_data = event_data.replace(/\bCATEGORIES:[^\S\n]*\n/g, '');
     event_data = event_data.trim();
 
-    update_caldav(etag, url, event_data, id).then(() => {
-      try {
-        if (
-          'serviceWorker' in navigator &&
-          navigator.serviceWorker.controller
-        ) {
-          collectionOfData = {
-            data: event_data,
-            etag: event.etag,
-            url: event.url,
-          };
-          navigator.serviceWorker.controller.postMessage({
-            type: 'parse',
-            t: collectionOfData,
-            e: event.id,
-            callback: false,
-            store: false,
-          });
-        }
+    update_caldav(etag, url, event_data, id).then((e) => {
+      if (e == undefined) return false;
 
-        style_calendar_cell(currentYear, currentMonth);
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'parse',
+          t: { uid: event.UID, data: dd, url: e.url, etag: e.etag },
+          e: e.calendar_name,
+          callback: false,
+          store: false,
+        });
       } catch (e) {
         console.log('error parsing' + e);
       }
-      get_last_view();
+      style_calendar_cell(currentYear, currentMonth);
       cache_caldav();
+      get_last_view();
     });
   }
 };
@@ -5347,8 +5342,6 @@ function handleKeyUp(evt) {
     shortpress_action(evt);
   }
 }
-
-console.log(local_account);
 
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
