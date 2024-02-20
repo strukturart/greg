@@ -62,6 +62,23 @@ localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
 
+let cache_caldav_events = () => {
+  parsed_events.filter((e) => e.isCaldav === true);
+
+  localforage.setItem('parsed_events_cached', parsed_events).then(() => {
+    window.close();
+  });
+};
+
+let load_cached_caldav_events = () => {
+  localforage.getItem('parsed_events_cached').then((e) => {
+    if (e == null) return false;
+    parsed_events = e;
+  });
+};
+
+load_cached_caldav_events();
+
 //version changment
 //export events
 try {
@@ -263,9 +280,12 @@ let loadAccounts = () => {
       loadCalendarNames();
 
       if (accounts != null) {
+        sync_caldav(sync_caldav_callback);
+        /*
         load_cached_caldav().then(() => {
           sync_caldav(sync_caldav_callback);
         });
+        */
       }
     })
     .catch(() => {});
@@ -620,7 +640,7 @@ export let sync_caldav = async function (callback) {
             callback();
             break;
           } else {
-            if (!status.visible) window.close();
+            if (!status.visible) cache_caldav_events();
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -918,7 +938,9 @@ export let sync_caldav_callback = function () {
     //close app because is background sync
     if (!status.visible) {
       //pushLocalNotification('greg', 'updated');
-      window.close();
+      cache_caldav_events();
+
+      // window.close();
       return false;
     }
   });
@@ -4846,7 +4868,8 @@ function repeat_action(param) {
 function longpress_action(param) {
   switch (param.key) {
     case 'Backspace':
-      window.close();
+      cache_caldav_events();
+      // window.close();
       break;
 
     case 'SoftLeft':
@@ -5288,12 +5311,18 @@ function handleKeyDown(evt) {
   }
 
   if (evt.key === 'Backspace' && currentPage('page_calendar')) {
-    if (closing_prohibited == false) window.close();
+    if (closing_prohibited == false) {
+      cache_caldav_events();
+      //window.close();
+    }
   }
 
   if (evt.key === 'EndCall') {
     evt.preventDefault();
-    if (closing_prohibited == false) window.close();
+    if (closing_prohibited == false) {
+      cache_caldav_events();
+      // window.close();
+    }
   }
   if (!evt.repeat) {
     longpress = false;
@@ -5420,7 +5449,6 @@ let interval = () => {
       interval_is_running = false;
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
-      console.log(page_add_events);
       clearInterval(waitForNoMessages);
     }
   }, checkMessagesInterval);
