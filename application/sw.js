@@ -185,7 +185,7 @@ function parse_ics(
       time_end: timeEnd,
       alarm: alarm || 'none',
       etag: etag || '',
-      url: url,
+      url: url || '',
       calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),

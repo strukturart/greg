@@ -54,30 +54,39 @@ export let closing_prohibited = false;
 export let search_history = [];
 export let calendar_names;
 
-export let background_sync_interval = 60;
+export let background_sync_interval = 3;
 let last_sync = localStorage.getItem('last_sync') || '';
 
 let subscriptions = [];
 localforage.getItem('subscriptions').then((e) => {
-  console.log(e);
+  console.log('no subscriptions');
 });
 
-let cache_caldav_events = () => {
+//caching parsed events
+//Caching is currently not stable
+//That's why I don't use it, when I start the app all events are parsed again
+
+let cache_caldav_events = (close) => {
   const pe = parsed_events.filter((e) => e.isCaldav === true);
 
   localforage.setItem('parsed_events_cached', pe).then(() => {
-    window.close();
+    if (close) window.close();
   });
 };
 
 let load_cached_caldav_events = () => {
-  localforage.getItem('parsed_events_cached').then((e) => {
-    if (e == null) return false;
-    parsed_events = e;
-  });
+  localforage
+    .getItem('parsed_events_cached')
+    .then((e) => {
+      if (e == null) {
+        return false;
+      }
+      parsed_events = e;
+    })
+    .catch((e) => {
+      console.log('D' + e);
+    });
 };
-
-load_cached_caldav_events();
 
 //version changment
 //export events
@@ -94,9 +103,7 @@ try {
             "In the new app version, events in the local calendar are saved differently. That's why it was exported and saved on your device. You can now import it again, please use the import button in the settings area. I apologize for the circumstances."
           );
         })
-        .catch((e) => {
-          console.log('error');
-        });
+        .catch((e) => {});
     }, 10000);
   }
 } catch (e) {
@@ -270,6 +277,8 @@ async function loadCalendarNames() {
 }
 
 //load accounts data
+//test whether there are updates in the remote
+
 let loadAccounts = () => {
   localforage
     .getItem('accounts')
@@ -280,12 +289,8 @@ let loadAccounts = () => {
       loadCalendarNames();
 
       if (accounts != null) {
+        load_cached_caldav();
         sync_caldav(sync_caldav_callback);
-        /*
-        load_cached_caldav().then(() => {
-          sync_caldav(sync_caldav_callback);
-        });
-        */
       }
     })
     .catch(() => {});
@@ -428,9 +433,12 @@ async function getClientInstance(item) {
 ///load events
 
 async function load_caldav(callback = false) {
+  if (!navigator.onLine) return false;
   closing_prohibited = true;
   //remove events with local events
-  parsed_events = parsed_events.filter((e) => !e.isCaldav);
+  try {
+    parsed_events = parsed_events.filter((e) => !e.isCaldav);
+  } catch (e) {}
 
   // Load data from every account
   for (const item of accounts) {
@@ -503,7 +511,6 @@ async function load_caldav(callback = false) {
 
       try {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-
         document.getElementById('icon-waiting').style.visibility = 'hidden';
       } catch (e) {
         console.log(e);
@@ -512,12 +519,10 @@ async function load_caldav(callback = false) {
       if (callback) side_toaster('all event reloaded', 2000);
 
       closing_prohibited = false;
-      side_toaster('Data loaded', 3000);
     } catch (e) {
       closing_prohibited = false;
       try {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-
         document.getElementById('icon-waiting').style.visibility = 'hidden';
       } catch (e) {
         console.log(e);
@@ -572,6 +577,8 @@ let cache_caldav = async function () {
       closing_prohibited = false;
     }
   }
+  //cache parsed events
+  cache_caldav_events();
 };
 
 //default calendar
@@ -589,10 +596,8 @@ let cn = [
 //update calendar names
 
 export let sync_caldav = async function (callback) {
-  localStorage.setItem(
-    'last_sync',
-    dayjs().format(settings.dateformat + ' hh:mm')
-  );
+  if (!navigator.onLine) return false;
+  if (!status.visible && !navigator.onLine) window.close();
 
   for (const item of accounts) {
     const client = await getClientInstance(item);
@@ -618,7 +623,10 @@ export let sync_caldav = async function (callback) {
       }
 
       const value = await localforage.getItem(item.id);
-      if (value == null) continue;
+      if (value == null) {
+        //  load_caldav();
+        continue;
+      }
 
       for (let i = 0; i < value.length; i++) {
         let s = {
@@ -636,11 +644,17 @@ export let sync_caldav = async function (callback) {
         };
         try {
           const ma = await client.syncCalendars(s);
+
+          localStorage.setItem(
+            'last_sync',
+            dayjs().format(settings.dateformat + ' HH:mm')
+          );
+
           if (ma.updated.length && ma.updated.length > 0) {
             callback();
             break;
           } else {
-            if (!status.visible) cache_caldav_events();
+            if (!status.visible) cache_caldav_events(true);
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -738,6 +752,8 @@ export let create_caldav = async function (
   event,
   event_id
 ) {
+  if (!navigator.onLine) return false;
+
   document.querySelector('.loading-spinner').style.display = 'block';
 
   const matchingAccount = accounts.find((p) => p.id === calendar_id);
@@ -804,9 +820,17 @@ export let create_caldav = async function (
 
 //delete event
 export let delete_caldav = async function (etag, url, account_id, uid) {
-  document.querySelector('.loading-spinner').style.display = 'block';
+  if (!navigator.onLine) return false;
 
+  document.querySelector('.loading-spinner').style.display = 'block';
   const matchingAccount = accounts.find((p) => p.id === account_id);
+  console.log('hey' + matchingAccount);
+
+  if (matchingAccount == undefined) {
+    document.querySelector('.loading-spinner').style.display = 'none';
+    side_toaster('There was a problem deleting, please try again later.', 5000);
+    return false;
+  }
 
   if (matchingAccount) {
     const client = await getClientInstance(matchingAccount);
@@ -838,8 +862,10 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 
           if (status.shortCut == false) {
             get_last_view();
+            return 'success';
           } else {
             show_success_animation();
+            return 'success';
           }
         }
       } else {
@@ -847,22 +873,14 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
           'There was a problem deleting, please try again later.',
           5000
         );
+        return 'error';
       }
     } catch (e) {
-      console.log(e);
-
       side_toaster(
         'There was a problem deleting, please try again later.',
         5000
       );
-      setTimeout(function () {
-        try {
-          sort_array(parsed_events, 'dateStartUnix', 'number');
-          style_calendar_cell(currentYear, currentMonth);
-        } catch (e) {
-          console.log(e);
-        }
-      }, 5000);
+      return e;
     }
   }
 };
@@ -870,9 +888,18 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 //update event
 
 export let update_caldav = async function (etag, url, data, account_id) {
+  if (!navigator.onLine) return false;
+
   document.querySelector('.loading-spinner').style.display = 'block';
 
   const matchingAccount = accounts.find((p) => p.id === account_id);
+
+  if (matchingAccount == undefined) {
+    document.querySelector('.loading-spinner').style.display = 'none';
+    side_toaster('There was a problem saving, please try again later.', 5000);
+
+    return false;
+  }
 
   if (matchingAccount) {
     const client = await getClientInstance(matchingAccount);
@@ -907,17 +934,24 @@ export let update_caldav = async function (etag, url, data, account_id) {
           let event = {};
           event.etag = res.props.getetag;
           event.url = result.url;
+          cache_caldav();
+
           return event;
         } catch (e) {
           console.log(e);
+          document.querySelector('.loading-spinner').style.display = 'none';
         }
       } else {
+        document.querySelector('.loading-spinner').style.display = 'none';
+
         side_toaster(
           'There was a problem saving, please try again later.',
           5000
         );
       }
     } catch (e) {
+      document.querySelector('.loading-spinner').style.display = 'none';
+
       side_toaster('There was a problem saving, please try again later.', 5000);
     }
   }
@@ -933,13 +967,9 @@ const load_subscriptions = () => {
 
 export let sync_caldav_callback = function () {
   load_caldav().then(() => {
-    //close app because is background sync
     if (!status.visible) {
-      //pushLocalNotification('greg', 'updated');
-      cache_caldav_events();
-
-      // window.close();
-      return false;
+      localStorage.setItem('background_sync_with_update', '1');
+      cache_caldav_events(true);
     }
   });
 };
@@ -2547,10 +2577,13 @@ export let page_options = {
                           return false;
                         }
                         accounts = value;
+                        load_caldav();
+                        /*
                         side_toaster(
                           'the calendar events will be loaded the next time the app is restarted',
                           30000
                         );
+                        */
                       })
                       .catch(function (err) {
                         console.log(err);
@@ -3583,7 +3616,6 @@ var page_edit_event = {
                   update_event_date.etag,
                   update_event_date.url,
                   update_event_date.id,
-                  update_event_date.id,
                   update_event_date.UID,
                   update_event_date.calendar_name
                 );
@@ -3591,18 +3623,16 @@ var page_edit_event = {
               if (status.event_calendar_changed) {
                 //you can cut bread nice and fine with a knife, or just tear it into pieces.
                 let n = document.getElementById('event-calendar');
+                delete_event(
+                  update_event_date.etag,
+                  update_event_date.url,
+                  update_event_date.id,
+                  update_event_date.UID
+                );
                 store_event(
                   n.options[n.selectedIndex].value,
                   n.options[n.selectedIndex].text
                 );
-                setTimeout(() => {
-                  delete_event(
-                    update_event_date.etag,
-                    update_event_date.url,
-                    update_event_date.id,
-                    update_event_date.UID
-                  );
-                }, 1000);
               }
             },
           },
@@ -3873,10 +3903,14 @@ let store_account = function (edit, id) {
     localforage
       .setItem('accounts', accounts)
       .then(function (value) {
+        loadAccounts();
+        load_caldav();
+        /*
         side_toaster(
           'the calendar events will be loaded the next time the app is restarted',
           30000
         );
+        */
         m.route.set('/page_options');
       })
       .catch(function (err) {
@@ -4255,7 +4289,7 @@ const rrule_convert = function (val, date_end, date_start) {
 
 let export_data = [];
 
-let store_event = function (db_id, cal_name) {
+let store_event = function (account_id, cal_name) {
   let validation = true;
 
   let allDay = false;
@@ -4372,8 +4406,8 @@ let store_event = function (db_id, cal_name) {
     alarm: document.getElementById('event-notification-time').value,
     alarmTrigger: notification_time,
     isSubscription: false,
-    isCaldav: db_id == 'local-id' ? false : true,
-    id: db_id,
+    isCaldav: account_id == 'local-id' ? false : true,
+    id: account_id,
     allDay: allDay,
     mod: convert_ics_date(new Date()),
   };
@@ -4396,7 +4430,9 @@ let store_event = function (db_id, cal_name) {
   }
 
   let dd =
-    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:local\nBEGIN:VEVENT\nSUMMARY:' +
+    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:' +
+    cal_name +
+    '\nBEGIN:VEVENT\nSUMMARY:' +
     event.SUMMARY +
     '\nUID:' +
     event.UID +
@@ -4504,28 +4540,29 @@ let store_event = function (db_id, cal_name) {
     event_data = event_data.replace(/^\s*[\r\n]/gm, '');
     event_data = event_data.trim();
 
-    create_caldav(event_data, db_id, cal_name, event, event.UID).then((e) => {
-      try {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'parse',
-          t: { uid: e.UID, data: dd, url: e.url, etag: e.etag },
-          e: e.calendar_name,
-          callback: false,
-          store: false,
-        });
-        get_last_view();
-      } catch (e) {
-        console.log('send to sw');
+    create_caldav(event_data, account_id, cal_name, event, event.UID).then(
+      (e) => {
+        try {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'parse',
+            t: { uid: e.UID, data: dd, url: e.url, etag: e.etag },
+            e: account_id,
+            callback: false,
+            store: false,
+          });
+          get_last_view();
+        } catch (e) {
+          console.log('send to sw');
+        }
       }
-    });
+    );
   }
 };
 
 // ////////////
 // UPDATE EVENT
 // /////////
-let update_event = function (etag, url, id, db_id, uid, cal_name) {
-  console.log(cal_name);
+let update_event = function (etag, url, account_id, uid, cal_name) {
   let validation = true;
   if (document.getElementById('event-title').value == '') {
     toaster("Title can't be empty", 2000);
@@ -4633,8 +4670,8 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
     alarm: document.getElementById('event-notification-time').value,
     alarmTrigger: notification_time,
     isSubscription: false,
-    isCaldav: db_id == 'local-id' ? false : true,
-    id: db_id,
+    isCaldav: account_id == 'local-id' ? false : true,
+    id: account_id,
     calendar_name: document.getElementById('event-calendar').value,
     allDay: allDay,
   };
@@ -4655,7 +4692,9 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
   }
 
   let dd =
-    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:local\nBEGIN:VEVENT\nSUMMARY:' +
+    'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ZContent.net//Greg Calendar 1.0//EN\nCALSCALE:GREGORIAN\nX-WR-CALNAME:' +
+    cal_name +
+    '\nBEGIN:VEVENT\nSUMMARY:' +
     event.SUMMARY +
     '\nUID:' +
     event.UID +
@@ -4679,7 +4718,7 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
 
   parsed_events = parsed_events.filter((person) => person.UID != uid);
 
-  if (db_id == 'local-id') {
+  if (account_id == 'local-id') {
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex(
       (item) => item.uid === event.UID
@@ -4758,8 +4797,11 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
     event_data = event_data.replace(/\bCATEGORIES:[^\S\n]*\n/g, '');
     event_data = event_data.trim();
 
-    update_caldav(etag, url, event_data, id).then((e) => {
-      if (e == undefined) return false;
+    update_caldav(etag, url, event_data, event.id).then((e) => {
+      if (e == undefined || e == null) {
+        console.log('cant parse');
+        return false;
+      }
 
       try {
         navigator.serviceWorker.controller.postMessage({
@@ -4773,7 +4815,6 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
         console.log('error parsing' + e);
       }
       style_calendar_cell(currentYear, currentMonth);
-      cache_caldav();
       get_last_view();
     });
   }
@@ -4785,11 +4826,10 @@ let update_event = function (etag, url, id, db_id, uid, cal_name) {
 
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
-    delete_caldav(etag, url, account_id, uid).then((e) => {});
+    delete_caldav(etag, url, account_id, uid).then((e) => {
+      cache_caldav_events();
+    });
   } else {
-    console.log(local_account.data);
-    console.log(parsed_events);
-
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex((item) => item.uid === uid);
     if (index !== -1) {
@@ -4803,6 +4843,7 @@ let delete_event = function (etag, url, account_id, uid) {
 
           if (!status.shortCut) get_last_view();
           show_success_animation();
+          cache_caldav_events();
         })
         .catch(function (err) {});
     }
@@ -4863,8 +4904,7 @@ function repeat_action(param) {
 function longpress_action(param) {
   switch (param.key) {
     case 'Backspace':
-      cache_caldav_events();
-      // window.close();
+      window.close();
       break;
 
     case 'SoftLeft':
@@ -4962,6 +5002,12 @@ function shortpress_action(param) {
       if (currentPage('page_calendar')) slider_navigation();
       break;
 
+    case '9':
+      parsed_events = [];
+      load_cached_caldav();
+      load_or_create_local_account();
+
+      break;
     case '5':
       if (currentPage('page_calendar')) {
         if (document.activeElement.classList.contains('event')) {
@@ -5307,16 +5353,14 @@ function handleKeyDown(evt) {
 
   if (evt.key === 'Backspace' && currentPage('page_calendar')) {
     if (closing_prohibited == false) {
-      cache_caldav_events();
-      //window.close();
+      window.close();
     }
   }
 
   if (evt.key === 'EndCall') {
     evt.preventDefault();
     if (closing_prohibited == false) {
-      cache_caldav_events();
-      // window.close();
+      window.close();
     }
   }
   if (!evt.repeat) {
@@ -5364,9 +5408,6 @@ let interval_is_running = false;
 let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
-  if (event.data.action == 'test') {
-  }
-
   //callback from Google OAuth
   //ugly method to open a new window, because a window from sw clients.open can not be closed
 
@@ -5411,9 +5452,7 @@ channel.addEventListener('message', (event) => {
           .then(() => {
             show_success_animation();
           })
-          .catch(() => {
-            side_toaster('problem', 5000);
-          });
+          .catch(() => {});
       }
     } else {
     }
@@ -5443,6 +5482,8 @@ let interval = () => {
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
       clearInterval(waitForNoMessages);
+      //cache parsed data
+      cache_caldav_events();
     }
   }, checkMessagesInterval);
 };
