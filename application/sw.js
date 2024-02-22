@@ -99,7 +99,7 @@ function parse_ics(
           rr_until = new Date('3000-01-01').getTime();
 
           if (rrule && typeof rrule === 'object' && rrule.freq) {
-            n = rrule;
+            let n = rrule;
             rr_until = n.until || '';
           }
 
@@ -134,74 +134,79 @@ function parse_ics(
       }
     }
 
-    //date start
-    let dateStart, timeStart, dateStartUnix;
-    if (date_start) {
-      let a = dayjs(date_start);
-      dateStart = a.format('YYYY-MM-DD');
-      timeStart = a.format('HH:mm:ss');
-      dateStartUnix = a.unix();
-    }
-
-    //date end
-    let dateEnd, timeEnd, dateEndUnix;
-
-    if (date_end) {
-      let a = dayjs(date_end);
-
-      if (rr_until != '') {
-        a = dayjs(rr_until);
+    try {
+      //date start
+      let dateStart, timeStart, dateStartUnix;
+      if (date_start) {
+        let a = dayjs(date_start);
+        dateStart = a.format('YYYY-MM-DD');
+        timeStart = a.format('HH:mm:ss');
+        dateStartUnix = a.unix();
       }
 
-      if (allday) {
-        a = a.subtract(1, 'day');
+      //date end
+      let dateEnd, timeEnd, dateEndUnix;
+
+      if (date_end) {
+        let a = dayjs(date_end);
+
+        if (rr_until != '') {
+          a = dayjs(rr_until);
+        }
+
+        if (allday) {
+          a = a.subtract(1, 'day');
+        }
+
+        dateEnd = a.format('YYYY-MM-DD');
+        timeEnd = a.format('HH:mm:ss');
+        dateEndUnix = a.unix();
       }
 
-      dateEnd = a.format('YYYY-MM-DD');
-      timeEnd = a.format('HH:mm:ss');
-      dateEndUnix = a.unix();
-    }
+      imp = {
+        UID: ite.getFirstPropertyValue('uid') || '',
+        SUMMARY: ite.getFirstPropertyValue('summary') || '',
+        LOCATION: ite.getFirstPropertyValue('location') || '',
+        DESCRIPTION: ite.getFirstPropertyValue('description') || '',
+        CATEGORIES: ite.getFirstPropertyValue('categories') || '',
+        RRULE: ite.getFirstPropertyValue('rrule') || '',
+        'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified') || '',
+        CLASS: ite.getFirstPropertyValue('class') || '',
+        DTSTAMP: ite.getFirstPropertyValue('dtstamp') || '',
+        DTSTART: date_start,
+        DTEND: date_end,
+        isSubscription: isSubscription,
+        isCaldav: isCaldav,
+        allDay: allday,
+        dateStart: dateStart,
+        dateStartUnix: dateStartUnix,
+        dateEndUnix: dateEndUnix,
+        dateEnd: dateEnd,
+        time_start: timeStart,
+        time_end: timeEnd,
+        alarm: alarm || 'none',
+        etag: etag || '',
+        url: url,
+        calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
+        id: account_id,
+        modified: ite.getFirstPropertyValue('last-modified') == null ? '' : ite.getFirstPropertyValue('last-modified').toString(),
+      };
+      //when importing data callback to store
+      let a = {parsed_data: imp};
+      if (store) {
+        a.raw_data = data;
+        a.uid = imp.UID;
+      }
 
-    imp = {
-      UID: ite.getFirstPropertyValue('uid') || '',
-      SUMMARY: ite.getFirstPropertyValue('summary') || '',
-      LOCATION: ite.getFirstPropertyValue('location') || '',
-      DESCRIPTION: ite.getFirstPropertyValue('description') || '',
-      CATEGORIES: ite.getFirstPropertyValue('categories') || '',
-      RRULE: ite.getFirstPropertyValue('rrule') || '',
-      'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified') || '',
-      CLASS: ite.getFirstPropertyValue('class') || '',
-      DTSTAMP: ite.getFirstPropertyValue('dtstamp') || '',
-      DTSTART: date_start,
-      DTEND: date_end,
-      isSubscription: isSubscription,
-      isCaldav: isCaldav,
-      allDay: allday,
-      dateStart: dateStart,
-      dateStartUnix: dateStartUnix,
-      dateEndUnix: dateEndUnix,
-      dateEnd: dateEnd,
-      time_start: timeStart,
-      time_end: timeEnd,
-      alarm: alarm || 'none',
-      etag: etag || '',
-      url: url,
-      calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
-      id: account_id,
-      modified: ite.getFirstPropertyValue('last-modified').toString(),
-    };
-    //when importing data callback to store
-    let a = { parsed_data: imp };
-    if (store) {
-      a.raw_data = data;
-      a.uid = imp.UID;
+      //callback or not
+      if (callback) {
+        a.calback = true;
+      }
+      return_array.push(a);
+    } catch (e) {
+      console.log(e);
+      console.log(ite);
     }
-
-    //callback or not
-    if (callback) {
-      a.calback = true;
-    }
-    return_array.push(a);
   });
   return return_array;
 }

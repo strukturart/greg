@@ -70,8 +70,8 @@ try {
       localforage
         .getItem('events')
         .then((e) => {
-          console.log(e.length);
           if (e == null || e.length == 0) return false;
+          console.log(e.length);
           export_ical_versionChangment('greg-backup.ics', e);
           alert(
             "In the new app version, events in the local calendar are saved differently. That's why it was exported and saved on your device. You can now import it again, please use the import button in the settings area. I apologize for the circumstances."
@@ -79,6 +79,7 @@ try {
         })
         .catch((e) => {
           console.log('error');
+          console.log(e);
         });
     }, 10000);
   }
@@ -1108,6 +1109,7 @@ let rrule_check = function (date) {
       let c = new Date(date).getTime();
       let d = parsed_events[t].RRULE.freq;
       let e = parsed_events[t].RRULE;
+      let rcur_interval = parsed_events[t].RRULE.interval;
 
       if (e !== undefined && e !== null) {
         //recurrences
@@ -1138,8 +1140,9 @@ let rrule_check = function (date) {
 
           if (d == 'WEEKLY') {
             if (
-              new Date(parsed_events[t].dateStart).getDay() ===
-              new Date(date).getDay()
+                ((rcur_interval == null || rcur_interval == 1)
+                    && new Date(parsed_events[t].dateStart).getDay() === new Date(date).getDay())
+                || Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (rcur_interval * 7) == 0
             ) {
               feedback.rrule = true;
               feedback.event = true;
@@ -1230,6 +1233,7 @@ let event_slider = function (date) {
     let b = new Date(parsed_events[i].dateEnd).getTime();
     let c = new Date(date).getTime();
     let d = parsed_events[i].RRULE.freq;
+    let rcur_interval = parsed_events[t].RRULE.interval;
 
     if (d === 'none' || d === '' || d === undefined || d === null) {
       if (a === c || (a <= c && b >= c)) {
@@ -1264,8 +1268,9 @@ let event_slider = function (date) {
         //WEEK
         if (d == 'WEEKLY') {
           if (
-            new Date(parsed_events[i].dateStart).getDay() ==
-            new Date(date).getDay()
+              ((rcur_interval == null || rcur_interval == 1)
+                  && new Date(parsed_events[t].dateStart).getDay() === new Date(date).getDay())
+              || Math.floor((c - a) / (24 * 60 * 60 * 1000)) % (rcur_interval * 7) == 0
           ) {
             slider.push(parsed_events[i]);
           }
@@ -1339,9 +1344,16 @@ let event_slider = function (date) {
   } else {
     document.getElementById('event-slider-indicator').style.opacity = 1;
     document.querySelector('div#event-slider article').style.display = 'block';
-    document
-      .querySelectorAll('div#event-slider .indicator')[0]
-      .style.classList.add('active');
+    try {
+      document
+          .querySelectorAll('div#event-slider .indicator')[0]
+          .style.classList.add('active');
+    } catch(e) {
+      // This seems to be needed for desktop browser:
+      document
+          .querySelectorAll('div#event-slider-indicator .indicator')[0]
+          .classList.add('active');
+    }
   }
 };
 
@@ -3840,6 +3852,9 @@ let store_account = function (edit, id) {
         type: 'basic',
       });
     } else {
+      if (accounts == null) {
+        accounts = [];
+      }
       accounts.push({
         server_url: document.getElementById('account-url').value,
         user: document.getElementById('account-username').value,
@@ -5420,7 +5435,7 @@ let interval = () => {
       interval_is_running = false;
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
-      console.log(page_add_events);
+      console.log('page_add_events');
       clearInterval(waitForNoMessages);
     }
   }, checkMessagesInterval);
