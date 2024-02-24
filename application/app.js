@@ -289,8 +289,9 @@ let loadAccounts = () => {
       loadCalendarNames();
 
       if (accounts != null) {
-        load_cached_caldav();
-        sync_caldav(sync_caldav_callback);
+        load_cached_caldav().then(() => {
+          sync_caldav(sync_caldav_callback);
+        });
       }
     })
     .catch(() => {});
@@ -596,12 +597,14 @@ let cn = [
 //update calendar names
 
 export let sync_caldav = async function (callback) {
-  if (!navigator.onLine) return false;
+  if (!navigator.onLine) {
+    console.log('offline');
+    return false;
+  }
   if (!status.visible && !navigator.onLine) window.close();
 
   for (const item of accounts) {
     const client = await getClientInstance(item);
-
     try {
       if (!isLoggedInMap[item.id]) {
         await client.login();
@@ -966,9 +969,10 @@ const load_subscriptions = () => {
 };
 
 export let sync_caldav_callback = function () {
+  console.log('sync');
+
   load_caldav().then(() => {
     if (!status.visible) {
-      localStorage.setItem('background_sync_with_update', '1');
       cache_caldav_events(true);
     }
   });

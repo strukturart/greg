@@ -169,9 +169,7 @@ function parse_ics(
       DESCRIPTION: ite.getFirstPropertyValue('description') || '',
       CATEGORIES: ite.getFirstPropertyValue('categories') || '',
       RRULE: ite.getFirstPropertyValue('rrule') || '',
-      // 'LAST-MODIFIED': ite.getFirstPropertyValue('last-modified') || '',
       CLASS: ite.getFirstPropertyValue('class') || '',
-      // DTSTAMP: ite.getFirstPropertyValue('dtstamp') || '',
       DTSTART: date_start,
       DTEND: date_end,
       isSubscription: isSubscription,
@@ -333,7 +331,6 @@ self.addEventListener('message', async (event) => {
 
   if (event.data.type == 'parse') {
     try {
-      // Call the parse_ics function asynchronously
       let ff = parse_ics(
         event.data.t.data,
         false,
@@ -352,7 +349,6 @@ self.addEventListener('message', async (event) => {
         channel.postMessage({ action: 'parse', content: e });
       });
     } catch (error) {
-      console.log('hello' + error);
       channel.postMessage({
         action: 'error',
         content: 'error parsing ' + error,
