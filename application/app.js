@@ -1911,33 +1911,37 @@ var page_events = {
           let de,
             se = '';
 
+          console.log(
+            dayjs(item.dateStartUnix * 1000).format(settings.dateformat)
+          );
+
           //all day
           if (item.allDay) {
             se = 'all day';
           } else {
-            se = formatDT(item.DTSTART._time).format('HH:mm');
+            se = dayjs(item.dateStartUnix).format('HH:mm');
           }
 
           let weekDay =
             settings.firstday == 'sunday'
-              ? weekday[dayjs(formatDT(item.DTSTART._time)).day()]
-              : weekday[dayjs(formatDT(item.DTSTART._time)).day() - 1];
+              ? weekday[dayjs(item.dateStartUnix * 1000).day()]
+              : weekday[dayjs(item.dateStartUnix * 1000).day() - 1];
 
           //date
           if (
-            item.DTSTART != null &&
-            item.DTEND != null &&
-            formatDT(item.DTSTART._time).format(settings.dateformat) !=
-              formatDT(item.DTEND._time).format(settings.dateformat) &&
+            item.dateStartUnix != null &&
+            item.dateEndUnix != null &&
+            dayjs(item.dateStartUnix * 1000).format(settings.dateformat) !=
+              dayjs(item.dateEndUnix * 1000).format(settings.dateformat) &&
             !item.allDay
           ) {
             de =
-              formatDT(item.DTSTART._time).format(settings.dateformat) +
+              dayjs(item.dateStartUnix * 1000).format(settings.dateformat) +
               ' - ' +
-              formatDT(item.DTEND._time).format(settings.dateformat);
+              dayjs(item.dateEndUnix * 1000).format(settings.dateformat);
           } else {
             de =
-              formatDT(item.DTSTART._time).format(settings.dateformat) +
+              dayjs(item.dateStartUnix * 1000).format(settings.dateformat) +
               ' | ' +
               weekDay;
           }
@@ -1951,7 +1955,9 @@ var page_events = {
               tabindex: 0,
 
               'data-id': item.UID,
-              'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
+              'data-date': dayjs(item.dateStartUnix * 1000).format(
+                'YYYY-MM-DD'
+              ),
               'data-category': (item.CATEGORIES || '').toUpperCase(),
               'data-summary': (item.SUMMARY || '').toUpperCase(),
               'data-calendar-name': item.calendar_name || '',
@@ -2024,18 +2030,18 @@ var page_events_filtered = {
             //date
             //date
             if (
-              item.DTSTART != null &&
-              item.DTEND != null &&
-              formatDT(item.DTSTART._time).format(settings.dateformat) !=
-                formatDT(item.DTEND._time).format(settings.dateformat) &&
+              item.dateStartUnix != null &&
+              item.dateEndUnix != null &&
+              formatDT(item.dateStartUnix).format(settings.dateformat) !=
+                formatDT(item.dateEndUnix).format(settings.dateformat) &&
               !item.allDay
             ) {
               de =
-                formatDT(item.DTSTART._time).format(settings.dateformat) +
+                formatDT(item.dateStartUnix).format(settings.dateformat) +
                 ' - ' +
-                formatDT(item.DTEND._time).format(settings.dateformat);
+                formatDT(item.dateEndUnix).format(settings.dateformat);
             } else {
-              de = formatDT(item.DTSTART._time).format(settings.dateformat);
+              de = formatDT(item.dateStartUnix).format(settings.dateformat);
             }
 
             let u = item.isSubscription ? 'subscription' : '';
@@ -2046,7 +2052,7 @@ var page_events_filtered = {
                 class: 'item events ' + u + ' ' + a,
                 tabindex: tindex,
                 'data-id': item.UID,
-                'data-date': formatDT(item.DTSTART._time).format('YYYY-MM-DD'),
+                'data-date': formatDT(item.dateStartUnix).format('YYYY-MM-DD'),
                 'data-category': (item.CATEGORIES || '').toUpperCase(),
                 'data-summary': (item.SUMMARY || '').toUpperCase(),
               },
