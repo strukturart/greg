@@ -1,5 +1,5 @@
 {
-  "version": "2.2.6308",
+  "version": "2.2.6310",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -8,6 +8,7 @@
   "launch_path": "/index.html",
   "type": "privileged",
   "fullscreen": "true",
+  "userAgentInfo": "greg written by strukturart@gmail.com",
   "icons": {
     "56": "/assets/icons/icon-56-56.png",
     "112": "/assets/icons/icon-112-112.png"

@@ -15,7 +15,6 @@ import {
   validate,
   get_file,
   list_files,
-  formatDT,
   autocomplete,
 } from './assets/js/helper.js';
 
@@ -54,7 +53,7 @@ export let closing_prohibited = false;
 export let search_history = [];
 export let calendar_names;
 
-export let background_sync_interval = 3;
+export let background_sync_interval = 60;
 let last_sync = localStorage.getItem('last_sync') || '';
 
 let subscriptions = [];
@@ -134,6 +133,7 @@ let view_history_update = () => {
 const get_last_view = () => {
   setTimeout(() => {
     m.route.set(view_history[view_history.length - 2]);
+    console.log(view_history);
   }, 1000);
 };
 wakeLookCPU();
@@ -827,7 +827,6 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 
   document.querySelector('.loading-spinner').style.display = 'block';
   const matchingAccount = accounts.find((p) => p.id === account_id);
-  console.log('hey' + matchingAccount);
 
   if (matchingAccount == undefined) {
     document.querySelector('.loading-spinner').style.display = 'none';
@@ -868,10 +867,13 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
             return 'success';
           } else {
             show_success_animation();
+
             return 'success';
           }
         }
       } else {
+        get_last_view();
+
         side_toaster(
           'There was a problem deleting, please try again later.',
           5000
@@ -879,6 +881,8 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
         return 'error';
       }
     } catch (e) {
+      get_last_view();
+
       side_toaster(
         'There was a problem deleting, please try again later.',
         5000
@@ -1667,6 +1671,7 @@ var page_calendar = {
           view_history_update();
           load_settings();
           clear_form();
+          status.shortCut = true;
         },
       },
       [
@@ -1781,8 +1786,6 @@ var page_calendar = {
 
 var page_events = {
   view: function () {
-    let query = m.route.param('query');
-
     return m(
       'div',
       {
@@ -1911,15 +1914,11 @@ var page_events = {
           let de,
             se = '';
 
-          console.log(
-            dayjs(item.dateStartUnix * 1000).format(settings.dateformat)
-          );
-
           //all day
           if (item.allDay) {
             se = 'all day';
           } else {
-            se = dayjs(item.dateStartUnix).format('HH:mm');
+            se = dayjs(item.dateStartUnix * 1000).format('HH:mm');
           }
 
           let weekDay =
@@ -2024,7 +2023,7 @@ var page_events_filtered = {
             if (item.allDay) {
               se = 'all day';
             } else {
-              se = dayjs.unix(item.dateStartUnix).format('HH:mm');
+              se = dayjs(item.dateStartUnix * 1000).format('HH:mm');
             }
 
             //date
@@ -2032,16 +2031,16 @@ var page_events_filtered = {
             if (
               item.dateStartUnix != null &&
               item.dateEndUnix != null &&
-              formatDT(item.dateStartUnix).format(settings.dateformat) !=
-                formatDT(item.dateEndUnix).format(settings.dateformat) &&
+              dayjs(item.dateStartUnix * 1000).format(settings.dateformat) !=
+                dayjs(item.dateStartUnix * 1000).format(settings.dateformat) &&
               !item.allDay
             ) {
               de =
-                formatDT(item.dateStartUnix).format(settings.dateformat) +
+                dayjs(item.dateStartUnix * 1000).format(settings.dateformat) +
                 ' - ' +
-                formatDT(item.dateEndUnix).format(settings.dateformat);
+                dayjs(item.dateStartUnix * 1000).format(settings.dateformat);
             } else {
-              de = formatDT(item.dateStartUnix).format(settings.dateformat);
+              de = dayjs(item.dateStartUnix * 1000).format(settings.dateformat);
             }
 
             let u = item.isSubscription ? 'subscription' : '';
@@ -2052,7 +2051,9 @@ var page_events_filtered = {
                 class: 'item events ' + u + ' ' + a,
                 tabindex: tindex,
                 'data-id': item.UID,
-                'data-date': formatDT(item.dateStartUnix).format('YYYY-MM-DD'),
+                'data-date': dayjs(item.dateStartUnix * 1000).format(
+                  'YYYY-MM-DD'
+                ),
                 'data-category': (item.CATEGORIES || '').toUpperCase(),
                 'data-summary': (item.SUMMARY || '').toUpperCase(),
               },
@@ -4753,8 +4754,9 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
           console.log('send to sw');
         }
         clear_form();
-
-        get_last_view();
+        setTimeout(() => {
+          get_last_view();
+        }, 1000);
       })
       .catch(function (err) {});
   } else {
@@ -4809,7 +4811,6 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
 
     update_caldav(etag, url, event_data, event.id).then((e) => {
       if (e == undefined || e == null) {
-        console.log('cant parse');
         return false;
       }
 
@@ -4825,7 +4826,9 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
         console.log('error parsing' + e);
       }
       style_calendar_cell(currentYear, currentMonth);
-      get_last_view();
+      setTimeout(() => {
+        get_last_view();
+      }, 1000);
     });
   }
 };
@@ -4837,6 +4840,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid).then((e) => {
+      if (status.shortCut) show_success_animation();
       cache_caldav_events();
     });
   } else {
@@ -4851,7 +4855,9 @@ let delete_event = function (etag, url, account_id, uid) {
         .then(function () {
           style_calendar_cell(currentYear, currentMonth);
 
-          if (!status.shortCut) get_last_view();
+          if (!status.shortCut) {
+            get_last_view();
+          }
           show_success_animation();
           cache_caldav_events();
         })

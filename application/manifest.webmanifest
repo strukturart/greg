@@ -8,6 +8,7 @@
   "categories": ["utilities"],
   "theme_color": "#ffffff",
   "orientation": "natural",
+  "userAgentInfo": "greg written by strukturart@gmail.com",
 
   "icons": [
     {
@@ -23,7 +24,7 @@
   ],
 
   "b2g_features": {
-    "version": "3.0.653",
+    "version": "3.0.654",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
