@@ -58,7 +58,7 @@ let last_sync = localStorage.getItem('last_sync') || '';
 
 let subscriptions = [];
 localforage.getItem('subscriptions').then((e) => {
-  console.log('no subscriptions');
+  console.log(e);
 });
 
 //caching parsed events
@@ -294,7 +294,9 @@ let loadAccounts = () => {
         });
       }
     })
-    .catch(() => {});
+    .catch(() => {
+      console.log('no accounts');
+    });
 };
 
 loadAccounts();
@@ -413,7 +415,9 @@ async function getClientInstance(item) {
           authMethod: 'Oauth',
           defaultAccountType: 'caldav',
         });
-      } else {
+      }
+      if (item.type === 'basic') {
+        console.log(item.type, item.user, item.password);
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
@@ -425,15 +429,17 @@ async function getClientInstance(item) {
         });
       }
     }
+    console.log(clientInstances[item.id]);
     return clientInstances[item.id];
   } catch (e) {
-    console.log(e);
+    console.error('Error occurred while creating DAVClient instance:', e);
+    throw e; // Re-throw the error to handle it outside this function if needed
   }
 }
 
 ///load events
 
-async function load_caldav(callback = false) {
+async function load_caldav(callback = false, account_to_update = false) {
   if (!navigator.onLine) return false;
   closing_prohibited = true;
   //remove events with local events
@@ -441,9 +447,18 @@ async function load_caldav(callback = false) {
     parsed_events = parsed_events.filter((e) => !e.isCaldav);
   } catch (e) {}
 
-  // Load data from every account
+  // Load data from every account or singel account
   for (const item of accounts) {
+    // if (account_to_update != false && account_to_update !== item) continue;
+    console.log(isLoggedInMap);
     const client = await getClientInstance(item);
+    console.log('client' + JSON.stringify(client));
+    let calendars;
+    try {
+      calendars = await client.fetchCalendars();
+    } catch (fetchCalendarsError) {
+      console.log(fetchCalendarsError);
+    }
 
     try {
       if (!isLoggedInMap[item.id]) {
@@ -451,25 +466,27 @@ async function load_caldav(callback = false) {
           await client.login();
           isLoggedInMap[item.id] = true;
         } catch (loginError) {
-          alert(loginError);
+          console.log(loginError);
           isLoggedInMap[item.id] = false; // Set flag to indicate login failure
           continue; // Skip to the next account in case of login failure
         }
       } else {
-        console.log('login in');
+        console.log('login');
+      }
+
+      let calendars;
+      try {
+        calendars = await client.fetchCalendars();
+      } catch (fetchCalendarsError) {
+        console.log(fetchCalendarsError);
+
+        // Handle the error (e.g., show a user-friendly message)
+        continue; // Skip to the next account in case of fetch failure
       }
 
       if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'visible';
       }
-      let calendars;
-      try {
-        calendars = await client.fetchCalendars();
-      } catch (fetchCalendarsError) {
-        // Handle the error (e.g., show a user-friendly message)
-        continue; // Skip to the next account in case of fetch failure
-      }
-
       const dataToCache = [];
 
       for (const calendar of calendars) {
@@ -627,7 +644,6 @@ export let sync_caldav = async function (callback) {
 
       const value = await localforage.getItem(item.id);
       if (value == null) {
-        //  load_caldav();
         continue;
       }
 
@@ -654,7 +670,7 @@ export let sync_caldav = async function (callback) {
           );
 
           if (ma.updated.length && ma.updated.length > 0) {
-            callback();
+            callback(item);
             break;
           } else {
             if (!status.visible) cache_caldav_events(true);
@@ -743,7 +759,8 @@ const load_cached_caldav = async () => {
   }
 
   if (should_be_loaded) {
-    load_caldav();
+    console.log('try to load');
+    load_caldav(false, false);
   }
 };
 
@@ -972,10 +989,8 @@ const load_subscriptions = () => {
   });
 };
 
-export let sync_caldav_callback = function () {
-  console.log('sync');
-
-  load_caldav().then(() => {
+export let sync_caldav_callback = function (account_to_update) {
+  load_caldav(false, account_to_update).then(() => {
     if (!status.visible) {
       cache_caldav_events(true);
     }
@@ -2406,7 +2421,7 @@ export let page_options = {
             tabindex: '7',
             onclick: function () {
               setTimeout(() => {
-                load_caldav(true);
+                load_caldav(true, false);
               }, 1000);
               side_toaster('the big loading has begun', 2000);
             },
@@ -2588,13 +2603,7 @@ export let page_options = {
                           return false;
                         }
                         accounts = value;
-                        load_caldav();
-                        /*
-                        side_toaster(
-                          'the calendar events will be loaded the next time the app is restarted',
-                          30000
-                        );
-                        */
+                        load_caldav(false, false);
                       })
                       .catch(function (err) {
                         console.log(err);
@@ -3870,7 +3879,6 @@ let store_subscription = () => {
         load_subscriptions();
       })
       .catch(function (err) {
-        // This code runs if there were any errors
         console.log(err);
       });
   } else {
@@ -3901,6 +3909,8 @@ let store_account = function (edit, id) {
         type: 'basic',
       });
     } else {
+      if (accounts == null) accounts = [];
+
       accounts.push({
         server_url: document.getElementById('account-url').value,
         user: document.getElementById('account-username').value,
@@ -3915,13 +3925,8 @@ let store_account = function (edit, id) {
       .setItem('accounts', accounts)
       .then(function (value) {
         loadAccounts();
-        load_caldav();
-        /*
-        side_toaster(
-          'the calendar events will be loaded the next time the app is restarted',
-          30000
-        );
-        */
+        load_caldav(true, false);
+
         m.route.set('/page_options');
       })
       .catch(function (err) {

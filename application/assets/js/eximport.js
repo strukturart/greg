@@ -207,14 +207,13 @@ export let fetch_ics = function (url, db_name) {
   xhttp.onload = function () {
     let data = xhttp.response;
 
-    parse_ics(data, true, '', '', db_name, false, 'none');
-
-    localforage
-      .setItem(db_name, data)
-      .then(function () {})
-      .catch(function (err) {
-        console.log(err);
-      });
+    navigator.serviceWorker.controller.postMessage({
+      type: 'parse',
+      t: data,
+      e: db_name,
+      callback: false,
+      store: false,
+    });
   };
 
   xhttp.onerror = function () {
