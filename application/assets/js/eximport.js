@@ -1,5 +1,3 @@
-import { side_toaster } from './helper.js';
-import localforage from 'localforage';
 import dayjs from 'dayjs';
 
 export let export_ical = function (filename, data, callback) {
@@ -192,35 +190,6 @@ export let export_ical_versionChangment = function (filename, event_data) {
       export_data();
     } catch (e) {}
   }
-};
-
-/////////////
-///FETCH ICS
-///////////
-
-export let fetch_ics = function (url, db_name) {
-  let xhttp = new XMLHttpRequest({ mozSystem: true });
-
-  xhttp.open('GET', url + '?time=' + new Date().getTime(), true);
-  xhttp.timeout = 2000;
-
-  xhttp.onload = function () {
-    let data = xhttp.response;
-
-    navigator.serviceWorker.controller.postMessage({
-      type: 'parse',
-      t: data,
-      e: db_name,
-      callback: false,
-      store: false,
-    });
-  };
-
-  xhttp.onerror = function () {
-    side_toaster('subscription could not be loaded', 4000);
-  };
-
-  xhttp.send(null);
 };
 
 function share(url, name) {

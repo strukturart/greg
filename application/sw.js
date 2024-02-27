@@ -2,7 +2,9 @@ import './assets/js/shim-xhr-to-fetch.js';
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
 import localforage from 'localforage';
-import { DAVClient } from './assets/js/tsdav-2.0.5.js';
+//import { DAVClient } from './assets/js/tsdav-2.0.5.js';
+import { DAVClient } from './assets/js/tsdav.js';
+
 import { google_cred } from './assets/js/google_cred.js';
 
 const google_acc = {
@@ -170,8 +172,6 @@ function parse_ics(
       CATEGORIES: ite.getFirstPropertyValue('categories') || '',
       RRULE: ite.getFirstPropertyValue('rrule') || '',
       CLASS: ite.getFirstPropertyValue('class') || '',
-      // DTSTART: date_start,
-      //  DTEND: date_end,
       isSubscription: isSubscription,
       isCaldav: isCaldav,
       allDay: allday,
@@ -331,13 +331,22 @@ self.addEventListener('message', async (event) => {
 
   if (event.data.type == 'parse') {
     try {
+      let is_caldav = () => {
+        if (event.data.e == 'subscription' || event.data.e == 'local-id')
+          return false;
+      };
+
+      let is_subscription = () => {
+        if (event.data.e == 'subscription') return true;
+      };
+
       let ff = parse_ics(
         event.data.t.data,
-        false,
+        event.data.e == is_subscription(),
         event.data.t.etag,
         event.data.t.url,
         event.data.e,
-        event.data.e == 'local-id' ? false : true,
+        event.data.e == is_caldav(),
         false,
         event.data.callback || false,
         event.data.store || false

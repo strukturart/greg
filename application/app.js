@@ -19,15 +19,13 @@ import {
 } from './assets/js/helper.js';
 
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
-import {
-  fetch_ics,
-  export_ical_versionChangment,
-} from './assets/js/eximport.js';
+import { export_ical_versionChangment } from './assets/js/eximport.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
 import m from 'mithril';
 import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+
 import 'url-search-params-polyfill';
 import { getManifest, load_ads, manifest } from './assets/js/ads.js';
 import { uid } from 'uid';
@@ -449,7 +447,7 @@ async function load_caldav(callback = false, account_to_update = false) {
 
   // Load data from every account or singel account
   for (const item of accounts) {
-    // if (account_to_update != false && account_to_update !== item) continue;
+    if (account_to_update != false && account_to_update !== item) continue;
     console.log(isLoggedInMap);
     const client = await getClientInstance(item);
     console.log('client' + JSON.stringify(client));
@@ -983,10 +981,48 @@ export let update_caldav = async function (etag, url, data, account_id) {
 
 //load subscriptions
 
-const load_subscriptions = () => {
-  subscriptions.forEach((e) => {
-    fetch_ics(e.url, e.id);
-  });
+const fetch_ics = function (url, callback) {
+  let xhttp = new XMLHttpRequest({ mozSystem: true });
+
+  xhttp.open('GET', url + '?time=' + new Date().getTime(), true);
+  xhttp.timeout = 2000;
+
+  xhttp.onload = function () {
+    if (xhttp.status >= 200 && xhttp.status < 300) {
+      callback(xhttp.responseText, url);
+    } else {
+      callback(new Error('Request failed with status ' + xhttp.status));
+    }
+  };
+
+  xhttp.onerror = function () {
+    callback(new Error('XMLHttpRequest error'), null);
+  };
+
+  xhttp.ontimeout = function () {
+    callback(new Error('XMLHttpRequest timed out'), null);
+  };
+
+  xhttp.send();
+};
+let send_to_parser = (data, url) => {
+  try {
+    navigator.serviceWorker.controller.postMessage({
+      type: 'parse',
+      t: { uid: '', data: data, url: url, etag: '' },
+      e: 'subscription',
+      callback: false,
+      store: false,
+    });
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const load_subscriptions = async () => {
+  for (const e of subscriptions) {
+    fetch_ics(e.url, send_to_parser);
+  }
 };
 
 export let sync_caldav_callback = function (account_to_update) {
@@ -5024,9 +5060,10 @@ function shortpress_action(param) {
       break;
 
     case '9':
-      parsed_events = [];
-      load_cached_caldav();
-      load_or_create_local_account();
+      //parsed_events = [];
+      //load_cached_caldav();
+      //load_or_create_local_account();
+      load_subscriptions();
 
       break;
     case '5':
@@ -5131,7 +5168,7 @@ function shortpress_action(param) {
       }
       if (currentPageStartsWith('page_events')) {
         if (document.activeElement.classList.contains('subscription')) {
-          toaster('a subscription cannot be edited', 2000);
+          side_toaster('subscriptions events cannot be edited', 4000);
           return false;
         }
 
@@ -5174,7 +5211,7 @@ function shortpress_action(param) {
 
           if (f.length - 1 == i) {
             update_event_date = parsed_events.filter(function (arr) {
-              if (arr.isSubscription == true) return false;
+              if (arr.isSubscription) return false;
               return arr.UID == n.getAttribute('data-uid');
             })[0];
 
