@@ -415,7 +415,6 @@ async function getClientInstance(item) {
         });
       }
       if (item.type === 'basic') {
-        console.log(item.type, item.user, item.password);
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
@@ -427,7 +426,6 @@ async function getClientInstance(item) {
         });
       }
     }
-    console.log(clientInstances[item.id]);
     return clientInstances[item.id];
   } catch (e) {
     console.error('Error occurred while creating DAVClient instance:', e);
@@ -440,31 +438,39 @@ async function getClientInstance(item) {
 async function load_caldav(callback = false, account_to_update = false) {
   if (!navigator.onLine) return false;
   closing_prohibited = true;
-  //remove events with local events
-  try {
-    parsed_events = parsed_events.filter((e) => !e.isCaldav);
-  } catch (e) {}
+
+  //remove events
+  if (!account_to_update) {
+    try {
+      parsed_events = parsed_events.filter((e) => !e.isCaldav);
+    } catch (e) {
+      console.log(e);
+    }
+  } else {
+    try {
+      parsed_events = parsed_events.filter((e) => e.id == e.account_to_update);
+    } catch (e) {
+      console.log(e);
+    }
+  }
 
   // Load data from every account or singel account
   for (const item of accounts) {
-    if (account_to_update != false && account_to_update !== item) continue;
-    console.log(isLoggedInMap);
-    const client = await getClientInstance(item);
-    console.log('client' + JSON.stringify(client));
-    let calendars;
-    try {
-      calendars = await client.fetchCalendars();
-    } catch (fetchCalendarsError) {
-      console.log(fetchCalendarsError);
+    if (account_to_update != false && account_to_update !== item) {
+      continue;
     }
+
+    const client = await getClientInstance(item);
 
     try {
       if (!isLoggedInMap[item.id]) {
         try {
           await client.login();
+
           isLoggedInMap[item.id] = true;
+          console.log('login successfull');
         } catch (loginError) {
-          console.log(loginError);
+          console.log('cant login' + loginError);
           isLoggedInMap[item.id] = false; // Set flag to indicate login failure
           continue; // Skip to the next account in case of login failure
         }
@@ -475,10 +481,10 @@ async function load_caldav(callback = false, account_to_update = false) {
       let calendars;
       try {
         calendars = await client.fetchCalendars();
+        console.log(calendars);
       } catch (fetchCalendarsError) {
         console.log(fetchCalendarsError);
 
-        // Handle the error (e.g., show a user-friendly message)
         continue; // Skip to the next account in case of fetch failure
       }
 
@@ -508,7 +514,6 @@ async function load_caldav(callback = false, account_to_update = false) {
         }
 
         // Parse data
-
         for (const obj of objects) {
           if (
             'serviceWorker' in navigator &&
@@ -594,7 +599,7 @@ let cache_caldav = async function () {
     }
   }
   //cache parsed events
-  cache_caldav_events();
+  //  cache_caldav_events();
 };
 
 //default calendar
@@ -671,7 +676,7 @@ export let sync_caldav = async function (callback) {
             callback(item);
             break;
           } else {
-            if (!status.visible) cache_caldav_events(true);
+            // if (!status.visible) cache_caldav_events(true);
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -714,8 +719,6 @@ export let sync_caldav = async function (callback) {
 //load cached
 
 const load_cached_caldav = async () => {
-  let should_be_loaded = false;
-
   if (!accounts) {
     return false;
   }
@@ -723,12 +726,14 @@ const load_cached_caldav = async () => {
   for (const item of accounts) {
     try {
       const w = await localforage.getItem(item.id);
-
       // Load content if never cached
       if (w === null) {
-        should_be_loaded = true;
+        try {
+          load_caldav(false, item.id);
+        } catch (e) {
+          console.log(e);
+        }
       }
-
       for (const b of w) {
         for (const m of b.objects) {
           if (
@@ -754,11 +759,6 @@ const load_cached_caldav = async () => {
     } catch (e) {
       console.log(e);
     }
-  }
-
-  if (should_be_loaded) {
-    console.log('try to load');
-    load_caldav(false, false);
   }
 };
 
@@ -838,10 +838,13 @@ export let create_caldav = async function (
 
 //delete event
 export let delete_caldav = async function (etag, url, account_id, uid) {
+  console.log(parsed_events);
   if (!navigator.onLine) return false;
 
   document.querySelector('.loading-spinner').style.display = 'block';
   const matchingAccount = accounts.find((p) => p.id === account_id);
+
+  console.log('hey' + matchingAccount);
 
   if (matchingAccount == undefined) {
     document.querySelector('.loading-spinner').style.display = 'none';
@@ -1028,7 +1031,7 @@ const load_subscriptions = async () => {
 export let sync_caldav_callback = function (account_to_update) {
   load_caldav(false, account_to_update).then(() => {
     if (!status.visible) {
-      cache_caldav_events(true);
+      //cache_caldav_events(true);
     }
   });
 };
@@ -1722,7 +1725,7 @@ var page_calendar = {
           view_history_update();
           load_settings();
           clear_form();
-          status.shortCut = true;
+          // status.shortCut = true;
         },
       },
       [
@@ -4882,7 +4885,7 @@ let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid).then((e) => {
       if (status.shortCut) show_success_animation();
-      cache_caldav_events();
+      // cache_caldav_events();
     });
   } else {
     // Find the index of the object with the matching UID
@@ -4900,7 +4903,7 @@ let delete_event = function (etag, url, account_id, uid) {
             get_last_view();
           }
           show_success_animation();
-          cache_caldav_events();
+          // cache_caldav_events();
         })
         .catch(function (err) {});
     }
@@ -5063,7 +5066,8 @@ function shortpress_action(param) {
       //parsed_events = [];
       //load_cached_caldav();
       //load_or_create_local_account();
-      load_subscriptions();
+      // load_subscriptions();
+      load_caldav();
 
       break;
     case '5':
@@ -5541,7 +5545,7 @@ let interval = () => {
       sort_array(parsed_events, 'dateStartUnix', 'number');
       clearInterval(waitForNoMessages);
       //cache parsed data
-      cache_caldav_events();
+      // cache_caldav_events();
     }
   }, checkMessagesInterval);
 };

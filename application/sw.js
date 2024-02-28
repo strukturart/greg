@@ -332,21 +332,28 @@ self.addEventListener('message', async (event) => {
   if (event.data.type == 'parse') {
     try {
       let is_caldav = () => {
-        if (event.data.e == 'subscription' || event.data.e == 'local-id')
+        if (event.data.e == 'subscription' || event.data.e == 'local-id') {
           return false;
+        } else {
+          return true;
+        }
       };
 
       let is_subscription = () => {
-        if (event.data.e == 'subscription') return true;
+        if (event.data.e == 'subscription') {
+          return true;
+        } else {
+          return false;
+        }
       };
 
       let ff = parse_ics(
         event.data.t.data,
-        event.data.e == is_subscription(),
+        is_subscription(),
         event.data.t.etag,
         event.data.t.url,
         event.data.e,
-        event.data.e == is_caldav(),
+        is_caldav(),
         false,
         event.data.callback || false,
         event.data.store || false
