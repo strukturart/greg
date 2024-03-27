@@ -4089,6 +4089,8 @@ let load_template_data = function () {
 /////////////////
 
 let nav = function (move) {
+  highlight_current_day();
+
   set_tabindex();
   if (
     document.activeElement.nodeName == 'SELECT' ||
