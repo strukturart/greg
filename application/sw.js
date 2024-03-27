@@ -85,6 +85,7 @@ function parse_ics(
   let return_array = [];
   vevent.forEach(function (ite) {
     let rr_until = '';
+    let rr_count = '';
     let allday = false;
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
@@ -98,36 +99,47 @@ function parse_ics(
         let rrule = ite.getFirstPropertyValue('rrule');
 
         if (rrule && typeof rrule === 'object' && rrule.freq) {
-          rr_until = new Date('3000-01-01').getTime();
-
-          if (rrule && typeof rrule === 'object' && rrule.freq) {
-            n = rrule;
-            rr_until = n.until || '';
-          }
-
           if (ite.getFirstPropertyValue('rrule').isFinite() === false)
-            rr_until = new Date('3000-01-01').getTime();
+            if (rrule.until !== null) {
+              //  rr_until = new Date('3000-01-01').getTime();
 
-          if (rrule.until !== null) {
-            rr_until = rrule.until;
-          }
+              rr_until = rrule.until;
+            }
 
           if (ite.getFirstPropertyValue('rrule').isByCount()) {
+            //  console.log('count' + ite);
             let dt = dayjs(date_start);
 
             switch (rrule.freq) {
               case 'DAILY':
                 rr_until = dt.add(rrule.count, 'days').valueOf();
+                date_end = dt.add(rrule.count, 'days').format('YYYY-MM-DD');
+                rr_count = rrule.count;
               case 'MONTHLY':
                 rr_until = dt.add(rrule.count, 'months').valueOf();
+                date_end = dt.add(rrule.count, 'months').format('YYYY-MM-DD');
+                rr_count = rrule.count;
+
               case 'BIWEEKLY':
                 rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+                date_end = dt
+                  .add(rrule.count * 2, 'weeks')
+                  .format('YYYY-MM-DD');
+                rr_count = rrule.count;
+
               case 'WEEKLY':
                 rr_until = dt.add(rrule.count, 'weeks').valueOf();
+                date_end = dt.add(rrule.count, 'weeks').format('YYYY-MM-DD');
+                console.log('super' + date_end);
+                rr_count = rrule.count;
+
               case 'YEARLY':
                 rr_until = dt.add(rrule.count, 'years').valueOf();
+                date_end = dt.add(rrule.count, 'years').format('YYYY-MM-DD');
+                rr_count = rrule.count;
+
               default:
-                rr_until = new Date('3000-01-01').getTime();
+              // rr_until = new Date('3000-01-01').getTime();
             }
           }
         }
@@ -179,6 +191,7 @@ function parse_ics(
       dateStartUnix: dateStartUnix,
       dateEndUnix: dateEndUnix,
       dateEnd: dateEnd,
+      rruleCount: rr_count,
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || 'none',
@@ -188,6 +201,8 @@ function parse_ics(
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
+
+    if (rr_count != '') console.log(imp);
     //when importing data callback to store
     let a = { parsed_data: imp };
     if (store) {

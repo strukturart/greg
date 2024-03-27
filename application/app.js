@@ -1227,7 +1227,7 @@ let rrule_check = function (date) {
         if (parsed_events[t].RRULE != null) {
           //endless || with end
           if (parsed_events[t].RRULE.until == null) {
-            b = new Date('3000-01-01').getTime();
+            // b = new Date('3000-01-01').getTime();
           }
         }
 
@@ -1353,7 +1353,7 @@ let event_slider = function (date) {
 
       if (parsed_events[i].RRULE != null) {
         if (parsed_events[i].RRULE.until == null) {
-          b = new Date('3000-01-01').getTime();
+          // b = new Date('3000-01-01').getTime();
         }
       }
 
@@ -4089,6 +4089,8 @@ let load_template_data = function () {
 /////////////////
 
 let nav = function (move) {
+  highlight_current_day();
+
   set_tabindex();
   if (
     document.activeElement.nodeName == 'SELECT' ||

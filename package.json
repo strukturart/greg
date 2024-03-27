@@ -1,13 +1,13 @@
 {
   "name": "greg",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "<img src=\"/images/logo.svg\" width=\"228\"/>",
   "source": "application/index.html",
   "browserslist": "Firefox <= 48",
   "scripts": {
     "oa": "parcel application/oauth.js --no-source-maps --no-optimize /dist",
     "start": "rm -rf dist/* && parcel --no-source-maps application/index.html && cp application/manifest.webapp dist && cp -r application/assets/icons dist",
-    "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize application/index.html && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/icons dist/assets/"
+    "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize --public-url ./ application/index.html  && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/icons dist/assets/"
   },
   "repository": {
     "type": "git",
@@ -18,7 +18,7 @@
     "Calendar"
   ],
   "author": "strukturart",
-  "license": "ISC",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/strukturart/greg/issues"
   },
