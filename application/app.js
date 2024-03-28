@@ -1197,6 +1197,7 @@ const event_check = function (date) {
 };
 
 // check if has recur event
+/*
 let rrule_check = function (date) {
   let feedback = {
     date: '',
@@ -1289,6 +1290,99 @@ let rrule_check = function (date) {
               t = parsed_events.length;
               return feedback;
             }
+          }
+        }
+      }
+    }
+  }
+  return feedback;
+};
+*/
+
+let rrule_check = function (date) {
+  let feedback = {
+    date: '',
+    event: false,
+    subscription: false,
+    multidayevent: false,
+    rrule: 'none',
+    event_data: '',
+  };
+
+  for (let event of parsed_events) {
+    if (typeof event === 'object') {
+      feedback.event = false;
+      feedback.multidayevent = false;
+      feedback.rrule = false;
+      feedback.date = date;
+      feedback.event_data = '';
+
+      let eventStart = new Date(event.dateStart).getTime();
+      let eventEnd = new Date(event.dateEnd).getTime();
+      let currentDate = new Date(date).getTime();
+      let recurrenceFreq = event.RRULE.freq;
+
+      if (event.RRULE !== undefined && event.RRULE !== null) {
+        // Check for recurrences
+        if (event.RRULE.until == null) {
+          // Handle events without end date
+          // eventEnd = new Date('3000-01-01').getTime();
+        }
+
+        if (
+          eventStart === currentDate ||
+          (eventStart < currentDate && eventEnd > currentDate)
+        ) {
+          feedback.event_data = event;
+
+          switch (recurrenceFreq) {
+            case 'MONTHLY':
+              if (
+                new Date(event.dateStart).getDate() === new Date(date).getDate()
+              ) {
+                feedback.event = true;
+                feedback.rrule = true;
+                return feedback;
+              }
+              break;
+
+            case 'WEEKLY':
+              if (
+                new Date(event.dateStart).getDay() === new Date(date).getDay()
+              ) {
+                feedback.rrule = true;
+                feedback.event = true;
+                return feedback;
+              }
+              break;
+
+            case 'BIWEEKLY':
+              if (
+                Math.floor((currentDate - eventStart) / (24 * 60 * 60 * 1000)) %
+                  14 ==
+                0
+              ) {
+                feedback.rrule = true;
+                feedback.event = true;
+                return feedback;
+              }
+              break;
+
+            case 'YEARLY':
+              let eventDate = new Date(event.dateStart);
+              let currentDateObj = new Date(date);
+              if (
+                eventDate.getDate() === currentDateObj.getDate() &&
+                eventDate.getMonth() === currentDateObj.getMonth()
+              ) {
+                feedback.rrule = true;
+                feedback.event = true;
+                return feedback;
+              }
+              break;
+
+            default:
+              break;
           }
         }
       }
@@ -1980,6 +2074,7 @@ var page_events = {
               ? weekday[dayjs(item.dateStartUnix * 1000).day()]
               : weekday[dayjs(item.dateStartUnix * 1000).day() - 1];
 
+          if (weekDay == undefined) weekDay = '';
           //date
           if (
             item.dateStartUnix != null &&
@@ -1997,6 +2092,11 @@ var page_events = {
               dayjs(item.dateStartUnix * 1000).format(settings.dateformat) +
               ' | ' +
               weekDay;
+          }
+
+          let rruleFreq = '';
+          if (item.RRULE) {
+            rruleFreq = item.RRULE.freq.toLowerCase();
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -2019,6 +2119,7 @@ var page_events = {
               m('div', { class: 'icons-bar' }, [
                 m('div', { class: 'date' }, de),
                 m('div', { class: 'time' }, se),
+                m('div', { class: 'rrule-freq' }, rruleFreq),
                 m('h2', { class: 'summary' }, item.SUMMARY),
                 m('div', { class: 'location' }, item.LOCATION),
                 m('div', { class: 'description' }, item.DESCRIPTION),

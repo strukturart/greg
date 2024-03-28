@@ -87,6 +87,7 @@ function parse_ics(
     let rr_until = '';
     let rr_count = '';
     let allday = false;
+    let rr_freq = '';
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
       ite.getFirstPropertyValue('dtend') ||
@@ -94,52 +95,56 @@ function parse_ics(
 
     if (date_start.isDate && date_end.isDate) allday = true;
 
-    if (ite.getFirstPropertyValue('rrule')) {
+    if (ite.getFirstPropertyValue('rrule') != undefined) {
       try {
         let rrule = ite.getFirstPropertyValue('rrule');
 
         if (rrule && typeof rrule === 'object' && rrule.freq) {
-          if (ite.getFirstPropertyValue('rrule').isFinite() === false)
+          rr_freq = rule.freq;
+          if (ite.getFirstPropertyValue('rrule').isFinite() === false) {
             if (rrule.until !== null) {
-              //  rr_until = new Date('3000-01-01').getTime();
-
               rr_until = rrule.until;
             }
+          } else {
+            if (ite.getFirstPropertyValue('rrule').isByCount()) {
+              let dt = dayjs(date_start);
 
-          if (ite.getFirstPropertyValue('rrule').isByCount()) {
-            //  console.log('count' + ite);
-            let dt = dayjs(date_start);
+              switch (rrule.freq) {
+                case 'DAILY':
+                  rr_until = dt.add(rrule.count, 'days').valueOf();
+                  date_end = dt.add(rrule.count, 'days').format('YYYY-MM-DD');
+                  rr_count = rrule.count;
+                  break;
+                case 'MONTHLY':
+                  rr_until = dt.add(rrule.count, 'months').valueOf();
+                  date_end = dt.add(rrule.count, 'months').format('YYYY-MM-DD');
+                  rr_count = rrule.count;
+                  break;
 
-            switch (rrule.freq) {
-              case 'DAILY':
-                rr_until = dt.add(rrule.count, 'days').valueOf();
-                date_end = dt.add(rrule.count, 'days').format('YYYY-MM-DD');
-                rr_count = rrule.count;
-              case 'MONTHLY':
-                rr_until = dt.add(rrule.count, 'months').valueOf();
-                date_end = dt.add(rrule.count, 'months').format('YYYY-MM-DD');
-                rr_count = rrule.count;
+                case 'BIWEEKLY':
+                  rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
+                  date_end = dt
+                    .add(rrule.count * 2, 'weeks')
+                    .format('YYYY-MM-DD');
+                  rr_count = rrule.count;
+                  break;
 
-              case 'BIWEEKLY':
-                rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
-                date_end = dt
-                  .add(rrule.count * 2, 'weeks')
-                  .format('YYYY-MM-DD');
-                rr_count = rrule.count;
+                case 'WEEKLY':
+                  rr_until = dt.add(rrule.count, 'weeks').valueOf();
+                  date_end = dt.add(rrule.count, 'weeks').format('YYYY-MM-DD');
+                  rr_count = rrule.count;
+                  break;
 
-              case 'WEEKLY':
-                rr_until = dt.add(rrule.count, 'weeks').valueOf();
-                date_end = dt.add(rrule.count, 'weeks').format('YYYY-MM-DD');
-                console.log('super' + date_end);
-                rr_count = rrule.count;
+                case 'YEARLY':
+                  rr_until = dt.add(rrule.count, 'years').valueOf();
+                  date_end = dt.add(rrule.count, 'years').format('YYYY-MM-DD');
+                  rr_count = rrule.count;
+                  break;
 
-              case 'YEARLY':
-                rr_until = dt.add(rrule.count, 'years').valueOf();
-                date_end = dt.add(rrule.count, 'years').format('YYYY-MM-DD');
-                rr_count = rrule.count;
-
-              default:
-              // rr_until = new Date('3000-01-01').getTime();
+                default:
+                  rr_until = new Date('3000-01-01').getTime();
+                  break;
+              }
             }
           }
         }
@@ -191,7 +196,6 @@ function parse_ics(
       dateStartUnix: dateStartUnix,
       dateEndUnix: dateEndUnix,
       dateEnd: dateEnd,
-      rruleCount: rr_count,
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || 'none',
