@@ -23,6 +23,7 @@ cp  ./application/assets/js/kaiads.v5.min.js ./dist/assets/js/
 #make oauth js script
 ./make_oauth_script.sh
 
+
 cp ./application/manifest.webapp ./dist/
 cp ./application/manifest.webmanifest ./dist/
 cp ./application/oauth.html ./dist/

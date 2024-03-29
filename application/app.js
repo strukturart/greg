@@ -131,7 +131,6 @@ let view_history_update = () => {
 const get_last_view = () => {
   setTimeout(() => {
     m.route.set(view_history[view_history.length - 2]);
-    console.log(view_history);
   }, 1000);
 };
 wakeLookCPU();
@@ -360,6 +359,7 @@ export let load_settings = function () {
       } else {
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       }
+      if (settings.dateformat == undefined) settings.dateformat = 'YYYY-MM-DD';
       document.querySelectorAll('.calendar-head div').forEach(function (e, i) {
         e.innerText = weekday[i];
       });
@@ -1324,9 +1324,9 @@ let rrule_check = function (date) {
 
       if (event.RRULE !== undefined && event.RRULE !== null) {
         // Check for recurrences
-        if (event.RRULE.until == null) {
+        if (event.RRULE.until == undefined && event.RRULE.count == undefined) {
           // Handle events without end date
-          // eventEnd = new Date('3000-01-01').getTime();
+          eventEnd = new Date('3000-01-01').getTime();
         }
 
         if (
@@ -1446,8 +1446,11 @@ let event_slider = function (date) {
       //AKA infinity
 
       if (parsed_events[i].RRULE != null) {
-        if (parsed_events[i].RRULE.until == null) {
-          // b = new Date('3000-01-01').getTime();
+        if (
+          parsed_events[i].RRULE.until == undefined &&
+          parsed_events[i].RRULE.count == undefined
+        ) {
+          b = new Date('3000-01-01').getTime();
         }
       }
 
@@ -1891,7 +1894,7 @@ var page_calendar = {
           [
             m('div', {
               id: 'slider-inner',
-              class: 'flex width-100 debug justify-content-spacearound',
+              class: 'flex width-100  justify-content-spacearound',
             }),
           ]
         ),
@@ -2100,7 +2103,7 @@ var page_events = {
           }
 
           let rruleFreq = '';
-          if (item.RRULE) {
+          if (item.RRULE && item.RRULE.freq) {
             rruleFreq = item.RRULE.freq.toLowerCase();
           }
 
@@ -2356,7 +2359,7 @@ export let page_options = {
                     focus_after_selection();
                     if (settings.dateformat == '') {
                       document.querySelector('#event-date-format').value =
-                        'YYYY-mm-dd';
+                        'YYYY-MM-DD';
                     } else {
                       document.querySelector('#event-date-format').value =
                         settings.dateformat;
@@ -5171,12 +5174,6 @@ function shortpress_action(param) {
       break;
 
     case '9':
-      //parsed_events = [];
-      //load_cached_caldav();
-      //load_or_create_local_account();
-      // load_subscriptions();
-      load_caldav();
-
       break;
     case '5':
       if (currentPage('page_calendar')) {
@@ -5384,8 +5381,7 @@ function shortpress_action(param) {
       }
 
       //toggle month/events
-
-      if (parsed_events.length > 0) {
+      if (parsed_events.length > 0 || parsed_events == null) {
         if (currentPageStartsWith('page_calendar')) {
           document.querySelector('.loading-spinner').style.display = 'block';
         }

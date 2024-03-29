@@ -85,9 +85,7 @@ function parse_ics(
   let return_array = [];
   vevent.forEach(function (ite) {
     let rr_until = '';
-    let rr_count = '';
     let allday = false;
-    let rr_freq = '';
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
       ite.getFirstPropertyValue('dtend') ||
@@ -100,10 +98,12 @@ function parse_ics(
         let rrule = ite.getFirstPropertyValue('rrule');
 
         if (rrule && typeof rrule === 'object' && rrule.freq) {
-          rr_freq = rule.freq;
+          rr_freq = rrule.freq;
           if (ite.getFirstPropertyValue('rrule').isFinite() === false) {
             if (rrule.until !== null) {
               rr_until = rrule.until;
+            } else {
+              rr_until = new Date('3000-01-01').getTime();
             }
           } else {
             if (ite.getFirstPropertyValue('rrule').isByCount()) {
@@ -113,12 +113,10 @@ function parse_ics(
                 case 'DAILY':
                   rr_until = dt.add(rrule.count, 'days').valueOf();
                   date_end = dt.add(rrule.count, 'days').format('YYYY-MM-DD');
-                  rr_count = rrule.count;
                   break;
                 case 'MONTHLY':
                   rr_until = dt.add(rrule.count, 'months').valueOf();
                   date_end = dt.add(rrule.count, 'months').format('YYYY-MM-DD');
-                  rr_count = rrule.count;
                   break;
 
                 case 'BIWEEKLY':
@@ -126,19 +124,16 @@ function parse_ics(
                   date_end = dt
                     .add(rrule.count * 2, 'weeks')
                     .format('YYYY-MM-DD');
-                  rr_count = rrule.count;
                   break;
 
                 case 'WEEKLY':
                   rr_until = dt.add(rrule.count, 'weeks').valueOf();
                   date_end = dt.add(rrule.count, 'weeks').format('YYYY-MM-DD');
-                  rr_count = rrule.count;
                   break;
 
                 case 'YEARLY':
                   rr_until = dt.add(rrule.count, 'years').valueOf();
                   date_end = dt.add(rrule.count, 'years').format('YYYY-MM-DD');
-                  rr_count = rrule.count;
                   break;
 
                 default:
@@ -206,7 +201,6 @@ function parse_ics(
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
 
-    if (rr_count != '') console.log(imp);
     //when importing data callback to store
     let a = { parsed_data: imp };
     if (store) {

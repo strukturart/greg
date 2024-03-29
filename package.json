@@ -63,7 +63,6 @@
     "mithril": "^3.0.0-next.3",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.34",
-    "parcel": "^2.12.0",
     "uid": "^2.0.0",
     "url-search-params-polyfill": "^8.1.1"
   }
