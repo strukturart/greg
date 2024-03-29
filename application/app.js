@@ -1886,9 +1886,14 @@ var page_calendar = {
           'div',
           {
             id: 'event-slider',
-            class: 'flex',
+            class: 'flex ',
           },
-          [m('div', { id: 'slider-inner', class: 'flex' })]
+          [
+            m('div', {
+              id: 'slider-inner',
+              class: 'flex width-100 debug justify-content-spacearound',
+            }),
+          ]
         ),
       ]
     );

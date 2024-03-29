@@ -846,12 +846,21 @@ div#event-slider div.icons-bar img {
   height: auto;
 }
 
+div#event-slider-indicator {
+  min-width: 100%;
+}
+
+div#event-slider-indicator div {
+  width: auto;
+  margin: 0px Auto;
+}
+
 div#event-slider-indicator div div {
   background: rgb(121, 112, 112);
   height: 5px;
   width: 5px;
   border-radius: 50%;
-  margin: 0 5px 0 0;
+  margin: 5px 5px 0 0;
 }
 
 div#event-slider-indicator div div.active {
