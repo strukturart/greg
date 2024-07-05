@@ -2300,7 +2300,7 @@ export let page_options = {
 
             m('li', { class: 'width-100  flex justify-content-spacebetween' }, [
               m('kbd', '0'),
-              m('div', 'Events filterdy by category'),
+              m('div', 'Events filtered by category'),
             ]),
 
             m('li', { class: 'width-100  flex justify-content-spacebetween' }, [
