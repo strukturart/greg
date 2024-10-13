@@ -59,32 +59,6 @@ localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
 
-//caching parsed events
-//Caching is currently not stable
-//That's why I don't use it, when I start the app all events are parsed again
-
-let cache_caldav_events = (close) => {
-  const pe = parsed_events.filter((e) => e.isCaldav === true);
-
-  localforage.setItem('parsed_events_cached', pe).then(() => {
-    if (close) window.close();
-  });
-};
-
-let load_cached_caldav_events = () => {
-  localforage
-    .getItem('parsed_events_cached')
-    .then((e) => {
-      if (e == null) {
-        return false;
-      }
-      parsed_events = e;
-    })
-    .catch((e) => {
-      console.log('D' + e);
-    });
-};
-
 //version changment
 //export events
 try {
@@ -106,6 +80,88 @@ try {
 } catch (e) {
   console.log(e);
 }
+
+const oauthRedirect = async () => {
+  const getAuthorizationCode = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('code');
+  };
+
+  const getToken = async (authorizationCode) => {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+
+    const urlencoded = new URLSearchParams();
+    urlencoded.append('code', authorizationCode);
+    urlencoded.append('grant_type', 'authorization_code');
+    urlencoded.append(
+      'redirect_uri',
+      'https://greg.strukturart.com/redirect.html'
+    );
+    urlencoded.append('client_id', process.env.clientId);
+    urlencoded.append('client_secret', process.env.clientSecret);
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: urlencoded,
+      redirect: 'follow',
+    };
+
+    try {
+      const response = await fetch(
+        'https://oauth2.googleapis.com/token',
+        requestOptions
+      );
+      if (!response.ok) {
+        throw new Error(`Token exchange failed: ${response.statusText}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching the token:', error);
+      throw error;
+    }
+  };
+
+  const saveAccount = async (tokens, authorizationCode) => {
+    try {
+      let accounts = (await localforage.getItem('accounts')) || [];
+
+      accounts.push({
+        server_url: 'https://apidata.googleusercontent.com/caldav/v2/',
+        tokens,
+        authorizationCode,
+        name: 'Google',
+        id: uid(32), // Assuming uid function is defined
+        type: 'oauth',
+      });
+
+      await localforage.setItem('accounts', accounts);
+      document.getElementById('success').innerText =
+        'Account successfully added to greg';
+      localStorage.setItem('oauth_callback', 'true');
+
+      setTimeout(() => {
+        window.close();
+      }, 3000);
+    } catch (error) {
+      alert('Error saving account: ' + error.message);
+    }
+  };
+
+  try {
+    const authorizationCode = getAuthorizationCode();
+    if (!authorizationCode) {
+      throw new Error('Authorization code is missing');
+    }
+
+    const tokens = await getToken(authorizationCode);
+    localStorage.setItem('oauth_back', 'true');
+    await saveAccount(tokens, authorizationCode);
+  } catch (error) {
+    alert('OAuth process failed: ' + error.message);
+  }
+};
 
 const intro_animation = () => {
   document.querySelector('#intro').classList.add('intro-animation');
@@ -134,12 +190,6 @@ const get_last_view = () => {
   }, 1000);
 };
 wakeLookCPU();
-
-//google oAuth
-const google_acc = {
-  token_url: 'https://oauth2.googleapis.com/token',
-  redirect_url: 'https://greg.strukturart.com/redirect.html',
-};
 
 let oauth_callback = '';
 
@@ -403,12 +453,12 @@ async function getClientInstance(item) {
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
-            tokenUrl: google_acc.token_url,
+            tokenUrl: process.env.token_url,
             refreshToken: item.tokens.refresh_token,
-            clientId: google_cred.clientId,
-            clientSecret: google_cred.clientSecret,
+            clientId: process.env.clientId,
+            clientSecret: process.env.clientSecret,
             authorizationCode: item.authorizationCode,
-            redirectUrl: google_acc.redirect_url,
+            redirectUrl: process.env.redirect_url,
           },
           authMethod: 'Oauth',
           defaultAccountType: 'caldav',
@@ -598,8 +648,6 @@ let cache_caldav = async function () {
       closing_prohibited = false;
     }
   }
-  //cache parsed events
-  //  cache_caldav_events();
 };
 
 //default calendar
@@ -675,8 +723,6 @@ export let sync_caldav = async function (callback) {
           if (ma.updated.length && ma.updated.length > 0) {
             callback(item);
             break;
-          } else {
-            // if (!status.visible) cache_caldav_events(true);
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -1029,11 +1075,7 @@ const load_subscriptions = async () => {
 };
 
 export let sync_caldav_callback = function (account_to_update) {
-  load_caldav(false, account_to_update).then(() => {
-    if (!status.visible) {
-      //cache_caldav_events(true);
-    }
-  });
+  load_caldav(false, account_to_update).then(() => {});
 };
 
 //get event data
@@ -1195,109 +1237,6 @@ const event_check = function (date) {
 
   return feedback;
 };
-
-// check if has recur event
-/*
-let rrule_check = function (date) {
-  let feedback = {
-    date: '',
-    event: false,
-    subscription: false,
-    multidayevent: false,
-    rrule: 'none',
-    event_data: '',
-  };
-
-  for (let t = 0; t < parsed_events.length; t++) {
-    if (typeof parsed_events[t] === 'object') {
-      feedback.event = false;
-      feedback.multidayevent = false;
-      feedback.rrule = false;
-      feedback.date = date;
-      feedback.event_data = '';
-
-      let a = new Date(parsed_events[t].dateStart).getTime();
-      let b = new Date(parsed_events[t].dateEnd).getTime();
-      let c = new Date(date).getTime();
-      let d = parsed_events[t].RRULE.freq;
-      let e = parsed_events[t].RRULE;
-
-      if (e !== undefined && e !== null) {
-        //recurrences
-
-        if (parsed_events[t].RRULE != null) {
-          //endless || with end
-          if (parsed_events[t].RRULE.until == null) {
-            // b = new Date('3000-01-01').getTime();
-          }
-        }
-
-        if (a === c || (a < c && b > c)) {
-          feedback.event_data = parsed_events[t];
-          if (d == 'MONTHLY') {
-            if (
-              new Date(parsed_events[t].dateStart).getDate() ===
-              new Date(date).getDate()
-            ) {
-              feedback.event = true;
-              feedback.rrule = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'WEEKLY') {
-            if (
-              new Date(parsed_events[t].dateStart).getDay() ===
-              new Date(date).getDay()
-            ) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'BIWEEKLY') {
-            if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'YEARLY') {
-            let tt = new Date(parsed_events[t].dateStart);
-            let pp = new Date(date);
-            if (
-              tt.getDate() + '-' + tt.getMonth() ===
-              pp.getDate() + '-' + pp.getMonth()
-            ) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-              return feedback;
-            }
-          }
-        }
-      }
-    }
-  }
-  return feedback;
-};
-*/
 
 let rrule_check = function (date) {
   let feedback = {
@@ -1819,10 +1758,11 @@ var page_calendar = {
         class: 'width-100 height-100',
         id: 'calendar',
         oninit: function () {
+          oauthRedirect();
+
           view_history_update();
           load_settings();
           clear_form();
-          // status.shortCut = true;
         },
       },
       [
@@ -4996,7 +4936,6 @@ let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid).then((e) => {
       if (status.shortCut) show_success_animation();
-      // cache_caldav_events();
     });
   } else {
     // Find the index of the object with the matching UID
@@ -5014,7 +4953,6 @@ let delete_event = function (etag, url, account_id, uid) {
             get_last_view();
           }
           show_success_animation();
-          // cache_caldav_events();
         })
         .catch(function (err) {});
     }
@@ -5648,8 +5586,6 @@ let interval = () => {
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
       clearInterval(waitForNoMessages);
-      //cache parsed data
-      // cache_caldav_events();
     }
   }, checkMessagesInterval);
 };
