@@ -386,11 +386,8 @@ self.onsystemmessage = (evt) => {
         handler = evt.data.webActivityRequestHandler();
         const { name: activityName, data: activityData } = handler.source;
         if (activityName == 'greg-oauth') {
-          let code = activityData.code;
-
-          const url = '/oauth.html?code=' + code;
           channel.postMessage({
-            oauth_success: url,
+            oauth_success: activityData,
           });
         }
       }

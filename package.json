@@ -8,7 +8,7 @@
     "oa": "parcel application/oauth.js --no-source-maps --no-optimize /dist",
     "start": "rm -rf dist/* && parcel --no-source-maps application/index.html && cp application/manifest.webapp dist && cp -r application/assets/icons dist",
     "build": "rm -rf dist/* && parcel build --no-source-maps --no-optimize --public-url ./ application/index.html  && cp application/manifest.webapp dist && mkdir dist/assets && cp -r application/assets/icons dist/assets/",
-    "web": "rm -rf docs/* && parcel build --dist-dir docs --public-url ./ --no-source-maps --no-content-hash application/index.html && cp application/manifest.webapp docs && cp application/manifest.webmanifest docs && mkdir -p docs/assets && cp -r application/assets/icons docs/assets/ && mkdir -p docs/assets/js/ && cp application/assets/js/kaiads.v5.min.js docs/assets/js/ &&  cp -r application/assets/fonts docs/assets/ &&   cp -r application/assets/image docs/assets/"
+    "web": "rm -rf docs/* && parcel build --dist-dir docs --public-url ./ --no-source-maps --no-content-hash application/index.html && cp application/manifest.webapp docs && cp application/manifest.webmanifest docs && mkdir -p docs/assets && cp -r application/assets/icons docs/assets/ && mkdir -p docs/assets/js/ && cp application/assets/js/kaiads.v5.min.js docs/assets/js/ &&  cp -r application/assets/fonts docs/assets/ &&   cp -r application/assets/image docs/assets/ &&   cp  application/about.html docs/  &&  cp  application/datenschutz.html docs/"
   },
   "repository": {
     "type": "git",
@@ -57,6 +57,7 @@
     "assets": "^3.0.1",
     "dayjs": "^1.11.6",
     "dayjs-plugin-utc": "^0.1.2",
+    "dotenv": "^16.4.5",
     "fast-sort": "^3.2.1",
     "ical.js": "^1.5.0",
     "jsqr": "^1.4.0",
@@ -65,7 +66,6 @@
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.34",
     "uid": "^2.0.0",
-    "url-search-params-polyfill": "^8.1.1",
-    "dotenv": "^16.4.1"
+    "url-search-params-polyfill": "^8.1.1"
   }
 }
