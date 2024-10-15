@@ -226,17 +226,6 @@ export let validate = function (url) {
   return false;
 };
 
-export let getManifest = function (callback) {
-  if (!navigator.mozApps) {
-    return false;
-  }
-  let self = navigator.mozApps.getSelf();
-  self.onsuccess = function () {
-    callback(self.result);
-  };
-  self.onerror = function () {};
-};
-
 //popup
 export let popup = function (text, action) {
   let m = document.querySelector('div#popup');
@@ -698,3 +687,23 @@ try {
 } catch (e) {
   console.log(e);
 }
+
+export let get_version = () => {
+  try {
+    fetch('/manifest.webapp')
+      .then((r) => r.json())
+      .then((parsedResponse) => {
+        status.version = parsedResponse.version;
+        localStorage.setItem('version', status.version);
+      });
+  } catch (e) {}
+
+  if ('b2g' in navigator || status.notKaiOS) {
+    fetch('/manifest.webmanifest')
+      .then((r) => r.json())
+      .then((parsedResponse) => {
+        status.version = parsedResponse.b2g_features.version;
+        localStorage.setItem('version', status.version);
+      });
+  }
+};

@@ -1,9 +1,6 @@
 'use strict';
 
 import { bottom_bar } from './helper.js';
-import { settings } from '../../app.js';
-import { export_ical_versionChangment } from './eximport.js';
-import localforage from 'localforage';
 
 export let load_ads = function () {
   var js = document.createElement('script');
@@ -59,42 +56,3 @@ export let load_ads = function () {
   };
   document.head.appendChild(js);
 };
-
-// Get a reference to the element you want to add the focus event listener to
-
-//KaiOS ads
-
-export let getManifest = function (callback) {
-  if (navigator.mozApps) {
-    let self = navigator.mozApps.getSelf();
-    self.onsuccess = function () {
-      callback(self.result);
-    };
-    self.onerror = function () {};
-  }
-
-  if ('b2g' in navigator) {
-    fetch('/manifest.webmanifest')
-      .then((r) => r.json())
-      .then((r) => callback(r.b2g_features));
-  }
-};
-
-//KaiOs store true||false
-export function manifest(a) {
-  if (navigator.mozApps) {
-    self = a.origin;
-    document.querySelector('#version kbd').innerText = a.manifest.version;
-
-    if (a.installOrigin == 'app://kaios-plus.kaiostech.com') {
-      settings.ads = true;
-    } else {
-      settings.ads = false;
-    }
-  }
-  if ('b2g' in navigator) {
-    document.querySelector('#version kbd').innerText = a.version;
-
-    settings.ads = true;
-  }
-}

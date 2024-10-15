@@ -16,10 +16,10 @@ import {
   get_file,
   list_files,
   autocomplete,
+  get_version,
 } from './assets/js/helper.js';
 
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
-import { export_ical_versionChangment } from './assets/js/eximport.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
@@ -27,9 +27,8 @@ import m from 'mithril';
 import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
 
 import 'url-search-params-polyfill';
-import { getManifest, load_ads, manifest } from './assets/js/ads.js';
+import { load_ads } from './assets/js/ads.js';
 import { uid } from 'uid';
-import { google_cred } from './assets/js/google_cred.js';
 import dayjs from 'dayjs';
 import dayjsPluginUTC from 'dayjs-plugin-utc';
 
@@ -40,9 +39,12 @@ const moment = require('moment-timezone');
 let channel = new BroadcastChannel('sw-messages');
 localforage.setDriver(localforage.INDEXEDDB);
 
-const debug = false;
 const google_oauth_url =
-  'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
+  'https://accounts.google.com/o/oauth2/v2/auth?client_id=' +
+  process.env.clientId +
+  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=' +
+  process.env.redirect_url +
+  '&access_type=offline&prompt=consent';
 
 export let parsed_events = [];
 export let accounts = [];
@@ -59,28 +61,7 @@ localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
 
-//version changment
-//export events
-try {
-  if (localStorage.getItem('export_versionChangment') != '1') {
-    setTimeout(() => {
-      localforage
-        .getItem('events')
-        .then((e) => {
-          console.log(e.length);
-          if (e == null || e.length == 0) return false;
-          export_ical_versionChangment('greg-backup.ics', e);
-          alert(
-            "In the new app version, events in the local calendar are saved differently. That's why it was exported and saved on your device. You can now import it again, please use the import button in the settings area. I apologize for the circumstances."
-          );
-        })
-        .catch((e) => {});
-    }, 10000);
-  }
-} catch (e) {
-  console.log(e);
-}
-
+//not KaiOS
 const oauthRedirect = async () => {
   const getAuthorizationCode = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -94,10 +75,7 @@ const oauthRedirect = async () => {
     const urlencoded = new URLSearchParams();
     urlencoded.append('code', authorizationCode);
     urlencoded.append('grant_type', 'authorization_code');
-    urlencoded.append(
-      'redirect_uri',
-      'https://greg.strukturart.com/redirect.html'
-    );
+    urlencoded.append('redirect_uri', process.env.redirect_url);
     urlencoded.append('client_id', process.env.clientId);
     urlencoded.append('client_secret', process.env.clientSecret);
 
@@ -137,9 +115,6 @@ const oauthRedirect = async () => {
       });
 
       await localforage.setItem('accounts', accounts);
-      document.getElementById('success').innerText =
-        'Account successfully added to greg';
-      localStorage.setItem('oauth_callback', 'true');
 
       setTimeout(() => {
         window.close();
@@ -152,16 +127,76 @@ const oauthRedirect = async () => {
   try {
     const authorizationCode = getAuthorizationCode();
     if (!authorizationCode) {
-      throw new Error('Authorization code is missing');
+      return false;
+      //throw new Error('Authorization code is missing');
     }
 
     const tokens = await getToken(authorizationCode);
-    localStorage.setItem('oauth_back', 'true');
     await saveAccount(tokens, authorizationCode);
   } catch (error) {
-    alert('OAuth process failed: ' + error.message);
+    // alert('OAuth process failed: ' + error.message);
   }
 };
+
+//open KaiOS app
+let app_launcher = () => {
+  var currentUrl = window.location.href;
+
+  // Check if the URL includes 'id='
+  if (!currentUrl.includes('code=')) return false;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let result = urlParams.get('code');
+  /*
+  const params = new URLSearchParams(currentUrl.split('?')[1]);
+  const code = params.get('code');
+  */
+  if (!result) return false;
+
+  // let result = code.split('#')[0];
+
+  setTimeout(() => {
+    try {
+      const activity = new MozActivity({
+        name: 'greg-oauth',
+        data: result,
+      });
+      activity.onsuccess = function () {
+        console.log('Activity successfuly handled');
+      };
+
+      activity.onerror = function () {
+        console.log('The activity encouter en error: ' + this.error);
+        alert(this.error);
+      };
+    } catch (e) {}
+    if ('b2g' in navigator) {
+      try {
+        let activity = new WebActivity('greg-oauth', {
+          name: 'greg-oauth',
+          type: 'string',
+          data: result,
+        });
+        activity.start().then(
+          (rv) => {
+            window.close();
+
+            console.log('Results passed back from activity handler:');
+            console.log(rv);
+          },
+          (err) => {
+            alert(err);
+          }
+        );
+      } catch (e) {}
+    }
+  }, 4000);
+};
+if ('b2g' in navigator || 'navigator.mozApps' in navigator) {
+  app_launcher();
+} else {
+  oauthRedirect();
+}
 
 const intro_animation = () => {
   document.querySelector('#intro').classList.add('intro-animation');
@@ -220,6 +255,9 @@ export let status = {
   sortEvents: 'startDate',
   shortCut: false,
   background_sync_running: false,
+  version: localStorage.getItem('version') || 'time is relative',
+  notKaiOS: true,
+  debug: false,
 };
 
 export let settings = {
@@ -231,6 +269,26 @@ export let settings = {
   background_sync: 'No',
   default_duration: 30,
 };
+
+if ('b2g' in navigator || 'navigator.mozApps' in navigator)
+  status.notKaiOS = false;
+
+if (!status.notKaiOS) {
+  const scripts = [
+    'http://127.0.0.1/api/v1/shared/core.js',
+    'http://127.0.0.1/api/v1/shared/session.js',
+    'http://127.0.0.1/api/v1/apps/service.js',
+    'http://127.0.0.1/api/v1/audiovolumemanager/service.js',
+    './assets/js/kaiads.v5.min.js',
+  ];
+
+  scripts.forEach((src) => {
+    const js = document.createElement('script');
+    js.type = 'text/javascript';
+    js.src = src;
+    document.head.appendChild(js);
+  });
+}
 
 test_is_background_sync();
 
@@ -453,7 +511,7 @@ async function getClientInstance(item) {
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
-            tokenUrl: process.env.token_url,
+            tokenUrl: 'https://oauth2.googleapis.com/token',
             refreshToken: item.tokens.refresh_token,
             clientId: process.env.clientId,
             clientSecret: process.env.clientSecret,
@@ -1134,12 +1192,6 @@ let currentDay = today.getDate();
 
 let update_event_date;
 
-//ads || ads free
-
-try {
-  getManifest(manifest);
-} catch (e) {}
-
 // ////////
 // finde closest event to selected date in list view
 // ////////
@@ -1758,11 +1810,14 @@ var page_calendar = {
         class: 'width-100 height-100',
         id: 'calendar',
         oninit: function () {
-          oauthRedirect();
-
           view_history_update();
           load_settings();
           clear_form();
+
+          get_version();
+
+          document.querySelector('#version').textContent =
+            localStorage.getItem('version');
         },
       },
       [
@@ -1796,7 +1851,7 @@ var page_calendar = {
                   dayjs().format('HH:mm');
               },
             },
-            'time is relative'
+            status.version
           ),
         ]),
 
@@ -2188,7 +2243,7 @@ export let page_options = {
           status.shortCut = false;
         },
         oncreate: () => {
-          if (settings.ads) {
+          if (!status.notKaiOS) {
             load_ads();
           }
 
@@ -2718,7 +2773,9 @@ export let page_options = {
           ]
         ),
 
-        m('div', { id: 'subscription-text' }, 'Your accounts'),
+        accounts != null
+          ? m('div', { id: 'subscription-text' }, 'Your accounts')
+          : '',
 
         accounts != null
           ? accounts.map(function (item) {
@@ -2753,7 +2810,6 @@ export let page_options = {
 
         m('div', {
           id: 'KaiOsAds-Wrapper',
-          //  tabindex: subscriptions.length + accounts.length + 11,
           class: 'flex justify-content-spacearound',
           oninit: function () {
             if (settings.ads) {
@@ -5494,7 +5550,7 @@ function handleKeyUp(evt) {
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 document.addEventListener('visibilitychange', handleVisibilityChange, false);
-if (debug) {
+if (status.debug) {
   window.onerror = function (msg, url, linenumber) {
     alert(
       'Error message: ' + msg + '\nURL: ' + url + '\nLine Number: ' + linenumber
@@ -5502,6 +5558,77 @@ if (debug) {
     return true;
   };
 }
+
+let oauthRedirect_kaios = async (authorizationCode) => {
+  const getToken = async (authorizationCode) => {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+
+    const urlencoded = new URLSearchParams();
+    urlencoded.append('code', authorizationCode);
+    urlencoded.append('grant_type', 'authorization_code');
+    urlencoded.append('redirect_uri', process.env.redirect_url);
+    urlencoded.append('client_id', process.env.clientId);
+    urlencoded.append('client_secret', process.env.clientSecret);
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: urlencoded,
+      redirect: 'follow',
+    };
+
+    try {
+      const response = await fetch(
+        'https://oauth2.googleapis.com/token',
+        requestOptions
+      );
+
+      if (!response.ok) {
+        const errorDetails = await response.text();
+        throw new Error(
+          `Token exchange failed: ${response.statusText}. Details: ${errorDetails}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching the token:', error);
+      throw error;
+    }
+  };
+
+  const saveAccount = async (tokens, authorizationCode) => {
+    try {
+      let accounts = (await localforage.getItem('accounts')) || [];
+
+      accounts.push({
+        server_url: 'https://apidata.googleusercontent.com/caldav/v2/',
+        tokens,
+        authorizationCode,
+        name: 'Google',
+        id: uid(32),
+        type: 'oauth',
+      });
+
+      await localforage.setItem('accounts', accounts);
+
+      setTimeout(() => {
+        show_success_animation();
+        localStorage.setItem('oauth_callback', 'true');
+      }, 3000);
+    } catch (error) {
+      alert('Error saving account: ' + error.message);
+    }
+  };
+
+  try {
+    const tokens = await getToken(authorizationCode);
+    await saveAccount(tokens, authorizationCode);
+  } catch (error) {
+    alert('OAuth process failed: ' + error.message);
+  }
+};
 
 // Set up a timer to check if no messages have arrived for a certain period
 const waitTimeout = 400; // Time in milliseconds
@@ -5513,13 +5640,12 @@ let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
   //callback from Google OAuth
-  //ugly method to open a new window, because a window from sw clients.open can not be closed
-
   if (event.data.oauth_success) {
-    const l = event.data.oauth_success;
-    setTimeout(() => {
-      window.open(l);
-    }, 5000);
+    let result = event.data.oauth_success.data;
+
+    if (result) {
+      oauthRedirect_kaios(result);
+    }
   }
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
