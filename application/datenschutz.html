@@ -84,66 +84,36 @@
               <a href="#Privacy-Policy">Privacy Policy</a>
             </h2>
             <div>
-              <h3>What data are requested ?</h3>
-              
-              <h4>Google Account & CalDav Account</h4>
-              <p>
-                <ul>
-                  <li>Information about the individual calendars</li>
-                  <li>Calendar events</li>
-                </ul>
-              </p>
-
-
-              <h3>What data is stored ?</h3>
-
+              <h3>What data is stored?</h3>
+            
               <h4>Google Account</h4>
               <p>
-                If you have connected your Google account to greg, the username
-                and password of your Google account will not be saved on the app,
-                an authentication via oAuth will be done.
-                <br />
+                If you have connected your Google account to the app, the username and password of your Google account will not be saved on the app. Authentication is done via OAuth.
               </p>
-
-                <p>
-                The information on the individual calendars and the calendar events is saved locally
+              <p>
+                The information on the individual calendars and calendar events is stored locally using IndexedDB on your device.
               </p>
-
+            
               <h4>CalDAV Account</h4>
               <p>
-                If you have connected the app to a calDAV account, the username
-                and password are saved locally in the app
-                <br />
+                If you have connected the app to a CalDAV account, the username and password are stored locally using IndexedDB in the app.
               </p>
-               <p>
-                The information on the individual calendars and the calendar events is saved locally
+              <p>
+                The information on the individual calendars and calendar events is also stored locally using IndexedDB.
               </p>
-
+            
               <h4>Local Calendar</h4>
               <p>
-              the calendar events are only saved locally on your device.
-
+                Calendar events are stored locally on your device using IndexedDB.
               </p>
-
-           
-              <h4>What data is shared ?</h4>
+            
+              <h3>Data protection and security</h3>
               <p>
-                If you have
-                connected the app to a google or calDAV account the requested data, it will be
-                synchronized with the server to always be up to date.</p>
-                <br />
-                No data analyzes of your data are carried out in the app.
-                <br />
+                The app uses IndexedDB for local data storage, which allows for efficient and secure management of large datasets. The storage of sensitive information, such as CalDAV account credentials, is encrypted and securely stored within IndexedDB to protect against unauthorized access.
               </p>
-
-
-              <h4>What happens if I delete the app</h4>
-            <p>
-              All your data will be deleted from the device. If you have backed
-              up your calendar data with the app, you must delete it from the
-              device yourself. <br>
-              Data that is synchronized with a Google account or CalDAV account will not be deleted from the server.            
-            </p>
+            </div>
+            
+            
 
 
           </section>
@@ -170,7 +140,6 @@
               KaiAds.
             </p>
           </section>
-          <div class="center"><a href="https://id.podcal.app/290783428.ics">test</a></div>
 
        
         </div>

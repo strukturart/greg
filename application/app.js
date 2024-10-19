@@ -42,7 +42,7 @@ localforage.setDriver(localforage.INDEXEDDB);
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=' +
   process.env.clientId +
-  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=' +
+  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar%20https://www.googleapis.com/auth/calendar.calendarlist&redirect_uri=' +
   process.env.redirect_url +
   '&access_type=offline&prompt=consent';
 
