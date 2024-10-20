@@ -42,8 +42,8 @@ localforage.setDriver(localforage.INDEXEDDB);
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=' +
   process.env.clientId +
-  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar%20https://www.googleapis.com/auth/calendar.calendarlist&redirect_uri=' +
-  process.env.redirect_url +
+  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=' +
+  encodeURIComponent(process.env.redirect_url) +
   '&access_type=offline&prompt=consent';
 
 export let parsed_events = [];
@@ -110,8 +110,9 @@ const oauthRedirect = async () => {
         tokens,
         authorizationCode,
         name: 'Google',
-        id: uid(32), // Assuming uid function is defined
+        id: uid(32),
         type: 'oauth',
+        calendars: [],
       });
 
       await localforage.setItem('accounts', accounts);
@@ -128,14 +129,11 @@ const oauthRedirect = async () => {
     const authorizationCode = getAuthorizationCode();
     if (!authorizationCode) {
       return false;
-      //throw new Error('Authorization code is missing');
     }
 
     const tokens = await getToken(authorizationCode);
     await saveAccount(tokens, authorizationCode);
-  } catch (error) {
-    // alert('OAuth process failed: ' + error.message);
-  }
+  } catch (error) {}
 };
 
 //open KaiOS app
@@ -147,10 +145,7 @@ let app_launcher = () => {
 
   const urlParams = new URLSearchParams(window.location.search);
   let result = urlParams.get('code');
-  /*
-  const params = new URLSearchParams(currentUrl.split('?')[1]);
-  const code = params.get('code');
-  */
+
   if (!result) return false;
 
   // let result = code.split('#')[0];
@@ -355,6 +350,35 @@ if ('b2g' in navigator) {
 
 //load calendar names
 let calendar_not_visible = [];
+
+async function loadCalendarNames() {
+  try {
+    const calendarData = await localforage.getItem('calendarNames');
+
+    // Set local calendar as default if 'calendarNames' is not found
+    if (!calendarData) {
+      calendar_names = [
+        {
+          name: 'local',
+          id: 'local-id',
+          data: [],
+          type: 'local',
+          view: true,
+        },
+      ];
+    } else {
+      calendar_names = calendarData;
+      // Process visibility
+      calendar_names.forEach((e) => {
+        if (!e.view) calendar_not_visible.push(e.name);
+      });
+    }
+  } catch (err) {
+    console.error('Error loading calendar names:', err);
+  }
+}
+
+/*
 async function loadCalendarNames() {
   try {
     const keys = await localforage.keys();
@@ -379,7 +403,7 @@ async function loadCalendarNames() {
       });
     }
   } catch (err) {}
-}
+}*/
 
 //load accounts data
 //test whether there are updates in the remote
@@ -589,11 +613,10 @@ async function load_caldav(callback = false, account_to_update = false) {
       let calendars;
       try {
         calendars = await client.fetchCalendars();
-        console.log(calendars);
       } catch (fetchCalendarsError) {
         console.log(fetchCalendarsError);
-
-        continue; // Skip to the next account in case of fetch failure
+        // Skip to the next account in case of fetch failure
+        continue;
       }
 
       if (m.route.get() === '/page_calendar') {
@@ -740,7 +763,7 @@ export let sync_caldav = async function (callback) {
       const calendars = await client.fetchCalendars();
 
       for (let i = 0; i < calendars.length; i++) {
-        const objects = await client.fetchCalendarObjects({
+        await client.fetchCalendarObjects({
           calendar: calendars[i],
         });
         cn.push({
@@ -792,18 +815,14 @@ export let sync_caldav = async function (callback) {
     }
   }
 
+  //update new calendars with old calendar view attribut
+
   if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
-    //update new calendars with old calendar view attribut
     try {
       cn.forEach((e) => {
         let matchingCalendar;
         if (Array.isArray(calendar_names)) {
           matchingCalendar = calendar_names.find((a) => a.name === e.name);
-
-          // Rest of your code using matchingCalendar
-        } else {
-          console.error('calendar_names is not an array or is undefined');
-          // Handle the case where calendar_names is not an array or is undefined
         }
 
         if (matchingCalendar) {
@@ -831,7 +850,7 @@ const load_cached_caldav = async () => {
     try {
       const w = await localforage.getItem(item.id);
       // Load content if never cached
-      if (w === null) {
+      if (!w) {
         try {
           load_caldav(false, item.id);
         } catch (e) {
@@ -5609,12 +5628,14 @@ let oauthRedirect_kaios = async (authorizationCode) => {
         name: 'Google',
         id: uid(32),
         type: 'oauth',
+        calendars: [],
       });
 
       await localforage.setItem('accounts', accounts);
 
       setTimeout(() => {
         show_success_animation();
+        load_caldav(true, false);
         localStorage.setItem('oauth_callback', 'true');
       }, 3000);
     } catch (error) {
