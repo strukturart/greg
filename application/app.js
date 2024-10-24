@@ -24,7 +24,11 @@ import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
 import m from 'mithril';
-import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+import {
+  DAVClient,
+  DAVNamespaceShort,
+  refreshAccessToken,
+} from './assets/js/tsdav.js';
 
 import 'url-search-params-polyfill';
 import { load_ads } from './assets/js/ads.js';
@@ -42,7 +46,12 @@ localforage.setDriver(localforage.INDEXEDDB);
 const google_oauth_url =
   'https://accounts.google.com/o/oauth2/v2/auth?client_id=' +
   process.env.clientId +
-  '&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=' +
+  '&response_type=code&state=state_parameter_passthrough_value' +
+  '&scope=' +
+  encodeURIComponent(
+    'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email'
+  ) +
+  '&redirect_uri=' +
   encodeURIComponent(process.env.redirect_url) +
   '&access_type=offline&prompt=consent';
 
@@ -187,7 +196,7 @@ let app_launcher = () => {
     }
   }, 4000);
 };
-if ('b2g' in navigator || 'navigator.mozApps' in navigator) {
+if ('b2g' in navigator || 'mozApps' in navigator) {
   app_launcher();
 } else {
   oauthRedirect();
@@ -197,6 +206,12 @@ const intro_animation = () => {
   document.querySelector('#intro').classList.add('intro-animation');
   document.querySelector('#version').classList.add('intro-version-animation');
   document.querySelector('#intro img').classList.add('intro-img-anmation');
+
+  setTimeout(() => {
+    if (status.user) {
+      side_toaster('logged in as ' + status.user, 5000);
+    }
+  }, 6000);
 };
 
 const show_success_animation = () => {
@@ -210,14 +225,9 @@ const show_success_animation = () => {
 };
 
 //back to last view
-let view_history = [];
-let view_history_update = () => {
-  view_history.push(m.route.get());
-};
+
 const get_last_view = () => {
-  setTimeout(() => {
-    m.route.set(view_history[view_history.length - 2]);
-  }, 1000);
+  if (m.route.get !== '/page_calendar') m.route.set('/page_calendar');
 };
 wakeLookCPU();
 
@@ -378,33 +388,6 @@ async function loadCalendarNames() {
   }
 }
 
-/*
-async function loadCalendarNames() {
-  try {
-    const keys = await localforage.keys();
-    //set local calendar as default
-    if (keys.indexOf('calendarNames') == -1) {
-      calendar_names = [
-        {
-          name: 'local',
-          id: 'local-id',
-          data: [],
-          type: 'local',
-          view: true,
-        },
-      ];
-    } else {
-      localforage.getItem('calendarNames').then((a) => {
-        calendar_names = a;
-        //visible or not visible
-        calendar_names.forEach((e) => {
-          if (e.view == false) calendar_not_visible.push(e.name);
-        });
-      });
-    }
-  } catch (err) {}
-}*/
-
 //load accounts data
 //test whether there are updates in the remote
 
@@ -558,6 +541,32 @@ async function getClientInstance(item) {
         });
       }
     }
+    return clientInstances[item.id];
+  } catch (e) {
+    console.error('Error occurred while creating DAVClient instance:', e);
+    throw e; // Re-throw the error to handle it outside this function if needed
+  }
+}
+
+async function getClientInstanceTest(item) {
+  try {
+    if (item.type === 'oauth') {
+      clientInstances[item.id] = new DAVClient({
+        serverUrl:
+          'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        credentials: {
+          tokenUrl: 'https://oauth2.googleapis.com/token',
+          refreshToken: item.tokens.refresh_token,
+          clientId: process.env.clientId,
+          clientSecret: process.env.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: process.env.redirect_url,
+        },
+        authMethod: 'Oauth',
+        defaultAccountType: 'caldav',
+      });
+    }
+
     return clientInstances[item.id];
   } catch (e) {
     console.error('Error occurred while creating DAVClient instance:', e);
@@ -753,6 +762,34 @@ export let sync_caldav = async function (callback) {
   if (!status.visible && !navigator.onLine) window.close();
 
   for (const item of accounts) {
+    //get user info
+
+    try {
+      const result = await refreshAccessToken({
+        clientId: process.env.clientId,
+        clientSecret: process.env.clientSecret,
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        refreshToken: item.tokens.refresh_token,
+      });
+      var xhr = new XMLHttpRequest({ mozSystem: true });
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          let m = JSON.parse(xhr.responseText);
+          status.user = m.email;
+        } else {
+          console.log('Error fetching calendar list:', xhr.statusText);
+        }
+      };
+
+      xhr.open('GET', 'https://www.googleapis.com/oauth2/v3/userinfo');
+
+      // Use the access token received from the login method in the Authorization header
+      xhr.setRequestHeader('Authorization', 'Bearer ' + result.access_token);
+      xhr.send();
+    } catch (e) {
+      console.log(e);
+    }
+
     const client = await getClientInstance(item);
     try {
       if (!isLoggedInMap[item.id]) {
@@ -961,15 +998,12 @@ export let create_caldav = async function (
 
 //delete event
 export let delete_caldav = async function (etag, url, account_id, uid) {
-  console.log(parsed_events);
   if (!navigator.onLine) return false;
 
   document.querySelector('.loading-spinner').style.display = 'block';
   const matchingAccount = accounts.find((p) => p.id === account_id);
 
-  console.log('hey' + matchingAccount);
-
-  if (matchingAccount == undefined) {
+  if (!matchingAccount) {
     document.querySelector('.loading-spinner').style.display = 'none';
     side_toaster('There was a problem deleting, please try again later.', 5000);
     return false;
@@ -1003,8 +1037,10 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
           style_calendar_cell(currentYear, currentMonth);
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          if (status.shortCut == false) {
+          if (!status.shortCut) {
             get_last_view();
+            show_success_animation();
+
             return 'success';
           } else {
             show_success_animation();
@@ -1829,10 +1865,8 @@ var page_calendar = {
         class: 'width-100 height-100',
         id: 'calendar',
         oninit: function () {
-          view_history_update();
           load_settings();
           clear_form();
-
           get_version();
 
           document.querySelector('#version').textContent =
@@ -1964,7 +1998,6 @@ var page_events = {
         oninit: () => {
           document.querySelector('.loading-spinner').style.display = 'block';
 
-          view_history_update();
           status.shortCut = false;
         },
         onremove: () => {
@@ -2172,7 +2205,6 @@ var page_events_filtered = {
             document.activeElement.getAttribute('data-id');
         },
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
           side_toaster('Category: ' + query, 8000);
         },
@@ -2258,7 +2290,6 @@ export let page_options = {
       {
         id: 'options',
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
         },
         oncreate: () => {
@@ -2439,7 +2470,6 @@ export let page_options = {
           'div',
           {
             class: 'item input-parent',
-            id: 'firs-day-of-the-week-box',
             tabindex: '4',
           },
           [
@@ -2861,7 +2891,6 @@ var page_subscriptions = {
           oninit: () => {
             bottom_bar('', '', '');
 
-            view_history_update();
             status.shortCut = false;
           },
 
@@ -2938,7 +2967,6 @@ var page_edit_account = {
 
           oncreate: function ({ dom }) {
             dom.focus();
-            view_history_update();
             status.shortCut = false;
           },
         },
@@ -3059,9 +3087,7 @@ var page_accounts = {
         {
           class: 'item input-parent',
           tabindex: '0',
-          oninit: () => {
-            view_history_update();
-          },
+          oninit: () => {},
           oncreate: function ({ dom }) {
             dom.focus();
           },
@@ -3181,7 +3207,6 @@ var page_add_event = {
         id: 'add-edit-event',
         tabindex: '0',
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
         },
       },
@@ -3502,7 +3527,6 @@ var page_edit_event = {
         id: 'add-edit-event',
         oninit: () => {},
         omcreate: () => {
-          view_history_update();
           status.shortCut = false;
         },
       },
@@ -3881,9 +3905,6 @@ var page_list_files = {
       'div',
       {
         id: 'options',
-        oninit: () => {
-          view_history_update();
-        },
       },
       [
         m('h2', { class: 'text-center', id: 'file-head' }, 'files'),
@@ -3921,9 +3942,7 @@ var page_event_templates = {
       'div',
       {
         id: 'options',
-        oninit: () => {
-          view_history_update();
-        },
+
         oncreate: function () {
           bottom_bar(
             "<img src='assets/image/delete.svg'>",
@@ -4662,7 +4681,7 @@ let store_event = function (account_id, cal_name) {
               type: 'parse',
               t: { uid: event.UID, data: dd },
               e: 'local-id',
-              callback: false,
+              callback: true,
               store: false,
             });
           } catch (e) {
@@ -4728,7 +4747,7 @@ let store_event = function (account_id, cal_name) {
             type: 'parse',
             t: { uid: e.UID, data: dd, url: e.url, etag: e.etag },
             e: account_id,
-            callback: false,
+            callback: true,
             store: false,
           });
           get_last_view();
@@ -4926,6 +4945,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
         clear_form();
         setTimeout(() => {
           get_last_view();
+          show_success_animation();
         }, 1000);
       })
       .catch(function (err) {});
@@ -4998,6 +5018,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
       style_calendar_cell(currentYear, currentMonth);
       setTimeout(() => {
         get_last_view();
+        show_success_animation();
       }, 1000);
     });
   }
@@ -5009,9 +5030,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
 
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
-    delete_caldav(etag, url, account_id, uid).then((e) => {
-      if (status.shortCut) show_success_animation();
-    });
+    delete_caldav(etag, url, account_id, uid);
   } else {
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex((item) => item.uid === uid);
@@ -5024,9 +5043,8 @@ let delete_event = function (etag, url, account_id, uid) {
         .then(function () {
           style_calendar_cell(currentYear, currentMonth);
 
-          if (!status.shortCut) {
-            get_last_view();
-          }
+          get_last_view();
+
           show_success_animation();
         })
         .catch(function (err) {});
@@ -5186,8 +5204,6 @@ function shortpress_action(param) {
       if (currentPage('page_calendar')) slider_navigation();
       break;
 
-    case '9':
-      break;
     case '5':
       if (currentPage('page_calendar')) {
         if (document.activeElement.classList.contains('event')) {
@@ -5634,9 +5650,10 @@ let oauthRedirect_kaios = async (authorizationCode) => {
       await localforage.setItem('accounts', accounts);
 
       setTimeout(() => {
-        show_success_animation();
-        load_caldav(true, false);
-        localStorage.setItem('oauth_callback', 'true');
+        load_cached_caldav().then(() => {
+          localStorage.setItem('oauth_callback', 'true');
+          show_success_animation();
+        });
       }, 3000);
     } catch (error) {
       alert('Error saving account: ' + error.message);
@@ -5685,7 +5702,6 @@ channel.addEventListener('message', (event) => {
       parsed_events.push(event.data.content.parsed_data);
 
       //notify user when data stored
-
       if (event.data.content.callback) {
         show_success_animation();
       }
