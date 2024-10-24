@@ -190,6 +190,7 @@ function parse_ics(
       etag: etag || '',
       url: url || '',
       calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
+
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
@@ -203,7 +204,7 @@ function parse_ics(
 
     //callback or not
     if (callback) {
-      a.calback = true;
+      a.callback = true;
     }
     return_array.push(a);
   });
