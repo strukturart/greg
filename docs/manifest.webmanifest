@@ -1,49 +1,54 @@
 {
-  "name": "greg",
-  "version": "0.0.9",
-  "description": "greg",
+  "name": "Greg",
+  "id": "greg",
+  "description": "Effortlessly manage your schedule with GREG for KaiOS. Save events locally or sync external calendars, including Nextcloud/Google via CalDAV. Navigate months, slide through events, and quickly jump to today with intuitive controls. Plus, enjoy a moon phase calendar with a press of a button (#). Stay organized with ease.",
   "lang": "en-US",
   "start_url": "/index.html",
+  "short_name": "Greg",
+  "categories": ["utilities"],
+  "theme_color": "#ffffff",
+  "orientation": "natural",
+  "userAgentInfo": "greg written by strukturart@gmail.com",
+
   "icons": [
     {
-      "src": "/icons/icon-56-56.png",
+      "src": "/assets/icons/icon-56-56.png",
       "type": "image/png",
       "sizes": "56x56"
     },
     {
-      "src": "/icons/icon-112-112.png",
+      "src": "/assets/icons/icon-112-112.png",
       "type": "image/png",
       "sizes": "112x112"
     }
   ],
+
   "b2g_features": {
-    "version": "0.0.1",
+    "version": "3.0.697",
     "id": "greg",
-    "categories": ["utilities"],
+    "subtitle": "easy to use calendar",
+    "core": true,
     "type": "privileged",
-    "fullscreen": "true",
+    "display": "fullscreen",
+
     "developer": {
       "name": "strukturart",
-      "url": "https://strukturart.com"
+      "url": "https://github.com/strukturart/greg"
     },
-    "dependencies": {
-      "ads-sdk": "1.5.0"
-    },
-    "messages": [
-      {
-        "alarm": "/index.html"
-      },
-      {
-        "notification": "/index.html"
-      }
-    ],
 
-    "redirects": [
-      {
-        "from": "https://greg.strukturart.com/redirect.html",
-        "to": "/oauth.html"
-      }
-    ],
+    "dependencies": {
+      "ads-sdk": "1.5.8"
+    },
+    "messages": [{ "serviceworker-notification": "index.html" }, "alarm"],
+
+    "activities": {
+      "greg-oauth": {}
+    },
+
+    "serviceworker": {
+      "script_url": "sw.js"
+    },
+
     "permissions": {
       "desktop-notification": {
         "description": "Needed to fire system notifications"
@@ -66,6 +71,9 @@
       },
       "systemXHR": {
         "description": "Required to load remote content"
+      },
+      "feature-detection": {
+        "description": "query which keys are available"
       }
     }
   }

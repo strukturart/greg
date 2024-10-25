@@ -16,20 +16,23 @@ import {
   get_file,
   list_files,
   autocomplete,
+  get_version,
 } from './assets/js/helper.js';
 
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
-import { export_ical_versionChangment } from './assets/js/eximport.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
 import m from 'mithril';
-import { DAVClient, DAVNamespaceShort } from './assets/js/tsdav.js';
+import {
+  DAVClient,
+  DAVNamespaceShort,
+  refreshAccessToken,
+} from './assets/js/tsdav.js';
 
 import 'url-search-params-polyfill';
-import { getManifest, load_ads, manifest } from './assets/js/ads.js';
+import { load_ads } from './assets/js/ads.js';
 import { uid } from 'uid';
-import { google_cred } from './assets/js/google_cred.js';
 import dayjs from 'dayjs';
 import dayjsPluginUTC from 'dayjs-plugin-utc';
 
@@ -40,9 +43,17 @@ const moment = require('moment-timezone');
 let channel = new BroadcastChannel('sw-messages');
 localforage.setDriver(localforage.INDEXEDDB);
 
-const debug = false;
 const google_oauth_url =
-  'https://accounts.google.com/o/oauth2/v2/auth?client_id=762086220505-f0kij4nt279nqn21ukokm06j0jge2ngl.apps.googleusercontent.com&response_type=code&state=state_parameter_passthrough_value&scope=https://www.googleapis.com/auth/calendar&redirect_uri=https://greg.strukturart.com/redirect.html&access_type=offline&prompt=consent';
+  'https://accounts.google.com/o/oauth2/v2/auth?client_id=' +
+  process.env.clientId +
+  '&response_type=code&state=state_parameter_passthrough_value' +
+  '&scope=' +
+  encodeURIComponent(
+    'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/userinfo.email'
+  ) +
+  '&redirect_uri=' +
+  encodeURIComponent(process.env.redirect_url) +
+  '&access_type=offline&prompt=consent';
 
 export let parsed_events = [];
 export let accounts = [];
@@ -59,58 +70,148 @@ localforage.getItem('subscriptions').then((e) => {
   console.log(e);
 });
 
-//caching parsed events
-//Caching is currently not stable
-//That's why I don't use it, when I start the app all events are parsed again
+//not KaiOS
+const oauthRedirect = async () => {
+  const getAuthorizationCode = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('code');
+  };
 
-let cache_caldav_events = (close) => {
-  const pe = parsed_events.filter((e) => e.isCaldav === true);
+  const getToken = async (authorizationCode) => {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
 
-  localforage.setItem('parsed_events_cached', pe).then(() => {
-    if (close) window.close();
-  });
-};
+    const urlencoded = new URLSearchParams();
+    urlencoded.append('code', authorizationCode);
+    urlencoded.append('grant_type', 'authorization_code');
+    urlencoded.append('redirect_uri', process.env.redirect_url);
+    urlencoded.append('client_id', process.env.clientId);
+    urlencoded.append('client_secret', process.env.clientSecret);
 
-let load_cached_caldav_events = () => {
-  localforage
-    .getItem('parsed_events_cached')
-    .then((e) => {
-      if (e == null) {
-        return false;
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: urlencoded,
+      redirect: 'follow',
+    };
+
+    try {
+      const response = await fetch(
+        'https://oauth2.googleapis.com/token',
+        requestOptions
+      );
+      if (!response.ok) {
+        throw new Error(`Token exchange failed: ${response.statusText}`);
       }
-      parsed_events = e;
-    })
-    .catch((e) => {
-      console.log('D' + e);
-    });
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching the token:', error);
+      throw error;
+    }
+  };
+
+  const saveAccount = async (tokens, authorizationCode) => {
+    try {
+      let accounts = (await localforage.getItem('accounts')) || [];
+
+      accounts.push({
+        server_url: 'https://apidata.googleusercontent.com/caldav/v2/',
+        tokens,
+        authorizationCode,
+        name: 'Google',
+        id: uid(32),
+        type: 'oauth',
+        calendars: [],
+      });
+
+      await localforage.setItem('accounts', accounts);
+
+      setTimeout(() => {
+        window.close();
+      }, 3000);
+    } catch (error) {
+      alert('Error saving account: ' + error.message);
+    }
+  };
+
+  try {
+    const authorizationCode = getAuthorizationCode();
+    if (!authorizationCode) {
+      return false;
+    }
+
+    const tokens = await getToken(authorizationCode);
+    await saveAccount(tokens, authorizationCode);
+  } catch (error) {}
 };
 
-//version changment
-//export events
-try {
-  if (localStorage.getItem('export_versionChangment') != '1') {
-    setTimeout(() => {
-      localforage
-        .getItem('events')
-        .then((e) => {
-          console.log(e.length);
-          if (e == null || e.length == 0) return false;
-          export_ical_versionChangment('greg-backup.ics', e);
-          alert(
-            "In the new app version, events in the local calendar are saved differently. That's why it was exported and saved on your device. You can now import it again, please use the import button in the settings area. I apologize for the circumstances."
-          );
-        })
-        .catch((e) => {});
-    }, 10000);
-  }
-} catch (e) {
-  console.log(e);
+//open KaiOS app
+let app_launcher = () => {
+  var currentUrl = window.location.href;
+
+  // Check if the URL includes 'id='
+  if (!currentUrl.includes('code=')) return false;
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let result = urlParams.get('code');
+
+  if (!result) return false;
+
+  // let result = code.split('#')[0];
+
+  setTimeout(() => {
+    try {
+      const activity = new MozActivity({
+        name: 'greg-oauth',
+        data: result,
+      });
+      activity.onsuccess = function () {
+        console.log('Activity successfuly handled');
+      };
+
+      activity.onerror = function () {
+        console.log('The activity encouter en error: ' + this.error);
+        alert(this.error);
+      };
+    } catch (e) {}
+    if ('b2g' in navigator) {
+      try {
+        let activity = new WebActivity('greg-oauth', {
+          name: 'greg-oauth',
+          type: 'string',
+          data: result,
+        });
+        activity.start().then(
+          (rv) => {
+            window.close();
+
+            console.log('Results passed back from activity handler:');
+            console.log(rv);
+          },
+          (err) => {
+            alert(err);
+          }
+        );
+      } catch (e) {}
+    }
+  }, 4000);
+};
+if ('b2g' in navigator || 'mozApps' in navigator) {
+  app_launcher();
+} else {
+  oauthRedirect();
 }
 
 const intro_animation = () => {
   document.querySelector('#intro').classList.add('intro-animation');
   document.querySelector('#version').classList.add('intro-version-animation');
   document.querySelector('#intro img').classList.add('intro-img-anmation');
+
+  setTimeout(() => {
+    if (status.user) {
+      side_toaster('logged in as ' + status.user, 5000);
+    }
+  }, 6000);
 };
 
 const show_success_animation = () => {
@@ -124,22 +225,11 @@ const show_success_animation = () => {
 };
 
 //back to last view
-let view_history = [];
-let view_history_update = () => {
-  view_history.push(m.route.get());
-};
+
 const get_last_view = () => {
-  setTimeout(() => {
-    m.route.set(view_history[view_history.length - 2]);
-  }, 1000);
+  if (m.route.get !== '/page_calendar') m.route.set('/page_calendar');
 };
 wakeLookCPU();
-
-//google oAuth
-const google_acc = {
-  token_url: 'https://oauth2.googleapis.com/token',
-  redirect_url: 'https://greg.strukturart.com/redirect.html',
-};
 
 let oauth_callback = '';
 
@@ -170,6 +260,9 @@ export let status = {
   sortEvents: 'startDate',
   shortCut: false,
   background_sync_running: false,
+  version: localStorage.getItem('version') || 'time is relative',
+  notKaiOS: true,
+  debug: false,
 };
 
 export let settings = {
@@ -181,6 +274,26 @@ export let settings = {
   background_sync: 'No',
   default_duration: 30,
 };
+
+if ('b2g' in navigator || 'navigator.mozApps' in navigator)
+  status.notKaiOS = false;
+
+if (!status.notKaiOS) {
+  const scripts = [
+    'http://127.0.0.1/api/v1/shared/core.js',
+    'http://127.0.0.1/api/v1/shared/session.js',
+    'http://127.0.0.1/api/v1/apps/service.js',
+    'http://127.0.0.1/api/v1/audiovolumemanager/service.js',
+    './assets/js/kaiads.v5.min.js',
+  ];
+
+  scripts.forEach((src) => {
+    const js = document.createElement('script');
+    js.type = 'text/javascript';
+    js.src = src;
+    document.head.appendChild(js);
+  });
+}
 
 test_is_background_sync();
 
@@ -247,11 +360,13 @@ if ('b2g' in navigator) {
 
 //load calendar names
 let calendar_not_visible = [];
+
 async function loadCalendarNames() {
   try {
-    const keys = await localforage.keys();
-    //set local calendar as default
-    if (keys.indexOf('calendarNames') == -1) {
+    const calendarData = await localforage.getItem('calendarNames');
+
+    // Set local calendar as default if 'calendarNames' is not found
+    if (!calendarData) {
       calendar_names = [
         {
           name: 'local',
@@ -262,15 +377,15 @@ async function loadCalendarNames() {
         },
       ];
     } else {
-      localforage.getItem('calendarNames').then((a) => {
-        calendar_names = a;
-        //visible or not visible
-        calendar_names.forEach((e) => {
-          if (e.view == false) calendar_not_visible.push(e.name);
-        });
+      calendar_names = calendarData;
+      // Process visibility
+      calendar_names.forEach((e) => {
+        if (!e.view) calendar_not_visible.push(e.name);
       });
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error('Error loading calendar names:', err);
+  }
 }
 
 //load accounts data
@@ -403,12 +518,12 @@ async function getClientInstance(item) {
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
-            tokenUrl: google_acc.token_url,
+            tokenUrl: 'https://oauth2.googleapis.com/token',
             refreshToken: item.tokens.refresh_token,
-            clientId: google_cred.clientId,
-            clientSecret: google_cred.clientSecret,
+            clientId: process.env.clientId,
+            clientSecret: process.env.clientSecret,
             authorizationCode: item.authorizationCode,
-            redirectUrl: google_acc.redirect_url,
+            redirectUrl: process.env.redirect_url,
           },
           authMethod: 'Oauth',
           defaultAccountType: 'caldav',
@@ -426,6 +541,32 @@ async function getClientInstance(item) {
         });
       }
     }
+    return clientInstances[item.id];
+  } catch (e) {
+    console.error('Error occurred while creating DAVClient instance:', e);
+    throw e; // Re-throw the error to handle it outside this function if needed
+  }
+}
+
+async function getClientInstanceTest(item) {
+  try {
+    if (item.type === 'oauth') {
+      clientInstances[item.id] = new DAVClient({
+        serverUrl:
+          'https://www.googleapis.com/calendar/v3/users/me/calendarList',
+        credentials: {
+          tokenUrl: 'https://oauth2.googleapis.com/token',
+          refreshToken: item.tokens.refresh_token,
+          clientId: process.env.clientId,
+          clientSecret: process.env.clientSecret,
+          authorizationCode: item.authorizationCode,
+          redirectUrl: process.env.redirect_url,
+        },
+        authMethod: 'Oauth',
+        defaultAccountType: 'caldav',
+      });
+    }
+
     return clientInstances[item.id];
   } catch (e) {
     console.error('Error occurred while creating DAVClient instance:', e);
@@ -481,11 +622,10 @@ async function load_caldav(callback = false, account_to_update = false) {
       let calendars;
       try {
         calendars = await client.fetchCalendars();
-        console.log(calendars);
       } catch (fetchCalendarsError) {
         console.log(fetchCalendarsError);
-
-        continue; // Skip to the next account in case of fetch failure
+        // Skip to the next account in case of fetch failure
+        continue;
       }
 
       if (m.route.get() === '/page_calendar') {
@@ -598,8 +738,6 @@ let cache_caldav = async function () {
       closing_prohibited = false;
     }
   }
-  //cache parsed events
-  //  cache_caldav_events();
 };
 
 //default calendar
@@ -624,6 +762,34 @@ export let sync_caldav = async function (callback) {
   if (!status.visible && !navigator.onLine) window.close();
 
   for (const item of accounts) {
+    //get user info
+
+    try {
+      const result = await refreshAccessToken({
+        clientId: process.env.clientId,
+        clientSecret: process.env.clientSecret,
+        tokenUrl: 'https://oauth2.googleapis.com/token',
+        refreshToken: item.tokens.refresh_token,
+      });
+      var xhr = new XMLHttpRequest({ mozSystem: true });
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          let m = JSON.parse(xhr.responseText);
+          status.user = m.email;
+        } else {
+          console.log('Error fetching calendar list:', xhr.statusText);
+        }
+      };
+
+      xhr.open('GET', 'https://www.googleapis.com/oauth2/v3/userinfo');
+
+      // Use the access token received from the login method in the Authorization header
+      xhr.setRequestHeader('Authorization', 'Bearer ' + result.access_token);
+      xhr.send();
+    } catch (e) {
+      console.log(e);
+    }
+
     const client = await getClientInstance(item);
     try {
       if (!isLoggedInMap[item.id]) {
@@ -634,7 +800,7 @@ export let sync_caldav = async function (callback) {
       const calendars = await client.fetchCalendars();
 
       for (let i = 0; i < calendars.length; i++) {
-        const objects = await client.fetchCalendarObjects({
+        await client.fetchCalendarObjects({
           calendar: calendars[i],
         });
         cn.push({
@@ -675,8 +841,6 @@ export let sync_caldav = async function (callback) {
           if (ma.updated.length && ma.updated.length > 0) {
             callback(item);
             break;
-          } else {
-            // if (!status.visible) cache_caldav_events(true);
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -688,18 +852,14 @@ export let sync_caldav = async function (callback) {
     }
   }
 
+  //update new calendars with old calendar view attribut
+
   if (JSON.stringify(cn) != JSON.stringify(calendar_names)) {
-    //update new calendars with old calendar view attribut
     try {
       cn.forEach((e) => {
         let matchingCalendar;
         if (Array.isArray(calendar_names)) {
           matchingCalendar = calendar_names.find((a) => a.name === e.name);
-
-          // Rest of your code using matchingCalendar
-        } else {
-          console.error('calendar_names is not an array or is undefined');
-          // Handle the case where calendar_names is not an array or is undefined
         }
 
         if (matchingCalendar) {
@@ -727,7 +887,7 @@ const load_cached_caldav = async () => {
     try {
       const w = await localforage.getItem(item.id);
       // Load content if never cached
-      if (w === null) {
+      if (!w) {
         try {
           load_caldav(false, item.id);
         } catch (e) {
@@ -838,15 +998,12 @@ export let create_caldav = async function (
 
 //delete event
 export let delete_caldav = async function (etag, url, account_id, uid) {
-  console.log(parsed_events);
   if (!navigator.onLine) return false;
 
   document.querySelector('.loading-spinner').style.display = 'block';
   const matchingAccount = accounts.find((p) => p.id === account_id);
 
-  console.log('hey' + matchingAccount);
-
-  if (matchingAccount == undefined) {
+  if (!matchingAccount) {
     document.querySelector('.loading-spinner').style.display = 'none';
     side_toaster('There was a problem deleting, please try again later.', 5000);
     return false;
@@ -880,8 +1037,10 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
           style_calendar_cell(currentYear, currentMonth);
           document.querySelector('.loading-spinner').style.display = 'none';
 
-          if (status.shortCut == false) {
+          if (!status.shortCut) {
             get_last_view();
+            show_success_animation();
+
             return 'success';
           } else {
             show_success_animation();
@@ -1029,11 +1188,7 @@ const load_subscriptions = async () => {
 };
 
 export let sync_caldav_callback = function (account_to_update) {
-  load_caldav(false, account_to_update).then(() => {
-    if (!status.visible) {
-      //cache_caldav_events(true);
-    }
-  });
+  load_caldav(false, account_to_update).then(() => {});
 };
 
 //get event data
@@ -1091,12 +1246,6 @@ let currentYear = today.getFullYear();
 let currentDay = today.getDate();
 
 let update_event_date;
-
-//ads || ads free
-
-try {
-  getManifest(manifest);
-} catch (e) {}
 
 // ////////
 // finde closest event to selected date in list view
@@ -1195,109 +1344,6 @@ const event_check = function (date) {
 
   return feedback;
 };
-
-// check if has recur event
-/*
-let rrule_check = function (date) {
-  let feedback = {
-    date: '',
-    event: false,
-    subscription: false,
-    multidayevent: false,
-    rrule: 'none',
-    event_data: '',
-  };
-
-  for (let t = 0; t < parsed_events.length; t++) {
-    if (typeof parsed_events[t] === 'object') {
-      feedback.event = false;
-      feedback.multidayevent = false;
-      feedback.rrule = false;
-      feedback.date = date;
-      feedback.event_data = '';
-
-      let a = new Date(parsed_events[t].dateStart).getTime();
-      let b = new Date(parsed_events[t].dateEnd).getTime();
-      let c = new Date(date).getTime();
-      let d = parsed_events[t].RRULE.freq;
-      let e = parsed_events[t].RRULE;
-
-      if (e !== undefined && e !== null) {
-        //recurrences
-
-        if (parsed_events[t].RRULE != null) {
-          //endless || with end
-          if (parsed_events[t].RRULE.until == null) {
-            // b = new Date('3000-01-01').getTime();
-          }
-        }
-
-        if (a === c || (a < c && b > c)) {
-          feedback.event_data = parsed_events[t];
-          if (d == 'MONTHLY') {
-            if (
-              new Date(parsed_events[t].dateStart).getDate() ===
-              new Date(date).getDate()
-            ) {
-              feedback.event = true;
-              feedback.rrule = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'WEEKLY') {
-            if (
-              new Date(parsed_events[t].dateStart).getDay() ===
-              new Date(date).getDay()
-            ) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'BIWEEKLY') {
-            if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-
-              return feedback;
-            }
-          }
-
-          if (d == 'YEARLY') {
-            let tt = new Date(parsed_events[t].dateStart);
-            let pp = new Date(date);
-            if (
-              tt.getDate() + '-' + tt.getMonth() ===
-              pp.getDate() + '-' + pp.getMonth()
-            ) {
-              feedback.rrule = true;
-              feedback.event = true;
-              feedback.event_data = parsed_events[t];
-
-              t = parsed_events.length;
-              return feedback;
-            }
-          }
-        }
-      }
-    }
-  }
-  return feedback;
-};
-*/
 
 let rrule_check = function (date) {
   let feedback = {
@@ -1819,10 +1865,12 @@ var page_calendar = {
         class: 'width-100 height-100',
         id: 'calendar',
         oninit: function () {
-          view_history_update();
           load_settings();
           clear_form();
-          // status.shortCut = true;
+          get_version();
+
+          document.querySelector('#version').textContent =
+            localStorage.getItem('version');
         },
       },
       [
@@ -1856,7 +1904,7 @@ var page_calendar = {
                   dayjs().format('HH:mm');
               },
             },
-            'time is relative'
+            status.version
           ),
         ]),
 
@@ -1950,7 +1998,6 @@ var page_events = {
         oninit: () => {
           document.querySelector('.loading-spinner').style.display = 'block';
 
-          view_history_update();
           status.shortCut = false;
         },
         onremove: () => {
@@ -2158,7 +2205,6 @@ var page_events_filtered = {
             document.activeElement.getAttribute('data-id');
         },
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
           side_toaster('Category: ' + query, 8000);
         },
@@ -2244,11 +2290,10 @@ export let page_options = {
       {
         id: 'options',
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
         },
         oncreate: () => {
-          if (settings.ads) {
+          if (!status.notKaiOS) {
             load_ads();
           }
 
@@ -2425,7 +2470,6 @@ export let page_options = {
           'div',
           {
             class: 'item input-parent',
-            id: 'firs-day-of-the-week-box',
             tabindex: '4',
           },
           [
@@ -2778,7 +2822,9 @@ export let page_options = {
           ]
         ),
 
-        m('div', { id: 'subscription-text' }, 'Your accounts'),
+        accounts != null
+          ? m('div', { id: 'subscription-text' }, 'Your accounts')
+          : '',
 
         accounts != null
           ? accounts.map(function (item) {
@@ -2813,7 +2859,6 @@ export let page_options = {
 
         m('div', {
           id: 'KaiOsAds-Wrapper',
-          //  tabindex: subscriptions.length + accounts.length + 11,
           class: 'flex justify-content-spacearound',
           oninit: function () {
             if (settings.ads) {
@@ -2846,7 +2891,6 @@ var page_subscriptions = {
           oninit: () => {
             bottom_bar('', '', '');
 
-            view_history_update();
             status.shortCut = false;
           },
 
@@ -2923,7 +2967,6 @@ var page_edit_account = {
 
           oncreate: function ({ dom }) {
             dom.focus();
-            view_history_update();
             status.shortCut = false;
           },
         },
@@ -3044,9 +3087,7 @@ var page_accounts = {
         {
           class: 'item input-parent',
           tabindex: '0',
-          oninit: () => {
-            view_history_update();
-          },
+          oninit: () => {},
           oncreate: function ({ dom }) {
             dom.focus();
           },
@@ -3166,7 +3207,6 @@ var page_add_event = {
         id: 'add-edit-event',
         tabindex: '0',
         oninit: () => {
-          view_history_update();
           status.shortCut = false;
         },
       },
@@ -3487,7 +3527,6 @@ var page_edit_event = {
         id: 'add-edit-event',
         oninit: () => {},
         omcreate: () => {
-          view_history_update();
           status.shortCut = false;
         },
       },
@@ -3866,9 +3905,6 @@ var page_list_files = {
       'div',
       {
         id: 'options',
-        oninit: () => {
-          view_history_update();
-        },
       },
       [
         m('h2', { class: 'text-center', id: 'file-head' }, 'files'),
@@ -3906,9 +3942,7 @@ var page_event_templates = {
       'div',
       {
         id: 'options',
-        oninit: () => {
-          view_history_update();
-        },
+
         oncreate: function () {
           bottom_bar(
             "<img src='assets/image/delete.svg'>",
@@ -4647,7 +4681,7 @@ let store_event = function (account_id, cal_name) {
               type: 'parse',
               t: { uid: event.UID, data: dd },
               e: 'local-id',
-              callback: false,
+              callback: true,
               store: false,
             });
           } catch (e) {
@@ -4713,7 +4747,7 @@ let store_event = function (account_id, cal_name) {
             type: 'parse',
             t: { uid: e.UID, data: dd, url: e.url, etag: e.etag },
             e: account_id,
-            callback: false,
+            callback: true,
             store: false,
           });
           get_last_view();
@@ -4911,6 +4945,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
         clear_form();
         setTimeout(() => {
           get_last_view();
+          show_success_animation();
         }, 1000);
       })
       .catch(function (err) {});
@@ -4983,6 +5018,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
       style_calendar_cell(currentYear, currentMonth);
       setTimeout(() => {
         get_last_view();
+        show_success_animation();
       }, 1000);
     });
   }
@@ -4994,10 +5030,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
 
 let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
-    delete_caldav(etag, url, account_id, uid).then((e) => {
-      if (status.shortCut) show_success_animation();
-      // cache_caldav_events();
-    });
+    delete_caldav(etag, url, account_id, uid);
   } else {
     // Find the index of the object with the matching UID
     const index = local_account.data.findIndex((item) => item.uid === uid);
@@ -5010,11 +5043,9 @@ let delete_event = function (etag, url, account_id, uid) {
         .then(function () {
           style_calendar_cell(currentYear, currentMonth);
 
-          if (!status.shortCut) {
-            get_last_view();
-          }
+          get_last_view();
+
           show_success_animation();
-          // cache_caldav_events();
         })
         .catch(function (err) {});
     }
@@ -5173,8 +5204,6 @@ function shortpress_action(param) {
       if (currentPage('page_calendar')) slider_navigation();
       break;
 
-    case '9':
-      break;
     case '5':
       if (currentPage('page_calendar')) {
         if (document.activeElement.classList.contains('event')) {
@@ -5556,7 +5585,7 @@ function handleKeyUp(evt) {
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
 document.addEventListener('visibilitychange', handleVisibilityChange, false);
-if (debug) {
+if (status.debug) {
   window.onerror = function (msg, url, linenumber) {
     alert(
       'Error message: ' + msg + '\nURL: ' + url + '\nLine Number: ' + linenumber
@@ -5564,6 +5593,80 @@ if (debug) {
     return true;
   };
 }
+
+let oauthRedirect_kaios = async (authorizationCode) => {
+  const getToken = async (authorizationCode) => {
+    const myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/x-www-form-urlencoded');
+
+    const urlencoded = new URLSearchParams();
+    urlencoded.append('code', authorizationCode);
+    urlencoded.append('grant_type', 'authorization_code');
+    urlencoded.append('redirect_uri', process.env.redirect_url);
+    urlencoded.append('client_id', process.env.clientId);
+    urlencoded.append('client_secret', process.env.clientSecret);
+
+    const requestOptions = {
+      method: 'POST',
+      headers: myHeaders,
+      body: urlencoded,
+      redirect: 'follow',
+    };
+
+    try {
+      const response = await fetch(
+        'https://oauth2.googleapis.com/token',
+        requestOptions
+      );
+
+      if (!response.ok) {
+        const errorDetails = await response.text();
+        throw new Error(
+          `Token exchange failed: ${response.statusText}. Details: ${errorDetails}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching the token:', error);
+      throw error;
+    }
+  };
+
+  const saveAccount = async (tokens, authorizationCode) => {
+    try {
+      let accounts = (await localforage.getItem('accounts')) || [];
+
+      accounts.push({
+        server_url: 'https://apidata.googleusercontent.com/caldav/v2/',
+        tokens,
+        authorizationCode,
+        name: 'Google',
+        id: uid(32),
+        type: 'oauth',
+        calendars: [],
+      });
+
+      await localforage.setItem('accounts', accounts);
+
+      setTimeout(() => {
+        load_cached_caldav().then(() => {
+          localStorage.setItem('oauth_callback', 'true');
+          show_success_animation();
+        });
+      }, 3000);
+    } catch (error) {
+      alert('Error saving account: ' + error.message);
+    }
+  };
+
+  try {
+    const tokens = await getToken(authorizationCode);
+    await saveAccount(tokens, authorizationCode);
+  } catch (error) {
+    alert('OAuth process failed: ' + error.message);
+  }
+};
 
 // Set up a timer to check if no messages have arrived for a certain period
 const waitTimeout = 400; // Time in milliseconds
@@ -5575,13 +5678,12 @@ let lastMessageTime; // Store the timestamp of the last received message
 let running = false;
 channel.addEventListener('message', (event) => {
   //callback from Google OAuth
-  //ugly method to open a new window, because a window from sw clients.open can not be closed
-
   if (event.data.oauth_success) {
-    const l = event.data.oauth_success;
-    setTimeout(() => {
-      window.open(l);
-    }, 5000);
+    let result = event.data.oauth_success.data;
+
+    if (result) {
+      oauthRedirect_kaios(result);
+    }
   }
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
@@ -5600,7 +5702,6 @@ channel.addEventListener('message', (event) => {
       parsed_events.push(event.data.content.parsed_data);
 
       //notify user when data stored
-
       if (event.data.content.callback) {
         show_success_animation();
       }
@@ -5648,8 +5749,6 @@ let interval = () => {
       style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
       clearInterval(waitForNoMessages);
-      //cache parsed data
-      // cache_caldav_events();
     }
   }, checkMessagesInterval);
 };

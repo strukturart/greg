@@ -2,15 +2,8 @@ import './assets/js/shim-xhr-to-fetch.js';
 import ICAL from 'ical.js';
 import dayjs from 'dayjs';
 import localforage from 'localforage';
-//import { DAVClient } from './assets/js/tsdav-2.0.5.js';
 import { DAVClient } from './assets/js/tsdav.js';
 
-import { google_cred } from './assets/js/google_cred.js';
-
-const google_acc = {
-  token_url: 'https://oauth2.googleapis.com/token',
-  redirect_url: 'https://greg.strukturart.com/redirect.html',
-};
 const channel = new BroadcastChannel('sw-messages');
 
 let accounts;
@@ -197,6 +190,7 @@ function parse_ics(
       etag: etag || '',
       url: url || '',
       calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
+
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
@@ -210,7 +204,7 @@ function parse_ics(
 
     //callback or not
     if (callback) {
-      a.calback = true;
+      a.callback = true;
     }
     return_array.push(a);
   });
@@ -230,12 +224,12 @@ async function getClientInstance(item) {
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
-            tokenUrl: google_acc.token_url,
+            tokenUrl: process.env.token_url,
             refreshToken: item.tokens.refresh_token,
-            clientId: google_cred.clientId,
-            clientSecret: google_cred.clientSecret,
+            clientId: process.env.clientId,
+            clientSecret: process.env.clientSecret,
             authorizationCode: item.authorizationCode,
-            redirectUrl: google_acc.redirect_url,
+            redirectUrl: process.env.redirect_url,
           },
           authMethod: 'Oauth',
           defaultAccountType: 'caldav',
@@ -384,38 +378,7 @@ self.addEventListener('message', async (event) => {
       });
     }
   }
-
-  if (event.data.type == 'test') {
-    // sync_caldav();
-  }
 });
-
-/*
-//System messages
-self.addEventListener('error', (event) => {
-  const errorMessage = {
-    type: 'error',
-    message: event.message,
-    filename: event.filename,
-    lineno: event.lineno,
-    colno: event.colno,
-  };
-
-  // Send the error message to all clients (pages) controlled by the service worker
-  self.clients.matchAll().then((clients) => {
-    clients.forEach((client) => {
-      client.postMessage({
-        action: 'test',
-        content: JSON.stringify(errorMessage),
-      });
-    });
-  });
-});
-
-self.addEventListener('unhandledrejection', (event) => {
-  channel.postMessage({ action: 'test', content: event.reason });
-});
-*/
 
 self.onsystemmessage = (evt) => {
   try {
@@ -424,11 +387,8 @@ self.onsystemmessage = (evt) => {
         handler = evt.data.webActivityRequestHandler();
         const { name: activityName, data: activityData } = handler.source;
         if (activityName == 'greg-oauth') {
-          let code = activityData.code;
-
-          const url = '/oauth.html?code=' + code;
           channel.postMessage({
-            oauth_success: url,
+            oauth_success: activityData,
           });
         }
       }
