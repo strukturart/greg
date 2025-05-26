@@ -34,10 +34,14 @@ import 'url-search-params-polyfill';
 import { load_ads } from './assets/js/ads.js';
 import { uid } from 'uid';
 import dayjs from 'dayjs';
-import dayjsPluginUTC from 'dayjs-plugin-utc';
+import utc from 'dayjs/plugin/utc';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+import isoWeek from 'dayjs/plugin/isoWeek';
 
-//const dayjs = require('dayjs');
-dayjs.extend(dayjsPluginUTC);
+dayjs.extend(utc);
+dayjs.extend(weekOfYear);
+dayjs.extend(isoWeek);
+
 const moment = require('moment-timezone');
 
 let channel = new BroadcastChannel('sw-messages');
@@ -157,8 +161,6 @@ let app_launcher = () => {
 
   if (!result) return false;
 
-  // let result = code.split('#')[0];
-
   setTimeout(() => {
     try {
       const activity = new MozActivity({
@@ -256,7 +258,7 @@ export let status = {
   visible: false,
   update_event_id: '',
   event_calendar_changed: false,
-  startup: false,
+  startup: true,
   sortEvents: 'startDate',
   shortCut: false,
   background_sync_running: false,
@@ -541,32 +543,6 @@ async function getClientInstance(item) {
         });
       }
     }
-    return clientInstances[item.id];
-  } catch (e) {
-    console.error('Error occurred while creating DAVClient instance:', e);
-    throw e; // Re-throw the error to handle it outside this function if needed
-  }
-}
-
-async function getClientInstanceTest(item) {
-  try {
-    if (item.type === 'oauth') {
-      clientInstances[item.id] = new DAVClient({
-        serverUrl:
-          'https://www.googleapis.com/calendar/v3/users/me/calendarList',
-        credentials: {
-          tokenUrl: 'https://oauth2.googleapis.com/token',
-          refreshToken: item.tokens.refresh_token,
-          clientId: process.env.clientId,
-          clientSecret: process.env.clientSecret,
-          authorizationCode: item.authorizationCode,
-          redirectUrl: process.env.redirect_url,
-        },
-        authMethod: 'Oauth',
-        defaultAccountType: 'caldav',
-      });
-    }
-
     return clientInstances[item.id];
   } catch (e) {
     console.error('Error occurred while creating DAVClient instance:', e);
@@ -1243,7 +1219,6 @@ let store_event_as_template = function (
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
-let currentDay = today.getDate();
 
 let update_event_date;
 
@@ -1607,198 +1582,131 @@ let event_slider = function (date) {
 let jump_to_today = function () {
   currentMonth = today.getMonth();
   currentYear = today.getFullYear();
-  showCalendar(currentMonth, currentYear);
+  m.redraw();
+
   setTimeout(() => {
     status.selected_day = dayjs().format('YYYY-MM-DD');
     event_slider(status.selected_day);
   }, 1000);
+
+  setTimeout(() => {
+    document.querySelector('.item:not(.empty)').focus();
+    try {
+      document.querySelector('.today').focus();
+    } catch (e) {}
+  }, 300);
 };
 
 function next() {
   currentYear = currentMonth === 11 ? currentYear + 1 : currentYear;
   currentMonth = (currentMonth + 1) % 12;
-  showCalendar(currentMonth, currentYear);
+  m.redraw();
+
   event_slider(status.selected_day);
+
+  setTimeout(() => {
+    console.log('update');
+
+    document.querySelector('.item:not(.empty)').focus();
+    try {
+      document.querySelector('.today').focus();
+    } catch (e) {}
+  }, 300);
 }
 
 function previous() {
   currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
   currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-  showCalendar(currentMonth, currentYear);
+  // showCalendar(currentMonth, currentYear);
+  m.redraw();
+
   event_slider(status.selected_day);
+
+  setTimeout(() => {
+    console.log('update');
+
+    document.querySelector('.item:not(.empty)').focus();
+    try {
+      document.querySelector('.today').focus();
+    } catch (e) {}
+  }, 300);
 }
-
-let highlight_current_day = function () {
-  if (m.route.get() != '/page_calendar') return false;
-  setTimeout(function () {
-    //reset weekday
-    document
-      .querySelectorAll('div#calendar div.calendar-head div')
-      .forEach(function (e) {
-        e.classList.remove('active');
-      });
-    //reset weeknumber
-    document.querySelectorAll('span.weeknumber').forEach((e) => {
-      e.classList.remove('active');
-    });
-
-    let p = document.activeElement.getAttribute('data-date');
-
-    const d = new Date(p);
-    let s = d.getDay();
-    let k = document.activeElement.closest('div.row');
-    k.querySelector('span.weeknumber').classList.add('active');
-
-    if (settings.firstday == 'monday') {
-      s = s - 1;
-
-      if (s == -1) s = 6;
-      document
-        .querySelectorAll('div#calendar div.calendar-head div')
-        [s].classList.add('active');
-    } else {
-      document
-        .querySelectorAll('div#calendar div.calendar-head div')
-        [s].classList.add('active');
-    }
-  }, 200);
-};
 
 //////////////
 //BUILD CALENDAR
 //////////////
 
-// get weeknumber
-Date.prototype.getWeek = function () {
-  var date = new Date(this.getTime());
-  date.setHours(0, 0, 0, 0);
+function getCalendarData(month, year) {
+  const test = dayjs(new Date(year, month, 1));
 
-  // Thursday in current week decides the year.
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-
-  // January 4 is always in week 1.
-  var week1 = new Date(date.getFullYear(), 0, 4);
-
-  // Adjust to Thursday in week 1 and count number of weeks from date to week1.
-  return (
-    1 +
-    Math.round(
-      ((date.getTime() - week1.getTime()) / 86400000 -
-        3 +
-        ((week1.getDay() + 6) % 7)) /
-        7
-    )
-  );
-};
-//https://medium.com/@nitinpatel_20236/challenge-of-building-a-calendar-with-pure-javascript-a86f1303267d
-let showCalendar = function (month, year) {
-  // filing data about month and in the page via DOM.
-
-  document.getElementById('monthAndYear').textContent =
-    months[month] + ' ' + year;
-
-  let firstDay = new Date(year, month).getDay();
-  if (settings.firstday == 'monday') {
-    if (firstDay == 0) {
-      firstDay = 6;
-    } else {
-      firstDay = firstDay - 1;
-    }
+  if (!test.isValid()) {
+    throw new Error('Ungültiger Monat oder Jahr');
   }
 
-  let daysInMonth = 32 - new Date(year, month, 32).getDate();
+  const weeks = [];
+  const firstDay = new Date(year, month).getDay(); // 0 = Sonntag
+  const daysInMonth = 32 - new Date(year, month, 32).getDate();
 
-  let tbl = document.getElementById('calendar-body');
+  const offset = (firstDay + 6) % 7; // Montag = 0
+  let dayCounter = 1;
 
-  // clearing all previous cells
-  tbl.innerHTML = '';
+  const today = dayjs().format('YYYY-MM-DD');
 
-  // creating all cells
-  let date = 1;
-  for (let i = 0; i < 6; i++) {
-    // creates a table row
-    let row = document.createElement('div');
-    row.classList.add('flex');
-    row.classList.add('row');
-    row.setAttribute('data-weeknumber', i);
-    row.classList.add('width-100');
+  for (let i = 0; i < 6 && dayCounter <= daysInMonth; i++) {
+    const week = [];
+    let firstDateOfWeek = null;
 
-    // creating individual cells, filing them up with data.
     for (let j = 0; j < 7; j++) {
-      if (i === 0 && j < firstDay) {
-        let cell = document.createElement('div');
-        let cellText = document.createTextNode('');
-        cell.appendChild(cellText);
-        row.appendChild(cell);
-      } else if (date > daysInMonth) {
-        break;
+      let dayObj;
+
+      if ((i === 0 && j < offset) || dayCounter > daysInMonth) {
+        dayObj = {
+          day: null,
+          date: null,
+          weekday: j,
+          isToday: false,
+          moonPhase: null,
+          week: null,
+        };
       } else {
-        let cell = document.createElement('div');
-        let span = document.createElement('span');
-        let moon = document.createElement('div');
+        const dayStr = String(dayCounter).padStart(2, '0');
+        const monthStr = String(month + 1).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
 
-        let cellText = document.createTextNode(date);
-        cell.appendChild(cellText);
-        cell.appendChild(span);
+        if (!firstDateOfWeek) firstDateOfWeek = dateStr;
 
-        // set tabindex
-        cell.setAttribute('tabindex', date - 1);
-        cell.classList.add('calendar-cell');
-        // store date with leading 0
-        // because input type date
-        // accept only day month with leading zero
-        let mmonth = `0${month + 1}`.slice(-2);
-        let day = `0${date}`.slice(-2);
+        dayObj = {
+          day: dayCounter,
+          date: dateStr,
+          weekday: j,
 
-        let p = year + '-' + mmonth + '-' + day;
+          isToday: dateStr === today,
+          moonPhase: getMoonPhase(year, month, dayCounter),
+          week: null, // wird später gesetzt
+        };
 
-        moon.classList.add('moon-phase-' + getMoonPhase(year, month, date));
-        cell.appendChild(moon);
-
-        cell.setAttribute('data-date', p);
-
-        cell.classList.add('item');
-        row.appendChild(cell);
-
-        date++;
+        dayCounter++;
       }
+
+      week.push(dayObj);
     }
 
-    // add weeknumbers
-    let week = document.createElement('span');
-    week.classList.add('weeknumber');
-    let f = () => {
-      let k = '';
-      if (settings.firstday == 'monday') {
-        k = new Date(year, month, date - 1).getWeek();
-      } else {
-        k = new Date(year, month, date).getWeek();
-      }
-      return k;
-    };
+    // Kalenderwoche bestimmen (ISO)
+    const weekNumber = firstDateOfWeek
+      ? dayjs(firstDateOfWeek).isoWeek()
+      : null;
 
-    let weekText = document.createTextNode(f());
+    // week-Nummer für alle Tage dieser Woche setzen
+    week.forEach((day) => {
+      if (day.date) day.week = weekNumber;
+    });
 
-    week.appendChild(weekText);
-    row.appendChild(week);
-
-    //add row
-    tbl.appendChild(row);
+    weeks.push(week);
   }
+  return weeks;
+}
 
-  document.querySelectorAll('.item')[0].focus();
-  status.selected_day = document.activeElement.getAttribute('data-date');
-
-  // highlight current day
-  if (today.getMonth() == month && today.getFullYear() == year) {
-    document.querySelectorAll('.item')[currentDay - 1].focus();
-    document.querySelectorAll('.item')[currentDay - 1].classList.add('today');
-  }
-
-  highlight_current_day();
-  style_calendar_cell(currentYear, currentMonth);
-};
-
+//clear form
 let clear_form = function () {
   document.querySelectorAll('div#add-edit-event input').forEach(function (e) {
     e.value = '';
@@ -1854,10 +1762,9 @@ let focus_after_selection = function () {
 //VIEWS
 /////////////////
 */
-
 var root = document.getElementById('app');
 
-var page_calendar = {
+var page_intro = {
   view: function () {
     return m(
       'div',
@@ -1874,14 +1781,64 @@ var page_calendar = {
         },
       },
       [
-        m('div', { class: 'flex justify-content-spacebetween', id: '' }, [
+        m('div', { class: 'flex justify-content-spacebetween' }, [
+          m('img', {
+            id: 'icon-loading',
+            src: './assets/image/E252.svg',
+            alt: 'loading',
+          }),
+
+          m('img', {
+            id: 'icon-waiting',
+            src: './assets/image/waiting.png',
+            alt: 'loading',
+          }),
+          m(
+            'div',
+            {
+              id: 'time',
+              oncreate: function () {
+                document.getElementById('time').innerText =
+                  dayjs().format('HH:mm');
+                setTimeout(() => {
+                  m.route.set('/page_calendar');
+                }, 3000);
+              },
+            },
+            status.version
+          ),
+        ]),
+      ]
+    );
+  },
+};
+
+let cdata;
+var page_calendar = {
+  view: function () {
+    cdata = getCalendarData(currentMonth, currentYear);
+    const header = dayjs(`${currentYear}-${currentMonth + 1}-01`).format(
+      'MMMM YYYY'
+    );
+
+    return m(
+      'div',
+      {
+        class: 'width-100 height-100',
+        id: 'calendar',
+        oninit: function () {
+          clear_form();
+        },
+      },
+      [
+        m('div', { class: 'flex justify-content-spacebetween' }, [
           m(
             'h3',
             {
               class: 'card-header',
               id: 'monthAndYear',
             },
-            ''
+            header
           ),
 
           m('img', {
@@ -1904,7 +1861,7 @@ var page_calendar = {
                   dayjs().format('HH:mm');
               },
             },
-            status.version
+            ''
           ),
         ]),
 
@@ -1924,7 +1881,96 @@ var page_calendar = {
             m('div', weekday[6]),
           ]
         ),
-        m('div', { id: 'calendar-body' }),
+        m(
+          'div',
+          {
+            id: 'calendar-body',
+          },
+          cdata.map((week) => {
+            const row = week.map((day) =>
+              m(
+                'div',
+                {
+                  tabindex: 0,
+                  'data-date': day.date,
+                  'data-weekday': day.weekday,
+
+                  oncreate: (vnode) => {
+                    if (day.day === 1) {
+                      setTimeout(() => {
+                        vnode.dom.focus();
+                      }, 1000);
+                    }
+
+                    if (day.isToday) {
+                      setTimeout(() => {
+                        vnode.dom.focus();
+                      }, 1000);
+                    }
+                  },
+
+                  onfocus: (event, vnode) => {
+                    const target = event.target;
+
+                    status.selected_day = target.getAttribute('data-date');
+
+                    let t = dayjs(status.selected_day);
+                    currentMonth = t.month();
+                    currentYear = t.year();
+
+                    //set selected day weekday/week
+                    setTimeout(() => {
+                      event_slider(status.selected_day);
+
+                      let weekday = target.getAttribute('data-weekday');
+
+                      document
+                        .querySelectorAll('span.weeknumber')
+                        .forEach((e) => {
+                          e.classList.remove('active');
+                        });
+
+                      document
+                        .querySelectorAll('.calendar-head div')
+                        .forEach((e) => {
+                          e.classList.remove('active');
+                        });
+
+                      document
+                        .querySelectorAll('.calendar-head div')
+                        [weekday].classList.add('active');
+
+                      const weekNumberSpan =
+                        target.parentElement.querySelector('span.weeknumber');
+                      if (weekNumberSpan) {
+                        weekNumberSpan.classList.add('active');
+                      }
+                    }, 200);
+                  },
+                  class:
+                    'calendar-cell item' +
+                    (day.day === null ? ' empty' : '') +
+                    (day.isToday ? ' today' : ''),
+                },
+                [
+                  day.day,
+                  m('span'),
+                  m('div'),
+                  m('div', { class: 'moon-phase-' + day.moonPhase }),
+                ]
+              )
+            );
+
+            const weekObj = week.find((d) => d.week !== null);
+            if (weekObj) {
+              row.push(
+                m('span', { class: 'calendar-cell weeknumber' }, weekObj.week)
+              );
+            }
+
+            return m('div', { class: 'flex row width-100' }, row);
+          })
+        ),
         m(
           'div',
           {
@@ -1938,6 +1984,29 @@ var page_calendar = {
           {
             id: 'event-slider',
             class: 'flex ',
+            onbeforeremove: () => {
+              status.selected_day =
+                document.activeElement.getAttribute('data-date');
+            },
+            onupdate: () => {
+              style_calendar_cell(currentYear, currentMonth);
+            },
+
+            oncreate: () => {
+              setTimeout(function () {
+                bottom_bar(
+                  "<img src='assets/image/add.svg'>",
+                  "<img src='assets/image/list.svg'>",
+                  "<img src='assets/image/option.svg'>"
+                );
+
+                let t = dayjs(status.selected_day);
+                currentMonth = t.month();
+                currentYear = t.year();
+
+                style_calendar_cell(currentYear, currentMonth);
+              }, 1000);
+            },
           },
           [
             m('div', {
@@ -1948,43 +2017,6 @@ var page_calendar = {
         ),
       ]
     );
-  },
-  onbeforeremove: () => {
-    status.selected_day = document.activeElement.getAttribute('data-date');
-  },
-
-  oncreate: () => {
-    setTimeout(function () {
-      if (document.activeElement.hasAttribute('data-date'))
-        status.selected_day = document.activeElement.getAttribute('data-date');
-      bottom_bar(
-        "<img src='assets/image/add.svg'>",
-        "<img src='assets/image/list.svg'>",
-        "<img src='assets/image/option.svg'>"
-      );
-
-      let t = new Date(status.selected_day);
-      currentMonth = t.getMonth();
-      currentYear = t.getFullYear();
-      showCalendar(currentMonth, currentYear);
-
-      document
-        .querySelectorAll('div#calendar-body div.item')
-        .forEach(function (item) {
-          if (item.getAttribute('data-date') == status.selected_day) {
-            item.focus();
-            event_slider(status.selected_day);
-            return;
-          }
-        });
-      //run only once
-      if (status.startup == false) {
-        event_slider(status.selected_day);
-        jump_to_today();
-
-        status.startup = true;
-      }
-    }, 200);
   },
 };
 
@@ -2006,6 +2038,12 @@ var page_events = {
 
           status.selected_day_id =
             document.activeElement.getAttribute('data-id');
+
+          let t = dayjs(status.selected_day);
+          currentMonth = t.month();
+          currentYear = t.year();
+
+          console.log(currentMonth, currentYear);
         },
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
@@ -3975,9 +4013,10 @@ var page_event_templates = {
 };
 
 if (status.background_sync_running == false) {
-  let kk = '/page_calendar';
+  let kk = '/page_intro';
 
   m.route(root, kk, {
+    '/page_intro': page_intro,
     '/page_calendar': page_calendar,
     '/page_events': page_events,
     '/page_options': page_options,
@@ -4058,7 +4097,7 @@ let store_subscription = () => {
       .setItem(id, '')
       .then(function (value) {
         side_toaster('subscription added', 4000);
-        load_subscriptions();
+        // load_subscriptions();
       })
       .catch(function (err) {
         console.log(err);
@@ -4179,7 +4218,7 @@ localforage
   .then(function (s) {
     subscriptions = s;
 
-    load_subscriptions();
+    //load_subscriptions();
   })
   .catch(function (err) {});
 
@@ -4232,7 +4271,7 @@ let load_template_data = function () {
 /////////////////
 
 let nav = function (move) {
-  highlight_current_day();
+  //highlight_current_day();
 
   set_tabindex();
   if (
@@ -5417,8 +5456,9 @@ function shortpress_action(param) {
 
         if (currentPageStartsWith('page_events')) {
           // Redirect to '/page_calendar' when on '/page_events'
-          if (document.activeElement.tagName !== 'BUTTON')
+          if (document.activeElement.tagName !== 'BUTTON') {
             m.route.set('/page_calendar');
+          }
 
           //filter button
           if (document.activeElement.tagName === 'BUTTON') {

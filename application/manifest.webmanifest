@@ -24,7 +24,7 @@
   ],
 
   "b2g_features": {
-    "version": "3.0.697",
+    "version": "3.0.706",
     "id": "greg",
     "subtitle": "easy to use calendar",
     "core": true,
@@ -56,24 +56,26 @@
       "alarms": {
         "description": "Required to schedule alarms"
       },
+      "feature-detection": {
+        "description": "query which keys are available"
+      },
       "mobiledata": {},
       "wifidata": {},
       "calllog": {},
+
+      "audio-channel-content": {
+        "description": "Allow background audio playback."
+      },
+      "volumemanager": { "description": "" },
       "device-storage:sdcard": {
         "description": "Read/Write from/to sd-card",
         "access": "readwrite"
-      },
-      "video-capture": {
-        "description": "Reading Codes using the Camera"
       },
       "spatialnavigation-app-manage": {
         "navigator.spatialNavigationEnabled": false
       },
       "systemXHR": {
         "description": "Required to load remote content"
-      },
-      "feature-detection": {
-        "description": "query which keys are available"
       }
     }
   }
