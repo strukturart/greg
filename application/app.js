@@ -149,7 +149,6 @@ const oauthRedirect = async () => {
   } catch (error) {}
 };
 
-//open KaiOS app
 let app_launcher = () => {
   var currentUrl = window.location.href;
 
@@ -4520,6 +4519,14 @@ const rrule_convert = function (val, date_end, date_start) {
     )}`;
   }
 
+  if (val === 'BIWEEKLY') {
+    return `FREQ=WEEKLY;INTERVAL=2;BYDAY=${f};UNTIL=${convert_ics_date(
+      date_end,
+      false,
+      true
+    )}`;
+  }
+
   return `FREQ=${val};UNTIL=${convert_ics_date(date_end, false, true)}`;
 };
 
@@ -5761,7 +5768,6 @@ channel.addEventListener('message', (event) => {
           })
           .catch(() => {});
       }
-    } else {
     }
 
     if (interval_is_running == false) {
