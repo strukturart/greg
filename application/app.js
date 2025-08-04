@@ -491,16 +491,41 @@ let style_calendar_cell = function () {
   try {
     document.querySelectorAll('div.calendar-cell').forEach(function (e) {
       let p = e.getAttribute('data-date');
-      if (event_check(p).event == true) {
+
+      if (event_check(p).events_ids.length > 0) {
         e.classList.add('event');
-        if (event_check(p).multidayevent == true) e.classList.add('multievent');
+
+        let testdata = event_check(p);
+        let events_ids = JSON.parse(e.getAttribute('data-events-ids') || '[]');
+
+        testdata.events_ids.forEach((id) => {
+          if (!events_ids.includes(id)) {
+            events_ids.push(id);
+          }
+        });
+
+        e.setAttribute('data-events-ids', JSON.stringify(events_ids));
+
+        if (events_ids.length > 1) e.classList.add('multievent');
       } else {
         if (e.classList.contains('event')) e.classList.remove('event');
       }
 
-      if (rrule_check(p).rrule == true) {
+      if (rrule_check(p).events_ids.length > 0) {
         e.classList.add('rrule');
-        if (rrule_check(p).count > 1) e.classList.add('multievent');
+        let testdata = rrule_check(p);
+
+        let events_ids = JSON.parse(e.getAttribute('data-events-ids') || '[]');
+        testdata.events_ids.forEach((id) => {
+          if (!events_ids.includes(id)) {
+            events_ids.push(id);
+          }
+        });
+        e.setAttribute('data-events-ids', JSON.stringify(events_ids));
+
+        if (events_ids.length > 1) e.classList.add('multievent');
+      } else {
+        if (e.classList.contains('rrule')) e.classList.remove('rrule');
       }
     });
   } catch (e) {
@@ -1156,12 +1181,6 @@ let send_to_parser = (data, url) => {
   }
 };
 
-const load_subscriptions = async () => {
-  for (const e of subscriptions) {
-    fetch_ics(e.url, send_to_parser);
-  }
-};
-
 export let sync_caldav_callback = function (account_to_update) {
   load_caldav(false, account_to_update).then(() => {});
 };
@@ -1273,144 +1292,54 @@ const find_closest_date = function (date) {
   }
 };
 
+//test if has events to style calendar
+
 const event_check = function (date) {
   let feedback = {
-    event: false,
-    multidayevent: false,
-    event_data: '',
+    events_ids: [],
   };
 
-  let eventsOnTargetDate = parsed_events.filter((event) => {
+  const targetTime = new Date(date).getTime();
+
+  for (let i = 0; i < parsed_events.length; i++) {
+    const event = parsed_events[i];
+
+    if (!event || typeof event !== 'object') continue;
+
     const eventStartTime = new Date(event.dateStart).getTime();
     const eventEndTime = new Date(event.dateEnd).getTime();
-    const targetTime = new Date(date).getTime();
+    const isRecurring = event.rrule_dates.length == 0 ? false : true;
 
-    return (
+    if (
       eventStartTime <= targetTime &&
       eventEndTime >= targetTime &&
-      !event.RRULE.freq
-    );
-  });
-
-  feedback.event = eventsOnTargetDate.length > 0;
-  feedback.event_data = eventsOnTargetDate;
-
-  // Check for multiday events
-  if (eventsOnTargetDate.length > 1) {
-    const sortedEvents = eventsOnTargetDate.sort(
-      (a, b) =>
-        new Date(a.dateStart).getTime() - new Date(b.dateStart).getTime()
-    );
-
-    for (let i = 1; i < sortedEvents.length; i++) {
-      const prevEventEndTime = new Date(sortedEvents[i - 1].dateEnd).getTime();
-      const currentEventStartTime = new Date(
-        sortedEvents[i].dateStart
-      ).getTime();
-
-      if (prevEventEndTime >= currentEventStartTime) {
-        feedback.multidayevent = true;
-        feedback.event_data = eventsOnTargetDate;
-        break;
-      }
+      !isRecurring
+    ) {
+      feedback.events_ids.push(event.UID);
     }
   }
 
   return feedback;
 };
 
-let rrule_check = function (date) {
+//test if has rrule events to style calendar
+
+const rrule_check = function (date) {
   let feedback = {
-    date: '',
-    event: false,
-    subscription: false,
-    multidayevent: false,
-    rrule: 'none',
-    event_data: '',
+    events_ids: [],
   };
 
+  const currentDate = date;
+
   for (let event of parsed_events) {
-    if (typeof event === 'object') {
-      feedback.event = false;
-      feedback.multidayevent = false;
-      feedback.rrule = false;
-      feedback.date = date;
-      feedback.event_data = '';
+    if (event.rrule_dates.length == 0) continue;
 
-      let eventStart = new Date(event.dateStart).getTime();
-      let eventEnd = new Date(event.dateEnd).getTime();
-      let currentDate = new Date(date).getTime();
-      let recurrenceFreq = event.RRULE.freq;
-
-      if (event.RRULE !== undefined && event.RRULE !== null) {
-        // Check for recurrences
-        if (event.RRULE.until == undefined && event.RRULE.count == undefined) {
-          // Handle events without end date
-          eventEnd = new Date('3000-01-01').getTime();
-        }
-
-        if (
-          eventStart === currentDate ||
-          (eventStart < currentDate && eventEnd > currentDate)
-        ) {
-          feedback.event_data = event;
-
-          switch (recurrenceFreq) {
-            case 'MONTHLY':
-              if (
-                new Date(event.dateStart).getDate() === new Date(date).getDate()
-              ) {
-                feedback.event = true;
-                feedback.rrule = true;
-                return feedback;
-              }
-              break;
-
-            case 'WEEKLY':
-              if (
-                new Date(event.dateStart).getDay() === new Date(date).getDay()
-              ) {
-                feedback.rrule = true;
-                feedback.event = true;
-                return feedback;
-              }
-              break;
-
-            case 'BIWEEKLY':
-              if (
-                Math.floor((currentDate - eventStart) / (24 * 60 * 60 * 1000)) %
-                  14 ==
-                0
-              ) {
-                feedback.rrule = true;
-                feedback.event = true;
-                return feedback;
-              }
-              break;
-
-            case 'YEARLY':
-              let eventDate = new Date(event.dateStart);
-              let currentDateObj = new Date(date);
-              if (
-                eventDate.getDate() === currentDateObj.getDate() &&
-                eventDate.getMonth() === currentDateObj.getMonth()
-              ) {
-                feedback.rrule = true;
-                feedback.event = true;
-                return feedback;
-              }
-              break;
-
-            default:
-              break;
-          }
-        }
-      }
+    if (event.rrule_dates.includes(currentDate)) {
+      feedback.events_ids.push(event.UID);
     }
   }
   return feedback;
 };
-
 //////////////////
 //event slider
 ///////////
@@ -1421,157 +1350,46 @@ let slider_index = 0;
 let slider_navigation = function () {
   slider_index++;
 
-  if (
-    slider_index >
-    document.querySelectorAll('div#event-slider article').length - 1
-  ) {
+  let slides = document.querySelectorAll('div#event-slider .event-item');
+
+  if (slider_index > slides.length - 1) {
     slider_index = 0;
   }
 
-  let p = document.querySelectorAll('div#event-slider-indicator div div');
-
-  document
-    .querySelectorAll('div#event-slider article')
-    .forEach(function (item) {
-      item.style.display = 'none';
-    });
-  document.querySelectorAll('div#event-slider article')[
-    slider_index
-  ].style.display = 'block';
-
-  p.forEach(function (item) {
-    item.classList.remove('active');
+  slides.forEach(function (item) {
+    item.style.display = 'none';
   });
-  p[slider_index].classList.add('active');
+  slides[slider_index].style.display = 'block';
+
+  let slides_indicators = document.querySelectorAll(
+    '.event-slider-indicator-item'
+  );
+
+  slides_indicators.forEach((e) => {
+    e.classList.remove('active');
+  });
+
+  slides_indicators[slider_index].classList.add('active');
 };
 
-let event_slider = function (date) {
+let eventsSliderData = [];
+let eventSlider = () => {
+  eventsSliderData = [];
   slider = [];
-  let k = document.querySelector('div#event-slider-indicator div');
-  k.innerHTML = '';
+  let events_list = [];
 
-  document.querySelector('div#event-slider').innerHTML = '';
-  for (let i = 0; i < parsed_events.length; i++) {
-    let a = new Date(parsed_events[i].dateStart).getTime();
-    let b = new Date(parsed_events[i].dateEnd).getTime();
-    let c = new Date(date).getTime();
-    let d = parsed_events[i].RRULE.freq;
-
-    if (d === 'none' || d === '' || d === undefined || d === null) {
-      if (a === c || (a <= c && b >= c)) {
-        slider.push(parsed_events[i]);
-      }
-    } else {
-      //workaround if enddate is not set
-      //AKA infinity
-
-      if (parsed_events[i].RRULE != null) {
-        if (
-          parsed_events[i].RRULE.until == undefined &&
-          parsed_events[i].RRULE.count == undefined
-        ) {
-          b = new Date('3000-01-01').getTime();
-        }
-      }
-
-      if (a === c || b === c || (a < c && b > c)) {
-        //recurrences
-
-        //YEAR
-        if (d == 'YEARLY') {
-          let tt = new Date(parsed_events[i].dateStart);
-          let pp = new Date(date);
-
-          if (
-            tt.getDate() + '-' + tt.getMonth() ===
-            pp.getDate() + '-' + pp.getMonth()
-          ) {
-            slider.push(parsed_events[i]);
-          }
-        }
-
-        //WEEK
-        if (d == 'WEEKLY') {
-          if (
-            new Date(parsed_events[i].dateStart).getDay() ==
-            new Date(date).getDay()
-          ) {
-            slider.push(parsed_events[i]);
-          }
-        }
-
-        //BIWEEK
-        if (d == 'BIWEEKLY') {
-          if (Math.floor((c - a) / (24 * 60 * 60 * 1000)) % 14 == 0) {
-            slider.push(parsed_events[i]);
-          }
-        }
-
-        //MONTH
-
-        if (d == 'MONTHLY') {
-          if (
-            new Date(parsed_events[i].dateStart).getDate() ==
-            new Date(date).getDate()
-          ) {
-            slider.push(parsed_events[i]);
-          }
-        }
-
-        if (d == 'DAILY') {
-          if (a === c || b === c || (a < c && b > c)) {
-            slider.push(parsed_events[i]);
-          }
-        }
-      }
-    }
-  }
-
-  if (slider.length >= 0) {
-    slider.forEach(function (item) {
-      k.insertAdjacentHTML('beforeend', "<div class='indicator'></div>");
-
-      let l = '';
-      if (!item.allDay) {
-        l = dayjs.unix(item.dateStartUnix).format('HH:mm');
-      }
-
-      document
-        .querySelector('div#event-slider')
-        .insertAdjacentHTML(
-          'beforeend',
-          "<article data-uid='" +
-            item.UID +
-            "'><div class='width-100'>" +
-            item.SUMMARY +
-            "</div><div class='width-100'>" +
-            l +
-            '</div></article>'
-        );
+  let element = document.activeElement;
+  events_list = JSON.parse(element.getAttribute('data-events-ids') || '[]');
+  if (events_list.length > 0) {
+    eventsSliderData = parsed_events.filter((e) => {
+      return events_list.includes(e.UID);
     });
-
-    if (slider.length > 0) {
-      try {
-        document.querySelectorAll('div#event-slider article')[0].style.display =
-          'block';
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  }
-
-  if (
-    document.querySelectorAll('div.indicator').length <= 1 ||
-    document.querySelectorAll('div.indicator').length == undefined
-  ) {
-    document.getElementById('event-slider-indicator').style.opacity = 0;
   } else {
-    document.getElementById('event-slider-indicator').style.opacity = 1;
-    document.querySelector('div#event-slider article').style.display = 'block';
-    document
-      .querySelectorAll('div#event-slider .indicator')[0]
-      .style.classList.add('active');
+    eventsSliderData = [];
+    console.log('nothing');
   }
+
+  console.log('data' + eventsSliderData.length);
 };
 
 ////
@@ -1585,7 +1403,7 @@ let jump_to_today = function () {
 
   setTimeout(() => {
     status.selected_day = dayjs().format('YYYY-MM-DD');
-    event_slider(status.selected_day);
+    //event_slider(status.selected_day);
   }, 1000);
 
   setTimeout(() => {
@@ -1601,7 +1419,7 @@ function next() {
   currentMonth = (currentMonth + 1) % 12;
   m.redraw();
 
-  event_slider(status.selected_day);
+  //event_slider(status.selected_day);
 
   setTimeout(() => {
     console.log('update');
@@ -1619,7 +1437,7 @@ function previous() {
   // showCalendar(currentMonth, currentYear);
   m.redraw();
 
-  event_slider(status.selected_day);
+  // event_slider(status.selected_day);
 
   setTimeout(() => {
     console.log('update');
@@ -1912,6 +1730,8 @@ var page_calendar = {
                     const target = event.target;
 
                     status.selected_day = target.getAttribute('data-date');
+                    console.log(status.selected_day);
+                    eventSlider();
 
                     let t = dayjs(status.selected_day);
                     currentMonth = t.month();
@@ -1919,7 +1739,7 @@ var page_calendar = {
 
                     //set selected day weekday/week
                     setTimeout(() => {
-                      event_slider(status.selected_day);
+                      //event_slider(status.selected_day);
 
                       let weekday = target.getAttribute('data-weekday');
 
@@ -1974,9 +1794,17 @@ var page_calendar = {
           'div',
           {
             id: 'event-slider-indicator',
-            class: 'flex width-100 justify-content-spacearound',
+            class: 'flex  justify-content-spacearound',
           },
-          [m('div', { class: 'flex justify-content-spacearound' })]
+          [
+            m('div', { class: 'event-slider-indicator-inner flex' }, [
+              eventsSliderData
+                ? eventsSliderData.map((ev, i) => {
+                    return m('div', { class: 'event-slider-indicator-item' });
+                  })
+                : null,
+            ]),
+          ]
         ),
         m(
           'div',
@@ -2008,10 +1836,35 @@ var page_calendar = {
             },
           },
           [
-            m('div', {
-              id: 'slider-inner',
-              class: 'flex width-100  justify-content-spacearound',
-            }),
+            eventsSliderData.length > 0
+              ? eventsSliderData.map((evt, i) => {
+                  return m(
+                    'div',
+                    {
+                      id: 'slider-inner',
+                      class: 'flex width-100 justify-content-spacearound',
+                    },
+                    [
+                      m(
+                        'div',
+                        {
+                          class: 'flex width-100 event-item',
+                          oncreate: (vnode) => {
+                            if (i > 0) vnode.dom.style.display = 'none';
+                          },
+                        },
+                        [
+                          m('div', { class: 'width-100' }, evt.SUMMARY),
+
+                          m('span', dayjs(evt.dateStartUnix).format('HH:mm')),
+                          m('span', ' - '),
+                          m('span', dayjs(evt.dateEndUnix).format('HH:mm')),
+                        ]
+                      ),
+                    ]
+                  );
+                })
+              : null,
           ]
         ),
       ]
@@ -2161,12 +2014,18 @@ var page_events = {
             se = dayjs(item.dateStartUnix * 1000).format('HH:mm');
           }
 
-          let weekDay =
-            settings.firstday == 'sunday'
-              ? weekday[dayjs(item.dateStartUnix * 1000).day()]
-              : weekday[dayjs(item.dateStartUnix * 1000).day() - 1];
+          //day
+          let dayIndex = dayjs(item.dateStartUnix * 1000).day();
 
-          if (weekDay == undefined) weekDay = '';
+          if (
+            settings.firstday !== 'sunday' &&
+            settings.firstday !== undefined
+          ) {
+            dayIndex = (dayIndex + 6) % 7;
+          }
+
+          let weekDay = ' | ' + weekday[dayIndex];
+
           //date
           if (
             item.dateStartUnix != null &&
@@ -2182,13 +2041,13 @@ var page_events = {
           } else {
             de =
               dayjs(item.dateStartUnix * 1000).format(settings.dateformat) +
-              ' | ' +
               weekDay;
           }
 
           let rruleFreq = '';
           if (item.RRULE && item.RRULE.freq) {
             rruleFreq = item.RRULE.freq.toLowerCase();
+            if (item.RRULE.interval == 2) rruleFreq = 'Biweekly';
           }
 
           let u = item.isSubscription ? 'subscription' : '';
@@ -2272,6 +2131,12 @@ var page_events_filtered = {
               se = dayjs(item.dateStartUnix * 1000).format('HH:mm');
             }
 
+            let rruleFreq = '';
+            if (item.RRULE && item.RRULE.freq) {
+              rruleFreq = item.RRULE.freq.toLowerCase();
+              if (item.RRULE.interval == 2) rruleFreq = 'Biweekly';
+            }
+
             //date
             //date
             if (
@@ -2307,6 +2172,8 @@ var page_events_filtered = {
                 m('div', { class: 'icons-bar' }, [
                   m('div', { class: 'date' }, de),
                   m('div', { class: 'time' }, se),
+                  m('div', { class: 'rrule-freq' }, rruleFreq),
+
                   m('h2', { class: 'summary' }, item.SUMMARY),
                   m('div', { class: 'location' }, item.LOCATION),
                   m('div', { class: 'description' }, item.DESCRIPTION),
@@ -3814,6 +3681,10 @@ var page_edit_event = {
                 id: 'event-recur',
                 value: update_event_date.RRULE.freq ?? 'none',
                 class: 'select-box',
+                oncreate: (vnode) => {
+                  if (update_event_date.RRULE.interval == 2)
+                    vnode.dom.value = 'BIWEEKLY';
+                },
               },
               [
                 m('option', { value: 'none' }, 'none'),
@@ -3949,7 +3820,6 @@ var page_list_files = {
           let fn = e.split('/');
           fn = fn[fn.length - 1];
 
-          // if (fn == "greg.ics") return false;
           return m(
             'button',
             {
@@ -4096,7 +3966,6 @@ let store_subscription = () => {
       .setItem(id, '')
       .then(function (value) {
         side_toaster('subscription added', 4000);
-        // load_subscriptions();
       })
       .catch(function (err) {
         console.log(err);
@@ -4216,8 +4085,6 @@ localforage
   .getItem('subscriptions')
   .then(function (s) {
     subscriptions = s;
-
-    //load_subscriptions();
   })
   .catch(function (err) {});
 
@@ -4384,7 +4251,7 @@ let nav = function (move) {
     try {
       status.selected_day = targetElement.getAttribute('data-date');
       status.selected_day_id = targetElement.getAttribute('data-id');
-      event_slider(status.selected_day);
+      //event_slider(status.selected_day);
     } catch (e) {}
   }
 };
@@ -4730,9 +4597,7 @@ let store_event = function (account_id, cal_name) {
               callback: true,
               store: false,
             });
-          } catch (e) {
-            console.log('send to sw');
-          }
+          } catch (e) {}
           get_last_view();
         })
         .catch(function (err) {});
@@ -4771,8 +4636,13 @@ let store_event = function (account_id, cal_name) {
       '\nCATEGORIES:' +
       event.CATEGORIES +
       '\nEND:VEVENT' +
-      alarm + // Include the alarm section if it's not null or 'none'
+      alarm +
       '\nEND:VCALENDAR';
+
+    if (event.RRULE != '') {
+      event.DTEND =
+        ';TZID=' + settings.timezone + convert_ics_date(rrule_dt_end, allDay);
+    }
 
     if (!event.RRULE) {
       event_data = event_data.replace('SEQUENCE:0', '');
@@ -4797,9 +4667,7 @@ let store_event = function (account_id, cal_name) {
             store: false,
           });
           get_last_view();
-        } catch (e) {
-          console.log('send to sw');
-        }
+        } catch (e) {}
       }
     );
   }

@@ -76,9 +76,13 @@ function parse_ics(
 
   let imp = null;
   let return_array = [];
+  let rrule_dates = [];
   vevent.forEach(function (ite) {
     let rr_until = '';
     let allday = false;
+
+    let rr_freq;
+    let isBiweekly = false;
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
       ite.getFirstPropertyValue('dtend') ||
@@ -87,57 +91,90 @@ function parse_ics(
     if (date_start.isDate && date_end.isDate) allday = true;
 
     if (ite.getFirstPropertyValue('rrule') != undefined) {
-      try {
-        let rrule = ite.getFirstPropertyValue('rrule');
+      rrule_dates = [];
 
+      try {
+        const rrule = ite.getFirstPropertyValue('rrule');
         if (rrule && typeof rrule === 'object' && rrule.freq) {
           rr_freq = rrule.freq;
-          if (ite.getFirstPropertyValue('rrule').isFinite() === false) {
-            if (rrule.until !== null) {
-              rr_until = rrule.until;
+          interval = rrule.interval || 1;
+
+          const dtstart = ite.getFirstPropertyValue('dtstart');
+          const dtstartTime = ICAL.Time.fromJSDate(
+            new Date(dtstart.toString()),
+            false
+          );
+
+          const iter = rrule.iterator(dtstartTime);
+
+          const maxIterations = 1500; // Sicherheitsgrenze
+          let next;
+          let count = 0;
+
+          while ((next = iter.next()) && count < maxIterations) {
+            // Brich ab wenn kein Ergebnis mehr
+            if (!next) break;
+
+            // Konvertiere ICAL.Time → JS-Date → String
+            const jsDate = next.toJSDate();
+            rrule_dates.push(dayjs(jsDate).format('YYYY-MM-DD'));
+
+            count++;
+          }
+
+          // Fallback für UNTIL oder COUNT wie bisher
+          if (rrule.until) {
+            // Prüfe, ob until ein ICAL.Time-Objekt ist (hat Methode toJSDate)
+            if (typeof rrule.until.toJSDate === 'function') {
+              rr_until = dayjs(rrule.until.toJSDate()).valueOf();
+            }
+            // Falls es ein String im Format 'YYYYMMDD' ist (z.B. Google)
+            else if (
+              typeof rrule.until === 'string' &&
+              /^\d{8}$/.test(rrule.until)
+            ) {
+              rr_until = dayjs(rrule.until, 'YYYYMMDD').endOf('day').valueOf();
+            }
+            // Falls anderes Format (z.B. ISO String)
+            else if (typeof rrule.until === 'string') {
+              rr_until = dayjs(rrule.until).valueOf();
             } else {
+              console.warn('Unbekanntes UNTIL-Format:', rrule.until);
               rr_until = new Date('3000-01-01').getTime();
             }
-          } else {
-            if (ite.getFirstPropertyValue('rrule').isByCount()) {
-              let dt = dayjs(date_start);
-
+          } else if (rrule.count) {
+            // Berechne Enddatum anhand count und interval
+            const freqUnit = (() => {
               switch (rrule.freq) {
                 case 'DAILY':
-                  rr_until = dt.add(rrule.count, 'days').valueOf();
-                  date_end = dt.add(rrule.count, 'days').format('YYYY-MM-DD');
-                  break;
-                case 'MONTHLY':
-                  rr_until = dt.add(rrule.count, 'months').valueOf();
-                  date_end = dt.add(rrule.count, 'months').format('YYYY-MM-DD');
-                  break;
-
-                case 'BIWEEKLY':
-                  rr_until = dt.add(rrule.count * 2, 'weeks').valueOf();
-                  date_end = dt
-                    .add(rrule.count * 2, 'weeks')
-                    .format('YYYY-MM-DD');
-                  break;
-
+                  return 'day';
                 case 'WEEKLY':
-                  rr_until = dt.add(rrule.count, 'weeks').valueOf();
-                  date_end = dt.add(rrule.count, 'weeks').format('YYYY-MM-DD');
-                  break;
-
+                  return 'week';
+                case 'MONTHLY':
+                  return 'month';
                 case 'YEARLY':
-                  rr_until = dt.add(rrule.count, 'years').valueOf();
-                  date_end = dt.add(rrule.count, 'years').format('YYYY-MM-DD');
-                  break;
-
+                  return 'year';
                 default:
-                  rr_until = new Date('3000-01-01').getTime();
-                  break;
+                  return 'day';
               }
-            }
+            })();
+
+            rr_until = dayjs(date_start)
+              .add(rrule.count * (rrule.interval || 1), freqUnit)
+              .valueOf();
+          } else {
+            // Unendliche Wiederholung — setze weit entferntes Enddatum als Sicherheitsnetz
+            rr_until = new Date('3000-01-01').getTime();
           }
+
+          if (rrule.freq === 'WEEKLY' && interval === 2) {
+            isBiweekly = true;
+          }
+
+          date_end = dayjs(rr_until).format('YYYY-MM-DD');
         }
       } catch (e) {
-        console.log(e);
+        console.warn('RRULE parse error:', e);
       }
     }
 
@@ -178,8 +215,10 @@ function parse_ics(
       RRULE: ite.getFirstPropertyValue('rrule') || '',
       CLASS: ite.getFirstPropertyValue('class') || '',
       isSubscription: isSubscription,
+      isBiweekly: isBiweekly,
       isCaldav: isCaldav,
       allDay: allday,
+      rrule_dates: rrule_dates,
       dateStart: dateStart,
       dateStartUnix: dateStartUnix,
       dateEndUnix: dateEndUnix,
@@ -194,6 +233,8 @@ function parse_ics(
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
+
+    console.log(imp);
 
     //when importing data callback to store
     let a = { parsed_data: imp };
@@ -211,7 +252,6 @@ function parse_ics(
   return return_array;
 }
 
-//loggin
 //login handler
 
 const clientInstances = {};

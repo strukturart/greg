@@ -807,103 +807,37 @@ div.icons-bar img {
 
 div#event-slider {
   position: relative;
-  margin: 15px 0 0 0;
+  margin: 5px 0 0 0;
   min-height: 40px;
   max-width: 90vw !important;
   min-width: 90vw !important;
-}
-
-div#event-slider div {
-  position: relative;
-
-  min-height: 30px;
-  max-width: 90vw !important;
-  min-width: 90vw !important;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
-}
-
-div#event-slider div.date {
-  opacity: 0;
-  height: 0px;
-}
-
-div#event-slider div.icons-bar {
-  position: absolute;
-  left: 90%;
-  width: 50px;
-  margin: 5px 0;
-}
-
-div#event-slider article[data-alarm='none'] div.icons-bar img.bell {
-  display: none;
-}
-
-div#event-slider div.icons-bar img {
-  width: 15px;
-  height: auto;
 }
 
 div#event-slider-indicator {
   min-width: 100%;
 }
 
-div#event-slider-indicator div {
-  width: auto;
-  margin: 0px Auto;
-}
-
-div#event-slider-indicator div div {
+div.event-slider-indicator-item {
   background: rgb(121, 112, 112);
-  height: 5px;
-  width: 5px;
+  height: 5px !important;
+  width: 5px !important;
   border-radius: 50%;
   margin: 5px 5px 0 0;
 }
 
-div#event-slider-indicator div div.active {
+div.event-slider-indicator-item.active {
   background: rgb(0, 0, 0);
-  height: 10px;
-  width: 10px;
-  border-radius: 50%;
-  margin: 0 5px 0 0;
+}
+
+div#event-slider-indicator .event-slider-indicator-inner {
+  height: 30px;
+  width: auto;
 }
 
 div#event-slider-indicator {
   margin: 3px 0 0 0px;
   max-width: 90vw;
   min-width: 90vw;
-}
-
-div#event-slider article h2 {
-  background: var(--color-five);
-}
-
-div#event-slider article {
-  margin: 0 0 15px 0;
-  max-width: 80vw;
-  min-width: 80vw;
-  font-size: 0.9rem;
-  display: none;
-}
-
-div#event-slider article > * {
-  text-align: center;
-  font-size: 0.9rem;
-}
-div#event-slider article:nth-child(1) {
-  margin: 0 0 15px 0;
-  font-size: 0.9rem;
-
-  display: block;
-  max-width: 90vw;
-  min-width: 90vw;
-}
-
-div#event-slider article h2 {
-  background: var(--color-five);
 }
 
 button.save-button {
