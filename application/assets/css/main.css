@@ -309,31 +309,13 @@ button.google-button:focus {
 
 div#intro {
   position: fixed;
-  background: black;
+  background: white;
   z-index: 100000;
   min-width: 100%;
   height: 100%;
 }
 .intro-animation {
   animation-name: intro;
-  animation-duration: 2s;
-  animation-delay: 6s;
-  animation-iteration-count: 1;
-  animation-fill-mode: forwards;
-}
-
-div#intro #version {
-  position: absolute;
-  background: black;
-  z-index: 100000;
-  bottom: 80px;
-  color: white;
-  text-align: center;
-  font-size: 1.2rem;
-}
-
-.intro-version-animation {
-  animation-name: intro_img_2;
   animation-duration: 2s;
   animation-delay: 6s;
   animation-iteration-count: 1;
@@ -349,42 +331,57 @@ div#intro img {
   margin-left: -90px;
 }
 
+#intro #version {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  color: rgb(43, 41, 41);
+}
+
+#intro #title {
+  position: absolute;
+  right: 10px;
+  bottom: 40px;
+  color: rgb(43, 41, 41);
+}
+
+#intro #slogan {
+  position: absolute;
+  min-width: 100vw;
+  text-align: center;
+
+  bottom: 50%;
+  color: rgb(43, 41, 41);
+  animation: growAndFade 2s ease-in-out 1s forwards;
+}
+
+@keyframes growAndFade {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+    color: black;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+    color: blue;
+  }
+}
+
 .intro-img-anmation {
-  animation-name: intro_img;
+  animation-name: intro;
   animation-duration: 2s;
-  animation-delay: 6s;
+  animation-delay: 1s;
   animation-iteration-count: 1;
   animation-fill-mode: forwards;
-}
-
-@keyframes intro_img {
-  from {
-    transform: translateX(0px);
-  }
-  to {
-    transform: translateX(-450px);
-  }
-}
-
-@keyframes intro_img_2 {
-  from {
-    transform: translateX(0px);
-  }
-  to {
-    transform: translateX(450px);
-  }
 }
 
 @keyframes intro {
   from {
     transform: translateY(0px);
-    display: block;
-    opacity: 100;
   }
   to {
-    transform: translateY(0px);
-    display: none;
-    opacity: 0;
+    transform: translateY(-450px);
   }
 }
 
@@ -807,10 +804,11 @@ div.icons-bar img {
 
 div#event-slider {
   position: relative;
-  margin: 5px 0 0 0;
+  margin: 0px 0 0 0;
   min-height: 40px;
   max-width: 90vw !important;
   min-width: 90vw !important;
+  font-size: 0.9rem;
 }
 
 div#event-slider-indicator {

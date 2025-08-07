@@ -83,10 +83,10 @@ function parse_ics(
 
     let rr_freq;
     let isBiweekly = false;
-    let date_start = ite.getFirstPropertyValue('dtstart');
+    let date_start = ite.getFirstPropertyValue('dtstart').toJSDate();
     let date_end =
-      ite.getFirstPropertyValue('dtend') ||
-      ite.getFirstPropertyValue('dtstart');
+      ite.getFirstPropertyValue('dtend').toJSDate() ||
+      ite.getFirstPropertyValue('dtstart').toJSDate();
 
     if (date_start.isDate && date_end.isDate) allday = true;
 
@@ -122,24 +122,20 @@ function parse_ics(
             count++;
           }
 
-          // Fallback für UNTIL oder COUNT wie bisher
           if (rrule.until) {
             // Prüfe, ob until ein ICAL.Time-Objekt ist (hat Methode toJSDate)
             if (typeof rrule.until.toJSDate === 'function') {
               rr_until = dayjs(rrule.until.toJSDate()).valueOf();
             }
-            // Falls es ein String im Format 'YYYYMMDD' ist (z.B. Google)
+            // patch until if has wrong format
             else if (
               typeof rrule.until === 'string' &&
               /^\d{8}$/.test(rrule.until)
             ) {
               rr_until = dayjs(rrule.until, 'YYYYMMDD').endOf('day').valueOf();
-            }
-            // Falls anderes Format (z.B. ISO String)
-            else if (typeof rrule.until === 'string') {
+            } else if (typeof rrule.until === 'string') {
               rr_until = dayjs(rrule.until).valueOf();
             } else {
-              console.warn('Unbekanntes UNTIL-Format:', rrule.until);
               rr_until = new Date('3000-01-01').getTime();
             }
           } else if (rrule.count) {
@@ -171,7 +167,7 @@ function parse_ics(
             isBiweekly = true;
           }
 
-          date_end = dayjs(rr_until).format('YYYY-MM-DD');
+          // date_end = dayjs(rr_until).format('YYYY-MM-DD');
         }
       } catch (e) {
         console.warn('RRULE parse error:', e);
@@ -182,9 +178,14 @@ function parse_ics(
     let dateStart, timeStart, dateStartUnix;
     if (date_start) {
       let a = dayjs(date_start);
-      dateStart = a.format('YYYY-MM-DD');
-      timeStart = a.format('HH:mm:ss');
-      dateStartUnix = a.unix();
+
+      if (a.isValid()) {
+        dateStart = a.format('YYYY-MM-DD');
+        timeStart = a.format('HH:mm');
+        dateStartUnix = a.unix();
+      } else {
+        console.log('invalid dt');
+      }
     }
 
     //date end
@@ -202,7 +203,7 @@ function parse_ics(
       }
 
       dateEnd = a.format('YYYY-MM-DD');
-      timeEnd = a.format('HH:mm:ss');
+      timeEnd = a.format('HH:mm');
       dateEndUnix = a.unix();
     }
 

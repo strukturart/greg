@@ -19,6 +19,8 @@ import {
   get_version,
 } from './assets/js/helper.js';
 
+import isEqual from 'lodash/isEqual';
+
 import { getMoonPhase } from './assets/js/getMoonPhase.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
@@ -70,9 +72,18 @@ export let background_sync_interval = 60;
 let last_sync = localStorage.getItem('last_sync') || '';
 
 let subscriptions = [];
-localforage.getItem('subscriptions').then((e) => {
-  console.log(e);
-});
+localforage.getItem('subscriptions').then((e) => {});
+
+localforage
+  .getItem('testtocache')
+  .then((e) => {
+    if (e.length > 0 && e != null) {
+      parsed_events = e;
+    } else {
+      alert('no data');
+    }
+  })
+  .catch((e) => {});
 
 //not KaiOS
 const oauthRedirect = async () => {
@@ -203,18 +214,6 @@ if ('b2g' in navigator || 'mozApps' in navigator) {
   oauthRedirect();
 }
 
-const intro_animation = () => {
-  document.querySelector('#intro').classList.add('intro-animation');
-  document.querySelector('#version').classList.add('intro-version-animation');
-  document.querySelector('#intro img').classList.add('intro-img-anmation');
-
-  setTimeout(() => {
-    if (status.user) {
-      side_toaster('logged in as ' + status.user, 5000);
-    }
-  }, 6000);
-};
-
 const show_success_animation = () => {
   setTimeout(() => {
     document.querySelector('.success-checkmark').style.display = 'block';
@@ -337,10 +336,8 @@ if ('b2g' in navigator) {
   }
 } else {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    console.log('Service worker found');
   } else {
     try {
-      console.log('Try to register service worker');
       navigator.serviceWorker
         .register(new URL('sw.js', import.meta.url), {
           type: 'module',
@@ -396,8 +393,6 @@ let loadAccounts = () => {
   localforage
     .getItem('accounts')
     .then((value) => {
-      intro_animation();
-
       accounts = value;
       loadCalendarNames();
 
@@ -437,9 +432,7 @@ let load_or_create_local_account = () => {
               callback: false,
               store: false,
             });
-          } catch (e) {
-            console.log('send to sw');
-          }
+          } catch (e) {}
         });
       } else {
         // If local_account doesn't exist, create it
@@ -490,6 +483,12 @@ load_settings();
 let style_calendar_cell = function () {
   try {
     document.querySelectorAll('div.calendar-cell').forEach(function (e) {
+      //reset
+      e.setAttribute('data-events-ids', '');
+      if (e.classList.contains('event')) e.classList.remove('event');
+      if (e.classList.contains('rrule')) e.classList.remove('rrule');
+      if (e.classList.contains('multievent')) e.classList.remove('multievent');
+
       let p = e.getAttribute('data-date');
 
       if (event_check(p).events_ids.length > 0) {
@@ -507,8 +506,6 @@ let style_calendar_cell = function () {
         e.setAttribute('data-events-ids', JSON.stringify(events_ids));
 
         if (events_ids.length > 1) e.classList.add('multievent');
-      } else {
-        if (e.classList.contains('event')) e.classList.remove('event');
       }
 
       if (rrule_check(p).events_ids.length > 0) {
@@ -524,8 +521,6 @@ let style_calendar_cell = function () {
         e.setAttribute('data-events-ids', JSON.stringify(events_ids));
 
         if (events_ids.length > 1) e.classList.add('multievent');
-      } else {
-        if (e.classList.contains('rrule')) e.classList.remove('rrule');
       }
     });
   } catch (e) {
@@ -908,9 +903,7 @@ const load_cached_caldav = async () => {
                 callback: false,
                 store: false,
               });
-            } catch (e) {
-              console.log('send to sw');
-            }
+            } catch (e) {}
           } else {
             console.log('no sw');
           }
@@ -1034,7 +1027,7 @@ export let delete_caldav = async function (etag, url, account_id, uid) {
 
           remove_alarm(uid);
           clear_form();
-          style_calendar_cell(currentYear, currentMonth);
+          //style_calendar_cell(currentYear, currentMonth);
           document.querySelector('.loading-spinner').style.display = 'none';
 
           if (!status.shortCut) {
@@ -1388,8 +1381,6 @@ let eventSlider = () => {
     eventsSliderData = [];
     console.log('nothing');
   }
-
-  console.log('data' + eventsSliderData.length);
 };
 
 ////
@@ -1422,8 +1413,6 @@ function next() {
   //event_slider(status.selected_day);
 
   setTimeout(() => {
-    console.log('update');
-
     document.querySelector('.item:not(.empty)').focus();
     try {
       document.querySelector('.today').focus();
@@ -1434,14 +1423,9 @@ function next() {
 function previous() {
   currentYear = currentMonth === 0 ? currentYear - 1 : currentYear;
   currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-  // showCalendar(currentMonth, currentYear);
   m.redraw();
 
-  // event_slider(status.selected_day);
-
   setTimeout(() => {
-    console.log('update');
-
     document.querySelector('.item:not(.empty)').focus();
     try {
       document.querySelector('.today').focus();
@@ -1587,36 +1571,23 @@ var page_intro = {
       'div',
       {
         class: 'width-100 height-100',
-        id: 'calendar',
+        id: 'intro',
         oninit: function () {
           load_settings();
           clear_form();
           get_version();
-
-          document.querySelector('#version').textContent =
-            localStorage.getItem('version');
         },
       },
       [
-        m('div', { class: 'flex justify-content-spacebetween' }, [
-          m('img', {
-            id: 'icon-loading',
-            src: './assets/image/E252.svg',
-            alt: 'loading',
-          }),
+        m('div', { class: '' }, [
+          m('div', { id: 'slogan' }, ''),
 
-          m('img', {
-            id: 'icon-waiting',
-            src: './assets/image/waiting.png',
-            alt: 'loading',
-          }),
+          m('div', { id: 'title' }, 'Greg'),
           m(
             'div',
             {
-              id: 'time',
-              oncreate: function () {
-                document.getElementById('time').innerText =
-                  dayjs().format('HH:mm');
+              id: 'version',
+              oncreate: function (vnode) {
                 setTimeout(() => {
                   m.route.set('/page_calendar');
                 }, 3000);
@@ -1632,6 +1603,9 @@ var page_intro = {
 
 let cdata;
 var page_calendar = {
+  onupdate: () => {
+    style_calendar_cell(currentYear, currentMonth);
+  },
   view: function () {
     cdata = getCalendarData(currentMonth, currentYear);
     const header = dayjs(`${currentYear}-${currentMonth + 1}-01`).format(
@@ -1674,6 +1648,15 @@ var page_calendar = {
             {
               id: 'time',
               oncreate: function () {
+                setTimeout(() => {
+                  if (!status.loginMessage) {
+                    if (status.user) {
+                      side_toaster('logged in as ' + status.user, 5000);
+                    }
+                    status.loginMessage = true;
+                  }
+                }, 4000);
+
                 document.getElementById('time').innerText =
                   dayjs().format('HH:mm');
               },
@@ -1730,7 +1713,6 @@ var page_calendar = {
                     const target = event.target;
 
                     status.selected_day = target.getAttribute('data-date');
-                    console.log(status.selected_day);
                     eventSlider();
 
                     let t = dayjs(status.selected_day);
@@ -1739,8 +1721,6 @@ var page_calendar = {
 
                     //set selected day weekday/week
                     setTimeout(() => {
-                      //event_slider(status.selected_day);
-
                       let weekday = target.getAttribute('data-weekday');
 
                       document
@@ -1815,9 +1795,6 @@ var page_calendar = {
               status.selected_day =
                 document.activeElement.getAttribute('data-date');
             },
-            onupdate: () => {
-              style_calendar_cell(currentYear, currentMonth);
-            },
 
             oncreate: () => {
               setTimeout(function () {
@@ -1856,9 +1833,9 @@ var page_calendar = {
                         [
                           m('div', { class: 'width-100' }, evt.SUMMARY),
 
-                          m('span', dayjs(evt.dateStartUnix).format('HH:mm')),
-                          m('span', ' - '),
-                          m('span', dayjs(evt.dateEndUnix).format('HH:mm')),
+                          !evt.allDay ? m('span', evt.time_start) : null,
+                          !evt.allDay ? m('span', ' - ') : null,
+                          !evt.allDay ? m('span', evt.time_end) : null,
                         ]
                       ),
                     ]
@@ -1894,8 +1871,6 @@ var page_events = {
           let t = dayjs(status.selected_day);
           currentMonth = t.month();
           currentYear = t.year();
-
-          console.log(currentMonth, currentYear);
         },
         oncreate: function () {
           document.querySelector('.loading-spinner').style.display = 'none';
@@ -2003,7 +1978,7 @@ var page_events = {
       ),
 
       [
-        parsed_events.map(function (item, index) {
+        parsed_events.map(function (item) {
           let de,
             se = '';
 
@@ -3287,7 +3262,6 @@ var page_add_event = {
             },
 
             oncreate: function ({ dom }) {
-              console.log(settings.default_duration);
               dom.value = dayjs()
                 .add(settings.default_duration, 'minutes')
                 .format('HH:mm');
@@ -3555,10 +3529,7 @@ var page_edit_event = {
             type: 'time',
             id: 'event-time-start',
             class: 'select-box',
-            value:
-              update_event_date.time_start.length == 8
-                ? update_event_date.time_start.slice(0, -3)
-                : update_event_date.time_start,
+            value: update_event_date.time_start,
           }),
         ]),
         m('div', { class: 'item input-parent time', tabindex: '5' }, [
@@ -3568,10 +3539,7 @@ var page_edit_event = {
             type: 'time',
             id: 'event-time-end',
             class: 'select-box',
-            value:
-              update_event_date.time_end.length == 8
-                ? update_event_date.time_end.slice(0, -3)
-                : update_event_date.time_end,
+            value: update_event_date.time_end,
           }),
         ]),
         m('div', { class: 'item input-parent', tabindex: '6' }, [
@@ -5604,7 +5572,7 @@ channel.addEventListener('message', (event) => {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
     running = true;
     try {
-      document.getElementById('icon-waiting').style.visibility = 'visible';
+      // document.getElementById('icon-waiting').style.visibility = 'visible';
     } catch (e) {}
 
     if (
@@ -5614,7 +5582,14 @@ channel.addEventListener('message', (event) => {
           event.data.content.parsed_data.calendar_name
         ) === -1)
     ) {
-      parsed_events.push(event.data.content.parsed_data);
+      //test if object exist
+      const exists = parsed_events.some((obj) =>
+        isEqual(obj, event.data.content.parsed_data)
+      );
+
+      if (!exists) {
+        parsed_events.push(event.data.content.parsed_data);
+      }
 
       //notify user when data stored
       if (event.data.content.callback) {
@@ -5644,7 +5619,7 @@ channel.addEventListener('message', (event) => {
   }
   if (event.data.action == 'error') {
     try {
-      document.getElementById('icon-waiting').style.visibility = 'hidden';
+      //  document.getElementById('icon-waiting').style.visibility = 'hidden';
     } catch (e) {}
   }
 });
@@ -5656,12 +5631,14 @@ let interval = () => {
     const currentTime = Date.now();
     if (currentTime - lastMessageTime >= waitTimeout) {
       try {
-        document.getElementById('icon-waiting').style.visibility = 'hidden';
+        // document.getElementById('icon-waiting').style.visibility = 'hidden';
       } catch (e) {}
       running = false;
       interval_is_running = false;
-      style_calendar_cell(currentYear, currentMonth);
       sort_array(parsed_events, 'dateStartUnix', 'number');
+
+      localforage.setItem('testtocache', parsed_events);
+      console.log('stored');
       clearInterval(waitForNoMessages);
     }
   }, checkMessagesInterval);
