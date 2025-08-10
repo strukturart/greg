@@ -58,7 +58,8 @@ function parse_ics(
   isCaldav,
   alarm,
   callback,
-  store
+  store,
+  doNotCache = false
 ) {
   let comp = new ICAL.Component(ICAL.parse(data), {
     parseEvent: true,
@@ -83,12 +84,14 @@ function parse_ics(
 
     let rr_freq;
     let isBiweekly = false;
-    let date_start = ite.getFirstPropertyValue('dtstart').toJSDate();
+    let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
-      ite.getFirstPropertyValue('dtend').toJSDate() ||
-      ite.getFirstPropertyValue('dtstart').toJSDate();
+      ite.getFirstPropertyValue('dtend') ||
+      ite.getFirstPropertyValue('dtstart');
 
     if (date_start.isDate && date_end.isDate) allday = true;
+
+    //RRULE
 
     if (ite.getFirstPropertyValue('rrule') != undefined) {
       rrule_dates = [];
@@ -112,10 +115,8 @@ function parse_ics(
           let count = 0;
 
           while ((next = iter.next()) && count < maxIterations) {
-            // Brich ab wenn kein Ergebnis mehr
             if (!next) break;
 
-            // Konvertiere ICAL.Time → JS-Date → String
             const jsDate = next.toJSDate();
             rrule_dates.push(dayjs(jsDate).format('YYYY-MM-DD'));
 
@@ -136,10 +137,10 @@ function parse_ics(
             } else if (typeof rrule.until === 'string') {
               rr_until = dayjs(rrule.until).valueOf();
             } else {
+              console.warn('Unbekanntes UNTIL-Format:', rrule.until);
               rr_until = new Date('3000-01-01').getTime();
             }
           } else if (rrule.count) {
-            // Berechne Enddatum anhand count und interval
             const freqUnit = (() => {
               switch (rrule.freq) {
                 case 'DAILY':
@@ -159,7 +160,6 @@ function parse_ics(
               .add(rrule.count * (rrule.interval || 1), freqUnit)
               .valueOf();
           } else {
-            // Unendliche Wiederholung — setze weit entferntes Enddatum als Sicherheitsnetz
             rr_until = new Date('3000-01-01').getTime();
           }
 
@@ -167,7 +167,7 @@ function parse_ics(
             isBiweekly = true;
           }
 
-          // date_end = dayjs(rr_until).format('YYYY-MM-DD');
+          date_end = dayjs(rr_until).format('YYYY-MM-DD');
         }
       } catch (e) {
         console.warn('RRULE parse error:', e);
@@ -178,14 +178,9 @@ function parse_ics(
     let dateStart, timeStart, dateStartUnix;
     if (date_start) {
       let a = dayjs(date_start);
-
-      if (a.isValid()) {
-        dateStart = a.format('YYYY-MM-DD');
-        timeStart = a.format('HH:mm');
-        dateStartUnix = a.unix();
-      } else {
-        console.log('invalid dt');
-      }
+      dateStart = a.format('YYYY-MM-DD');
+      timeStart = a.format('HH:mm:ss');
+      dateStartUnix = a.valueOf();
     }
 
     //date end
@@ -198,13 +193,14 @@ function parse_ics(
         a = dayjs(rr_until);
       }
 
+      //all day event substract on day for the view
       if (allday) {
         a = a.subtract(1, 'day');
       }
 
       dateEnd = a.format('YYYY-MM-DD');
-      timeEnd = a.format('HH:mm');
-      dateEndUnix = a.unix();
+      timeEnd = a.format('HH:mm:ss');
+      dateEndUnix = a.valueOf();
     }
 
     imp = {
@@ -230,12 +226,11 @@ function parse_ics(
       etag: etag || '',
       url: url || '',
       calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
+      doNotCache: doNotCache,
 
       id: account_id,
       modified: ite.getFirstPropertyValue('last-modified').toString(),
     };
-
-    console.log(imp);
 
     //when importing data callback to store
     let a = { parsed_data: imp };
@@ -404,7 +399,8 @@ self.addEventListener('message', async (event) => {
         is_caldav(),
         false,
         event.data.callback || false,
-        event.data.store || false
+        event.data.store || false,
+        event.data.doNotCache || false
       );
 
       // Post the result back to the main thread
