@@ -1,5 +1,5 @@
 {
-  "version": "2.2.6322",
+  "version": "2.2.6337",
   "name": "greg",
   "id": "greg",
   "categories": ["utilities"],
@@ -8,6 +8,7 @@
   "launch_path": "/index.html",
   "type": "privileged",
   "fullscreen": "true",
+  "priority": "high",
   "userAgentInfo": "greg written by strukturart@gmail.com",
   "icons": {
     "56": "/assets/icons/icon-56-56.png",
@@ -35,21 +36,14 @@
     "action": "view"
   },
 
+
   "activities": {
-    "view": {
-      "filters": {
-        "type": "url",
-        "url": {
-          "required": true,
-          "regexp": "^https?://.*\\.ics$",
-          "pattern": "^https?://.*\\.ics$"
-        }
-      },
-      "disposition": "window",
-      "returnValue": false,
+     "greg-oauth": {
       "href": "/index.html"
     }
   },
+
+ 
 
   "messages": [
     {
@@ -64,8 +58,8 @@
 
   "redirects": [
     {
-      "from": "https://greg.strukturart.com/redirect.html",
-      "to": "/oauth.html"
+      "from": "https://greg.strukturart.com/index.html",
+      "to": "/index.html"
     }
   ],
 

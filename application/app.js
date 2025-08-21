@@ -21,7 +21,6 @@ import {
 
 import isEqual from 'lodash/isEqual';
 
-import { getMoonPhase } from './assets/js/getMoonPhase.js';
 import { export_ical } from './assets/js/eximport.js';
 import { start_scan } from './assets/js/scan.js';
 import { stop_scan } from './assets/js/scan.js';
@@ -79,8 +78,6 @@ localforage
   .then((e) => {
     if (e.length > 0 && e != null) {
       parsed_events = e.filter((a) => a.doNotCache !== true);
-    } else {
-      alert('no data');
     }
   })
   .catch((e) => {});
@@ -89,6 +86,7 @@ localforage
 let key_delay = () => {
   setTimeout(() => {
     status.viewReady = true;
+    document.querySelector('.loading-spinner').style.display = 'none';
   }, 1500);
 };
 
@@ -171,12 +169,16 @@ let app_launcher = () => {
   var currentUrl = window.location.href;
 
   // Check if the URL includes 'id='
-  if (!currentUrl.includes('code=')) return false;
+  if (!currentUrl.includes('code=')) {
+    return false;
+  }
 
   const urlParams = new URLSearchParams(window.location.search);
   let result = urlParams.get('code');
 
-  if (!result) return false;
+  if (!result) {
+    return false;
+  }
 
   setTimeout(() => {
     try {
@@ -186,6 +188,7 @@ let app_launcher = () => {
       });
       activity.onsuccess = function () {
         console.log('Activity successfuly handled');
+        window.close();
       };
 
       activity.onerror = function () {
@@ -397,6 +400,7 @@ async function loadCalendarNames() {
 //test whether there are updates in the remote
 
 let loadAccounts = () => {
+  console.log('loadACc');
   localforage
     .getItem('accounts')
     .then((value) => {
@@ -405,7 +409,8 @@ let loadAccounts = () => {
 
       if (accounts != null) {
         load_cached_caldav().then(() => {
-          sync_caldav(sync_caldav_callback);
+          //todo
+          //  sync_caldav(sync_caldav_callback);
         });
       }
     })
@@ -414,7 +419,6 @@ let loadAccounts = () => {
     });
 };
 
-loadAccounts();
 //local account
 export let local_account = {
   data: [],
@@ -427,22 +431,26 @@ let load_or_create_local_account = () => {
   localforage
     .getItem('local_account')
     .then((value) => {
-      if (value != null) {
+      if (value != null && Array.isArray(value.data)) {
+        // Wenn es existiert, Daten übernehmen
         local_account.data = value.data;
 
         local_account.data.forEach((e) => {
           try {
-            navigator.serviceWorker.controller.postMessage({
+            navigator.serviceWorker.controller?.postMessage({
               type: 'parse',
               t: e,
               e: 'local-id',
               callback: false,
               store: false,
             });
-          } catch (e) {}
+          } catch (err) {
+            console.error('Error posting message to service worker:', err);
+          }
         });
       } else {
-        // If local_account doesn't exist, create it
+        // Falls es nicht existiert oder keine gültige data-Struktur hat, neu anlegen
+
         localforage
           .setItem('local_account', local_account)
           .then(() => {
@@ -457,6 +465,7 @@ let load_or_create_local_account = () => {
       console.error('Error loading local account:', error);
     });
 };
+
 load_or_create_local_account();
 
 //load settings
@@ -632,6 +641,7 @@ async function load_caldav(callback = false, account_to_update = false) {
 
       if (m.route.get() === '/page_calendar') {
         document.getElementById('icon-loading').style.visibility = 'visible';
+        document.getElementById('icon-loading').style.position = 'relative';
       }
       const dataToCache = [];
 
@@ -674,19 +684,19 @@ async function load_caldav(callback = false, account_to_update = false) {
 
       try {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-        document.getElementById('icon-waiting').style.visibility = 'hidden';
+        document.getElementById('icon-loading').style.position = 'absolute';
       } catch (e) {
         console.log(e);
       }
 
-      if (callback) side_toaster('all event reloaded', 2000);
+      if (callback) side_toaster('all events reloaded', 2000);
 
       closing_prohibited = false;
     } catch (e) {
       closing_prohibited = false;
       try {
         document.getElementById('icon-loading').style.visibility = 'hidden';
-        document.getElementById('icon-waiting').style.visibility = 'hidden';
+        document.getElementById('icon-loading').style.position = 'absolute';
       } catch (e) {
         console.log(e);
       }
@@ -1475,7 +1485,6 @@ function getCalendarData(month, year) {
           date: null,
           weekday: j,
           isToday: false,
-          moonPhase: null,
           week: null,
         };
       } else {
@@ -1491,8 +1500,7 @@ function getCalendarData(month, year) {
           weekday: j,
 
           isToday: dateStr === today,
-          moonPhase: getMoonPhase(year, month, dayCounter),
-          week: null, // wird später gesetzt
+          week: null,
         };
 
         dayCounter++;
@@ -1501,7 +1509,6 @@ function getCalendarData(month, year) {
       week.push(dayObj);
     }
 
-    // Kalenderwoche bestimmen (ISO)
     const weekNumber = firstDateOfWeek
       ? dayjs(firstDateOfWeek).isoWeek()
       : null;
@@ -1567,6 +1574,10 @@ let focus_after_selection = function () {
   });
 };
 
+setTimeout(() => {
+  loadAccounts();
+}, 10000);
+
 /*
 ///////////////////
 //VIEWS
@@ -1628,7 +1639,7 @@ var page_intro = {
               oncreate: function (vnode) {
                 setTimeout(() => {
                   m.route.set('/page_calendar');
-                }, 3500);
+                }, 4000);
               },
             },
             status.version
@@ -1639,7 +1650,6 @@ var page_intro = {
   },
 };
 
-let cdata;
 var page_calendar = {
   oninit: () => {
     key_delay();
@@ -1652,7 +1662,7 @@ var page_calendar = {
   },
 
   view: function () {
-    cdata = getCalendarData(currentMonth, currentYear);
+    const cdata = getCalendarData(currentMonth, currentYear);
     const header = dayjs(`${currentYear}-${currentMonth + 1}-01`).format(
       'MMMM YYYY'
     );
@@ -1683,11 +1693,6 @@ var page_calendar = {
             alt: 'loading',
           }),
 
-          m('img', {
-            id: 'icon-waiting',
-            src: './assets/image/waiting.png',
-            alt: 'loading',
-          }),
           m(
             'div',
             {
@@ -1730,6 +1735,14 @@ var page_calendar = {
           'div',
           {
             id: 'calendar-body',
+
+            oncreate: () => {
+              bottom_bar(
+                "<img src='./assets/image/add.svg'>",
+                "<img src='./assets/image/list.svg'>",
+                "<img src='./assets/image/option.svg'>"
+              );
+            },
           },
           cdata.map((week) => {
             const row = week.map((day) =>
@@ -1796,12 +1809,7 @@ var page_calendar = {
                     (day.day === null ? ' empty' : '') +
                     (day.isToday ? ' today' : ''),
                 },
-                [
-                  day.day,
-                  m('span'),
-                  m('div'),
-                  m('div', { class: 'moon-phase-' + day.moonPhase }),
-                ]
+                [day.day, m('span'), m('div')]
               )
             );
 
@@ -1843,12 +1851,6 @@ var page_calendar = {
 
             oncreate: () => {
               setTimeout(function () {
-                bottom_bar(
-                  "<img src='assets/image/add.svg'>",
-                  "<img src='assets/image/list.svg'>",
-                  "<img src='assets/image/option.svg'>"
-                );
-
                 let t = dayjs(status.selected_day);
                 currentMonth = t.month();
                 currentYear = t.year();
@@ -1941,9 +1943,9 @@ var page_events = {
           }
 
           bottom_bar(
-            "<img src='assets/image/pencil.svg'>",
-            "<img src='assets/image/calendar.svg'>",
-            "<img src='assets/image/E257.svg'>"
+            "<img src='./assets/image/pencil.svg'>",
+            "<img src='./assets/image/calendar.svg'>",
+            "<img src='./assets/image/E257.svg'>"
           );
         },
       },
@@ -2146,9 +2148,9 @@ var page_events_filtered = {
         oncreate: function () {
           document.querySelectorAll('.item')[0].focus();
           bottom_bar(
-            "<img src='assets/image/pencil.svg'>",
-            "<img src='assets/image/calendar.svg'>",
-            "<img src='assets/image/E257.svg'>"
+            "<img src='./assets/image/pencil.svg'>",
+            "<img src='./assets/image/calendar.svg'>",
+            "<img src='./assets/image/E257.svg'>"
           );
         },
       },
@@ -2297,10 +2299,6 @@ export let page_options = {
               m('div', 'Events filtered by category'),
             ]),
 
-            m('li', { class: 'width-100  flex justify-content-spacebetween' }, [
-              m('kbd', '#'),
-              m('div', 'Moon'),
-            ]),
             m('li', { class: 'width-100  flex justify-content-spacebetween' }, [
               m('kbd', '*'),
               m('div', 'Today'),
@@ -2593,7 +2591,7 @@ export let page_options = {
                   'data-action': 'delete-subscription',
                   tabindex: index + 8,
                   onfocus: function () {
-                    bottom_bar("<img src='assets/image/delete.svg'>", '', '');
+                    bottom_bar("<img src='./assets/image/delete.svg'>", '', '');
                   },
                   onblur: function () {
                     bottom_bar('', '', '');
@@ -2793,9 +2791,9 @@ export let page_options = {
                       bottom_bar("<img src='assets/image/delete.svg'>", '', '');
                     } else {
                       bottom_bar(
-                        "<img src='assets/image/delete.svg'>",
+                        "<img src='./assets/image/delete.svg'>",
                         '',
-                        "<img src='assets/image/pencil.svg'>"
+                        "<img src='./assets/image/pencil.svg'>"
                       );
                     }
                   },
@@ -2874,7 +2872,7 @@ var page_subscriptions = {
             id: 'cal-subs-url',
             'data-scan-action': 'true',
             onfocus: function () {
-              bottom_bar("<img src='assets/image/E1D8.svg'>", '', '');
+              bottom_bar("<img src='./assets/image/E1D8.svg'>", '', '');
             },
             oncreate: () => {
               setTimeout(() => {
@@ -2955,7 +2953,7 @@ var page_edit_account = {
             value: update_account.server_url,
 
             onfocus: function () {
-              bottom_bar("<img src='assets/image/E1D8.svg'>", '', '');
+              bottom_bar("<img src='./assets/image/E1D8.svg'>", '', '');
             },
             onblur: function () {
               bottom_bar('', '', '');
@@ -2983,7 +2981,7 @@ var page_edit_account = {
 
             'data-scan-action': 'true',
             onfocus: function () {
-              bottom_bar("<img src='assets/image/E1D8.svg'>", '', '');
+              bottom_bar("<img src='./assets/image/E1D8.svg'>", '', '');
             },
             onblur: function () {
               bottom_bar('', '', '');
@@ -3932,8 +3930,8 @@ var page_event_templates = {
 
         oncreate: function () {
           bottom_bar(
-            "<img src='assets/image/delete.svg'>",
-            "<img src='assets/image/add.svg'>",
+            "<img src='./assets/image/delete.svg'>",
+            "<img src='./assets/image/add.svg'>",
             ''
           );
         },
@@ -4251,9 +4249,9 @@ let nav = function (move) {
   if (m.route.get() == '/page_calendar') {
     status.shortCut = false;
     bottom_bar(
-      "<img src='assets/image/add.svg'>",
-      "<img src='assets/image/list.svg'>",
-      "<img src='assets/image/option.svg'>"
+      "<img src='./assets/image/add.svg'>",
+      "<img src='./assets/image/list.svg'>",
+      "<img src='./assets/image/option.svg'>"
     );
   }
 
@@ -4481,8 +4479,8 @@ const rrule_convert = function (val, date_end, date_start) {
 
 let export_data = [];
 
-let lastCall = dayjs(0); // initial weit in der Vergangenheit
-const cooldownMs = 1000; // 1 Sekunde Sperrzeit
+let lastCall = dayjs(0);
+const cooldownMs = 1000;
 
 let store_event = function (account_id, cal_name) {
   //debounce to prevent keyboard hardware bugs
@@ -4687,6 +4685,7 @@ let store_event = function (account_id, cal_name) {
               e: 'local-id',
               callback: true,
               store: false,
+              doNotCache: false,
             });
           } catch (e) {}
           get_last_view();
@@ -5031,23 +5030,31 @@ let delete_event = function (etag, url, account_id, uid) {
   if (etag) {
     delete_caldav(etag, url, account_id, uid);
   } else {
-    // Find the index of the object with the matching UID
-    const index = local_account.data.findIndex((item) => item.uid === uid);
-    if (index !== -1) {
-      local_account.data.splice(index, 1);
-      parsed_events = parsed_events.filter((person) => person.UID != uid);
+    document.querySelector('.loading-spinner').style.display = 'block';
+    if (parsed_events.length > 0)
+      parsed_events = parsed_events.filter((event) => event.UID != uid);
 
-      localforage
-        .setItem('local_account', local_account)
-        .then(function () {
-          style_calendar_cell(currentYear, currentMonth);
+    if (local_account.data.length > 0)
+      local_account = local_account.data.filter((event) => event.UID != uid);
 
-          get_last_view();
+    localforage.setItem('testtocache', parsed_events).then(() => {
+      eventSlider();
+    });
 
-          show_success_animation();
-        })
-        .catch(function (err) {});
-    }
+    localforage
+      .setItem('local_account', local_account)
+      .then(function () {
+        document.querySelector('.loading-spinner').style.display = 'none';
+
+        style_calendar_cell(currentYear, currentMonth);
+
+        get_last_view();
+
+        show_success_animation();
+      })
+      .catch(function (err) {
+        document.querySelector('.loading-spinner').style.display = 'none';
+      });
 
     remove_alarm(uid);
   }
@@ -5212,22 +5219,12 @@ function shortpress_action(param) {
         if (document.activeElement.classList.contains('event')) {
           status.shortCut = true;
           bottom_bar(
-            "<img src='assets/image/pencil.svg'>",
+            "<img src='./assets/image/pencil.svg'>",
             '',
-            "<img src='assets/image/delete-red.svg'>"
+            "<img src='./assets/image/delete-red.svg'>"
           );
         }
       }
-      break;
-
-    case '#':
-      document
-        .querySelectorAll(
-          "div#calendar div#calendar-body div div [class^='moon-phase-']"
-        )
-        .forEach(function (e) {
-          e.classList.toggle('active');
-        });
       break;
 
     case 'SoftRight':
@@ -5658,8 +5655,8 @@ let oauthRedirect_kaios = async (authorizationCode) => {
 };
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 400; // Time in milliseconds
-const checkMessagesInterval = 100; // Interval to check for new messages
+const waitTimeout = 1400; // Time in milliseconds
+const checkMessagesInterval = 400; // Interval to check for new messages
 let waitForNoMessages;
 let interval_is_running = false;
 
@@ -5686,6 +5683,7 @@ channel.addEventListener('message', (event) => {
         ) === -1)
     ) {
       //test if object exist
+
       const exists = parsed_events.some((obj) =>
         isEqual(obj, event.data.content.parsed_data)
       );
@@ -5693,6 +5691,8 @@ channel.addEventListener('message', (event) => {
       if (!exists) {
         parsed_events.push(event.data.content.parsed_data);
       }
+
+      parsed_events.push(event.data.content.parsed_data);
 
       //notify user when data stored
       if (event.data.content.callback) {
@@ -5721,21 +5721,23 @@ channel.addEventListener('message', (event) => {
     }
   }
   if (event.data.action == 'error') {
-    try {
-      //  document.getElementById('icon-waiting').style.visibility = 'hidden';
-    } catch (e) {}
+    console.log('error');
   }
 });
 
 let interval = () => {
   waitForNoMessages = setInterval(() => {
+    console.log('waiting');
+
     interval_is_running = true;
     if (!running) return false;
     const currentTime = Date.now();
     if (currentTime - lastMessageTime >= waitTimeout) {
       running = false;
       interval_is_running = false;
-      sort_array(parsed_events, 'dateStartUnix', 'number');
+      console.log('done');
+
+      // sort_array(parsed_events, 'dateStartUnix', 'number');
 
       localforage.setItem('testtocache', parsed_events);
       clearInterval(waitForNoMessages);
@@ -5747,6 +5749,10 @@ let interval = () => {
 try {
   navigator.mozSetMessageHandler('activity', function (activityRequest) {
     var option = activityRequest.source;
+
+    if (option.name == 'greg-oauth') {
+      oauthRedirect_kaios(option.data);
+    }
 
     //link
     if (option.name == 'view') {

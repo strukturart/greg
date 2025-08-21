@@ -65,13 +65,9 @@ function parse_ics(
     parseEvent: true,
   });
 
-  comp.onerror = function (error) {
-    console.log('Error occurred:', error);
-  };
+  comp.onerror = function (error) {};
 
-  comp.oncomplete = function () {
-    console.log('succesfull parsed');
-  };
+  comp.oncomplete = function () {};
 
   var vevent = comp.getAllSubcomponents('vevent');
 
@@ -110,7 +106,7 @@ function parse_ics(
 
           const iter = rrule.iterator(dtstartTime);
 
-          const maxIterations = 1500; // Sicherheitsgrenze
+          const maxIterations = 500;
           let next;
           let count = 0;
 
