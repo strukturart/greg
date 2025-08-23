@@ -12,9 +12,9 @@ An easy to use calendar for KaiOs
 - Key \* : Jump to current Day
 - Key Enter: toggle views
 - Key 2: event slider in month view
-- Key #: toggle moon phase view
 - Key SoftLeft: Add event
 - Key SoftLeft Longpress: Add Event with template
+- Key 5: shortAction edit/delete
 - <kbn>0</kbn> Single category view
 
 ### Nextcloud account
@@ -32,13 +32,12 @@ at nextcloud as follows:
 - Nextcloud calendar
 - Google Calendar
 - subscribe to calendar
-- moon phases
 
 I tested subscribing to calendar with google calendar. you have the possibility to subscribe to public calendars and private calendars, in the google calendar settings you will find an ID that you can enter in greg (by hand or qr code).
 
 ## How to install
 
-- KaiOs Store
+- KaiOS Store
 - Sideloading <a href="https://www.martinkaptein.com/blog/sideloading-and-deploying-apps-to-kai-os/">step-by-step article</a> by martinkaptein
 
 You can download the latest version from the Releases page.
@@ -59,14 +58,13 @@ If you connect a Google account to greg, it is possible that Google collects inf
 ### Dev
 
 If you want to create your own version of the app you need to use your own google oaut cred. you have to create a file with this content
-/assets/js/google_cred.js
+.env
 
 ```
-const google_cred = {
-  clientId:
-    "",
-  clientSecret: "",
-};
+clientId=
+clientSecret=
+token_url=
+redirect_url=
 ```
 
 ## Donation

@@ -49,6 +49,8 @@ let load_settings = function () {
 load_settings();
 
 //parse calendar events and send back to mainscript
+let return_array = [];
+
 function parse_ics(
   data,
   isSubscription,
@@ -61,187 +63,218 @@ function parse_ics(
   store,
   doNotCache = false
 ) {
-  let comp = new ICAL.Component(ICAL.parse(data), {
-    parseEvent: true,
-  });
+  let comp = new ICAL.Component(ICAL.parse(data), { parseEvent: true });
 
-  comp.onerror = function (error) {};
+  const vevent = comp.getAllSubcomponents('vevent');
 
-  comp.oncomplete = function () {};
-
-  var vevent = comp.getAllSubcomponents('vevent');
-
-  let imp = null;
-  let return_array = [];
-  let rrule_dates = [];
-  vevent.forEach(function (ite) {
-    let rr_until = '';
+  vevent.forEach((ite) => {
     let allday = false;
-
-    let rr_freq;
     let isBiweekly = false;
+    let rrule_dates = [];
+    let rr_until = null;
+
+    // Cache all props (viel schneller als mehrfaches getFirstPropertyValue)
+    const uid = ite.getFirstPropertyValue('uid') || '';
+    const summary = ite.getFirstPropertyValue('summary') || '';
+    const location = ite.getFirstPropertyValue('location') || '';
+    const description = ite.getFirstPropertyValue('description') || '';
+    const categories = ite.getFirstPropertyValue('categories') || '';
+    const rrule = ite.getFirstPropertyValue('rrule') || '';
+    const clazz = ite.getFirstPropertyValue('class') || '';
+    const lastModified = ite.getFirstPropertyValue('last-modified');
+
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
       ite.getFirstPropertyValue('dtend') ||
       ite.getFirstPropertyValue('dtstart');
 
-    if (date_start.isDate && date_end.isDate) allday = true;
+    if (date_start && date_start.isDate && date_end && date_end.isDate) {
+      allday = true;
+    }
 
-    //RRULE
-
-    if (ite.getFirstPropertyValue('rrule') != undefined) {
-      rrule_dates = [];
-
+    // === RRULE ===
+    if (rrule && typeof rrule === 'object' && rrule.freq) {
       try {
-        const rrule = ite.getFirstPropertyValue('rrule');
-        if (rrule && typeof rrule === 'object' && rrule.freq) {
-          rr_freq = rrule.freq;
-          interval = rrule.interval || 1;
+        const interval = rrule.interval || 1;
+        const dtstart = ite.getFirstPropertyValue('dtstart');
 
-          const dtstart = ite.getFirstPropertyValue('dtstart');
-          const dtstartTime = ICAL.Time.fromJSDate(
-            new Date(dtstart.toString()),
-            false
-          );
+        // Nutze direkt ICAL.Time (nicht erst via JSDate)
+        const iter = rrule.iterator(dtstart);
 
-          const iter = rrule.iterator(dtstartTime);
+        const now = new Date();
 
-          const maxIterations = 500;
-          let next;
-          let count = 0;
+        const maxIterations = 500;
+        const maxDate = new Date();
 
-          while ((next = iter.next()) && count < maxIterations) {
-            if (!next) break;
+        maxDate.setFullYear(now.getFullYear() + 5);
 
-            const jsDate = next.toJSDate();
-            rrule_dates.push(dayjs(jsDate).format('YYYY-MM-DD'));
+        let count = 0;
+        let next;
 
-            count++;
+        while ((next = iter.next()) && count < maxIterations) {
+          const jsDate = next.toJSDate();
+
+          const year = next.year;
+          const month = ('0' + next.month).slice(-2);
+          const day = ('0' + next.day).slice(-2);
+
+          const formatted = `${year}-${month}-${day}`;
+          rrule_dates.push(formatted);
+          count++;
+
+          if (jsDate > maxDate) break;
+
+          if (
+            rrule.until &&
+            jsDate.getTime() > new Date(rrule.until).getTime()
+          ) {
+            break; // früh abbrechen
           }
+        }
 
-          if (rrule.until) {
-            // Prüfe, ob until ein ICAL.Time-Objekt ist (hat Methode toJSDate)
-            if (typeof rrule.until.toJSDate === 'function') {
-              rr_until = dayjs(rrule.until.toJSDate()).valueOf();
-            }
-            // patch until if has wrong format
-            else if (
-              typeof rrule.until === 'string' &&
-              /^\d{8}$/.test(rrule.until)
-            ) {
-              rr_until = dayjs(rrule.until, 'YYYYMMDD').endOf('day').valueOf();
-            } else if (typeof rrule.until === 'string') {
-              rr_until = dayjs(rrule.until).valueOf();
-            } else {
-              console.warn('Unbekanntes UNTIL-Format:', rrule.until);
-              rr_until = new Date('3000-01-01').getTime();
-            }
-          } else if (rrule.count) {
-            const freqUnit = (() => {
-              switch (rrule.freq) {
-                case 'DAILY':
-                  return 'day';
-                case 'WEEKLY':
-                  return 'week';
-                case 'MONTHLY':
-                  return 'month';
-                case 'YEARLY':
-                  return 'year';
-                default:
-                  return 'day';
-              }
-            })();
-
-            rr_until = dayjs(date_start)
-              .add(rrule.count * (rrule.interval || 1), freqUnit)
-              .valueOf();
+        // UNTIL bestimmen
+        if (rrule.until) {
+          if (typeof rrule.until.toJSDate === 'function') {
+            rr_until = rrule.until.toJSDate().getTime();
+          } else if (
+            typeof rrule.until === 'string' &&
+            /^\d{8}$/.test(rrule.until)
+          ) {
+            const y = parseInt(rrule.until.slice(0, 4), 10);
+            const m = parseInt(rrule.until.slice(4, 6), 10) - 1;
+            const d = parseInt(rrule.until.slice(6, 8), 10);
+            rr_until = new Date(y, m, d, 23, 59, 59).getTime();
+          } else if (typeof rrule.until === 'string') {
+            rr_until = new Date(rrule.until).getTime();
           } else {
             rr_until = new Date('3000-01-01').getTime();
           }
-
-          if (rrule.freq === 'WEEKLY' && interval === 2) {
-            isBiweekly = true;
+        } else if (rrule.count) {
+          // Fallback auf count * interval
+          const unitMap = {
+            DAILY: 'day',
+            WEEKLY: 'week',
+            MONTHLY: 'month',
+            YEARLY: 'year',
+          };
+          const unit = unitMap[rrule.freq] || 'day';
+          // Approximation mit JS Date (reicht für UNTIL)
+          const js = date_start.toJSDate();
+          switch (unit) {
+            case 'day':
+              js.setDate(js.getDate() + rrule.count * interval);
+              break;
+            case 'week':
+              js.setDate(js.getDate() + rrule.count * interval * 7);
+              break;
+            case 'month':
+              js.setMonth(js.getMonth() + rrule.count * interval);
+              break;
+            case 'year':
+              js.setFullYear(js.getFullYear() + rrule.count * interval);
+              break;
           }
-
-          date_end = dayjs(rr_until).format('YYYY-MM-DD');
+          rr_until = js.getTime();
+        } else {
+          rr_until = new Date('3000-01-01').getTime();
         }
+
+        if (rrule.freq === 'WEEKLY' && interval === 2) {
+          isBiweekly = true;
+        }
+
+        // Enddatum auf UNTIL setzen
+        date_end = new ICAL.Time.fromJSDate(new Date(rr_until), false);
       } catch (e) {
         console.warn('RRULE parse error:', e);
       }
     }
 
-    //date start
+    // === START / END berechnen ===
     let dateStart, timeStart, dateStartUnix;
     if (date_start) {
-      let a = dayjs(date_start);
-      dateStart = a.format('YYYY-MM-DD');
-      timeStart = a.format('HH:mm:ss');
-      dateStartUnix = a.valueOf();
+      const js = date_start.toJSDate();
+      dateStartUnix = js.getTime();
+      dateStart = `${js.getFullYear()}-${('0' + (js.getMonth() + 1)).slice(
+        -2
+      )}-${('0' + js.getDate()).slice(-2)}`;
+      timeStart = `${('0' + js.getHours()).slice(-2)}:${(
+        '0' + js.getMinutes()
+      ).slice(-2)}:${('0' + js.getSeconds()).slice(-2)}`;
     }
 
-    //date end
     let dateEnd, timeEnd, dateEndUnix;
-
     if (date_end) {
-      let a = dayjs(date_end);
+      let js = date_end.toJSDate();
 
-      if (rr_until != '') {
-        a = dayjs(rr_until);
+      if (rr_until) {
+        js = new Date(rr_until);
       }
 
-      //all day event substract on day for the view
       if (allday) {
-        a = a.subtract(1, 'day');
+        js.setDate(js.getDate() - 1); // Ganztägige Events: Enddatum anpassen
       }
 
-      dateEnd = a.format('YYYY-MM-DD');
-      timeEnd = a.format('HH:mm:ss');
-      dateEndUnix = a.valueOf();
+      dateEndUnix = js.getTime();
+      dateEnd = `${js.getFullYear()}-${('0' + (js.getMonth() + 1)).slice(
+        -2
+      )}-${('0' + js.getDate()).slice(-2)}`;
+      timeEnd = `${('0' + js.getHours()).slice(-2)}:${(
+        '0' + js.getMinutes()
+      ).slice(-2)}:${('0' + js.getSeconds()).slice(-2)}`;
     }
 
-    imp = {
-      UID: ite.getFirstPropertyValue('uid') || '',
-      SUMMARY: ite.getFirstPropertyValue('summary') || '',
-      LOCATION: ite.getFirstPropertyValue('location') || '',
-      DESCRIPTION: ite.getFirstPropertyValue('description') || '',
-      CATEGORIES: ite.getFirstPropertyValue('categories') || '',
-      RRULE: ite.getFirstPropertyValue('rrule') || '',
-      CLASS: ite.getFirstPropertyValue('class') || '',
-      isSubscription: isSubscription,
-      isBiweekly: isBiweekly,
-      isCaldav: isCaldav,
+    // === Ergebnisobjekt ===
+    const imp = {
+      UID: uid,
+      SUMMARY: summary,
+      LOCATION: location,
+      DESCRIPTION: description,
+      CATEGORIES: categories,
+      RRULE: rrule,
+      CLASS: clazz,
+      isSubscription,
+      isBiweekly,
+      isCaldav,
       allDay: allday,
-      rrule_dates: rrule_dates,
-      dateStart: dateStart,
-      dateStartUnix: dateStartUnix,
-      dateEndUnix: dateEndUnix,
-      dateEnd: dateEnd,
+      rrule_dates,
+      dateStart,
+      dateStartUnix,
+      dateEnd,
+      dateEndUnix,
       time_start: timeStart,
       time_end: timeEnd,
       alarm: alarm || 'none',
       etag: etag || '',
       url: url || '',
       calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
-      doNotCache: doNotCache,
-
+      doNotCache,
       id: account_id,
-      modified: ite.getFirstPropertyValue('last-modified').toString(),
+      modified: lastModified ? lastModified.toString() : '',
     };
 
-    //when importing data callback to store
-    let a = { parsed_data: imp };
+    const a = { parsed_data: imp };
     if (store) {
       a.raw_data = data;
       a.uid = imp.UID;
     }
-
-    //callback or not
     if (callback) {
       a.callback = true;
     }
     return_array.push(a);
+
+    if (return_array.length > 200) {
+      channel.postMessage({ action: 'parse', content: return_array });
+      return_array = [];
+    }
   });
-  return return_array;
+
+  if (return_array.length > 0) {
+    channel.postMessage({ action: 'parse', content: return_array });
+    return_array = [];
+  }
+
+  return;
 }
 
 //login handler
@@ -386,7 +419,7 @@ self.addEventListener('message', async (event) => {
         }
       };
 
-      let ff = parse_ics(
+      parse_ics(
         event.data.t.data,
         is_subscription(),
         event.data.t.etag,
@@ -398,12 +431,6 @@ self.addEventListener('message', async (event) => {
         event.data.store || false,
         event.data.doNotCache || false
       );
-
-      // Post the result back to the main thread
-
-      ff.forEach((e) => {
-        channel.postMessage({ action: 'parse', content: e });
-      });
     } catch (error) {
       channel.postMessage({
         action: 'error',

@@ -400,7 +400,6 @@ async function loadCalendarNames() {
 //test whether there are updates in the remote
 
 let loadAccounts = () => {
-  console.log('loadACc');
   localforage
     .getItem('accounts')
     .then((value) => {
@@ -408,10 +407,10 @@ let loadAccounts = () => {
       loadCalendarNames();
 
       if (accounts != null) {
-        load_cached_caldav().then(() => {
-          //todo
-          //  sync_caldav(sync_caldav_callback);
-        });
+        console.log(accounts);
+        sync_caldav(sync_caldav_callback);
+
+        //  load_cached_caldav().then(() => {});
       }
     })
     .catch(() => {
@@ -449,8 +448,6 @@ let load_or_create_local_account = () => {
           }
         });
       } else {
-        // Falls es nicht existiert oder keine gültige data-Struktur hat, neu anlegen
-
         localforage
           .setItem('local_account', local_account)
           .then(() => {
@@ -497,6 +494,7 @@ load_settings();
 //style calendar cells
 
 let style_calendar_cell = function () {
+  console.log('try to style');
   try {
     document.querySelectorAll('div.calendar-cell').forEach(function (e) {
       //reset
@@ -851,8 +849,12 @@ export let sync_caldav = async function (callback) {
           );
 
           if (ma.updated.length && ma.updated.length > 0) {
+            console.log('try to sync' + ma);
+
             callback(item);
             break;
+          } else {
+            side_toaster('nothing to update', 2000);
           }
         } catch (e) {
           if (!navigator.onLine)
@@ -897,17 +899,17 @@ const load_cached_caldav = async () => {
 
   for (const item of accounts) {
     try {
-      const w = await localforage.getItem(item.id);
+      const account = await localforage.getItem(item.id);
       // Load content if never cached
-      if (!w) {
+      if (!account) {
         try {
           load_caldav(false, item.id);
         } catch (e) {
           console.log(e);
         }
       }
-      for (const b of w) {
-        for (const m of b.objects) {
+      for (const b of account) {
+        for (const event_item of b.objects) {
           if (
             'serviceWorker' in navigator &&
             navigator.serviceWorker.controller
@@ -915,7 +917,7 @@ const load_cached_caldav = async () => {
             try {
               navigator.serviceWorker.controller.postMessage({
                 type: 'parse',
-                t: m,
+                t: event_item,
                 e: item.id,
                 callback: false,
                 store: false,
@@ -987,10 +989,10 @@ export let create_caldav = async function (
               navigator.serviceWorker.controller.postMessage({
                 type: 'parse',
                 t: singleEvent[0],
-                e: calendar_name,
+                e: calendar_id,
                 callback: false,
                 store: false,
-                doNotCache: true,
+                doNotCache: false,
               });
             }
             document.querySelector('.loading-spinner').style.display = 'none';
@@ -1338,15 +1340,14 @@ const rrule_check = function (date) {
     events_ids: [],
   };
 
-  const currentDate = date;
-
   for (let event of parsed_events) {
     if (event.rrule_dates.length == 0) continue;
 
-    if (event.rrule_dates.includes(currentDate)) {
+    if (event.rrule_dates.includes(date)) {
       feedback.events_ids.push(event.UID);
     }
   }
+
   return feedback;
 };
 //////////////////
@@ -1390,14 +1391,20 @@ let eventSlider = () => {
   let events_list = [];
 
   let element = document.activeElement;
+
+  // IDs aus data-Attribut holen
   events_list = JSON.parse(element.getAttribute('data-events-ids') || '[]');
+
   if (events_list.length > 0) {
+    // Das erste Event als "selected"
     status.selected_event = events_list[0];
 
-    eventsSliderData = parsed_events.filter((e) => {
-      return events_list.includes(e.UID);
-    });
+    // Alle Events in Liste sammeln
+    eventsSliderData = events_list
+      .map((uid) => parsed_events.find((e) => e.UID === uid))
+      .filter(Boolean);
   } else {
+    status.selected_event = null;
     eventsSliderData = [];
   }
 };
@@ -1576,7 +1583,7 @@ let focus_after_selection = function () {
 
 setTimeout(() => {
   loadAccounts();
-}, 10000);
+}, 1000);
 
 /*
 ///////////////////
@@ -4489,11 +4496,8 @@ let store_event = function (account_id, cal_name) {
     return false;
   }
   lastCall = now;
-
   let validation = true;
-
   let event = {};
-
   let allDay = false;
 
   if (document.getElementById('event-all-day').checked === true) {
@@ -5008,7 +5012,7 @@ let update_event = function (etag, url, account_id, uid, cal_name) {
           e: e.calendar_name,
           callback: false,
           store: false,
-          doNotCache: true,
+          doNotCache: false,
         });
       } catch (e) {
         console.log('error parsing' + e);
@@ -5245,6 +5249,7 @@ function shortpress_action(param) {
         if (update_event_date == undefined) {
           side_toaster('subscriptions events cannot be edited', 4000);
         } else {
+          console.log(update_event_date);
           delete_event(
             update_event_date.etag,
             update_event_date.url,
@@ -5508,6 +5513,10 @@ function shortpress_action(param) {
 
       break;
 
+    case '#':
+      load_cached_caldav();
+      break;
+
     case '0':
       if (currentPage('page_calendar') || currentPage('page_events')) {
         if (!settings.eventsfilter) {
@@ -5655,13 +5664,11 @@ let oauthRedirect_kaios = async (authorizationCode) => {
 };
 
 // Set up a timer to check if no messages have arrived for a certain period
-const waitTimeout = 1400; // Time in milliseconds
-const checkMessagesInterval = 400; // Interval to check for new messages
-let waitForNoMessages;
-let interval_is_running = false;
+const waitTimeout = 5000; // Time in milliseconds
+const checkMessagesInterval = 1000; // Interval to check for new messages
+let waitForNoMessages = null;
 
 let lastMessageTime; // Store the timestamp of the last received message
-let running = false;
 channel.addEventListener('message', (event) => {
   //callback from Google OAuth
   if (event.data.oauth_success) {
@@ -5671,28 +5678,24 @@ channel.addEventListener('message', (event) => {
       oauthRedirect_kaios(result);
     }
   }
+
+  //parsing result
   if (event.data.action == 'parse') {
     lastMessageTime = Date.now(); // Update the timestamp for the last received message
-    running = true;
 
-    if (
-      event.data.content.parsed_data !== false &&
-      (calendar_not_visible.length === 0 ||
-        calendar_not_visible.indexOf(
-          event.data.content.parsed_data.calendar_name
-        ) === -1)
-    ) {
+    // console.log(JSON.stringify(event.data.content));
+
+    event.data.content.forEach((e) => {
       //test if object exist
+      //  parsed_events.push(event.data.content.parsed_data);
 
-      const exists = parsed_events.some((obj) =>
-        isEqual(obj, event.data.content.parsed_data)
-      );
+      const exists = parsed_events.some((obj) => isEqual(obj, e.parsed_data));
 
       if (!exists) {
-        parsed_events.push(event.data.content.parsed_data);
+        parsed_events.push(e.parsed_data);
+      } else {
+        console.log('duplicate');
       }
-
-      parsed_events.push(event.data.content.parsed_data);
 
       //notify user when data stored
       if (event.data.content.callback) {
@@ -5701,10 +5704,10 @@ channel.addEventListener('message', (event) => {
       //store data
       //when importing data
       //When importing, the data is first parsed and then the RAW and parsed data are returned
-      if (event.data.content.raw_data) {
+      if (e.raw_data) {
         local_account.data.push({
-          uid: event.data.content.uid,
-          data: event.data.content.raw_data,
+          uid: e.uid,
+          data: e.raw_data,
         });
 
         localforage
@@ -5714,11 +5717,11 @@ channel.addEventListener('message', (event) => {
           })
           .catch(() => {});
       }
-    }
 
-    if (interval_is_running == false) {
-      interval();
-    }
+      if (waitForNoMessages == null) {
+        interval();
+      }
+    });
   }
   if (event.data.action == 'error') {
     console.log('error');
@@ -5726,21 +5729,26 @@ channel.addEventListener('message', (event) => {
 });
 
 let interval = () => {
-  waitForNoMessages = setInterval(() => {
-    console.log('waiting');
-
-    interval_is_running = true;
-    if (!running) return false;
-    const currentTime = Date.now();
-    if (currentTime - lastMessageTime >= waitTimeout) {
-      running = false;
-      interval_is_running = false;
-      console.log('done');
-
-      // sort_array(parsed_events, 'dateStartUnix', 'number');
-
-      localforage.setItem('testtocache', parsed_events);
+  console.log('start');
+  setTimeout(() => {
+    //urgence break
+    if (waitForNoMessages != null) {
       clearInterval(waitForNoMessages);
+      waitForNoMessages = null;
+      console.log('stopped');
+    }
+  }, 240000);
+
+  waitForNoMessages = setInterval(() => {
+    const currentTime = Date.now();
+
+    if (currentTime - lastMessageTime > waitTimeout) {
+      clearInterval(waitForNoMessages);
+      waitForNoMessages = null;
+
+      console.log('done');
+      sort_array(parsed_events, 'dateStartUnix', 'number');
+      localforage.setItem('testtocache', parsed_events);
     }
   }, checkMessagesInterval);
 };
