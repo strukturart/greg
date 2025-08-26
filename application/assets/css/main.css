@@ -108,13 +108,7 @@ img {
   display: block;
 }
 
-img[src=''] {
-  display: none;
-}
 
-img[src=' '] {
-  display: none;
-}
 
 button {
   font-size: 1rem;
