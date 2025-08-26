@@ -108,13 +108,7 @@ img {
   display: block;
 }
 
-img[src=''] {
-  display: none;
-}
 
-img[src=' '] {
-  display: none;
-}
 
 button {
   font-size: 1rem;
@@ -406,19 +400,19 @@ div#intro img {
 
 
 
-#KaiOsAd {
+#KaiOSAd {
   height: 100px;
   width: 240px;
 }
 
-#KaiOsAds-Wrapper {
+#KaiOSAds-Wrapper {
   padding: 0px;
   height: 100px;
   width: 240px;
   margin: 0 0 50px 0;
 }
 
-#KaiOsAds-Wrapper iframe {
+#KaiOSAds-Wrapper iframe {
   width: 240px;
   height: 100px;
   margin: 0 0 50px 0;

@@ -1,6 +1,5 @@
 import './assets/js/shim-xhr-to-fetch.js';
 import ICAL from 'ical.js';
-import dayjs from 'dayjs';
 import localforage from 'localforage';
 import { DAVClient } from './assets/js/tsdav.js';
 
@@ -82,6 +81,8 @@ function parse_ics(
     const rrule = ite.getFirstPropertyValue('rrule') || '';
     const clazz = ite.getFirstPropertyValue('class') || '';
     const lastModified = ite.getFirstPropertyValue('last-modified');
+
+    const calname = comp.getFirstPropertyValue('x-wr-calname') || '';
 
     let date_start = ite.getFirstPropertyValue('dtstart');
     let date_end =
@@ -247,7 +248,7 @@ function parse_ics(
       alarm: alarm || 'none',
       etag: etag || '',
       url: url || '',
-      calendar_name: comp.getFirstPropertyValue('x-wr-calname') || '',
+      calendar_name: calname,
       doNotCache,
       id: account_id,
       modified: lastModified ? lastModified.toString() : '',
