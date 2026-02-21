@@ -1,21 +1,19 @@
-import jsQR from "jsqr";
+import jsQR from 'jsqr';
 
-let video = document.querySelector("video");
+let video = document.querySelector('video');
 let intv;
 let mediaStream;
 
-export let stop_scan = function (callback) {
+export let stop_scan = function () {
   mediaStream.getTracks().map(function (val) {
     val.stop();
   });
 
-  document.getElementById("qr-screen").style.display = "none";
-
-  callback();
+  document.getElementById('qr-screen').style.display = 'none';
 };
 
 export let start_scan = function (callback) {
-  document.getElementById("qr-screen").style.display = "block";
+  document.getElementById('qr-screen').style.display = 'block';
 
   navigator.getUserMedia =
     navigator.getUserMedia ||
@@ -39,11 +37,11 @@ export let start_scan = function (callback) {
         video.onloadedmetadata = function (e) {
           video.play();
 
-          var barcodeCanvas = document.createElement("canvas");
+          var barcodeCanvas = document.createElement('canvas');
           intv = setInterval(() => {
             barcodeCanvas.width = video.videoWidth;
             barcodeCanvas.height = video.videoHeight;
-            var barcodeContext = barcodeCanvas.getContext("2d");
+            var barcodeContext = barcodeCanvas.getContext('2d');
             var imageWidth = Math.max(1, Math.floor(video.videoWidth)),
               imageHeight = Math.max(1, Math.floor(video.videoHeight));
 
@@ -68,10 +66,10 @@ export let start_scan = function (callback) {
         };
       },
       function (err) {
-        console.log("The following error occurred: " + err.name);
+        console.log('The following error occurred: ' + err.name);
       },
     );
   } else {
-    console.log("getUserMedia not supported");
+    console.log('getUserMedia not supported');
   }
 };

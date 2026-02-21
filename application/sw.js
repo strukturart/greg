@@ -1,18 +1,18 @@
-import './assets/js/shim-xhr-to-fetch.js';
-import ICAL from 'ical.js';
-import localforage from 'localforage';
-import { DAVClient } from './assets/js/tsdav.js';
+import ICAL from "ical.js";
+import localforage from "localforage";
+import { DAVClient } from "./assets/js/tsdav.js";
+import { kaiOSFetch } from "./app.js";
 
-const channel = new BroadcastChannel('sw-messages');
+const channel = new BroadcastChannel("sw-messages");
 
 let accounts;
 async function loadAccounts() {
   try {
-    accounts = (await localforage.getItem('accounts')) || [];
+    accounts = (await localforage.getItem("accounts")) || [];
     return true;
   } catch (error) {
-    console.error('Error loading accounts:', error);
-    channel.postMessage({ action: 'error', content: 'error' });
+    console.error("Error loading accounts:", error);
+    channel.postMessage({ action: "error", content: "error" });
 
     return false;
   }
@@ -22,12 +22,11 @@ loadAccounts();
 let calendar_names;
 async function getCalendarNames() {
   try {
-    calendar_names = await localforage.getItem('calendarNames');
-    // Do additional processing if needed
+    calendar_names = await localforage.getItem("calendarNames");
   } catch (error) {
-    channel.postMessage({ action: 'error', content: 'error' });
+    channel.postMessage({ action: "error", content: "error" });
 
-    console.error('Error retrieving calendar names:', error);
+    console.error("Error retrieving calendar names:", error);
   }
 }
 getCalendarNames();
@@ -35,13 +34,13 @@ getCalendarNames();
 let settings;
 let load_settings = function () {
   localforage
-    .getItem('settings')
+    .getItem("settings")
     .then(function (value) {
       settings = value;
     })
     .catch(function (err) {
       console.log(err);
-      channel.postMessage({ action: 'error', content: 'error' });
+      channel.postMessage({ action: "error", content: "error" });
     });
 };
 
@@ -60,11 +59,11 @@ function parse_ics(
   alarm,
   callback,
   store,
-  doNotCache = false
+  doNotCache = false,
 ) {
   let comp = new ICAL.Component(ICAL.parse(data), { parseEvent: true });
 
-  const vevent = comp.getAllSubcomponents('vevent');
+  const vevent = comp.getAllSubcomponents("vevent");
 
   vevent.forEach((ite) => {
     let allday = false;
@@ -73,31 +72,31 @@ function parse_ics(
     let rr_until = null;
 
     // Cache all props (viel schneller als mehrfaches getFirstPropertyValue)
-    const uid = ite.getFirstPropertyValue('uid') || '';
-    const summary = ite.getFirstPropertyValue('summary') || '';
-    const location = ite.getFirstPropertyValue('location') || '';
-    const description = ite.getFirstPropertyValue('description') || '';
-    const categories = ite.getFirstPropertyValue('categories') || '';
-    const rrule = ite.getFirstPropertyValue('rrule') || '';
-    const clazz = ite.getFirstPropertyValue('class') || '';
-    const lastModified = ite.getFirstPropertyValue('last-modified');
+    const uid = ite.getFirstPropertyValue("uid") || "";
+    const summary = ite.getFirstPropertyValue("summary") || "";
+    const location = ite.getFirstPropertyValue("location") || "";
+    const description = ite.getFirstPropertyValue("description") || "";
+    const categories = ite.getFirstPropertyValue("categories") || "";
+    const rrule = ite.getFirstPropertyValue("rrule") || "";
+    const clazz = ite.getFirstPropertyValue("class") || "";
+    const lastModified = ite.getFirstPropertyValue("last-modified");
 
-    const calname = comp.getFirstPropertyValue('x-wr-calname') || '';
+    const calname = comp.getFirstPropertyValue("x-wr-calname") || "";
 
-    let date_start = ite.getFirstPropertyValue('dtstart');
+    let date_start = ite.getFirstPropertyValue("dtstart");
     let date_end =
-      ite.getFirstPropertyValue('dtend') ||
-      ite.getFirstPropertyValue('dtstart');
+      ite.getFirstPropertyValue("dtend") ||
+      ite.getFirstPropertyValue("dtstart");
 
     if (date_start && date_start.isDate && date_end && date_end.isDate) {
       allday = true;
     }
 
     // === RRULE ===
-    if (rrule && typeof rrule === 'object' && rrule.freq) {
+    if (rrule && typeof rrule === "object" && rrule.freq) {
       try {
         const interval = rrule.interval || 1;
-        const dtstart = ite.getFirstPropertyValue('dtstart');
+        const dtstart = ite.getFirstPropertyValue("dtstart");
 
         // Nutze direkt ICAL.Time (nicht erst via JSDate)
         const iter = rrule.iterator(dtstart);
@@ -116,8 +115,8 @@ function parse_ics(
           const jsDate = next.toJSDate();
 
           const year = next.year;
-          const month = ('0' + next.month).slice(-2);
-          const day = ('0' + next.day).slice(-2);
+          const month = ("0" + next.month).slice(-2);
+          const day = ("0" + next.day).slice(-2);
 
           const formatted = `${year}-${month}-${day}`;
           rrule_dates.push(formatted);
@@ -135,59 +134,59 @@ function parse_ics(
 
         // UNTIL bestimmen
         if (rrule.until) {
-          if (typeof rrule.until.toJSDate === 'function') {
+          if (typeof rrule.until.toJSDate === "function") {
             rr_until = rrule.until.toJSDate().getTime();
           } else if (
-            typeof rrule.until === 'string' &&
+            typeof rrule.until === "string" &&
             /^\d{8}$/.test(rrule.until)
           ) {
             const y = parseInt(rrule.until.slice(0, 4), 10);
             const m = parseInt(rrule.until.slice(4, 6), 10) - 1;
             const d = parseInt(rrule.until.slice(6, 8), 10);
             rr_until = new Date(y, m, d, 23, 59, 59).getTime();
-          } else if (typeof rrule.until === 'string') {
+          } else if (typeof rrule.until === "string") {
             rr_until = new Date(rrule.until).getTime();
           } else {
-            rr_until = new Date('3000-01-01').getTime();
+            rr_until = new Date("3000-01-01").getTime();
           }
         } else if (rrule.count) {
           // Fallback auf count * interval
           const unitMap = {
-            DAILY: 'day',
-            WEEKLY: 'week',
-            MONTHLY: 'month',
-            YEARLY: 'year',
+            DAILY: "day",
+            WEEKLY: "week",
+            MONTHLY: "month",
+            YEARLY: "year",
           };
-          const unit = unitMap[rrule.freq] || 'day';
+          const unit = unitMap[rrule.freq] || "day";
           // Approximation mit JS Date (reicht für UNTIL)
           const js = date_start.toJSDate();
           switch (unit) {
-            case 'day':
+            case "day":
               js.setDate(js.getDate() + rrule.count * interval);
               break;
-            case 'week':
+            case "week":
               js.setDate(js.getDate() + rrule.count * interval * 7);
               break;
-            case 'month':
+            case "month":
               js.setMonth(js.getMonth() + rrule.count * interval);
               break;
-            case 'year':
+            case "year":
               js.setFullYear(js.getFullYear() + rrule.count * interval);
               break;
           }
           rr_until = js.getTime();
         } else {
-          rr_until = new Date('3000-01-01').getTime();
+          rr_until = new Date("3000-01-01").getTime();
         }
 
-        if (rrule.freq === 'WEEKLY' && interval === 2) {
+        if (rrule.freq === "WEEKLY" && interval === 2) {
           isBiweekly = true;
         }
 
         // Enddatum auf UNTIL setzen
         date_end = new ICAL.Time.fromJSDate(new Date(rr_until), false);
       } catch (e) {
-        console.warn('RRULE parse error:', e);
+        console.warn("RRULE parse error:", e);
       }
     }
 
@@ -196,12 +195,12 @@ function parse_ics(
     if (date_start) {
       const js = date_start.toJSDate();
       dateStartUnix = js.getTime();
-      dateStart = `${js.getFullYear()}-${('0' + (js.getMonth() + 1)).slice(
-        -2
-      )}-${('0' + js.getDate()).slice(-2)}`;
-      timeStart = `${('0' + js.getHours()).slice(-2)}:${(
-        '0' + js.getMinutes()
-      ).slice(-2)}:${('0' + js.getSeconds()).slice(-2)}`;
+      dateStart = `${js.getFullYear()}-${("0" + (js.getMonth() + 1)).slice(
+        -2,
+      )}-${("0" + js.getDate()).slice(-2)}`;
+      timeStart = `${("0" + js.getHours()).slice(-2)}:${(
+        "0" + js.getMinutes()
+      ).slice(-2)}:${("0" + js.getSeconds()).slice(-2)}`;
     }
 
     let dateEnd, timeEnd, dateEndUnix;
@@ -217,12 +216,12 @@ function parse_ics(
       }
 
       dateEndUnix = js.getTime();
-      dateEnd = `${js.getFullYear()}-${('0' + (js.getMonth() + 1)).slice(
-        -2
-      )}-${('0' + js.getDate()).slice(-2)}`;
-      timeEnd = `${('0' + js.getHours()).slice(-2)}:${(
-        '0' + js.getMinutes()
-      ).slice(-2)}:${('0' + js.getSeconds()).slice(-2)}`;
+      dateEnd = `${js.getFullYear()}-${("0" + (js.getMonth() + 1)).slice(
+        -2,
+      )}-${("0" + js.getDate()).slice(-2)}`;
+      timeEnd = `${("0" + js.getHours()).slice(-2)}:${(
+        "0" + js.getMinutes()
+      ).slice(-2)}:${("0" + js.getSeconds()).slice(-2)}`;
     }
 
     // === Ergebnisobjekt ===
@@ -245,13 +244,13 @@ function parse_ics(
       dateEndUnix,
       time_start: timeStart,
       time_end: timeEnd,
-      alarm: alarm || 'none',
-      etag: etag || '',
-      url: url || '',
+      alarm: alarm || "none",
+      etag: etag || "",
+      url: url || "",
       calendar_name: calname,
       doNotCache,
       id: account_id,
-      modified: lastModified ? lastModified.toString() : '',
+      modified: lastModified ? lastModified.toString() : "",
     };
 
     const a = { parsed_data: imp };
@@ -265,13 +264,13 @@ function parse_ics(
     return_array.push(a);
 
     if (return_array.length > 200) {
-      channel.postMessage({ action: 'parse', content: return_array });
+      channel.postMessage({ action: "parse", content: return_array });
       return_array = [];
     }
   });
 
   if (return_array.length > 0) {
-    channel.postMessage({ action: 'parse', content: return_array });
+    channel.postMessage({ action: "parse", content: return_array });
     return_array = [];
   }
 
@@ -286,7 +285,7 @@ const isLoggedInMap = {};
 async function getClientInstance(item) {
   try {
     if (!clientInstances[item.id]) {
-      if (item.type === 'oauth') {
+      if (item.type === "oauth") {
         clientInstances[item.id] = new DAVClient({
           serverUrl: item.server_url,
           credentials: {
@@ -297,8 +296,8 @@ async function getClientInstance(item) {
             authorizationCode: item.authorizationCode,
             redirectUrl: process.env.redirect_url,
           },
-          authMethod: 'Oauth',
-          defaultAccountType: 'caldav',
+          authMethod: "Oauth",
+          defaultAccountType: "caldav",
         });
       } else {
         clientInstances[item.id] = new DAVClient({
@@ -307,17 +306,15 @@ async function getClientInstance(item) {
             username: item.user,
             password: item.password,
           },
-          authMethod: 'Basic',
-          defaultAccountType: 'caldav',
+          authMethod: "Basic",
+          defaultAccountType: "caldav",
         });
       }
     }
     return clientInstances[item.id];
   } catch (e) {
-    console.log(e);
-
     channel.postMessage({
-      action: 'test',
+      action: "test",
       content: e,
     });
   }
@@ -342,7 +339,7 @@ let sync_caldav = async function () {
         cn.push({
           name: calendars[i].displayName,
           url: calendars[i].url,
-          id: item.id + '-' + i,
+          id: item.id + "-" + i,
           view: true,
         });
       }
@@ -366,12 +363,12 @@ let sync_caldav = async function () {
         };
         try {
           const ma = await client.syncCalendars(s);
-          console.log('try to sync');
+          console.log("try to sync");
 
           if (ma.updated.length && ma.updated.length > 0) {
             channel.postMessage({
-              action: 'test',
-              content: 'update needed',
+              action: "test",
+              content: "update needed",
             });
             break;
           } else {
@@ -380,7 +377,7 @@ let sync_caldav = async function () {
           console.log(e);
 
           channel.postMessage({
-            action: 'test',
+            action: "test",
             content: e.toString(),
           });
         }
@@ -389,23 +386,23 @@ let sync_caldav = async function () {
       console.log(err);
 
       channel.postMessage({
-        action: 'test',
+        action: "test",
         content: err.toString(),
       });
     }
   }
 };
 
-self.addEventListener('message', async (event) => {
+self.addEventListener("message", async (event) => {
   // Receive a message from the main thread
   if (!event.data) {
-    channel.postMessage({ action: 'error', content: 'error' });
+    channel.postMessage({ action: "error", content: "error" });
   }
 
-  if (event.data.type == 'parse') {
+  if (event.data.type == "parse") {
     try {
       let is_caldav = () => {
-        if (event.data.e == 'subscription' || event.data.e == 'local-id') {
+        if (event.data.e == "subscription" || event.data.e == "local-id") {
           return false;
         } else {
           return true;
@@ -413,7 +410,7 @@ self.addEventListener('message', async (event) => {
       };
 
       let is_subscription = () => {
-        if (event.data.e == 'subscription') {
+        if (event.data.e == "subscription") {
           return true;
         } else {
           return false;
@@ -430,12 +427,12 @@ self.addEventListener('message', async (event) => {
         false,
         event.data.callback || false,
         event.data.store || false,
-        event.data.doNotCache || false
+        event.data.doNotCache || false,
       );
     } catch (error) {
       channel.postMessage({
-        action: 'error',
-        content: 'error parsing ' + error,
+        action: "error",
+        content: "error parsing " + error,
       });
     }
   }
@@ -444,44 +441,44 @@ self.addEventListener('message', async (event) => {
 self.onsystemmessage = (evt) => {
   try {
     const serviceHandler = async () => {
-      if (evt.name === 'activity') {
+      if (evt.name === "activity") {
         handler = evt.data.webActivityRequestHandler();
         const { name: activityName, data: activityData } = handler.source;
-        if (activityName == 'greg-oauth') {
+        if (activityName == "greg-oauth") {
           channel.postMessage({
             oauth_success: activityData,
           });
         }
       }
 
-      if (evt.name === 'alarm') {
+      if (evt.name === "alarm") {
         let m = evt.data.json();
 
-        if (m.data.note == 'keep alive') {
+        if (m.data.note == "keep alive") {
           sync_caldav();
 
-          self.registration.showNotification('Test', {
+          self.registration.showNotification("Test", {
             body: m.data.note,
           });
 
           localforage
-            .getItem('settings')
+            .getItem("settings")
             .then(function (e) {
-              if (e.background_sync == 'Yes') {
+              if (e.background_sync == "Yes") {
                 var d = new Date();
                 d.setMinutes(d.getMinutes() + 2);
 
                 let options = {
                   date: d,
-                  data: { note: 'keep alive', type: 'background_sync' },
+                  data: { note: "keep alive", type: "background_sync" },
                   ignoreTimezone: false,
                 };
 
                 navigator.b2g.alarmManager.add(options).then(
                   channel.postMessage({
-                    action: 'background_sync',
-                    content: '',
-                  })
+                    action: "background_sync",
+                    content: "",
+                  }),
                 );
               }
             })
@@ -489,7 +486,7 @@ self.onsystemmessage = (evt) => {
               console.log(err);
             });
         } else {
-          self.registration.showNotification('Greg', {
+          self.registration.showNotification("Greg", {
             body: m.data.note,
           });
         }
@@ -498,6 +495,6 @@ self.onsystemmessage = (evt) => {
 
     evt.waitUntil(serviceHandler());
   } catch (e) {
-    channel.postMessage({ action: 'error', content: e });
+    channel.postMessage({ action: "error", content: e });
   }
 };

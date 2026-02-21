@@ -1,4 +1,0 @@
-{
-  "ignore": ["**/@ts-ignore"],
-  "singleQuote": true
-}
