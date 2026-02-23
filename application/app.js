@@ -29,7 +29,7 @@ import {
   DAVClient,
   DAVNamespaceShort,
   refreshAccessToken,
-} from "./assets/js/tsdav.js";
+} from "./assets/js/tsdav-kaios.js";
 
 import "url-search-params-polyfill";
 import { load_ads } from "./assets/js/ads.js";

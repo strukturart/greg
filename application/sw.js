@@ -1,7 +1,6 @@
 import ICAL from "ical.js";
 import localforage from "localforage";
-import { DAVClient } from "./assets/js/tsdav.js";
-import { kaiOSFetch } from "./app.js";
+import { DAVClient } from "./assets/js/tsdav-kaios.js";
 
 const channel = new BroadcastChannel("sw-messages");
 
